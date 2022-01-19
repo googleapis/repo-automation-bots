@@ -271,7 +271,7 @@ const handler = (app: Probot) => {
     for (const branchConfiguration of branchConfigurations) {
       logger.debug(branchConfiguration);
 
-      const manifest = await buildManifest(
+      let manifest = await buildManifest(
         github,
         repoLanguage,
         branchConfiguration
@@ -284,6 +284,15 @@ const handler = (app: Probot) => {
         try {
           const numReleases = await Runner.createReleases(manifest);
           logger.info(`Created ${numReleases} releases`);
+          if (numReleases > 0) {
+            // we created a release, reload config which may include the latest
+            // version
+            manifest = await buildManifest(
+              github,
+              repoLanguage,
+              branchConfiguration
+            );
+          }
         } catch (e) {
           if (e instanceof Errors.DuplicateReleaseError) {
             // In the future, this could raise an issue against the
