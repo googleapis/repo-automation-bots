@@ -34,7 +34,7 @@ steps:
     entrypoint: bash
     env:
       - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
-      - "MEMORY=1G"
+      - "MEMORY=2G"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
