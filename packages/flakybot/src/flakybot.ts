@@ -44,9 +44,27 @@ export interface Config {
 export const DEFAULT_CONFIG: Config = {issuePriority: 'p1'};
 export const CONFIG_FILENAME = 'flakybot.yaml';
 
-type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
+type IssuesListForRepoResponseItem = components['schemas']['issue'];
 type IssuesListCommentsResponseData = components['schemas']['issue-comment'][];
 type IssuesListForRepoResponseData = IssuesListForRepoResponseItem[];
+
+interface Label {
+  id?: number;
+  node_id?: string;
+  url?: string;
+  name?: string;
+  description?: string | null;
+  color?: string | null;
+  default?: boolean;
+}
+
+function isArray(label: Label[] | unknown | string): label is Label[] {
+  return Array.isArray(label);
+}
+
+function isString(label: Label[] | unknown | string): label is Label[] {
+  return typeof label === 'string';
+}
 
 function getLabelsForFlakyIssue(config: Config): string[] {
   return [
@@ -789,11 +807,20 @@ function hasLabel(
   if (issue.labels === undefined) {
     return false;
   }
-  for (const l of issue.labels) {
-    if (l.name === label) {
+  if (isArray(issue.labels)) {
+    for (const l of issue.labels) {
+      if (l.name === label) {
+        return true;
+      }
+    }
+  }
+
+  if (isString(label)) {
+    if (issue.labels === label) {
       return true;
     }
   }
+
   return false;
 }
 
@@ -808,19 +835,24 @@ flakybot.markIssueFlaky = async (
   context.log.info(
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
   );
-  const existingLabels = existingIssue.labels
-    ?.map(l => l.name as string) // "as string" is workaround for https://github.com/github/rest-api-description/issues/112
-    .filter(l => !l.startsWith('flakybot'));
-  let labelsToAdd = getLabelsForFlakyIssue(config);
-  // If existingLabels contains a priority or type label, don't add the
-  // default priority and type labels.
-  if (existingLabels?.find(l => l.startsWith('priority:'))) {
-    labelsToAdd = labelsToAdd.filter(l => !l.startsWith('priority:'));
+  let existingLabels;
+  let labels;
+  if (isArray(existingIssue.labels)) {
+    existingLabels = existingIssue.labels
+      ?.map(l => l.name) // "as string" is workaround for https://github.com/github/rest-api-description/issues/112
+      .filter(l => !l?.startsWith('flakybot'));
+
+    let labelsToAdd = getLabelsForFlakyIssue(config);
+    // If existingLabels contains a priority or type label, don't add the
+    // default priority and type labels.
+    if (existingLabels?.find(l => l?.startsWith('priority:'))) {
+      labelsToAdd = labelsToAdd.filter(l => !l.startsWith('priority:'));
+    }
+    if (existingLabels?.find(l => l?.startsWith('type:'))) {
+      labelsToAdd = labelsToAdd.filter(l => !l.startsWith('type:'));
+    }
+    labels = labelsToAdd.concat(existingLabels as string[]);
   }
-  if (existingLabels?.find(l => l.startsWith('type:'))) {
-    labelsToAdd = labelsToAdd.filter(l => !l.startsWith('type:'));
-  }
-  const labels = labelsToAdd.concat(existingLabels);
   await context.octokit.issues.update({
     owner,
     repo,

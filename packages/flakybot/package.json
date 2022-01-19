@@ -30,7 +30,7 @@
     "@google-automations/bot-config-utils": "^4.0.0",
     "@google-automations/datastore-lock": "^3.0.0",
     "@google-automations/label-utils": "^2.0.2",
-    "@octokit/openapi-types": "^10.6.0",
+    "@octokit/openapi-types": "^11.0.0",
     "@octokit/types": "^6.31.0",
     "gcf-utils": "^13.0.2",
     "probot": "^12.1.1",
