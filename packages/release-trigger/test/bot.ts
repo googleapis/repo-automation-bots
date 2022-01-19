@@ -21,6 +21,7 @@ import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import * as releaseTriggerModule from '../src/release-trigger';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -53,6 +54,8 @@ function buildFakePullRequest(
 describe('bot', () => {
   let probot: Probot;
   let getConfigStub: sinon.SinonStub;
+  let datastoreLockAcquireStub: sinon.SinonStub;
+  let datastoreLockReleaseStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -66,6 +69,8 @@ describe('bot', () => {
     });
     probot.load(myProbotApp);
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
+    datastoreLockAcquireStub = sandbox.stub(DatastoreLock.prototype, 'acquire');
+    datastoreLockReleaseStub = sandbox.stub(DatastoreLock.prototype, 'release');
     sandbox.replace(releaseTriggerModule, 'ALLOWED_ORGANIZATIONS', [
       'Codertocat',
     ]);
@@ -81,13 +86,20 @@ describe('bot', () => {
         fixturesPath,
         './events/release_published'
       ));
+      const pull1 = buildFakePullRequest('Codertocat', 'Hello-World', 1234);
+      const pull2 = buildFakePullRequest('Codertocat', 'Hello-World', 1235);
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1234')
+        .reply(200, pull1)
+        .get('/repos/Codertocat/Hello-World/pulls/1235')
+        .reply(200, pull2);
+
       getConfigStub.resolves({enabled: true});
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
       const findPullRequestsStub = sandbox
         .stub(releaseTriggerModule, 'findPendingReleasePullRequests')
-        .resolves([
-          buildFakePullRequest('Codertocat', 'Hello-World', 1234),
-          buildFakePullRequest('Codertocat', 'Hello-World', 1235),
-        ]);
+        .resolves([pull1, pull2]);
       const triggerKokoroJobStub = sandbox
         .stub(releaseTriggerModule, 'triggerKokoroJob')
         .resolves({stdout: '', stderr: ''});
@@ -121,6 +133,7 @@ describe('bot', () => {
         sinon.match.any,
         sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1235})
       );
+      requests.done();
     });
   });
 
@@ -131,6 +144,12 @@ describe('bot', () => {
         './events/pull_request_unlabeled'
       ));
       getConfigStub.resolves({enabled: true});
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const pull = buildFakePullRequest('Codertocat', 'Hello-World', 2);
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/2')
+        .reply(200, pull);
       const triggerKokoroJobStub = sandbox
         .stub(releaseTriggerModule, 'triggerKokoroJob')
         .resolves({stdout: '', stderr: ''});
@@ -154,6 +173,7 @@ describe('bot', () => {
         sinon.match.any,
         sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 2})
       );
+      requests.done();
     });
 
     it('should ignore if pull request is not tagged', async () => {
