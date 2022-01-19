@@ -17,6 +17,7 @@ import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
 import {
@@ -35,8 +36,68 @@ import {
   PullRequest,
   TAGGED_LABEL,
   cleanupPublished,
+  isReleasePullRequest,
 } from './release-trigger';
 
+const TRIGGER_LOCK_ID = 'release-trigger';
+const TRIGGER_LOCK_DURATION_MS = 60 * 1000;
+const TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
+
+/**
+ * Try to trigger a the release job for a release pull request under
+ * a lock. This is to try to avoid a race condition and double-triggering
+ *
+ * @param {Octokit} octokit An authenticated octokit instance
+ * @param {PullRequest} pullRequest The release pull request
+ * @param {string} token An authenticated auth token for releasetool to use
+ * @throws {Error} if we fail to acquire the lock
+ */
+async function doTriggerWithLock(
+  octokit: Octokit,
+  pullRequest: PullRequest,
+  token: string
+) {
+  const lock = new DatastoreLock(
+    TRIGGER_LOCK_ID,
+    pullRequest.html_url,
+    TRIGGER_LOCK_DURATION_MS,
+    TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS
+  );
+  const result = await lock.acquire();
+  if (!result) {
+    // throw an error and expect gcf-utils infrastructure to retry
+    throw new Error(
+      `Failed to acquire lock in ${TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS}ms for ${pullRequest.html_url}`
+    );
+  }
+  // fetch the pull request and ensure it is triggerable
+  pullRequest = (
+    await octokit.pulls.get({
+      owner: pullRequest.base.repo.owner!.login!,
+      repo: pullRequest.base.repo.name,
+      pull_number: pullRequest.number,
+    })
+  ).data;
+
+  try {
+    // double-check that the pull request is triggerable
+    if (isReleasePullRequest(pullRequest)) {
+      await doTrigger(octokit, pullRequest, token);
+    } else {
+      logger.warn(`Skipping triggering release PR: ${pullRequest.html_url}`);
+    }
+  } finally {
+    await lock.release();
+  }
+}
+
+/**
+ * Try to trigger a the release job for a release pull request using releasetool.
+ *
+ * @param {Octokit} octokit An authenticated octokit instance
+ * @param {PullRequest} pullRequest The release pull request
+ * @param {string} token An authenticated auth token for releasetool to use
+ */
 async function doTrigger(
   octokit: Octokit,
   pullRequest: PullRequest,
@@ -114,7 +175,7 @@ export = (app: Probot) => {
         continue;
       }
 
-      await doTrigger(context.octokit, pullRequest, token);
+      await doTriggerWithLock(context.octokit, pullRequest, token);
     }
   });
 
@@ -214,7 +275,11 @@ export = (app: Probot) => {
     const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };
-    await doTrigger(context.octokit, context.payload.pull_request, token);
+    await doTriggerWithLock(
+      context.octokit,
+      context.payload.pull_request,
+      token
+    );
   });
 
   // Check the config schema on PRs.
