@@ -88,7 +88,7 @@ export interface PullRequest {
 }
 
 const LAUNCH_DATE = new Date('2021-08-01');
-function isReleasePullRequest(pullRequest: PullRequest): boolean {
+export function isReleasePullRequest(pullRequest: PullRequest): boolean {
   return (
     pullRequest.state === 'closed' &&
     !!pullRequest.merge_commit_sha &&
