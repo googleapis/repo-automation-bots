@@ -8,6 +8,16 @@ There is no check if the `do not merge` label is never added to the PR.
 
 The `do-not-merge` label is treated the same way as `do not merge`.
 
+## Configuration
+
+To configure the bot, you can create a configuration file:
+`.github/do-not-merge.yml`. The contents of this file allow for the following
+options:
+
+| Name                | Description                                        | Type       | Default                                                                               |
+| ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| `alwaysCreateStatusCheck` | Whether the bot should always report a status check | `boolean` | `false` |
+
 ## Development
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.
