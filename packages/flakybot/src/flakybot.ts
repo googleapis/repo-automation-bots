@@ -62,7 +62,7 @@ function isArray(label: Label[] | unknown | string): label is Label[] {
   return Array.isArray(label);
 }
 
-function isString(label: Label[] | unknown | string): label is Label[] {
+function isString(label: Label[] | unknown | string): label is string {
   return typeof label === 'string';
 }
 
@@ -815,7 +815,7 @@ function hasLabel(
     }
   }
 
-  if (isString(label)) {
+  if (isString(issue.labels)) {
     if (issue.labels === label) {
       return true;
     }
