@@ -448,7 +448,7 @@ export function getJavaVersions(
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
 
-  // In order to extract the correct values from the possible Java files, 
+  // In order to extract the correct values from the possible Java files,
   // first we need to determine whether we need to take the regexes from build.gradle
   // files or from pom.xml files
   if (versionFile.filename.includes('build.gradle')) {
