@@ -20,6 +20,7 @@ import {writeFile} from 'fs';
 import yargs = require('yargs');
 import {dump} from 'js-yaml';
 import {fetchConfig} from '../../docker-api';
+import {adornOwlBotLockText} from '../../write-lock';
 
 const writeFileAsync = promisify(writeFile);
 
@@ -49,14 +50,14 @@ export const writeLock: yargs.CommandModule<{}, Args> = {
     const [image, digest] = argv['image'].split('@');
     const config: OwlBotLock = {docker: {image, digest}};
     let text = dump(config);
+    let timestamp = '';
     try {
-      const timestamp = (await fetchConfig(image, digest)).created;
-      const separator = text.endsWith('\n') ? '' : '\n';
-      text += `${separator}# created: ${timestamp}\n`;
+      timestamp = (await fetchConfig(image, digest)).created;
     } catch (e) {
       // Failing to fetch the timestamp is not fatal.
       console.error(e);
     }
+    text = adornOwlBotLockText(text, timestamp);
     await writeFileAsync(argv['lock-file-path'], text);
   },
 };

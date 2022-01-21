@@ -31,11 +31,11 @@
     "@google-automations/bot-config-utils": "^4.0.0",
     "@google-automations/label-utils": "^2.0.2",
     "@octokit/webhooks": "^9.20.0",
+    "@octokit/rest": "^18.12.0",
     "gcf-utils": "^13.1.0",
-    "release-please": "^12.6.3"
+    "release-please": "^13.4.1"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.12.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^17.0.2",
     "@types/semver": "^7.3.9",
