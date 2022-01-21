@@ -1,0 +1,109 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This is identical to ./update-lock-branch.yaml except for 2 differences:
+# 1. It doesn't run the post-processor container.
+# 2. It always creates a pull request.
+#
+# This build is designed to be run after repeated runs of
+# update-lock-branch.yaml have failed.  The post processor must be
+# throwing an error, and we need to present that user to the owners of
+# the repository.  So, we open a pull request and let the post processor
+# run on that pull request as normal.  The repository owners will see
+# the error in the pull request.
+
+steps:
+  # Clone user/branch that created PR:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - clone
+      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+
+  # Observe the default branch name and save it for later.
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: bash
+    args: [
+      '-l',
+      '-c',
+      "git branch --show-current > /workspace/default-branch.txt"
+    ]
+    dir: ${_REPOSITORY}
+
+  # Populate global username, email for git:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.email
+      - 'gcf-owl-bot[bot]@users.noreply.github.com'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.name
+      - 'Owl Bot'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - checkout
+      - -b
+      - ${_PR_BRANCH}
+    dir: '${_REPOSITORY}'
+
+  # Write the contents of .Owlbot.lock.yaml with the new digest.
+  - name: ${_OWL_BOT_CLI}
+    args:
+      - write-lock
+      - --lock-file-path
+      - '${_LOCK_FILE_PATH}'
+      - --image
+      - ${_CONTAINER}
+    dir: '${_REPOSITORY}'
+
+  # Dump the change history from the docker image so we can include it
+  # in the pull request description.
+  - name: ${_CONTAINER}
+    dir: /
+    entrypoint: 'sh'
+    args: ['-c', '( ( cat post-processor-changes.txt || printf "chore: new owl bot post processor docker image\n\n" ) && printf "Post-Processor: ${_CONTAINER}\n" ) > /workspace/post-processor-changes.txt']
+
+  # Commit changes
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - add
+      - ${_LOCK_FILE_PATH}
+    dir: '${_REPOSITORY}'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - commit
+      - -F
+      - /workspace/post-processor-changes.txt
+    dir: '${_REPOSITORY}'
+
+  # Fetch our github credentials because we may need to push to github.
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/owl-bot-github-key.pem" ]
+
+  # Examine the changed files and possibly create a pull request.
+  - name: ${_OWL_BOT_CLI}
+    args:
+      - maybe-create-pull-request-for-lock-update
+      - --pem-path
+      - /workspace/owl-bot-github-key.pem
+      - --app-id
+      - '99011'
+      - --installation
+      - '14695777'
+      - --force
+    dir: '${_REPOSITORY}'
