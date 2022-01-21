@@ -60,7 +60,7 @@ export interface Versions {
  * of the file that was changed in the PR, plus the file rule that applies
  * to that given file.
  */
-export interface fileAndMetadata {
+export interface FileAndMetadata {
   file: File;
   fileRule: FileSpecificRule;
 }

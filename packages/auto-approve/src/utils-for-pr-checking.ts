@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File, FileSpecificRule, fileAndMetadata, Versions} from './interfaces';
+import {File, FileSpecificRule, FileAndMetadata, Versions} from './interfaces';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -36,7 +36,7 @@ export function getTargetFiles(
   changedFiles: File[],
   author: string,
   languageRules: FileSpecificRule[]
-): fileAndMetadata[] {
+): FileAndMetadata[] {
   const targetFiles = [];
 
   for (const changedFile of changedFiles) {
@@ -448,31 +448,68 @@ export function getJavaVersions(
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
 
+  // In order to extract the correct values from the possible Java files, 
+  // first we need to determine whether we need to take the regexes from build.gradle
+  // files or from pom.xml files
   if (versionFile.filename.includes('build.gradle')) {
     if (oldVersions) {
-      oldDependencyName = oldVersions[1] || oldVersions[4];
-      oldMajorVersion = oldVersions[2] || oldVersions[5];
-      oldMinorVersion = oldVersions[6] || oldVersions[3];
+      // Whatever the previous dependency name was, or if it was just `grpcVersion`
+      oldDependencyName =
+        oldVersions.groups?.oldDependencyNameBuild ||
+        oldVersions.groups?.oldGrpcVersionBuild;
+      // Whatever the previous major version was of a dependency or grpc
+      oldMajorVersion =
+        oldVersions.groups?.oldMajorVersionBuild ||
+        oldVersions.groups?.oldMajorVersionGrpcBuild;
+      // Whatever the previous minor version was of a dependency or grpc
+      oldMinorVersion =
+        oldVersions.groups?.oldMinorVersionGrpcBuild ||
+        oldVersions.groups?.oldMinorVersionBuild;
     }
 
     if (newVersions) {
-      newDependencyName = newVersions[1] || newVersions[4];
-      newMajorVersion = newVersions[2] || newVersions[5];
-      newMinorVersion = newVersions[6] || newVersions[3];
+      // Whatever the new dependency name iss, or if it was just `grpcVersion`
+      newDependencyName =
+        newVersions.groups?.newDependencyNameBuild ||
+        newVersions.groups?.newGrpcVersionBuild;
+      // Whatever the new major version was of a dependency or grpc
+      newMajorVersion =
+        newVersions.groups?.newMajorVersionBuild ||
+        newVersions.groups?.newMajorVersionGrpcBuild;
+      // Whatever the new minor version was of a dependency or grpc
+      newMinorVersion =
+        newVersions.groups?.newMinorVersionGrpcBuild ||
+        newVersions.groups?.newMinorVersionBuild;
     }
   } else {
     if (oldVersions) {
-      oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
-      oldMajorRevVersion = oldVersions[4];
-      oldMajorVersion = oldVersions[5] || oldVersions[7];
-      oldMinorVersion = oldVersions[6] || oldVersions[8];
+      // Whatever the full name of the previous dependency was in a pom.xml file
+      oldDependencyName = `${oldVersions.groups?.oldDependencyNamePrefixPom}:${oldVersions.groups?.oldDependencyNamePom}`;
+      // Whatever the date version of the previous dependency was
+      oldMajorRevVersion = oldVersions.groups?.oldRevVersionPom;
+      // Whatever the major version of the previous dependency was (whether or not it has a rev version attached to it)
+      oldMajorVersion =
+        oldVersions.groups?.oldMajorRevVersionPom ||
+        oldVersions.groups?.oldMajorVersionPom;
+      // Whatever the minor version of the previous dependency was (whether or not it has a rev version attached to it)
+      oldMinorVersion =
+        oldVersions.groups?.oldMinorRevVersionPom ||
+        oldVersions.groups?.oldMinorVersionPom;
     }
 
     if (newVersions) {
-      newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
-      newMajorRevVersion = newVersions[5];
-      newMajorVersion = newVersions[6] || newVersions[8];
-      newMinorVersion = newVersions[7] || newVersions[9];
+      // Whatever the full name of the new dependency is in a pom.xml file
+      newDependencyName = `${newVersions.groups?.newDependencyNamePrefixPom}:${newVersions.groups?.newDependencyNamePom}`;
+      // Whatever the date version of the new dependency is
+      newMajorRevVersion = newVersions.groups?.newRevVersionPom;
+      // Whatever the major version of the new dependency is (whether or not it has a rev version attached to it)
+      newMajorVersion =
+        newVersions.groups?.newMajorRevVersionPom ||
+        newVersions.groups?.newMajorVersionPom;
+      // Whatever the minor version of the new dependency is (whether or not it has a rev version attached to it)
+      newMinorVersion =
+        newVersions.groups?.newMinorRevVersionPom ||
+        newVersions.groups?.newMinorVersionPom;
     }
   }
 
