@@ -28,7 +28,7 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
+type IssuesListForRepoResponseItem = components['schemas']['issue'];
 type IssuesListForRepoResponseData = IssuesListForRepoResponseItem[];
 
 const packageJsonFile = fs.readFileSync(

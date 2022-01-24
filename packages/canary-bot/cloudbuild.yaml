@@ -79,3 +79,19 @@ steps:
       - "$_FUNCTION_REGION"
       # override the bot name
       - canary-bot-cloud-run
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run-backend"
+    waitFor: ["push-docker"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+      # override the bot name
+      - canary-bot-cloud-run-backend
