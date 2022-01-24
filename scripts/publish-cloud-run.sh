@@ -59,8 +59,11 @@ else
     exit 1
 fi
 
+if [ -z "${SERVICE_NAME}" ]; then
+  SERVICE_NAME=${botName//_/-}
+fi
+
 pushd "${directoryName}"
-serviceName=${botName//_/-}
 functionName=${botName//-/_}
 queueName=${botName//_/-}
 
@@ -103,11 +106,11 @@ fi
 if [ -n "${MEMORY}" ]; then
   deployArgs+=( "--memory" "${MEMORY}" )
 fi
-echo "About to cloud run app ${serviceName}"
-gcloud run deploy "${serviceName}" "${deployArgs[@]}"
+echo "About to cloud run app ${SERVICE_NAME}"
+gcloud run deploy "${SERVICE_NAME}" "${deployArgs[@]}"
 
 echo "Adding ability for allUsers to execute the Function"
-gcloud run services add-iam-policy-binding "${serviceName}" \
+gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
   --member="allUsers" \
   --region "${region}" \
   --role="roles/run.invoker"

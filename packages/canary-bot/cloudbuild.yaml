@@ -84,6 +84,8 @@ steps:
     id: "deploy-cloud-run-backend"
     waitFor: ["push-docker"]
     entrypoint: bash
+    env:
+      - "SERVICE_NAME=canary-bot-cloud-run-backend"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
@@ -94,4 +96,4 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       # override the bot name
-      - canary-bot-cloud-run-backend
+      - canary-bot-cloud-run
