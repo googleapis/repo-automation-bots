@@ -18,7 +18,7 @@
 #
 # This build is designed to be run after repeated runs of
 # update-lock-branch.yaml have failed.  The post processor must be
-# throwing an error, and we need to present that user to the owners of
+# throwing an error, and we need to present that error to the owners of
 # the repository.  So, we open a pull request and let the post processor
 # run on that pull request as normal.  The repository owners will see
 # the error in the pull request.
