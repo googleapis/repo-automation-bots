@@ -221,14 +221,14 @@ export class FirestoreCopyStateStore implements CopyStateStore {
     this.copyBuilds = collectionsPrefix + 'copy-builds';
   }
 
-  async RecordBuildForCopy(copyTag: string, buildId: string): Promise<void> {
+  async recordBuildForCopy(copyTag: string, buildId: string): Promise<void> {
     await this.db
       .collection(this.copyBuilds)
       .doc(encodeId(copyTag))
       .set({buildId});
   }
 
-  async FindBuildForCopy(copyTag: string): Promise<string | undefined> {
+  async findBuildForCopy(copyTag: string): Promise<string | undefined> {
     return (
       await this.db.collection(this.copyBuilds).doc(encodeId(copyTag)).get()
     ).data()?.buildId;

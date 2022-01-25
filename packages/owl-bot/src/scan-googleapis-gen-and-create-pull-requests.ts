@@ -134,7 +134,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
           `Ignoring ${repoFullName} because ${commitHash} is too old.`
         );
       } else if (
-        (copyBuildId = await copyStateStore?.FindBuildForCopy(
+        (copyBuildId = await copyStateStore?.findBuildForCopy(
           copyTagFrom(repo.yamlPath, commitHash)
         ))
       ) {
@@ -180,7 +180,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     );
     if (copyStateStore) {
       const copyTag = copyTagFrom(todo.repo.yamlPath, todo.commitHash);
-      copyStateStore.RecordBuildForCopy(copyTag, htmlUrl);
+      copyStateStore.recordBuildForCopy(copyTag, htmlUrl);
     }
   }
   return todoStack.length;

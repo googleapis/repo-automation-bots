@@ -252,6 +252,7 @@ ${copyTagLine}`,
  * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
  * @param sourceRepoCommit: the commit from which to copy code. Empty means the most recent commit.
  * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
+ * @returns a url to a github issue or pull request.
  */
 export async function copyCodeAndCreatePullRequest(
   sourceRepo: string,

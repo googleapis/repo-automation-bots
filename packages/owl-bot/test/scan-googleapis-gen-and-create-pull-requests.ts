@@ -42,11 +42,11 @@ const cmd = newCmd();
 
 class FakeCopyStateStore implements CopyStateStore {
   readonly store: Map<string, string> = new Map();
-  RecordBuildForCopy(copyTag: string, buildId: string): Promise<void> {
+  recordBuildForCopy(copyTag: string, buildId: string): Promise<void> {
     this.store.set(copyTag, buildId);
     return Promise.resolve();
   }
-  FindBuildForCopy(copyTag: string): Promise<string | undefined> {
+  findBuildForCopy(copyTag: string): Promise<string | undefined> {
     return Promise.resolve(this.store.get(copyTag));
   }
 }

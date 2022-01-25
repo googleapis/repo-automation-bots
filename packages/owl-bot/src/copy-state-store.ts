@@ -23,12 +23,12 @@ export interface CopyStateStore {
    * @param a unique id for the copy operation.
    * @param buildId the google cloud build id.
    */
-  RecordBuildForCopy(copyTag: string, buildId: string): Promise<void>;
+  recordBuildForCopy(copyTag: string, buildId: string): Promise<void>;
 
   /**
    * Finds an existing branch for the copy operation.
    * @param a unique id for the copy operation.
    * @returns the empty string if none exists.
    */
-  FindBuildForCopy(copyTag: string): Promise<string | undefined>;
+  findBuildForCopy(copyTag: string): Promise<string | undefined>;
 }
