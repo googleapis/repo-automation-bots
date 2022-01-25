@@ -82,6 +82,7 @@ interface LocalCopy {
 interface CreatedGithubIssue {
   kind: 'CreatedGithubIssue';
   issue: number;
+  link: string;
 }
 
 /**
@@ -222,6 +223,7 @@ ${copyTagLine}`,
     const result: CreatedGithubIssue = {
       kind: 'CreatedGithubIssue',
       issue: issue.data.number,
+      link: issue.data.html_url,
     };
     return result;
   }
@@ -257,7 +259,7 @@ export async function copyCodeAndCreatePullRequest(
   destRepo: AffectedRepo,
   octokitFactory: OctokitFactory,
   logger = console
-): Promise<void> {
+): Promise<string> {
   const destBranch = 'owl-bot-' + uuidv4();
   const dest = await copyCodeIntoLocalBranch(
     sourceRepo,
@@ -268,15 +270,21 @@ export async function copyCodeAndCreatePullRequest(
     logger
   );
   if (dest.kind === 'CreatedGithubIssue') {
-    return;
+    return dest.link;
   }
 
   // Check for existing pull request one more time before we push.
   const token = await octokitFactory.getGitHubShortLivedAccessToken();
   // Octokit token may have expired; refresh it.
   const octokit = await octokitFactory.getShortLivedOctokit(token);
-  if (await copyExists(octokit, destRepo, dest.sourceCommitHash, 100)) {
-    return; // Mid-air collision!
+  const existingUrl = await copyExists(
+    octokit,
+    destRepo,
+    dest.sourceCommitHash,
+    100
+  );
+  if (existingUrl) {
+    return existingUrl; // Mid-air collision!
   }
 
   const prBody =
@@ -284,7 +292,7 @@ export async function copyCodeAndCreatePullRequest(
     '\n\n' +
     getLastCommitBody(dest.dir, logger);
 
-  await createPullRequestFromLastCommit(
+  return await createPullRequestFromLastCommit(
     destRepo.repo.owner,
     destRepo.repo.repo,
     dest.dir,
@@ -555,7 +563,9 @@ export function copyDirs(
  * to approximately 20.  The github token has a quota of about 5000 requests per hour,
  * so this cache is essential.
  */
-type Issues = {data: {number: number; body?: string | null}[]};
+type Issues = {
+  data: {number: number; body?: string | null; html_url: string}[];
+};
 export type RepoHistoryCache = Map<string, Issues>;
 
 export function newRepoHistoryCache(): RepoHistoryCache {
@@ -573,6 +583,7 @@ function stripIssues(issues: Issues): Issues {
       return {
         number: issue.number,
         body: copyTag ? copyTagFooter + copyTag : '',
+        html_url: issue.html_url,
       };
     }),
   };
@@ -613,7 +624,7 @@ function keyFrom(kind: 'pulls' | 'issues', request: Request): string {
  * @param destRepo the repo to search
  * @param sourceCommitHash the string to search for
  * @param searchDepth the depth of pull request and issue histories to search.
- * @returns true if there's a PR or issue with the commit hash exists
+ * @returns an html link to the existing issue if it exists
  */
 export async function copyExists(
   octokit: OctokitType,
@@ -622,7 +633,7 @@ export async function copyExists(
   searchDepth: number,
   cache?: RepoHistoryCache,
   logger = console
-): Promise<boolean> {
+): Promise<string> {
   // I observed octokit.search.issuesAndPullRequests() not finding recent, open
   // pull requests.  So enumerate them.
   const owner = destRepo.repo.owner;
@@ -635,8 +646,8 @@ export async function copyExists(
   // bodies.
   const findInBodies = (
     kind: 'Pull request' | 'Issue',
-    response: {data: {number: number; body?: string | null}[]}
-  ): boolean => {
+    response: Issues
+  ): string => {
     for (const issue of response.data) {
       const bodyIncludesCopyTag = bodyIncludesCopyTagFooter(issue.body ?? '');
       const needle = bodyIncludesCopyTag // Find the needle in a haystack.
@@ -647,12 +658,13 @@ export async function copyExists(
         logger.info(
           `${kind} ${issue.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
         );
-        return true;
+        return issue.html_url;
       }
     }
-    return false;
+    return '';
   };
 
+  let foundUrl = '';
   for (let page = 1, prsSeen = 0; prsSeen < searchDepth; page += 1) {
     const request: Request = {
       owner,
@@ -670,7 +682,7 @@ export async function copyExists(
       pulls = await octokit.pulls.list({...request});
       cache.set(cacheKey, stripIssues(pulls));
     }
-    if (findInBodies('Pull request', pulls)) return true;
+    if ((foundUrl = findInBodies('Pull request', pulls))) return foundUrl;
     prsSeen += pulls.data.length;
     if (pulls.data.length < per_page) {
       break; // No more to see.
@@ -695,7 +707,7 @@ export async function copyExists(
       issues = await octokit.issues.listForRepo({...request});
       cache.set(cacheKey, stripIssues(issues));
     }
-    if (findInBodies('Issue', issues)) return true;
+    if ((foundUrl = findInBodies('Issue', issues))) return foundUrl;
     issuesSeen += issues.data.length;
     if (issues.data.length < per_page) {
       break; // No more to see.
@@ -703,5 +715,5 @@ export async function copyExists(
   }
 
   logger.info(`${sourceCommitHash} not found in ${owner}/${repo}.`);
-  return false;
+  return '';
 }

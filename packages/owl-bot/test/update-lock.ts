@@ -48,7 +48,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
     const calls: any[][] = [];
     function recordCall(...args: any[]) {
       calls.push(args);
-      return Promise.resolve();
+      return Promise.resolve(`result-${calls.length}`);
     }
 
     // Mock the octokit factory:
