@@ -67,7 +67,7 @@ export class JavaDependency extends Process implements LanguageRule {
         titleRegex:
           /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
         maxFiles: 50,
-        fileNameRegex: [/pom.xml$/],
+        fileNameRegex: [/pom.xml$/, /build.gradle$/],
         fileRules: [
           {
             targetFileToCheck: /pom.xml$/,
@@ -82,10 +82,10 @@ export class JavaDependency extends Process implements LanguageRule {
                   or
                   <groupId>com.google.apis</groupId>
                   <artifactId>google-api-services-policytroubleshooter</artifactId>
-            -     <version>v1-rev20210319-1.31.5</version>
+                  -     <version>v1-rev20210319-1.31.5</version>
                 */
             oldVersion: new RegExp(
-              /<groupId>([^<]*)<\/groupId>[\s]*<artifactId>([^<]*)<\/artifactId>[\s]*-[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>[\s]*/
+              /<groupId>(?<oldDependencyNamePrefixPom>[^<]*)<\/groupId>[\s]*<artifactId>(?<oldDependencyNamePom>[^<]*)<\/artifactId>[\s]*-[\s]*<version>(?:v[0-9]-rev(?<oldRevVersionPom>[0-9]*)-(?<oldMajorRevVersionPom>[0-9]*)\.(?<oldMinorRevVersionPom>[0-9]*\.[0-9])|(?<oldMajorVersionPom>[0-9]*)\.(?<oldMinorVersionPom>[0-9]*\.[0-9]*))<\/version>[\s]*/
             ),
             /* This would match:
                   <groupId>com.google.cloud</groupId>
@@ -99,7 +99,30 @@ export class JavaDependency extends Process implements LanguageRule {
             +      <version>v1-rev20210319-1.32.1</version>
                 */
             newVersion: new RegExp(
-              /<groupId>([^<]*)<\/groupId>[\s]*<artifactId>([^<]*)<\/artifactId>[\s]*-[\s]*<version>(v[0-9]-rev[0-9]*-[0-9]*\.[0-9]*\.[0-9]|[[0-9]*\.[0-9]*\.[0-9]*)<\/version>[\s]*\+[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>/
+              /<groupId>(?<newDependencyNamePrefixPom>[^<]*)<\/groupId>[\s]*<artifactId>(?<newDependencyNamePom>[^<]*)<\/artifactId>[\s]*-[\s]*<version>(?:v[0-9]-rev[0-9]*-[0-9]*\.[0-9]*\.[0-9]|[[0-9]*\.[0-9]*\.[0-9]*)<\/version>[\s]*\+[\s]*<version>(v[0-9]-rev(?<newRevVersionPom>[0-9]*)-(?<newMajorRevVersionPom>[0-9]*)\.(?<newMinorRevVersionPom>[0-9]*\.[0-9])|(?<newMajorVersionPom>[0-9]*)\.(?<newMinorVersionPom>[0-9]*\.[0-9]*))<\/version>/
+            ),
+          },
+          {
+            targetFileToCheck: /build.gradle$/,
+            // This would match: chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v1.4.2 or chore(deps): update dependency com.google.apis:google-api-services-policytroubleshooter to v1-rev20210319-1.32.1
+            dependencyTitle: new RegExp(
+              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+            ),
+            /* This would match either
+            -    invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2
+            -    classpath 'com.google.cloud.tools:endpoints-framework-gradle-plugin:1.0.3'
+            -def grpcVersion = '1.40.1'
+            */
+            oldVersion: new RegExp(
+              /-(?:[\s]*(?:classpath|invoker)[\s]'(?<oldDependencyNameBuild>.*):(?<oldMajorVersionBuild>[0-9]*)\.(?<oldMinorVersionBuild>[0-9]*\.[0-9]*)|def[\s](?<oldGrpcVersionBuild>grpcVersion)[\s]=[\s]'(?<oldMajorVersionGrpcBuild>[0-9]*)\.(?<oldMinorVersionGrpcBuild>[0-9]*\.[0-9]*))/
+            ),
+            /* This would match either:
+            +    invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2
+            +    classpath 'com.google.cloud.tools:endpoints-framework-gradle-plugin:1.0.3'
+            +def grpcVersion = '1.40.1'
+            */
+            newVersion: new RegExp(
+              /\+(?:[\s]*(?:classpath|invoker)[\s]'(?<newDependencyNameBuild>.*):(?<newMajorVersionBuild>[0-9]*)\.(?<newMinorVersionBuild>[0-9]*\.[0-9]*)|def[\s](?<newGrpcVersionBuild>grpcVersion)[\s]=[\s]'(?<newMajorVersionGrpcBuild>[0-9]*)\.(?<newMinorVersionGrpcBuild>[0-9]*\.[0-9]*))/
             ),
           },
         ],

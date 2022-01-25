@@ -215,6 +215,7 @@ interface BootstrapperOptions {
   location?: string;
   payloadBucket?: string;
   taskTargetEnvironment?: BotEnvironment;
+  taskTargetName?: string;
 }
 
 function defaultTaskEnvironment(): BotEnvironment {
@@ -232,6 +233,7 @@ export class GCFBootstrapper {
   location: string;
   payloadBucket: string | undefined;
   taskTargetEnvironment: BotEnvironment;
+  taskTargetName: string;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -271,6 +273,7 @@ export class GCFBootstrapper {
     }
     this.location = options.location;
     this.payloadBucket = options.payloadBucket;
+    this.taskTargetName = options.taskTargetName || this.functionName;
   }
 
   async loadProbot(
@@ -982,7 +985,7 @@ export class GCFBootstrapper {
    */
   async enqueueTask(params: EnqueueTaskParams) {
     logger.info(
-      `scheduling cloud task targeting: ${this.taskTargetEnvironment}`
+      `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}`
     );
     // Make a task here and return 200 as this is coming from GitHub
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
@@ -995,7 +998,7 @@ export class GCFBootstrapper {
     const url = await this.getTaskTarget(
       this.projectId,
       this.location,
-      this.functionName
+      this.taskTargetName
     );
     logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {

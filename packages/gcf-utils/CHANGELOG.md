@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.2.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.1.0...gcf-utils-v13.2.0) (2022-01-21)
+
+
+### Features
+
+* allow overriding the backend service name ([#3116](https://github.com/googleapis/repo-automation-bots/issues/3116)) ([4b668fe](https://github.com/googleapis/repo-automation-bots/commit/4b668fedd279e80461a63a6ca1e1c92f35d683e9))
+
 ## [13.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.2...gcf-utils-v13.1.0) (2021-11-18)
 
 

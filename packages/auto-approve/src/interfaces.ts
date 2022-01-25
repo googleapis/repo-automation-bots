@@ -22,9 +22,10 @@ export interface FileSpecificRule {
   prAuthor: string;
   process?: string;
   title?: RegExp;
-  targetFile: RegExp;
-  oldVersion: RegExp;
-  newVersion: RegExp;
+  targetFile: string;
+  dependency?: RegExp;
+  oldVersion?: RegExp;
+  newVersion?: RegExp;
 }
 
 /**
@@ -52,6 +53,16 @@ export interface Versions {
   oldMinorVersion: string;
   newMajorVersion: string;
   newMinorVersion: string;
+}
+
+/**
+ * Interface for return type of array from getTargetFiles. It is the amalgamation
+ * of the file that was changed in the PR, plus the file rule that applies
+ * to that given file.
+ */
+export interface FileAndMetadata {
+  file: File;
+  fileRule: FileSpecificRule;
 }
 
 /**
