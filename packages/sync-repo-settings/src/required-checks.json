@@ -87,7 +87,6 @@
           "ci/kokoro: Samples test",
           "ci/kokoro: System test",
           "docs",
-          "docfx",
           "lint",
           "test (10)",
           "test (12)",
