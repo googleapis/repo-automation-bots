@@ -13,8 +13,8 @@
 // limitations under the License.
 
 /**
- * A state store for the operation of copying files from googleapis-gen
- * into client library reposities.
+ * Records the build id for builds that run the post processor on code that's
+ * been copied from googleapis-gen into the client library repos.
  */
 export interface CopyStateStore {
   /**
