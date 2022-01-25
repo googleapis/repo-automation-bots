@@ -17,6 +17,7 @@ import appFn from './bot';
 
 const bootstrap = new GCFBootstrapper({
   taskTargetEnvironment: 'run',
+  taskTargetName: 'release-trigger-backend',
 });
 const server = bootstrap.server(appFn);
 const port = process.env.PORT ?? 8080;
