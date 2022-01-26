@@ -78,10 +78,10 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       })
       .option('track-builds-in-firestore', {
         describe:
-          'Instead of searching through pull requests and issues, look in' +
-          ' firestore, where pull requests and issues will also be recorded.',
+          "Record copy jobs in firestore, so that we don't try" +
+          ' to copy the same code twice.',
         type: 'boolean',
-        default: false,
+        default: true,
       });
   },
   async handler(argv) {
