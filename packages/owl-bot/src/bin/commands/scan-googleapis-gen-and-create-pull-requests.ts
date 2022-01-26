@@ -17,7 +17,7 @@
 import admin from 'firebase-admin';
 import yargs = require('yargs');
 import {scanGoogleapisGenAndCreatePullRequests} from '../../scan-googleapis-gen-and-create-pull-requests';
-import {FirestoreConfigsStore} from '../../database';
+import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../../database';
 import {OctokitParams, octokitFactoryFrom} from '../../octokit-util';
 
 interface Args extends OctokitParams {
@@ -25,6 +25,7 @@ interface Args extends OctokitParams {
   'firestore-project': string;
   'clone-depth': number;
   'search-depth': number;
+  'track-builds-in-firestore': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -74,6 +75,13 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           ' request for the commit was already created, search this deep',
         type: 'number',
         default: 1000,
+      })
+      .option('track-builds-in-firestore', {
+        describe:
+          'Instead of searching through pull requests and issues, look in' +
+          ' firestore, where pull requests and issues will also be recorded.',
+        type: 'boolean',
+        default: false,
       });
   },
   async handler(argv) {
@@ -83,12 +91,16 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
     });
     const db = admin.firestore();
     const configsStore = new FirestoreConfigsStore(db!);
+    const copyStateStore = argv['track-builds-in-firestore']
+      ? new FirestoreCopyStateStore(db!)
+      : undefined;
     await scanGoogleapisGenAndCreatePullRequests(
       argv['source-repo'],
       octokitFactoryFrom(argv),
       configsStore,
       argv['search-depth'],
-      argv['clone-depth']
+      argv['clone-depth'],
+      copyStateStore
     );
   },
 };
