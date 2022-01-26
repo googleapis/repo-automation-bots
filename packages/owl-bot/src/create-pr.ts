@@ -82,6 +82,7 @@ export function insertApiName(prTitle: string, apiName: string): string {
  * Creates a pull request using the title and commit message from the most
  * recent commit.
  * @argument apiName Name of the API to optionally include in the PR title.
+ * @returns an link to the pull request
  */
 export async function createPullRequestFromLastCommit(
   owner: string,
@@ -94,7 +95,7 @@ export async function createPullRequestFromLastCommit(
   prBody = '',
   apiName = '',
   logger = console
-): Promise<void> {
+): Promise<string> {
   const cmd = newCmd(logger);
   const githubRepo = await octokit.repos.get({owner, repo});
 
@@ -132,4 +133,5 @@ export async function createPullRequestFromLastCommit(
       labels,
     });
   }
+  return pull.data.html_url;
 }
