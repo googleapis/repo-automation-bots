@@ -46,6 +46,7 @@ export const scanAndRetryFailedLockUpdatesCommand: yargs.CommandModule<
           'Trigger this build trigger when all the regular builds failed.',
         type: 'string',
         demand: false,
+        default: '7887fb1c-55c1-4693-8fca-de0b9e503ea1',
       })
       .option('project-id', {
         describe: 'The Google Cloud project id.',
