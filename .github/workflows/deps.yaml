@@ -34,7 +34,7 @@ jobs:
       - run: npm i -g npm-check-updates
       - run: echo ./packages/${{ matrix.package }}
       - run: ./scripts/update-dependencies.sh packages/${{ matrix.package }}
-      - uses: googleapis/code-suggester@v1 # takes the changes from git directory
+      - uses: googleapis/code-suggester@v1
         env:
           ACCESS_TOKEN: ${{ secrets.YOSHI_CODE_BOT_TOKEN }}
         with:
