@@ -44,10 +44,12 @@ else
   minInstances="0"
 fi
 
-if [ $# -ge 10 ]; then
-  concurrency=${10}
-else
-  concurrency="80"
+if [ -z "${CONCURRENCY}" ]; then
+  if [ $# -ge 10 ]; then
+    CONCURRENCY=${10}
+  else
+    CONCURRENCY="80"
+  fi
 fi
 
 if [ "${project}" == "repo-automation-bots" ]; then
@@ -97,7 +99,7 @@ deployArgs=(
   "--min-instances"
   "${minInstances}"
   "--concurrency"
-  "${concurrency}"
+  "${CONCURRENCY}"
   "--quiet"
 )
 if [ -n "${SERVICE_ACCOUNT}" ]; then
