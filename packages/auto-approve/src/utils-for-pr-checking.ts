@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File} from './interfaces';
+import {File, FileSpecificRule, FileAndMetadata, Versions} from './interfaces';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -20,44 +20,6 @@ import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-/**
- * Interface for return type of array from getTargetFiles. It is the amalgamation
- * of the file that was changed in the PR, plus the file rule that applies
- * to that given file.
- */
-export interface fileAndMetadata {
-  file: File;
-  fileRule: FileSpecificRule;
-}
-/**
- * Interface for rules in `./language-versioning-rules.json`. These
- * are rules for files that match an author and filename, and then provide
- * regex for the versions for those particular formats.
- */
-export interface FileSpecificRule {
-  prAuthor: string;
-  process: string;
-  targetFile: string;
-  dependency?: RegExp;
-  oldVersion?: RegExp;
-  newVersion?: RegExp;
-}
-
-/**
- * Interface for the versions found in the selected files. These versions are
- * picked out based on the regex listed in `./language-versioning-rules.json` for
- * that particular file. From there, you will get the previous dependency, new
- * dependency, and previous version number and changed version number.
- */
-export interface Versions {
-  oldDependencyName: string;
-  newDependencyName: string;
-  oldMajorVersion: string;
-  oldMinorVersion: string;
-  newMajorVersion: string;
-  newMinorVersion: string;
-}
 
 /**
  * Takes all of the files changed in a given PR, and checks them against a set of
@@ -74,7 +36,7 @@ export function getTargetFiles(
   changedFiles: File[],
   author: string,
   languageRules: FileSpecificRule[]
-): fileAndMetadata[] {
+): FileAndMetadata[] {
   const targetFiles = [];
 
   for (const changedFile of changedFiles) {
@@ -436,12 +398,20 @@ export function doesDependencyChangeMatchPRTitleJava(
   if (titleRegex) {
     dependencyName = titleRegex[2];
 
-    if (!dependencyName.includes('com.google.')) {
+    if (
+      !(
+        dependencyName.includes('com.google.') ||
+        dependencyName.includes('io.grpc')
+      )
+    ) {
       return false;
     }
     return (
-      versions.newDependencyName === versions.oldDependencyName &&
-      dependencyName === versions.newDependencyName
+      (versions.newDependencyName === versions.oldDependencyName &&
+        dependencyName === versions.newDependencyName) ||
+      (versions.newDependencyName.includes('grpc') &&
+        versions.oldDependencyName.includes('grpc') &&
+        dependencyName.includes('grpc'))
     );
   }
   return false;
@@ -472,19 +442,91 @@ export function getJavaVersions(
   let oldMinorVersion;
   let newMajorVersion;
   let newMinorVersion;
+  let oldMajorRevVersion;
+  let newMajorRevVersion;
 
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
-  if (oldVersions) {
-    oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
-    oldMajorVersion = oldVersions[4] || oldVersions[6];
-    oldMinorVersion = oldVersions[5] || oldVersions[7];
+
+  // In order to extract the correct values from the possible Java files,
+  // first we need to determine whether we need to take the regexes from build.gradle
+  // files or from pom.xml files
+  if (versionFile.filename.includes('build.gradle')) {
+    if (oldVersions) {
+      // Whatever the previous dependency name was, or if it was just `grpcVersion`
+      oldDependencyName =
+        oldVersions.groups?.oldDependencyNameBuild ||
+        oldVersions.groups?.oldGrpcVersionBuild;
+      // Whatever the previous major version was of a dependency or grpc
+      oldMajorVersion =
+        oldVersions.groups?.oldMajorVersionBuild ||
+        oldVersions.groups?.oldMajorVersionGrpcBuild;
+      // Whatever the previous minor version was of a dependency or grpc
+      oldMinorVersion =
+        oldVersions.groups?.oldMinorVersionGrpcBuild ||
+        oldVersions.groups?.oldMinorVersionBuild;
+    }
+
+    if (newVersions) {
+      // Whatever the new dependency name iss, or if it was just `grpcVersion`
+      newDependencyName =
+        newVersions.groups?.newDependencyNameBuild ||
+        newVersions.groups?.newGrpcVersionBuild;
+      // Whatever the new major version was of a dependency or grpc
+      newMajorVersion =
+        newVersions.groups?.newMajorVersionBuild ||
+        newVersions.groups?.newMajorVersionGrpcBuild;
+      // Whatever the new minor version was of a dependency or grpc
+      newMinorVersion =
+        newVersions.groups?.newMinorVersionGrpcBuild ||
+        newVersions.groups?.newMinorVersionBuild;
+    }
+  } else {
+    if (oldVersions) {
+      // Whatever the full name of the previous dependency was in a pom.xml file
+      oldDependencyName = `${oldVersions.groups?.oldDependencyNamePrefixPom}:${oldVersions.groups?.oldDependencyNamePom}`;
+      // Whatever the date version of the previous dependency was
+      oldMajorRevVersion = oldVersions.groups?.oldRevVersionPom;
+      // Whatever the major version of the previous dependency was (whether or not it has a rev version attached to it)
+      oldMajorVersion =
+        oldVersions.groups?.oldMajorRevVersionPom ||
+        oldVersions.groups?.oldMajorVersionPom;
+      // Whatever the minor version of the previous dependency was (whether or not it has a rev version attached to it)
+      oldMinorVersion =
+        oldVersions.groups?.oldMinorRevVersionPom ||
+        oldVersions.groups?.oldMinorVersionPom;
+    }
+
+    if (newVersions) {
+      // Whatever the full name of the new dependency is in a pom.xml file
+      newDependencyName = `${newVersions.groups?.newDependencyNamePrefixPom}:${newVersions.groups?.newDependencyNamePom}`;
+      // Whatever the date version of the new dependency is
+      newMajorRevVersion = newVersions.groups?.newRevVersionPom;
+      // Whatever the major version of the new dependency is (whether or not it has a rev version attached to it)
+      newMajorVersion =
+        newVersions.groups?.newMajorRevVersionPom ||
+        newVersions.groups?.newMajorVersionPom;
+      // Whatever the minor version of the new dependency is (whether or not it has a rev version attached to it)
+      newMinorVersion =
+        newVersions.groups?.newMinorRevVersionPom ||
+        newVersions.groups?.newMinorVersionPom;
+    }
   }
 
-  if (newVersions) {
-    newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
-    newMajorVersion = newVersions[5] || newVersions[7];
-    newMinorVersion = newVersions[6] || newVersions[8];
+  // This reassignment occurs when apiary clients are updated, where the date changes, but not the
+  // version.
+  // See this bug: https://github.com/googleapis/repo-automation-bots/issues/2371
+  // See this as an example: https://github.com/GoogleCloudPlatform/java-docs-samples/pull/5888/files
+  if (
+    oldMajorRevVersion &&
+    newMajorRevVersion &&
+    Number(oldMajorVersion) === Number(newMajorVersion) &&
+    Number(oldMinorVersion) === Number(newMinorVersion)
+  ) {
+    oldMajorVersion = '0';
+    oldMinorVersion = oldMajorRevVersion;
+    newMajorVersion = '0';
+    newMinorVersion = newMajorRevVersion;
   }
 
   // If there is a change with a file that requires special validation checks,

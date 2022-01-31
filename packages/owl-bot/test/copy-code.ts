@@ -59,8 +59,7 @@ Copy-Tag: ${copyTag}
       yamlPath: 'some-api/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
@@ -84,8 +83,7 @@ Copy-Tag: ${copyTag}
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
     const cache = newRepoHistoryCache();
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
@@ -96,8 +94,7 @@ Copy-Tag: ${copyTag}
     );
 
     // Confirm its in the cache.
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         (await fakeOctokit()) as unknown as OctokitType,
         destRepo,
@@ -121,8 +118,7 @@ Copy-Tag: ${copyTag}
       yamlPath: 'some-api/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
@@ -151,14 +147,13 @@ Copy-Tag: ${copyTag}
       yamlPath: '.github/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      false,
-      await copyExists(
+    assert.ok(
+      !(await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
         'abc123',
         1000
-      )
+      ))
     );
   });
 
@@ -181,14 +176,13 @@ Copy-Tag: ${copyTag}
       yamlPath: 'some-api/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      false,
-      await copyExists(
+    assert.ok(
+      !(await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
         'def456',
         1000
-      )
+      ))
     );
   });
 
@@ -203,8 +197,7 @@ Source-Link: https://github.com/googleapis/googleapis/abc123
       yamlPath: '.github/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,

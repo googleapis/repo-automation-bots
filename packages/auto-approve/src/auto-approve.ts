@@ -33,7 +33,6 @@ import {
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
 import {Configuration, ConfigurationV2} from './interfaces';
-import yaml from 'js-yaml';
 
 const APPROVER = 'yoshi-approver';
 

@@ -1469,5 +1469,90 @@ describe('GCFBootstrapper', () => {
       runScope.done();
       sinon.assert.calledOnce(adcStub);
     });
+
+    it('allows overriding the backend GCF bot name', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function-name',
+        location: 'my-location',
+        taskTargetName: 'my-function-name-backend',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'https://my-location-my-project.cloudfunctions.net/my-function-name-backend',
+          },
+        },
+      });
+    });
+
+    it('allows overriding the backend Cloud Run bot name', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function-name',
+        location: 'my-location',
+        taskTargetEnvironment: 'run',
+        taskTargetName: 'my-function-name-backend',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
+      const runScope = nock('https://run.googleapis.com')
+        .get(
+          '/v1/projects/my-project/locations/my-location/services/my-function-name-backend'
+        )
+        .reply(200, {
+          status: {
+            address: {
+              url: 'http://some.domain/path',
+            },
+          },
+        });
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'http://some.domain/path',
+          },
+        },
+      });
+      runScope.done();
+      sinon.assert.calledOnce(adcStub);
+    });
   });
 });

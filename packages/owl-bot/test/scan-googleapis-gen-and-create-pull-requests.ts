@@ -31,6 +31,7 @@ import {
   newFakeOctokit,
   newFakeOctokitFactory,
 } from './fake-octokit';
+import {CopyStateStore} from '../src/copy-state-store';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -38,6 +39,17 @@ import {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const cmd = newCmd();
+
+class FakeCopyStateStore implements CopyStateStore {
+  readonly store: Map<string, string> = new Map();
+  recordBuildForCopy(copyTag: string, buildId: string): Promise<void> {
+    this.store.set(copyTag, buildId);
+    return Promise.resolve();
+  }
+  findBuildForCopy(copyTag: string): Promise<string | undefined> {
+    return Promise.resolve(this.store.get(copyTag));
+  }
+}
 
 function factory(octokit: any): OctokitFactory {
   return {
@@ -137,17 +149,52 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     );
   });
 
+  it('skips pull requests that were already created', async () => {
+    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
+    const pulls = new FakePulls();
+    pulls.create({body: `Copy-Tag: ${copyTag}`});
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const prCount = await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      1000
+    );
+    assert.strictEqual(prCount, 0);
+  });
+
+  it("doesn't skip pull requests when search depth is zero", async () => {
+    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
+    const pulls = new FakePulls();
+    pulls.create({body: `Copy-Tag: ${copyTag}`});
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const prCount = await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      0
+    );
+    assert.strictEqual(prCount, 1);
+  });
+
   it('copies files and creates a pull request', async () => {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 
     const pulls = new FakePulls();
     const issues = new FakeIssues();
     const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
     await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
       configsStore,
-      1000
+      1000,
+      undefined,
+      copyStateStore
     );
 
     // Confirm it created one pull request.
@@ -181,6 +228,21 @@ Copy-Tag: ${copyTag}`
     // But of course the main branch doesn't have it until the PR is merged.
     cmd('git checkout main', {cwd: destDir});
     assert.ok(!cc.stat(bpath));
+
+    // Confirm the PR was recorded in firestore.
+    assert.ok(copyStateStore.store.get(copyTag));
+
+    // Because the PR is recorded in firestore, a second call should skip
+    // creating a new one.
+    const prCount = await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      1000,
+      undefined,
+      copyStateStore
+    );
+    assert.strictEqual(prCount, 0);
   });
 
   it('creates 3 pull requests for 3 matching commits', async () => {

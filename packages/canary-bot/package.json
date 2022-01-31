@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "dayjs": "^1.10.7",
-    "gcf-utils": "^13.0.2"
+    "gcf-utils": "^13.2.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",

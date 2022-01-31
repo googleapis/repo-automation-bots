@@ -56,9 +56,13 @@ export class FakePulls {
   }
 
   create(pull: any) {
-    this.pulls.push(pull);
+    const myPull = {
+      html_url: `http://github.com/fake/pulls/${this.pulls.length + 1}`,
+      ...pull,
+    };
+    this.pulls.push(myPull);
     return Promise.resolve({
-      data: {html_url: `http://github.com/fake/pulls/${this.pulls.length}`},
+      data: myPull,
     });
   }
 }

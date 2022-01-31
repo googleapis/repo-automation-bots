@@ -17,49 +17,61 @@ import * as createPr from './create-pr';
 import {GithubRepo, githubRepoFromUri} from './github-repo';
 import {OctokitFactory} from './octokit-util';
 
-export async function maybeCreatePullRequestForLockUpdate(
-  octokitFactory: OctokitFactory,
-  githubRepo?: GithubRepo,
-  localRepoDir?: string,
-  createPullRequestFromLastCommit = createPr.createPullRequestFromLastCommit,
+/** Returns true if there are pending changes, and logs when there isn't. */
+export function shouldCreatePullRequestForLockUpdate(
+  localRepoDir = '.',
   logger = console
-): Promise<void> {
+): boolean {
   const cmd = newCmd(logger);
-  const cwd = localRepoDir ?? '.';
+  const cwd = localRepoDir;
   // 'git status' returns the empty string when no changes are pending.
   const status = cmd('git status --porcelain', {cwd}).toString('utf8').trim();
   if (status) {
-    // Commit additional changes.
-    cmd('git add -A', {cwd});
-    cmd('git commit --amend --no-edit', {cwd});
-
-    // Create credentials.
-    const token = await octokitFactory.getGitHubShortLivedAccessToken();
-
-    // Create the pull request.
-    const uri = cmd('git remote get-url origin', {cwd}).toString('utf8').trim();
-    if (!githubRepo) {
-      githubRepo = githubRepoFromUri(uri);
-    }
-    const branch = cmd('git branch --show-current', {cwd})
-      .toString('utf8')
-      .trim();
-    const octokit = await octokitFactory.getShortLivedOctokit(token);
-    await createPullRequestFromLastCommit(
-      githubRepo.owner,
-      githubRepo.repo,
-      cwd,
-      branch,
-      githubRepo.getCloneUrl(token),
-      [core.OWL_BOT_LOCK_UPDATE],
-      octokit,
-      '',
-      '', // No API name because this PR was not triggered by an API change.
-      logger
-    );
+    return true;
   } else {
     logger.log(
       "The post processor made no changes; I won't create a pull request."
     );
+    return false;
   }
+}
+
+export async function createPullRequestForLockUpdate(
+  octokitFactory: OctokitFactory,
+  githubRepo?: GithubRepo,
+  localRepoDir = '.',
+  createPullRequestFromLastCommit = createPr.createPullRequestFromLastCommit,
+  logger = console
+): Promise<void> {
+  const cmd = newCmd(logger);
+  const cwd = localRepoDir;
+
+  // Commit additional changes.
+  cmd('git add -A', {cwd});
+  cmd('git commit --amend --no-edit', {cwd});
+
+  // Create credentials.
+  const token = await octokitFactory.getGitHubShortLivedAccessToken();
+
+  // Create the pull request.
+  const uri = cmd('git remote get-url origin', {cwd}).toString('utf8').trim();
+  if (!githubRepo) {
+    githubRepo = githubRepoFromUri(uri);
+  }
+  const branch = cmd('git branch --show-current', {cwd})
+    .toString('utf8')
+    .trim();
+  const octokit = await octokitFactory.getShortLivedOctokit(token);
+  await createPullRequestFromLastCommit(
+    githubRepo.owner,
+    githubRepo.repo,
+    cwd,
+    branch,
+    githubRepo.getCloneUrl(token),
+    [core.OWL_BOT_LOCK_UPDATE],
+    octokit,
+    '',
+    '', // No API name because this PR was not triggered by an API change.
+    logger
+  );
 }

@@ -18,7 +18,10 @@ import tmp from 'tmp';
 import {makeDirTree} from './dir-tree';
 import {makeAbcRepo} from './make-repos';
 import {newCmd} from '../src/cmd';
-import {maybeCreatePullRequestForLockUpdate} from '../src/update-lock';
+import {
+  createPullRequestForLockUpdate,
+  shouldCreatePullRequestForLockUpdate,
+} from '../src/update-lock';
 import {OctokitFactory, OctokitType} from '../src/octokit-util';
 import {githubRepoFromOwnerSlashName} from '../src/github-repo';
 
@@ -31,11 +34,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
   const abcDir = makeAbcRepo();
 
   it('does nothing when no files changed', async () => {
-    await maybeCreatePullRequestForLockUpdate(
-      {} as OctokitFactory,
-      githubRepoFromOwnerSlashName('googleapis/nodejs-speech'),
-      abcDir
-    );
+    assert.strictEqual(false, shouldCreatePullRequestForLockUpdate(abcDir));
   });
 
   it('creates a pull request when a file changed', async () => {
@@ -44,11 +43,13 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
     cmd(`git clone ${abcDir} ${cloneDir}`);
     makeDirTree(cloneDir, ['x.txt:New file added.']);
 
+    assert.ok(shouldCreatePullRequestForLockUpdate(cloneDir));
+
     // Mock the call to createPullRequestFromLastCommit
     const calls: any[][] = [];
     function recordCall(...args: any[]) {
       calls.push(args);
-      return Promise.resolve();
+      return Promise.resolve(`result-${calls.length}`);
     }
 
     // Mock the octokit factory:
@@ -58,7 +59,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
         Promise.resolve({fake: true} as unknown as OctokitType),
     };
 
-    await maybeCreatePullRequestForLockUpdate(
+    await createPullRequestForLockUpdate(
       factory,
       githubRepoFromOwnerSlashName('googleapis/nodejs-speech'),
       cloneDir,

@@ -14,7 +14,7 @@
 
 import {describe, it, before} from 'mocha';
 import admin from 'firebase-admin';
-import {FirestoreConfigsStore} from '../src/database';
+import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../src/database';
 import {Configs} from '../src/configs-store';
 import {v4 as uuidv4} from 'uuid';
 import * as assert from 'assert';
@@ -40,6 +40,16 @@ describe('database', () => {
       // No connection to firestore.  Not possible to test.
       this.skip();
     }
+  });
+
+  it('stores and retrieves copy state', async () => {
+    const db = admin.firestore();
+    const store = new FirestoreCopyStateStore(db, 'test-' + uuidv4() + '-');
+    const copyTag = uuidv4();
+    const buildId = uuidv4();
+    assert.ok(!(await store.findBuildForCopy(copyTag)));
+    await store.recordBuildForCopy(copyTag, buildId);
+    assert.strictEqual(await store.findBuildForCopy(copyTag), buildId);
   });
 
   it('stores and retrieves configs', async () => {

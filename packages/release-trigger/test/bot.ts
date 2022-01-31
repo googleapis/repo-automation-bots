@@ -111,7 +111,7 @@ describe('bot', () => {
         .resolves();
 
       await probot.receive({
-        name: 'release.published',
+        name: 'release',
         payload: payload,
         id: 'abc123',
       });
@@ -172,7 +172,7 @@ describe('bot', () => {
         .resolves();
 
       await probot.receive({
-        name: 'release.published',
+        name: 'release',
         payload: payload,
         id: 'abc123',
       });
@@ -215,7 +215,7 @@ describe('bot', () => {
         .resolves();
 
       await probot.receive({
-        name: 'pull_request.unlabeled',
+        name: 'pull_request',
         payload: payload,
         id: 'abc123',
       });
@@ -247,7 +247,7 @@ describe('bot', () => {
         .resolves();
 
       await probot.receive({
-        name: 'pull_request.unlabeled',
+        name: 'pull_request',
         payload: payload,
         id: 'abc123',
       });
@@ -271,7 +271,7 @@ describe('bot', () => {
         .resolves();
 
       await probot.receive({
-        name: 'pull_request.unlabeled',
+        name: 'pull_request',
         payload: payload,
         id: 'abc123',
       });
@@ -294,7 +294,7 @@ describe('bot', () => {
         .resolves(true);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload: payload,
         id: 'abc123',
       });
@@ -314,7 +314,7 @@ describe('bot', () => {
         .resolves(true);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload: payload,
         id: 'abc123',
       });

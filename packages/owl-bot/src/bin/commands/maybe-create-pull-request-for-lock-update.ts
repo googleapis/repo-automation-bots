@@ -16,9 +16,14 @@
 
 import yargs = require('yargs');
 import {octokitFactoryFrom, OctokitParams} from '../../octokit-util';
-import {maybeCreatePullRequestForLockUpdate} from '../../update-lock';
+import {
+  createPullRequestForLockUpdate,
+  shouldCreatePullRequestForLockUpdate,
+} from '../../update-lock';
 
-type Args = OctokitParams;
+interface Args extends OctokitParams {
+  force: boolean;
+}
 
 export const maybeCreatePullRequestForLockUpdateCommand: yargs.CommandModule<
   {},
@@ -43,9 +48,18 @@ export const maybeCreatePullRequestForLockUpdateCommand: yargs.CommandModule<
         describe: 'installation ID for GitHub app',
         type: 'number',
         demand: true,
+      })
+      .option('force', {
+        describe:
+          'forces owl bot to create a pull request even when there are no unstaged changes',
+        type: 'boolean',
+        demand: false,
+        default: false,
       });
   },
   async handler(argv) {
-    await maybeCreatePullRequestForLockUpdate(octokitFactoryFrom(argv));
+    if (argv.force || shouldCreatePullRequestForLockUpdate()) {
+      await createPullRequestForLockUpdate(octokitFactoryFrom(argv));
+    }
   },
 };

@@ -22,6 +22,7 @@ type Args = {
   'trigger-id': string;
   'max-tries': number;
   'project-id': string;
+  'force-trigger-id': string | undefined;
   port: number;
 };
 
@@ -39,6 +40,13 @@ export const scanAndRetryFailedLockUpdatesCommand: yargs.CommandModule<
         type: 'string',
         demand: false,
         default: '7f3c737e-9641-48c8-adae-eccb5b0d7ad5',
+      })
+      .option('force-trigger-id', {
+        describe:
+          'Trigger this build trigger when all the regular builds failed.',
+        type: 'string',
+        demand: false,
+        default: '7887fb1c-55c1-4693-8fca-de0b9e503ea1',
       })
       .option('project-id', {
         describe: 'The Google Cloud project id.',
@@ -66,6 +74,7 @@ export const scanAndRetryFailedLockUpdatesCommand: yargs.CommandModule<
       scanAndRetryFailedLockUpdates(
         argv['project-id'],
         argv['trigger-id'],
+        argv['force-trigger-id'],
         argv['max-tries']
       );
     if (argv.port) {

@@ -17,7 +17,7 @@
 import admin from 'firebase-admin';
 import yargs = require('yargs');
 import {scanGoogleapisGenAndCreatePullRequests} from '../../scan-googleapis-gen-and-create-pull-requests';
-import {FirestoreConfigsStore} from '../../database';
+import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../../database';
 import {OctokitParams, octokitFactoryFrom} from '../../octokit-util';
 
 interface Args extends OctokitParams {
@@ -25,6 +25,7 @@ interface Args extends OctokitParams {
   'firestore-project': string;
   'clone-depth': number;
   'search-depth': number;
+  'track-builds-in-firestore': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -73,7 +74,14 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'When searching pull request and issue histories to see if a pull' +
           ' request for the commit was already created, search this deep',
         type: 'number',
-        default: 1000,
+        default: 0,
+      })
+      .option('track-builds-in-firestore', {
+        describe:
+          "Record copy jobs in firestore, so that we don't try" +
+          ' to copy the same code twice.',
+        type: 'boolean',
+        default: true,
       });
   },
   async handler(argv) {
@@ -83,12 +91,16 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
     });
     const db = admin.firestore();
     const configsStore = new FirestoreConfigsStore(db!);
+    const copyStateStore = argv['track-builds-in-firestore']
+      ? new FirestoreCopyStateStore(db!)
+      : undefined;
     await scanGoogleapisGenAndCreatePullRequests(
       argv['source-repo'],
       octokitFactoryFrom(argv),
       configsStore,
       argv['search-depth'],
-      argv['clone-depth']
+      argv['clone-depth'],
+      copyStateStore
     );
   },
 };

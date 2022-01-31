@@ -29,12 +29,31 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/release-trigger"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
+    id: "deploy-frontend"
     waitFor: ["push-docker"]
     entrypoint: bash
     env:
       - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
       - "MEMORY=1G"
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-backend"
+    waitFor: ["push-docker"]
+    entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
+      - "MEMORY=1G"
+      - "SERVICE_NAME=release-trigger-backend"
+      - "CONCURRENCY=4"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
