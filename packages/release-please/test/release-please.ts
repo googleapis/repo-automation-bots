@@ -198,6 +198,30 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
+      it('should allow release-please to configure the default package-name', async () => {
+        getConfigStub.resolves(
+          loadConfig('ruby_release.yml')
+        );
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match({
+            releaseType: 'ruby',
+            packageName: undefined,
+          }),
+          sinon.match.any,
+          undefined
+        );
+      });
+
       it('should allow overriding the package-name from configuration', async () => {
         getConfigStub.resolves(
           loadConfig('ruby_release_alternate_pkg_name.yml')

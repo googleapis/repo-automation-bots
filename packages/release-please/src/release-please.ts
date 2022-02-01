@@ -193,7 +193,6 @@ async function buildManifest(
     : configuration.manifest
     ? 'simple'
     : releaseTypeFromRepoLanguage(repoLanguage);
-  const packageName = configuration.packageName || github.repository.repo;
 
   const releaserConfig: ReleaserConfig = {
     releaseType,
@@ -202,7 +201,7 @@ async function buildManifest(
     bumpPatchForMinorPreMajor: configuration.bumpPatchForMinorPreMajor,
     draft: configuration.draft,
     draftPullRequest: configuration.draftPullRequest,
-    packageName,
+    packageName: configuration.packageName,
     includeComponentInTag: !!configuration.monorepoTags,
     pullRequestTitlePattern: configuration.pullRequestTitlePattern,
     // changelogSections: configuration.changelogSections,
