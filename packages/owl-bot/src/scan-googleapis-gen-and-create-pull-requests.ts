@@ -135,6 +135,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
         );
       } else if (
         (copyBuildId = await copyStateStore?.findBuildForCopy(
+          repo.repo,
           copyTagFrom(repo.yamlPath, commitHash)
         ))
       ) {
@@ -180,7 +181,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     );
     if (copyStateStore) {
       const copyTag = copyTagFrom(todo.repo.yamlPath, todo.commitHash);
-      copyStateStore.recordBuildForCopy(copyTag, htmlUrl);
+      copyStateStore.recordBuildForCopy(todo.repo.repo, copyTag, htmlUrl);
     }
   }
   return todoStack.length;

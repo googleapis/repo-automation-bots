@@ -47,9 +47,36 @@ describe('database', () => {
     const store = new FirestoreCopyStateStore(db, 'test-' + uuidv4() + '-');
     const copyTag = uuidv4();
     const buildId = uuidv4();
-    assert.ok(!(await store.findBuildForCopy(copyTag)));
-    await store.recordBuildForCopy(copyTag, buildId);
-    assert.strictEqual(await store.findBuildForCopy(copyTag), buildId);
+    const repo = {
+      owner: uuidv4(),
+      repo: uuidv4(),
+    };
+    assert.ok(!(await store.findBuildForCopy(repo, copyTag)));
+    await store.recordBuildForCopy(repo, copyTag, buildId);
+
+    // Confirm we can find what we just recorded.
+    assert.strictEqual(await store.findBuildForCopy(repo, copyTag), buildId);
+
+    // Changing any one of the arguments should result in not found.
+    assert.ok(!(await store.findBuildForCopy(repo, uuidv4())));
+    assert.ok(
+      !(await store.findBuildForCopy(
+        {
+          owner: repo.owner,
+          repo: uuidv4(),
+        },
+        copyTag
+      ))
+    );
+    assert.ok(
+      !(await store.findBuildForCopy(
+        {
+          owner: uuidv4(),
+          repo: repo.repo,
+        },
+        copyTag
+      ))
+    );
   });
 
   it('stores and retrieves configs', async () => {
