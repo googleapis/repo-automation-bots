@@ -20,7 +20,8 @@ export interface CopyStateStore {
   /**
    * Records a build id of the post-processor run that was started for
    * code copied into a client library repository.
-   * @param a unique id for the copy operation.
+   * @param repo the destination repo into which the code was copied.
+   * @param copyTag a unique id for the copy operation.
    * @param buildId the google cloud build id.
    */
   recordBuildForCopy(
@@ -31,8 +32,9 @@ export interface CopyStateStore {
 
   /**
    * Finds an existing branch for the copy operation.
-   * @param a unique id for the copy operation.
-   * @returns the empty string if none exists.
+   * @param repo the destination repo into which the code was copied.
+   * @param copyTag a unique id for the copy operation.
+   * @returns undefined if none exists.
    */
   findBuildForCopy(
     repo: {owner: string; repo: string},
