@@ -209,6 +209,12 @@ export class FirestoreConfigsStore implements ConfigsStore {
   }
 }
 
+function makeCopyStateKey(
+  repo: {owner: string; repo: string},
+  copyTag: string
+): string {
+  return [repo.owner, repo.repo, copyTag].map(encodeId).join('+');
+}
 export class FirestoreCopyStateStore implements CopyStateStore {
   private db: Db;
   readonly copyBuilds: string;
@@ -221,16 +227,26 @@ export class FirestoreCopyStateStore implements CopyStateStore {
     this.copyBuilds = collectionsPrefix + 'copy-builds';
   }
 
-  async recordBuildForCopy(copyTag: string, buildId: string): Promise<void> {
+  async recordBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string,
+    buildId: string
+  ): Promise<void> {
     await this.db
       .collection(this.copyBuilds)
-      .doc(encodeId(copyTag))
+      .doc(makeCopyStateKey(repo, copyTag))
       .set({buildId});
   }
 
-  async findBuildForCopy(copyTag: string): Promise<string | undefined> {
+  async findBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string
+  ): Promise<string | undefined> {
     return (
-      await this.db.collection(this.copyBuilds).doc(encodeId(copyTag)).get()
+      await this.db
+        .collection(this.copyBuilds)
+        .doc(makeCopyStateKey(repo, copyTag))
+        .get()
     ).data()?.buildId;
   }
 }

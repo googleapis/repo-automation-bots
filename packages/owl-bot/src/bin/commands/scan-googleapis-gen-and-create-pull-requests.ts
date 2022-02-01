@@ -75,7 +75,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'When searching pull request and issue histories to see if a pull' +
           ' request for the commit was already created, search this deep',
         type: 'number',
-        default: 0,
+        default: 1000,
       })
       .option('track-builds-in-firestore', {
         describe:

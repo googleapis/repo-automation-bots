@@ -44,12 +44,23 @@ const cmd = newCmd();
 
 class FakeCopyStateStore implements CopyStateStore {
   readonly store: Map<string, string> = new Map();
-  recordBuildForCopy(copyTag: string, buildId: string): Promise<void> {
-    this.store.set(copyTag, buildId);
+
+  makeKey(repo: {owner: string; repo: string}, copyTag: string) {
+    return `${repo.owner}+${repo.repo}+${copyTag}`;
+  }
+  recordBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string,
+    buildId: string
+  ): Promise<void> {
+    this.store.set(this.makeKey(repo, copyTag), buildId);
     return Promise.resolve();
   }
-  findBuildForCopy(copyTag: string): Promise<string | undefined> {
-    return Promise.resolve(this.store.get(copyTag));
+  findBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string
+  ): Promise<string | undefined> {
+    return Promise.resolve(this.store.get(this.makeKey(repo, copyTag)));
   }
 }
 
@@ -236,7 +247,7 @@ Copy-Tag: ${copyTag}`
       assert.ok(!cc.stat(bpath));
 
       // Confirm the PR was recorded in firestore.
-      assert.ok(copyStateStore.store.get(copyTag));
+      assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
 
       // Because the PR is recorded in firestore, a second call should skip
       // creating a new one.
@@ -315,7 +326,7 @@ Copy-Tag: ${copyTag}`
 
     // Confirm the PR was recorded in firestore.
     const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
-    assert.ok(copyStateStore.store.get(copyTag));
+    assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
 
     // Because the PR is recorded in firestore, a second call should skip
     // creating a new one.
