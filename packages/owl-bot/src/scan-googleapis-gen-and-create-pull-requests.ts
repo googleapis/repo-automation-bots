@@ -140,7 +140,8 @@ export async function scanGoogleapisGenAndCreatePullRequests(
         ))
       ) {
         logger.info(
-          `Found build ${copyBuildId} for ${repo.yamlPath}:${commitHash}.`
+          `Found build ${copyBuildId} for ${commitHash} `
+          + `for ${repo.repo.owner}:${repo.repo.repo} ${repo.yamlPath}.`
         );
       } else if (
         copyExistsSearchDepth > 0 &&
