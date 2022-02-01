@@ -619,6 +619,15 @@ async function updatePullRequestAfterPostProcessor(
       pull_number: prNumber,
       state: 'closed',
     });
+    if (pull.head.repo.full_name === `${owner}/${repo}`) {
+      logger.info(`Deleting branch ${pull.head.ref}`);
+      await octokit.git.deleteRef({owner, repo, ref: pull.head.ref});
+    } else {
+      logger.info(
+        `I won't delete the ${pull.head.ref} branch in the fork ` +
+          `${pull.head.repo.full_name}`
+      );
+    }
   } else {
     // If the pull request is a DRAFT lock file update, close it or promote it.
     if (
