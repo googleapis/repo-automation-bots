@@ -489,14 +489,16 @@ async function loadCopyTagOrCommentOnPullRequest(
   };
   const copyTagText = findCopyTag(commitText);
   if (!copyTagText) {
-    reportError("I couldn't find a copy-tag in the commit message.");
+    reportError(
+      "I couldn't find a copy-tag in the commit message.  Ask Yoshi team for help."
+    );
     return undefined;
   }
   try {
     return unpackCopyTag(copyTagText);
   } catch (e) {
     reportError(
-      `Corrupt copy-tag found in the commit message:\n${copyTagText}.`
+      `Corrupt copy-tag found in the commit message.  Ask Yoshi team for help.\n${copyTagText}.`
     );
     return undefined;
   }
