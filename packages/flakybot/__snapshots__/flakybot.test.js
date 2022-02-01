@@ -8,6 +8,16 @@ exports['flakybot app testsFailed opens an issue when testsFailed 1'] = {
   ]
 }
 
+exports['flakybot app testsFailed opens an issue with priority p2 1'] = {
+  "title": "The build failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot).\n\nIf I'm commenting on this issue too often, add the `flakybot: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
+  "labels": [
+    "type: bug",
+    "priority: p2",
+    "flakybot: issue"
+  ]
+}
+
 exports['flakybot app testsFailed opens a new issue when testsFailed and there is a previous one closed 1'] = {
   "title": "The build failed",
   "body": "This test failed!\n\nTo configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot).\n\nIf I'm commenting on this issue too often, add the `flakybot: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
@@ -144,13 +154,6 @@ exports['flakybot app xunitXML closes an issue for a passing test [Java] 2'] = {
 }
 
 exports['flakybot app xunitXML keeps an issue open for a passing test that failed in the same build (comment) 1'] = {
-  "labels": [
-    "type: bug",
-    "priority: p1",
-    "flakybot: issue",
-    "flakybot: flaky",
-    null
-  ],
   "state": "open"
 }
 
@@ -159,13 +162,6 @@ exports['flakybot app xunitXML keeps an issue open for a passing test that faile
 }
 
 exports['flakybot app xunitXML keeps an issue open for a passing test that failed in the same build (issue body) 1'] = {
-  "labels": [
-    "type: bug",
-    "priority: p1",
-    "flakybot: issue",
-    "flakybot: flaky",
-    null
-  ],
   "state": "open"
 }
 
@@ -202,13 +198,6 @@ exports['flakybot app xunitXML closes a duplicate issue 2'] = {
 }
 
 exports['flakybot app xunitXML reopens the more recently closed issue when there is a duplicate 1'] = {
-  "labels": [
-    "type: bug",
-    "priority: p1",
-    "flakybot: issue",
-    "flakybot: flaky",
-    null
-  ],
   "state": "open"
 }
 
@@ -282,14 +271,4 @@ exports['flakybot app xunitXML Grouped issues closes group issues when all tests
 
 exports['flakybot app xunitXML Grouped issues closes group issues when all tests pass 4'] = {
   "state": "closed"
-}
-
-exports['flakybot app testsFailed opens an issue with priority p2 1'] = {
-  "title": "The build failed",
-  "body": "This test failed!\n\nTo configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot).\n\nIf I'm commenting on this issue too often, add the `flakybot: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
-  "labels": [
-    "type: bug",
-    "priority: p2",
-    "flakybot: issue"
-  ]
 }
