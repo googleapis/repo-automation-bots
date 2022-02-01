@@ -15,6 +15,7 @@
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import {
+  branchNameForCopy,
   copyCode,
   copyDirs,
   copyExists,
@@ -24,6 +25,7 @@ import {
   newRepoHistoryCache,
   sourceLinkFrom,
   stat,
+  toSafeBranchName,
   unpackCopyTag,
 } from '../src/copy-code';
 import path from 'path';
@@ -532,5 +534,32 @@ describe('unpackCopyTag', () => {
     assert.throws(() => {
       unpackCopyTag(tag);
     });
+  });
+});
+
+describe('toSafeBranchName', () => {
+  it('correctly replaces characters', () => {
+    assert.strictEqual(toSafeBranchName('a-3!@#$%b^&*()N'), 'a-3_____b_____N');
+  });
+});
+
+describe('branchNameForCopy', () => {
+  it('correctly transforms yaml paths to branch names', () => {
+    assert.strictEqual(
+      branchNameForCopy('/.github/.OwlBot.yaml'),
+      'owl-bot-copy'
+    );
+    assert.strictEqual(
+      branchNameForCopy('.github/.OwlBot.yaml'),
+      'owl-bot-copy'
+    );
+    assert.strictEqual(
+      branchNameForCopy('Firebase/Ad$%min/.OwlBot.yaml'),
+      'owl-bot-copy-Firebase-Ad__min'
+    );
+    assert.strictEqual(
+      branchNameForCopy('/speech/.OwlBot.yaml'),
+      'owl-bot-copy-speech'
+    );
   });
 });
