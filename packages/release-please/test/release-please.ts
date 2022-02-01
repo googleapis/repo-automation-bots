@@ -199,9 +199,7 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should allow release-please to configure the default package-name', async () => {
-        getConfigStub.resolves(
-          loadConfig('ruby_release.yml')
-        );
+        getConfigStub.resolves(loadConfig('ruby_release.yml'));
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {name: 'push', payload: payload as any, id: 'abc123'}
