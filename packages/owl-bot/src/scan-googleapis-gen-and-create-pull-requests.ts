@@ -135,11 +135,13 @@ export async function scanGoogleapisGenAndCreatePullRequests(
         );
       } else if (
         (copyBuildId = await copyStateStore?.findBuildForCopy(
+          repo.repo,
           copyTagFrom(repo.yamlPath, commitHash)
         ))
       ) {
         logger.info(
-          `Found build ${copyBuildId} for ${repo.yamlPath}:${commitHash}.`
+          `Found build ${copyBuildId} for ${commitHash} ` +
+            `for ${repo.repo.owner}:${repo.repo.repo} ${repo.yamlPath}.`
         );
       } else if (
         copyExistsSearchDepth > 0 &&
@@ -180,7 +182,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     );
     if (copyStateStore) {
       const copyTag = copyTagFrom(todo.repo.yamlPath, todo.commitHash);
-      copyStateStore.recordBuildForCopy(copyTag, htmlUrl);
+      copyStateStore.recordBuildForCopy(todo.repo.repo, copyTag, htmlUrl);
     }
   }
   return todoStack.length;
