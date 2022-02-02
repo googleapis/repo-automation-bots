@@ -221,4 +221,156 @@ describe('cherry-pick-bot', () => {
       requests.done();
     });
   });
+
+  describe('pull_request_closed', () => {
+    it('creates a cherry-pick pull request', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+      const comments = require(resolve(fixturesPath, 'data', 'issue_comments'));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      cherryPickPullRequestStub.resolves({
+        number: 123,
+        html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
+        title: 'chore: cherry-pick abc123',
+        body: null,
+      });
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledTwice(cherryPickPullRequestStub);
+      requests.done();
+    });
+
+    it('ignores non-configured repositories', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves(null);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.notCalled(cherryPickPullRequestStub);
+    });
+
+    it('ignores disabled repositories', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+
+      sandbox
+        .stub(botConfigUtilsModule, 'getConfig')
+        .resolves({enabled: false});
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.notCalled(cherryPickPullRequestStub);
+    });
+
+    it('ignores non-contributors', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+      const comments = require(resolve(
+        fixturesPath,
+        'data',
+        'issue_comments_non_member'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.notCalled(cherryPickPullRequestStub);
+      requests.done();
+    });
+
+    it('de-duplicates target branches', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+      const comments = require(resolve(
+        fixturesPath,
+        'data',
+        'issue_comments_duplicated'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      cherryPickPullRequestStub.resolves({
+        number: 123,
+        html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
+        title: 'chore: cherry-pick abc123',
+        body: null,
+      });
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(cherryPickPullRequestStub);
+      requests.done();
+    });
+
+    it('ignores closed pull request', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_closed'
+      ));
+
+      sandbox
+        .stub(botConfigUtilsModule, 'getConfig')
+        .resolves({enabled: false});
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.notCalled(cherryPickPullRequestStub);
+    });
+  });
 });

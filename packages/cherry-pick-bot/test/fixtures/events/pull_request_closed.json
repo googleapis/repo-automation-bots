@@ -1,5 +1,5 @@
 {
-  "action": "opened",
+  "action": "closed",
   "number": 6,
   "pull_request": {
     "url": "https://api.github.com/repos/testuser2/testRepo/pulls/6",
@@ -10,7 +10,7 @@
     "patch_url": "https://github.com/testuser2/testRepo/pull/6.patch",
     "issue_url": "https://api.github.com/repos/testuser2/testRepo/issues/6",
     "number": 6,
-    "state": "open",
+    "state": "closed",
     "locked": false,
     "title": "Assign pr",
     "user": {
@@ -37,7 +37,7 @@
     "body": "",
     "created_at": "2019-08-22T23:00:58Z",
     "updated_at": "2019-08-22T23:00:58Z",
-    "closed_at": null,
+    "closed_at": "2019-08-22T23:00:58Z",
     "merged_at": null,
     "merge_commit_sha": null,
     "assignee": null,

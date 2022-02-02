@@ -107,4 +107,69 @@ export = (app: Probot) => {
       targetBranch
     );
   });
+
+  app.on('pull_request.closed', async context => {
+    const {owner, repo} = context.repo();
+    const remoteConfig = await getConfig<Configuration>(
+      context.octokit,
+      owner,
+      repo,
+      CONFIGURATION_FILE_PATH
+    );
+    if (!remoteConfig) {
+      logger.debug(`cherry-pick-bot not configured for ${owner}/${repo}`);
+      return;
+    }
+
+    if (remoteConfig.enabled === false) {
+      logger.debug(`ignoring explicitly disabled repository ${owner}/${repo}`);
+      return;
+    }
+
+    if (!context.payload.pull_request.merge_commit_sha) {
+      logger.warn(
+        `pull request ${context.payload.pull_request.number} is not merged, skipping.`
+      );
+      return;
+    }
+
+    const {data: comments} = await context.octokit.issues.listComments({
+      owner,
+      repo,
+      issue_number: context.payload.pull_request.number,
+    });
+
+    // Collect cherry-pick comment target branches
+    const targetBranches = new Set<string>();
+    for (const comment of comments) {
+      const targetBranch = parseCherryPickComment(comment.body || '');
+      if (!targetBranch) {
+        logger.debug('comment did not match cherry-pick comment');
+        return;
+      }
+
+      logger.info(
+        `${comment.user?.login} requested cherry-pick to branch ${targetBranch}`
+      );
+      if (!ALLOWED_COMMENTER_ASSOCIATIONS.has(comment.author_association)) {
+        logger.debug(
+          `comment author (${comment.author_association}) is not authorized to cherry-pick`
+        );
+        continue;
+      }
+
+      targetBranches.add(targetBranch);
+    }
+
+    // Open cherry-pick commit PRs for each target
+    for (const targetBranch of targetBranches.values()) {
+      await cherryPickAsPullRequest(
+        context.octokit,
+        owner,
+        repo,
+        [context.payload.pull_request.merge_commit_sha],
+        targetBranch
+      );
+    }
+  });
 };
