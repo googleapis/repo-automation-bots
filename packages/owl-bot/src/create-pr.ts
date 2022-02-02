@@ -78,6 +78,11 @@ export function insertApiName(prTitle: string, apiName: string): string {
   }
 }
 
+export enum Force {
+  Yes = '-f',
+  No = '',
+}
+
 /**
  * Creates a pull request using the title and commit message from the most
  * recent commit.
@@ -94,13 +99,14 @@ export async function createPullRequestFromLastCommit(
   octokit: OctokitType,
   prBody = '',
   apiName = '',
+  forceFlag: Force = Force.No,
   logger = console
 ): Promise<string> {
   const cmd = newCmd(logger);
   const githubRepo = await octokit.repos.get({owner, repo});
 
   cmd(`git remote set-url origin ${pushUrl}`, {cwd: localRepoDir});
-  cmd(`git push origin ${branch}`, {cwd: localRepoDir});
+  cmd(`git push ${forceFlag} origin ${branch}`, {cwd: localRepoDir});
 
   // Use the commit's subject and body as the pull request's title and body.
   const commitSubject: string = cmd('git log -1 --format=%s', {

@@ -16,7 +16,7 @@
 
 import yargs = require('yargs');
 import {DEFAULT_OWL_BOT_YAML_PATH} from '../../config-files';
-import {copyCodeIntoPullRequest} from '../../copy-code';
+import {copyCodeIntoPullRequest, regeneratePullRequest} from '../../copy-code';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {octokitFactoryFromToken} from '../../octokit-util';
 
@@ -27,13 +27,13 @@ interface Args {
   'dest-repo': string;
   'dest-branch': string;
   'github-token': string;
+  'multi-commit': boolean;
 }
 
 export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
   command: 'copy-code-into-pull-request',
   describe:
-    'Copies code from source repo into the branch of an open pull ' +
-    'request in another repo.  Uses `git push -f` to overwrite branch.',
+    'Regenerates a pull request. Uses `git push -f` to overwrite branch.',
   builder(yargs) {
     return yargs
       .option('source-repo', {
@@ -69,18 +69,37 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
         describe: 'Short-lived github token.',
         type: 'string',
         demand: true,
+      })
+      .option('multi-commit', {
+        describe:
+          'Use an entirely new code path that works with multiple commits in a single pull request.',
+        type: 'boolean',
+        demand: false,
+        default: false,
       });
   },
   async handler(argv) {
-    await copyCodeIntoPullRequest(
-      argv['source-repo'],
-      argv['source-repo-commit-hash'],
-      {
-        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-        yamlPath: argv['owl-bot-yaml-path'],
-      },
-      argv['dest-branch'],
-      octokitFactoryFromToken(argv['github-token'])
-    );
+    if (argv['multi-commit']) {
+      await regeneratePullRequest(
+        argv['source-repo'],
+        {
+          repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
+          yamlPath: argv['owl-bot-yaml-path'],
+        },
+        argv['dest-branch'],
+        octokitFactoryFromToken(argv['github-token'])
+      );
+    } else {
+      await copyCodeIntoPullRequest(
+        argv['source-repo'],
+        argv['source-repo-commit-hash'],
+        {
+          repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
+          yamlPath: argv['owl-bot-yaml-path'],
+        },
+        argv['dest-branch'],
+        octokitFactoryFromToken(argv['github-token'])
+      );
+    }
   },
 };

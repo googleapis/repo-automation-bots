@@ -24,6 +24,7 @@ import {
 } from '../src/update-lock';
 import {OctokitFactory, OctokitType} from '../src/octokit-util';
 import {githubRepoFromOwnerSlashName} from '../src/github-repo';
+import {Force} from '../src/create-pr';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -78,6 +79,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
         {fake: true},
         '',
         '',
+        Force.No,
         console,
       ],
     ]);

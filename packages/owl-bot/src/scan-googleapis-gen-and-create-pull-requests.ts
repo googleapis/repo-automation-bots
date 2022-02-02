@@ -16,6 +16,7 @@ import {AffectedRepo, ConfigsStore, OwlBotYamlAndPath} from './configs-store';
 import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import {
+  copyCodeAndAppendPullRequest,
   copyCodeAndCreatePullRequest,
   copyExists,
   copyTagFrom,
@@ -74,6 +75,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   copyExistsSearchDepth: number,
   cloneDepth = 100,
   copyStateStore?: CopyStateStore,
+  multiCommit = false,
   logger = console
 ): Promise<number> {
   // Clone the source repo.
@@ -173,7 +175,10 @@ export async function scanGoogleapisGenAndCreatePullRequests(
 
   // Copy files beginning with the oldest commit hash.
   for (const todo of todoStack.reverse()) {
-    const htmlUrl = await copyCodeAndCreatePullRequest(
+    const copyFunction = multiCommit
+      ? copyCodeAndAppendPullRequest
+      : copyCodeAndCreatePullRequest;
+    const htmlUrl = await copyFunction(
       sourceDir,
       todo.commitHash,
       todo.repo,
