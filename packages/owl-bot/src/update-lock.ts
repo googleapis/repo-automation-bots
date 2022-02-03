@@ -72,6 +72,7 @@ export async function createPullRequestForLockUpdate(
     octokit,
     '',
     '', // No API name because this PR was not triggered by an API change.
+    createPr.Force.No,
     logger
   );
 }

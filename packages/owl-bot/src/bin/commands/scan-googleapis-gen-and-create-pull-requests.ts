@@ -26,6 +26,7 @@ interface Args extends OctokitParams {
   'clone-depth': number;
   'search-depth': number;
   'track-builds-in-firestore': boolean;
+  'multi-commit': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -74,7 +75,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'When searching pull request and issue histories to see if a pull' +
           ' request for the commit was already created, search this deep',
         type: 'number',
-        default: 1000,
+        default: 0,
       })
       .option('track-builds-in-firestore', {
         describe:
@@ -82,6 +83,13 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           ' to copy the same code twice.',
         type: 'boolean',
         default: true,
+      })
+      .option('multi-commit', {
+        describe:
+          "Add new commits to open PRs when there's already one open. " +
+          'Otherwise, opens a new PR for every new upstream change.',
+        type: 'boolean',
+        default: false,
       });
   },
   async handler(argv) {
@@ -100,7 +108,8 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       configsStore,
       argv['search-depth'],
       argv['clone-depth'],
-      copyStateStore
+      copyStateStore,
+      argv['multi-commit']
     );
   },
 };
