@@ -407,10 +407,10 @@ describe('owlBot', () => {
       .reply(200, [])
       // Update to closed state:
       .patch('/repos/googleapis/owl-bot-testing/pulls/33')
-      .reply(200)
-      // Delete the branch`
-      // .delete('/repos/googleapis/owl-bot-testing/git/refs/abc123')
-      // .reply(200);
+      .reply(200);
+    // Delete the branch`
+    // .delete('/repos/googleapis/owl-bot-testing/git/refs/abc123')
+    // .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
       .resolves({
