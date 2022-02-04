@@ -16,11 +16,11 @@ steps:
   - name: gcr.io/cloud-builders/docker
     id: 'build-docker'
     waitFor: ['-']
-    dir: 'packages/'
+    dir: 'packages/cherry-pick-bot'
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/'
+      - 'gcr.io/$PROJECT_ID/cherry-pick-bot'
       - '.'
 
   # TODO: create container test
