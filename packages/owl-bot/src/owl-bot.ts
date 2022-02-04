@@ -31,8 +31,8 @@ import {
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 import {OwlBotLock} from './config-files';
 import {octokitFactoryFrom} from './octokit-util';
-import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
 import {githubRepo} from './github-repo';
+import {REGENERATE_CHECKBOX_TEXT} from './create-pr';
 
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
