@@ -75,7 +75,7 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
           'Use an entirely new code path that works with multiple commits in a single pull request.',
         type: 'boolean',
         demand: false,
-        default: false,
+        default: true,
       });
   },
   async handler(argv) {

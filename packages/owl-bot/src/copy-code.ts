@@ -30,8 +30,9 @@ import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {
   createPullRequestFromLastCommit,
+  EMPTY_REGENERATE_CHECKBOX_TEXT,
   Force,
-  getLastCommitBody,
+  WithRegenerateCheckbox,
 } from './create-pr';
 import {AffectedRepo} from './configs-store';
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
@@ -384,10 +385,6 @@ export async function copyCodeAndAppendPullRequest(
     return pulls.data[0].html_url;
   } else {
     // Create a pull request.
-    const prBody =
-      EMPTY_REGENERATE_CHECKBOX_TEXT +
-      '\n\n' +
-      getLastCommitBody(dest.dir, logger);
     return await createPullRequestFromLastCommit(
       destRepo.repo.owner,
       destRepo.repo.repo,
@@ -396,7 +393,7 @@ export async function copyCodeAndAppendPullRequest(
       pushUrl,
       [OWL_BOT_COPY],
       await octokitFactory.getShortLivedOctokit(token),
-      prBody,
+      WithRegenerateCheckbox.Yes,
       dest.yaml['api-name'] ?? '',
       Force.Yes,
       logger
@@ -447,11 +444,6 @@ export async function copyCodeAndCreatePullRequest(
     return existingUrl; // Mid-air collision!
   }
 
-  const prBody =
-    EMPTY_REGENERATE_CHECKBOX_TEXT +
-    '\n\n' +
-    getLastCommitBody(dest.dir, logger);
-
   return await createPullRequestFromLastCommit(
     destRepo.repo.owner,
     destRepo.repo.repo,
@@ -460,7 +452,7 @@ export async function copyCodeAndCreatePullRequest(
     destRepo.repo.getCloneUrl(token),
     [OWL_BOT_COPY],
     octokit,
-    prBody,
+    WithRegenerateCheckbox.Yes,
     dest.yaml['api-name'] ?? '',
     Force.No,
     logger
@@ -548,7 +540,7 @@ export async function regeneratePullRequest(
   // Create a single commit message by combining the multiple commit messages
   // in the pull request.
   const commitMsgBuf = cmd(
-    `git log ${ancestor}..origin/${destBranch} --format=%s%n%n%b`,
+    `git log ${ancestor}..origin/${destBranch} --format=%B`,
     {cwd: destDir}
   );
   const commitMsgFilePath = path.join(workDir, 'commit.txt');
@@ -709,13 +701,6 @@ export function toLocalRepo(
   }
 }
 
-export const REGENERATE_CHECKBOX_TEXT =
-  '- [x] Regenerate this pull request now.';
-export const EMPTY_REGENERATE_CHECKBOX_TEXT = REGENERATE_CHECKBOX_TEXT.replace(
-  '[x]',
-  '[ ]'
-);
-
 /**
  * Copies the code from a source repo to a locally checked out repo.
  *
@@ -760,7 +745,7 @@ export async function copyCode(
 
   // Commit changes to branch.
   const commitMsgPath = path.resolve(path.join(workDir, 'commit-msg.txt'));
-  let commitMsg = cmd('git log -1 --format=%s%n%n%b', {
+  let commitMsg = cmd('git log -1 --format=%B', {
     cwd: sourceDir,
   }).toString('utf8');
   const sourceLink = sourceLinkFrom(sourceCommitHash);
