@@ -153,7 +153,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         fi
 
         # Copy the commit message from the commit in googleapis.
-        git -C "$GOOGLEAPIS" log -1 --format=%s%n%n%b > commit-msg.txt
+        git -C "$GOOGLEAPIS" log -1 --format=%B > commit-msg.txt
         echo "Source-Link: https://github.com/googleapis/googleapis/commit/$sha" >> commit-msg.txt
         # Commit changes and push them.
         git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"

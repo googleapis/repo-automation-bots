@@ -16,13 +16,16 @@ import {AffectedRepo, ConfigsStore, OwlBotYamlAndPath} from './configs-store';
 import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import {
+  copyCodeAndAppendPullRequest,
   copyCodeAndCreatePullRequest,
   copyExists,
+  copyTagFrom,
   newRepoHistoryCache,
   toLocalRepo,
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
 import {newCmd} from './cmd';
+import {CopyStateStore} from './copy-state-store';
 
 interface Todo {
   repo: AffectedRepo;
@@ -71,6 +74,8 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   configsStore: ConfigsStore,
   copyExistsSearchDepth: number,
   cloneDepth = 100,
+  copyStateStore?: CopyStateStore,
+  multiCommit = false,
   logger = console
 ): Promise<number> {
   // Clone the source repo.
@@ -116,6 +121,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     logger.info(`affecting ${repos.length} repos.`);
     repos.forEach(repo => logger.info(repo));
     const stackSize = todoStack.length;
+    let copyBuildId: string | undefined;
     for (const repo of repos) {
       octokit = octokit ?? (await octokitFactory.getShortLivedOctokit());
       const repoFullName = repo.repo.toString();
@@ -130,7 +136,18 @@ export async function scanGoogleapisGenAndCreatePullRequests(
           `Ignoring ${repoFullName} because ${commitHash} is too old.`
         );
       } else if (
-        !(await copyExists(
+        (copyBuildId = await copyStateStore?.findBuildForCopy(
+          repo.repo,
+          copyTagFrom(repo.yamlPath, commitHash)
+        ))
+      ) {
+        logger.info(
+          `Found build ${copyBuildId} for ${commitHash} ` +
+            `for ${repo.repo.owner}:${repo.repo.repo} ${repo.yamlPath}.`
+        );
+      } else if (
+        copyExistsSearchDepth > 0 &&
+        (await copyExists(
           octokit,
           repo,
           commitHash,
@@ -139,6 +156,8 @@ export async function scanGoogleapisGenAndCreatePullRequests(
           logger
         ))
       ) {
+        // copyExists already logged that we found it.
+      } else {
         const todo: Todo = {repo, commitHash};
         logger.info(`Pushing todo onto stack: ${todo}`);
         todoStack.push(todo);
@@ -156,13 +175,20 @@ export async function scanGoogleapisGenAndCreatePullRequests(
 
   // Copy files beginning with the oldest commit hash.
   for (const todo of todoStack.reverse()) {
-    await copyCodeAndCreatePullRequest(
+    const copyFunction = multiCommit
+      ? copyCodeAndAppendPullRequest
+      : copyCodeAndCreatePullRequest;
+    const htmlUrl = await copyFunction(
       sourceDir,
       todo.commitHash,
       todo.repo,
       octokitFactory,
       logger
     );
+    if (copyStateStore) {
+      const copyTag = copyTagFrom(todo.repo.yamlPath, todo.commitHash);
+      copyStateStore.recordBuildForCopy(todo.repo.repo, copyTag, htmlUrl);
+    }
   }
   return todoStack.length;
 }

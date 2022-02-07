@@ -15,6 +15,7 @@
 import admin from 'firebase-admin';
 import {OwlBotLock, toFrontMatchRegExp} from './config-files';
 import {AffectedRepo, Configs, ConfigsStore} from './configs-store';
+import {CopyStateStore} from './copy-state-store';
 import {githubRepoFromOwnerSlashName} from './github-repo';
 
 export type Db = admin.firestore.Firestore;
@@ -205,5 +206,47 @@ export class FirestoreConfigsStore implements ConfigsStore {
     });
     console.info(`walked ${i} configs`);
     return result;
+  }
+}
+
+function makeCopyStateKey(
+  repo: {owner: string; repo: string},
+  copyTag: string
+): string {
+  return [repo.owner, repo.repo, copyTag].map(encodeId).join('+');
+}
+export class FirestoreCopyStateStore implements CopyStateStore {
+  private db: Db;
+  readonly copyBuilds: string;
+
+  /**
+   * @param collectionsPrefix should only be overridden in tests.
+   */
+  constructor(db: Db, collectionsPrefix = 'owl-bot-') {
+    this.db = db;
+    this.copyBuilds = collectionsPrefix + 'copy-builds';
+  }
+
+  async recordBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string,
+    buildId: string
+  ): Promise<void> {
+    await this.db
+      .collection(this.copyBuilds)
+      .doc(makeCopyStateKey(repo, copyTag))
+      .set({buildId});
+  }
+
+  async findBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string
+  ): Promise<string | undefined> {
+    return (
+      await this.db
+        .collection(this.copyBuilds)
+        .doc(makeCopyStateKey(repo, copyTag))
+        .get()
+    ).data()?.buildId;
   }
 }

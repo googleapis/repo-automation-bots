@@ -19,36 +19,37 @@ import {OctokitType} from './octokit-util';
 export const MAX_TITLE_LENGTH = 255;
 export const MAX_BODY_LENGTH = 64 * 1024 - 1;
 
+export const REGENERATE_CHECKBOX_TEXT =
+  '- [x] Regenerate this pull request now.';
+export const EMPTY_REGENERATE_CHECKBOX_TEXT = REGENERATE_CHECKBOX_TEXT.replace(
+  '[x]',
+  '[ ]'
+);
+
 /***
  * Github will reject the pull request if the title is longer than 255
  * characters.  This function will move characters from the title to the body
  * if the title is too long.
+ *
+ * @param rawBody the subject and body of the commit message.
  */
 export function resplit(
-  title: string,
-  body: string
+  rawBody: string,
+  withRegenerateCheckbox: WithRegenerateCheckbox
 ): {title: string; body: string} {
+  const regexp = /([^\r\n]*)([\r\n]*)((.|\r|\n)*)/;
+  const match = regexp.exec(rawBody)!;
+  let title = match[1];
+  let body = match[3];
   if (title.length > MAX_TITLE_LENGTH) {
     const splitIndex = MAX_TITLE_LENGTH - 3; // 3 dots.
-    body = '...' + title.substring(splitIndex) + '\n\n' + body;
-    title = title.substring(0, splitIndex) + '...';
+    title = rawBody.substring(0, splitIndex) + '...';
+    body = rawBody.substring(splitIndex);
+  }
+  if (withRegenerateCheckbox === WithRegenerateCheckbox.Yes) {
+    body = EMPTY_REGENERATE_CHECKBOX_TEXT + '\n\n' + body;
   }
   return {title, body: body.substring(0, MAX_BODY_LENGTH)};
-}
-
-/**
- * Returns the body of the most recent commit message in a git directory.
- */
-export function getLastCommitBody(
-  localRepoDir: string,
-  logger = console
-): string {
-  const cmd = newCmd(logger);
-  return cmd('git log -1 --format=%b', {
-    cwd: localRepoDir,
-  })
-    .toString('utf8')
-    .trim();
 }
 
 // Exported for testing only.
@@ -79,9 +80,31 @@ export function insertApiName(prTitle: string, apiName: string): string {
 }
 
 /**
+ * Should createPullRequestFromLastCommit() force push to github?
+ *
+ * More type safe and readable than a boolean.
+ */
+export enum Force {
+  Yes = '-f',
+  No = '',
+}
+
+/**
+ * Should createPullRequestFromLastCommit() create a pull request body with
+ * a "[x] Regenerate this pull request now" checkbox?
+ *
+ * More type safe and readable than a boolean.
+ */
+export enum WithRegenerateCheckbox {
+  Yes = 'yes',
+  No = 'no',
+}
+
+/**
  * Creates a pull request using the title and commit message from the most
  * recent commit.
  * @argument apiName Name of the API to optionally include in the PR title.
+ * @returns an link to the pull request
  */
 export async function createPullRequestFromLastCommit(
   owner: string,
@@ -91,27 +114,27 @@ export async function createPullRequestFromLastCommit(
   pushUrl: string,
   labels: string[],
   octokit: OctokitType,
-  prBody = '',
+  withRegenerateCheckbox = WithRegenerateCheckbox.No,
   apiName = '',
+  forceFlag: Force = Force.No,
   logger = console
-): Promise<void> {
+): Promise<string> {
   const cmd = newCmd(logger);
   const githubRepo = await octokit.repos.get({owner, repo});
 
   cmd(`git remote set-url origin ${pushUrl}`, {cwd: localRepoDir});
-  cmd(`git push origin ${branch}`, {cwd: localRepoDir});
+  cmd(`git push ${forceFlag} origin ${branch}`, {cwd: localRepoDir});
 
   // Use the commit's subject and body as the pull request's title and body.
-  const commitSubject: string = cmd('git log -1 --format=%s', {
+  const rawBody: string = cmd('git log -1 --format=%B', {
     cwd: localRepoDir,
   })
     .toString('utf8')
     .trim();
-  const commitBody = prBody ?? getLastCommitBody(localRepoDir, logger);
 
   const {title, body} = resplit(
-    insertApiName(commitSubject, apiName),
-    commitBody
+    insertApiName(rawBody, apiName),
+    withRegenerateCheckbox
   );
 
   // Create a pull request.
@@ -132,4 +155,5 @@ export async function createPullRequestFromLastCommit(
       labels,
     });
   }
+  return pull.data.html_url;
 }

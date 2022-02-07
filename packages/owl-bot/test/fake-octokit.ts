@@ -50,16 +50,28 @@ export class FakeIssues {
 
 export class FakePulls {
   pulls: any[] = [];
+  updates: any[] = [];
 
   list() {
     return Promise.resolve({data: this.pulls});
   }
 
   create(pull: any) {
-    this.pulls.push(pull);
+    const pullNumber = this.pulls.length + 1;
+    const myPull = {
+      number: pullNumber,
+      html_url: `http://github.com/fake/pulls/${pullNumber}`,
+      ...pull,
+    };
+    this.pulls.push(myPull);
     return Promise.resolve({
-      data: {html_url: `http://github.com/fake/pulls/${this.pulls.length}`},
+      data: myPull,
     });
+  }
+
+  update(pull: any) {
+    this.updates.push(pull);
+    return Promise.resolve();
   }
 }
 

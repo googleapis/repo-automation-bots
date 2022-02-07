@@ -15,6 +15,7 @@
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import {
+  branchNameForCopy,
   copyCode,
   copyDirs,
   copyExists,
@@ -24,6 +25,7 @@ import {
   newRepoHistoryCache,
   sourceLinkFrom,
   stat,
+  toSafeBranchName,
   unpackCopyTag,
 } from '../src/copy-code';
 import path from 'path';
@@ -59,8 +61,7 @@ Copy-Tag: ${copyTag}
       yamlPath: 'some-api/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
@@ -84,8 +85,7 @@ Copy-Tag: ${copyTag}
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
     const cache = newRepoHistoryCache();
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
@@ -96,8 +96,7 @@ Copy-Tag: ${copyTag}
     );
 
     // Confirm its in the cache.
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         (await fakeOctokit()) as unknown as OctokitType,
         destRepo,
@@ -121,8 +120,7 @@ Copy-Tag: ${copyTag}
       yamlPath: 'some-api/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
@@ -151,14 +149,13 @@ Copy-Tag: ${copyTag}
       yamlPath: '.github/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      false,
-      await copyExists(
+    assert.ok(
+      !(await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
         'abc123',
         1000
-      )
+      ))
     );
   });
 
@@ -181,14 +178,13 @@ Copy-Tag: ${copyTag}
       yamlPath: 'some-api/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      false,
-      await copyExists(
+    assert.ok(
+      !(await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
         'def456',
         1000
-      )
+      ))
     );
   });
 
@@ -203,8 +199,7 @@ Source-Link: https://github.com/googleapis/googleapis/abc123
       yamlPath: '.github/.OwlBot.yaml',
       repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
     };
-    assert.strictEqual(
-      true,
+    assert.ok(
       await copyExists(
         octokit as unknown as OctokitType,
         destRepo,
@@ -539,5 +534,32 @@ describe('unpackCopyTag', () => {
     assert.throws(() => {
       unpackCopyTag(tag);
     });
+  });
+});
+
+describe('toSafeBranchName', () => {
+  it('correctly replaces characters', () => {
+    assert.strictEqual(toSafeBranchName('a-3!@#$%b^&*()N'), 'a-3_____b_____N');
+  });
+});
+
+describe('branchNameForCopy', () => {
+  it('correctly transforms yaml paths to branch names', () => {
+    assert.strictEqual(
+      branchNameForCopy('/.github/.OwlBot.yaml'),
+      'owl-bot-copy'
+    );
+    assert.strictEqual(
+      branchNameForCopy('.github/.OwlBot.yaml'),
+      'owl-bot-copy'
+    );
+    assert.strictEqual(
+      branchNameForCopy('Firebase/Ad$%min/.OwlBot.yaml'),
+      'owl-bot-copy-Firebase-Ad__min'
+    );
+    assert.strictEqual(
+      branchNameForCopy('/speech/.OwlBot.yaml'),
+      'owl-bot-copy-speech'
+    );
   });
 });

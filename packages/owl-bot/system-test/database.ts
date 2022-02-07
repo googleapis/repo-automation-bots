@@ -14,7 +14,7 @@
 
 import {describe, it, before} from 'mocha';
 import admin from 'firebase-admin';
-import {FirestoreConfigsStore} from '../src/database';
+import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../src/database';
 import {Configs} from '../src/configs-store';
 import {v4 as uuidv4} from 'uuid';
 import * as assert from 'assert';
@@ -40,6 +40,43 @@ describe('database', () => {
       // No connection to firestore.  Not possible to test.
       this.skip();
     }
+  });
+
+  it('stores and retrieves copy state', async () => {
+    const db = admin.firestore();
+    const store = new FirestoreCopyStateStore(db, 'test-' + uuidv4() + '-');
+    const copyTag = uuidv4();
+    const buildId = uuidv4();
+    const repo = {
+      owner: uuidv4(),
+      repo: uuidv4(),
+    };
+    assert.ok(!(await store.findBuildForCopy(repo, copyTag)));
+    await store.recordBuildForCopy(repo, copyTag, buildId);
+
+    // Confirm we can find what we just recorded.
+    assert.strictEqual(await store.findBuildForCopy(repo, copyTag), buildId);
+
+    // Changing any one of the arguments should result in not found.
+    assert.ok(!(await store.findBuildForCopy(repo, uuidv4())));
+    assert.ok(
+      !(await store.findBuildForCopy(
+        {
+          owner: repo.owner,
+          repo: uuidv4(),
+        },
+        copyTag
+      ))
+    );
+    assert.ok(
+      !(await store.findBuildForCopy(
+        {
+          owner: uuidv4(),
+          repo: repo.repo,
+        },
+        copyTag
+      ))
+    );
   });
 
   it('stores and retrieves configs', async () => {
