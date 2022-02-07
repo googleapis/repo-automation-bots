@@ -31,7 +31,7 @@ import {Configs} from '../src/configs-store';
 import {OWL_BOT_LOCK_PATH} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import {FirestoreConfigsStore} from '../src/database';
-import {REGENERATE_CHECKBOX_TEXT} from '../src/copy-code';
+import {REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();

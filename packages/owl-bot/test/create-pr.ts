@@ -15,27 +15,50 @@
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import {
+  EMPTY_REGENERATE_CHECKBOX_TEXT,
   insertApiName,
   MAX_BODY_LENGTH,
   MAX_TITLE_LENGTH,
   resplit,
+  WithRegenerateCheckbox,
 } from '../src/create-pr';
 
 describe('resplit', () => {
   it('leaves a short title unchanged', () => {
-    const tb = resplit('title', 'body');
-    assert.deepStrictEqual(tb, {title: 'title', body: 'body'});
+    const tb = resplit('title\nbody\n', WithRegenerateCheckbox.No);
+    assert.deepStrictEqual(tb, {title: 'title', body: 'body\n'});
+  });
+
+  it('leaves a short title unchanged with checkbox', () => {
+    const tb = resplit('title\nbody\n', WithRegenerateCheckbox.Yes);
+    assert.deepStrictEqual(tb, {
+      title: 'title',
+      body: EMPTY_REGENERATE_CHECKBOX_TEXT + '\n\nbody\n',
+    });
   });
 
   const loremIpsum =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
 
   it('resplits a long title', () => {
-    const tb = resplit(loremIpsum, 'body');
+    const tb = resplit(loremIpsum + '\n\nbody', WithRegenerateCheckbox.No);
     assert.strictEqual(tb.title.length, MAX_TITLE_LENGTH);
     assert.ok(tb.title.length < loremIpsum.length);
     assert.deepStrictEqual(tb, {
-      body: '...r in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nbody',
+      body: 'r in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nbody',
+      title:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolo...',
+    });
+  });
+
+  it('resplits a long title with checkbox', () => {
+    const tb = resplit(loremIpsum + '\n\nbody', WithRegenerateCheckbox.Yes);
+    assert.strictEqual(tb.title.length, MAX_TITLE_LENGTH);
+    assert.ok(tb.title.length < loremIpsum.length);
+    assert.deepStrictEqual(tb, {
+      body:
+        EMPTY_REGENERATE_CHECKBOX_TEXT +
+        '\n\nr in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nbody',
       title:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolo...',
     });
@@ -43,7 +66,15 @@ describe('resplit', () => {
 
   it('truncates a long title and a long body', () => {
     const body = loremIpsum.repeat(64 * 4);
-    const tb = resplit(loremIpsum, body);
+    const tb = resplit(loremIpsum + body, WithRegenerateCheckbox.No);
+    assert.strictEqual(tb.title.length, MAX_TITLE_LENGTH);
+    assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
+    assert.ok(tb.body.length < body.length);
+  });
+
+  it('truncates a long title and a long body with checkbox', () => {
+    const body = loremIpsum.repeat(64 * 4);
+    const tb = resplit(loremIpsum + body, WithRegenerateCheckbox.Yes);
     assert.strictEqual(tb.title.length, MAX_TITLE_LENGTH);
     assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
     assert.ok(tb.body.length < body.length);
@@ -51,7 +82,15 @@ describe('resplit', () => {
 
   it('truncates a long body', () => {
     const body = loremIpsum.repeat(64 * 4);
-    const tb = resplit('title', body);
+    const tb = resplit('title\n' + body, WithRegenerateCheckbox.No);
+    assert.strictEqual(tb.title, 'title');
+    assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
+    assert.ok(tb.body.length < body.length);
+  });
+
+  it('truncates a long body with checkbox', () => {
+    const body = loremIpsum.repeat(64 * 4);
+    const tb = resplit('title\n' + body, WithRegenerateCheckbox.Yes);
     assert.strictEqual(tb.title, 'title');
     assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
     assert.ok(tb.body.length < body.length);

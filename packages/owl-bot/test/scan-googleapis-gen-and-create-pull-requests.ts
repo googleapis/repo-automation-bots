@@ -34,6 +34,7 @@ import {
 import {CopyStateStore} from '../src/copy-state-store';
 import tmp from 'tmp';
 import {copyTagFrom} from '../src/copy-code';
+import {EMPTY_REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -487,7 +488,7 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
     );
 
     // Confirm commit messages were merged and pushed to pull-branch.
-    const gitLog = cmd('git log -1 --format=%s%n%n%b pull-branch', {
+    const gitLog = cmd('git log -1 --format=%B pull-branch', {
       cwd: destDir,
     }).toString('utf-8');
     assert.strictEqual(gitLog, `${commitMessage2}\n\n${commitMessage1}\n\n`);
@@ -495,7 +496,7 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
     // Confirm the pull request body was updated.
     assert.deepStrictEqual(pulls.updates, [
       {
-        body: `${cc.EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${commitMessage2}\n\n${commitMessage1}\n\n`,
+        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${commitMessage2}\n\n${commitMessage1}\n\n`,
         owner: 'googleapis',
         pull_number: 1,
         repo: 'nodejs-spell-check',

@@ -70,7 +70,7 @@ export async function createPullRequestForLockUpdate(
     githubRepo.getCloneUrl(token),
     [core.OWL_BOT_LOCK_UPDATE],
     octokit,
-    '',
+    createPr.WithRegenerateCheckbox.No,
     '', // No API name because this PR was not triggered by an API change.
     createPr.Force.No,
     logger
