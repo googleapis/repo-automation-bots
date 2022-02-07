@@ -24,7 +24,7 @@ import {
 } from '../src/update-lock';
 import {OctokitFactory, OctokitType} from '../src/octokit-util';
 import {githubRepoFromOwnerSlashName} from '../src/github-repo';
-import {Force} from '../src/create-pr';
+import {Force, WithRegenerateCheckbox} from '../src/create-pr';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -77,7 +77,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
         'https://x-access-token:b4@github.com/googleapis/nodejs-speech.git',
         ['owl-bot-update-lock'],
         {fake: true},
-        '',
+        WithRegenerateCheckbox.No,
         '',
         Force.No,
         console,
