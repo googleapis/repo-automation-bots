@@ -59,6 +59,4 @@ assign_prs_by:
     - SurferJeffAtGoogle
 
 assign_prs:
-  - tmatsuo
-  - chingor13
-  - sofisl
+  - @googleapis/github-automation
