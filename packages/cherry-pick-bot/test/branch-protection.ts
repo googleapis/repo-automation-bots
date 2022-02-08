@@ -16,12 +16,9 @@ import nock from 'nock';
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import {Octokit} from '@octokit/rest';
-import sinon from 'sinon';
 import {branchRequiresReviews} from '../src/branch-protection';
 
 nock.disableNetConnect();
-
-const sandbox = sinon.createSandbox();
 
 describe('branchRequiresReview', () => {
   let octokit: Octokit;
@@ -73,11 +70,11 @@ describe('branchRequiresReview', () => {
       .get('/repos/testOwner/testRepo/branches/dev/protection')
       .reply(200, {
         required_pull_request_reviews: {
-          url: "https://api.github.com/repos/testOwner/testRepo/branches/dev/protection/required_pull_request_reviews",
+          url: 'https://api.github.com/repos/testOwner/testRepo/branches/dev/protection/required_pull_request_reviews',
           dismiss_stale_reviews: false,
           require_code_owner_reviews: false,
-          required_approving_review_count: 1
-        }
+          required_approving_review_count: 1,
+        },
       });
     const requiresReview = await branchRequiresReviews(
       octokit,
@@ -94,12 +91,13 @@ describe('branchRequiresReview', () => {
       .get('/repos/testOwner/testRepo/branches/dev/protection')
       .reply(200, {
         required_status_checks: {
-          url: "https://api.github.com/repos/testOwner/testRepo/branches/dev/protection/required_status_checks",
+          url: 'https://api.github.com/repos/testOwner/testRepo/branches/dev/protection/required_status_checks',
           strict: false,
           contexts: [],
-          contexts_url: "https://api.github.com/repos/testOwner/testRepo/branches/dev/protection/required_status_checks/contexts",
-          checks: []
-        }
+          contexts_url:
+            'https://api.github.com/repos/testOwner/testRepo/branches/dev/protection/required_status_checks/contexts',
+          checks: [],
+        },
       });
     const requiresReview = await branchRequiresReviews(
       octokit,
