@@ -1,1 +1,1 @@
-{"packages/bot-config-utils":"4.0.1","packages/cron-utils":"3.0.1","packages/datastore-lock":"3.0.0","packages/gcf-utils":"13.2.0","packages/label-utils":"2.0.2","packages/mono-repo-publish":"1.2.2","packages/object-selector":"2.0.0","packages/release-brancher":"1.3.1"}
+{"packages/bot-config-utils":"4.0.1","packages/cron-utils":"3.0.2","packages/datastore-lock":"3.0.0","packages/gcf-utils":"13.2.1","packages/label-utils":"2.0.2","packages/mono-repo-publish":"1.2.2","packages/object-selector":"2.0.0","packages/release-brancher":"1.3.1"}

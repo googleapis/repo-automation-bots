@@ -28,6 +28,11 @@ interface PullRequest {
   body: string | null;
 }
 
+interface Commit {
+  message: string;
+  sha: string;
+}
+
 const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w[-\w]*)/;
 
 /**
@@ -83,22 +88,37 @@ export async function cherryPickAsPullRequest(
     targetBranchHead
   );
 
-  const newHeadSha = await cherryPickCommits(
+  const newCommits = (await exports.cherryPickCommits(
     octokit,
     owner,
     repo,
     commits,
     newBranchName
+  )) as Commit[];
+  logger.debug(
+    `cherry-picked ${newCommits.length} commits as ${
+      newCommits[newCommits.length - 1].sha
+    }`
   );
-  logger.debug(`cherry-picked as ${newHeadSha}`);
 
   logger.debug(`opening pull request from ${newBranchName} to ${targetBranch}`);
+  const title = newCommits[0].message;
+  const body =
+    newCommits.length > 1
+      ? newCommits
+          .slice(1)
+          .map(commit => commit.message)
+          .join('\n')
+      : '';
   const {data: pullRequest} = await octokit.pulls.create({
     owner,
     repo,
     head: newBranchName,
     base: targetBranch,
-    title: `chore: cherry-pick commit ${commits.join(', ')} to ${targetBranch}`,
+    title,
+    body: `${body}\n\nCherry-picked ${newCommits
+      .map(commit => commit.message)
+      .join(', ')}`,
   });
   return pullRequest;
 }
@@ -117,7 +137,8 @@ export async function cherryPickCommits(
   repo: string,
   commits: string[],
   targetBranch: string
-): Promise<string> {
+): Promise<Commit[]> {
+  const newCommits: Commit[] = [];
   logger.info(`cherry-pick ${commits} to branch ${targetBranch}`);
 
   logger.debug(`fetching sha for ref ${targetBranch}`);
@@ -225,6 +246,11 @@ export async function cherryPickCommits(
       }
     );
 
+    newCommits.push({
+      message: commit.message,
+      sha: newHeadSha,
+    });
+
     logger.debug(`updating ref: ${newHeadSha}`);
     await updateRef(octokit, owner, repo, temporaryRefName, newHeadSha);
 
@@ -241,7 +267,7 @@ export async function cherryPickCommits(
     repo,
   });
 
-  return headSha;
+  return newCommits;
 }
 
 /**
