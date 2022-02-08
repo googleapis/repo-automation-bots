@@ -1,5 +1,13 @@
 # Changelog
 
+### [3.0.2](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.0.1...cron-utils-v3.0.2) (2022-02-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/run to v6 ([#3144](https://github.com/googleapis/repo-automation-bots/issues/3144)) ([b8c2aaf](https://github.com/googleapis/repo-automation-bots/commit/b8c2aaf89d137b3581448d77dfd68081f58b6ee2))
+* **deps:** update dependency @googleapis/run to v7 ([#3161](https://github.com/googleapis/repo-automation-bots/issues/3161)) ([620ec05](https://github.com/googleapis/repo-automation-bots/commit/620ec05b6078f95232fa14438317b24b590671b2))
+
 ### [3.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.0.0...cron-utils-v3.0.1) (2021-09-17)
 
 
