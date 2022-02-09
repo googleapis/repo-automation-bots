@@ -57,7 +57,7 @@ Pull Requests will not be assigned a user while in draft mode.
 ### Assigning to a team
 
 You can configure teams for issues or PRs by using the format `<organization>/<team-name>` (no leading `@`).
-Blunderbuss with expand the entire team roster into the pool of possible assignees.
+Blunderbuss will expand the entire team roster into the pool of possible assignees.
 
 ## Setup
 
