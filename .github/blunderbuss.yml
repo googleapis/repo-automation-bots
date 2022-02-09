@@ -59,4 +59,4 @@ assign_prs_by:
     - SurferJeffAtGoogle
 
 assign_prs:
-  - '@googleapis/github-automation'
+  - googleapis/github-automation
