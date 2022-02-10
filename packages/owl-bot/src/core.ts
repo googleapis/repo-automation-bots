@@ -620,10 +620,8 @@ async function updatePullRequestAfterPostProcessor(
       state: 'closed',
     });
     if (pull.head.repo.full_name === `${owner}/${repo}`) {
-      logger.info(`I would delete branch ${pull.head.ref}`);
-      // TODO(rennie): uncomment the next line of code after I see
-      // some log messages in production that delete the right branch.
-      // await octokit.git.deleteRef({owner, repo, ref: pull.head.ref});
+      logger.info(`Deleting branch ${pull.head.ref}`);
+      await octokit.git.deleteRef({owner, repo, ref: pull.head.ref});
     } else {
       logger.info(
         `I won't delete the ${pull.head.ref} branch in the fork ` +
