@@ -89,7 +89,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           "Add new commits to open PRs when there's already one open. " +
           'Otherwise, opens a new PR for every new upstream change.',
         type: 'boolean',
-        default: false,
+        default: true,
       });
   },
   async handler(argv) {
