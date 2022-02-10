@@ -54,18 +54,24 @@ describe('maybe-create-pull-request-for-copy', () => {
     });
   });
 
+  function cloneAbc(): string {
+    const cloneDir = tmp.dirSync().name;
+    cmd(`git clone ${abcRepo} ${cloneDir}`);
+    cmd('git config user.email "test@example.com"', {cwd: cloneDir});
+    cmd('git config user.name "test"', {cwd: cloneDir});
+    return cloneDir;
+  }
+
   describe('shouldCreatePullRequestForCopyBranch', () => {
     it('creates a pull request when contents changed', async () => {
-      const cloneDir = tmp.dirSync().name;
-      cmd(`git clone ${abcRepo} ${cloneDir}`);
+      const cloneDir = cloneAbc();
       makeDirTree(cloneDir, ['x.txt:New file added.']);
       cmd('git add -A', {cwd: cloneDir});
       assert.ok(shouldCreatePullRequestForCopyBranch('main', cloneDir));
     });
 
     it("doesn't create a pull request when final result is the same", async () => {
-      const cloneDir = tmp.dirSync().name;
-      cmd(`git clone ${abcRepo} ${cloneDir}`);
+      const cloneDir = cloneAbc();
       cmd('git checkout -b owl-bot-copy', {cwd: cloneDir});
       makeDirTree(cloneDir, ['x.txt:New file added.']);
       cmd('git add -A', {cwd: cloneDir});
@@ -82,6 +88,14 @@ describe('maybe-create-pull-request-for-copy', () => {
       'api-name': 'data fusion',
     });
 
+    function cloneLib(): string {
+      const cloneDir = tmp.dirSync().name;
+      cmd(`git clone ${libRepo} ${cloneDir}`);
+      cmd('git config user.email "test@example.com"', {cwd: cloneDir});
+      cmd('git config user.name "test"', {cwd: cloneDir});
+      return cloneDir;
+    }
+
     // Mock the call to createPullRequestFromLastCommit
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const calls: any[][] = [];
@@ -94,8 +108,7 @@ describe('maybe-create-pull-request-for-copy', () => {
     afterEach(() => calls.splice(0, calls.length));
 
     it('creates a pull request', async () => {
-      const cloneDir = tmp.dirSync().name;
-      cmd(`git clone ${libRepo} ${cloneDir}`);
+      const cloneDir = cloneLib();
       cmd('git checkout -b owl-bot-copy', {cwd: cloneDir});
       makeDirTree(cloneDir, ['x.txt:New file added.']);
       cmd('git add -A', {cwd: cloneDir});
@@ -147,8 +160,7 @@ describe('maybe-create-pull-request-for-copy', () => {
     });
 
     it('creates a pull request with post processor changes', async () => {
-      const cloneDir = tmp.dirSync().name;
-      cmd(`git clone ${libRepo} ${cloneDir}`);
+      const cloneDir = cloneLib();
       cmd('git checkout -b owl-bot-copy', {cwd: cloneDir});
       makeDirTree(cloneDir, ['x.txt:New file added.']);
       cmd('git add -A', {cwd: cloneDir});
@@ -208,8 +220,7 @@ describe('maybe-create-pull-request-for-copy', () => {
     });
 
     it('squashes a pull request with post processor changes', async () => {
-      const cloneDir = tmp.dirSync().name;
-      cmd(`git clone ${libRepo} ${cloneDir}`);
+      const cloneDir = cloneLib();
       cmd('git checkout -b owl-bot-copy', {cwd: cloneDir});
       makeDirTree(cloneDir, [
         '.github/.OwlBot.yaml:squash: true\napi-name: data fusion',
@@ -265,8 +276,7 @@ describe('maybe-create-pull-request-for-copy', () => {
     });
 
     it('squashes a pull request with post processor changes', async () => {
-      const cloneDir = tmp.dirSync().name;
-      cmd(`git clone ${libRepo} ${cloneDir}`);
+      const cloneDir = cloneLib();
       cmd('git checkout -b owl-bot-copy', {cwd: cloneDir});
       makeDirTree(cloneDir, ['.github/.OwlBot.yaml:garbage']);
       cmd('git add -A', {cwd: cloneDir});
