@@ -103,7 +103,9 @@ export enum WithRegenerateCheckbox {
 /**
  * Creates a pull request using the title and commit message from the most
  * recent commit.
- * @argument apiName Name of the API to optionally include in the PR title.
+ * @param apiName Name of the API to optionally include in the PR title.
+ * @param commitMessage The commit message to use to create the PR title and body.
+ *        Uses the most recent commit message when omitted.
  * @returns an link to the pull request
  */
 export async function createPullRequestFromLastCommit(
@@ -117,7 +119,8 @@ export async function createPullRequestFromLastCommit(
   withRegenerateCheckbox = WithRegenerateCheckbox.No,
   apiName = '',
   forceFlag: Force = Force.No,
-  logger = console
+  logger = console,
+  commitMessage?: string
 ): Promise<string> {
   const cmd = newCmd(logger);
   const githubRepo = await octokit.repos.get({owner, repo});
@@ -126,11 +129,13 @@ export async function createPullRequestFromLastCommit(
   cmd(`git push ${forceFlag} origin ${branch}`, {cwd: localRepoDir});
 
   // Use the commit's subject and body as the pull request's title and body.
-  const rawBody: string = cmd('git log -1 --format=%B', {
-    cwd: localRepoDir,
-  })
-    .toString('utf8')
-    .trim();
+  const rawBody: string =
+    commitMessage ??
+    cmd('git log -1 --format=%B', {
+      cwd: localRepoDir,
+    })
+      .toString('utf8')
+      .trim();
 
   const {title, body} = resplit(
     insertApiName(rawBody, apiName),

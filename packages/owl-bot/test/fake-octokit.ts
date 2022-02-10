@@ -78,7 +78,8 @@ export class FakePulls {
 export function newFakeOctokit(
   pulls?: FakePulls,
   issues?: FakeIssues,
-  default_branch = 'main'
+  default_branch = 'main',
+  deadRefs: unknown[] = []
 ): OctokitType {
   return {
     pulls: pulls ?? new FakePulls(),
@@ -90,6 +91,11 @@ export function newFakeOctokit(
             default_branch,
           },
         };
+      },
+    },
+    git: {
+      deleteRef(deadRef: unknown) {
+        deadRefs.push(deadRef);
       },
     },
   } as unknown as OctokitType;
