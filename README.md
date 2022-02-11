@@ -11,21 +11,22 @@ by Google on GitHub.
 | [auto-approve] | Automatically approves and merges PRs matching user-specified configs | [install][auto-approve-app] |
 | [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
-| [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][flakybot-app] |
+| [cherry-pick-bot] | Cherry-pick merged PRs between branches | [install][cherry-pick-bot-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
 | [do-not-merge] | PR checker that ensures the `do not merge` label is not present | [install][do-not-merge-app]
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
+| [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][flakybot-app] |
 | [generated-files-bot] | PR checker to notify if you are modifying generated files | [install][generated-files-bot-app]
-| [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
+| [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
 | [policy] | Check repo configuration against known rules | [install][policy-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
 | [release-trigger] | Trigger releases jobs | [install][release-trigger-app] |
+| [repo-metadata-lint] | Lint .repo-metadata.json files | [install][repo-metadata-lint-app] |
 | [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
-| [repo-metadata-lint] | Lint .repo-metadata.json files | [install][repo-metadata-lint-app] |
 
 ## Development environment
 
@@ -120,6 +121,8 @@ at the specified schedule.
 [auto-label-app]: https://github.com/apps/product-auto-label
 [blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/blunderbuss
 [blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
+[cherry-pick-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/cherry-pick-bot
+[cherry-pick-bot-app]: https://github.com/apps/gcp-cherry-pick-bot
 [conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/conventional-commit-lint
 [conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
 [do-not-merge]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/do-not-merge
