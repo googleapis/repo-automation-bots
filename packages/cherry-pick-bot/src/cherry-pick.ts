@@ -33,7 +33,7 @@ interface Commit {
   sha: string;
 }
 
-const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w[\.-\w]*)/;
+const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w[.-\w]*)/;
 
 /**
  * Parse a comment string to see if it matches the expected cherry-pick
