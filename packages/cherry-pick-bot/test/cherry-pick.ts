@@ -39,6 +39,11 @@ describe('parseCherryPickComment', () => {
     const branch = parseCherryPickComment('\n/cherry-pick feature-branch   ');
     assert.strictEqual(branch, 'feature-branch');
   });
+
+  it('handles version format', () => {
+    const branch = parseCherryPickComment('\n/cherry-pick 2.1.x   ');
+    assert.strictEqual(branch, '2.1.x');
+  });
 });
 
 describe('cherryPickCommits', () => {
