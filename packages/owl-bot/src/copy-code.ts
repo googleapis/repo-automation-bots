@@ -32,6 +32,7 @@ import {
   createPullRequestFromLastCommit,
   EMPTY_REGENERATE_CHECKBOX_TEXT,
   Force,
+  REGENERATE_CHECKBOX_TEXT,
   WithRegenerateCheckbox,
 } from './create-pr';
 import {AffectedRepo} from './configs-store';
@@ -378,11 +379,33 @@ export async function copyCodeAndAppendPullRequest(
   const token = await octokitFactory.getGitHubShortLivedAccessToken();
   const pushUrl = destRepo.repo.getCloneUrl(token);
   if (cloneBranch) {
+    const pull = pulls.data[0];
     // Push the new commit to the existing pull request.
     const cmd = newCmd(logger);
     cmd(`git remote set-url origin ${pushUrl}`, {cwd: dest.dir});
     cmd(`git push origin ${destBranch}`, {cwd: dest.dir});
-    return pulls.data[0].html_url;
+    // Prepend the new commit message to the body.
+    try {
+      const commitBody: string = cmd('git log -1 --format=%B', {cwd: dest.dir})
+        .toString('utf8')
+        .trim();
+      const oldBody =
+        pull.body
+          ?.replace(REGENERATE_CHECKBOX_TEXT, '')
+          .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
+          .trim() ?? '';
+      await octokit.pulls.update({
+        owner: destRepo.repo.owner,
+        repo: destRepo.repo.repo,
+        pull_number: pull.number,
+        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${commitBody}\n\n${oldBody}`,
+      });
+    } catch (e) {
+      // Catch the error because we still want to return the url of the
+      // pull request that we did indeed push new commits to.
+      console.error(e);
+    }
+    return pull.html_url;
   } else {
     // Create a pull request.
     return await createPullRequestFromLastCommit(
