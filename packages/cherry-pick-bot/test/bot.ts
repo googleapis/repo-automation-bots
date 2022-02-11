@@ -21,6 +21,7 @@ import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import * as cherryPickModule from '../src/cherry-pick';
+import * as branchProtectionModule from '../src/branch-protection';
 
 nock.disableNetConnect();
 
@@ -63,9 +64,18 @@ describe('cherry-pick-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/Codertocat/Hello-World/pulls/1')
-        .reply(200, {merge_commit_sha: 'abc123'});
+        .reply(200, {merge_commit_sha: 'abc123', base: {ref: 'main'}});
 
       sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
       cherryPickPullRequestStub.resolves({
         number: 123,
         html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
@@ -207,7 +217,7 @@ describe('cherry-pick-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/Codertocat/Hello-World/pulls/1')
-        .reply(200, {merge_commit_sha: null});
+        .reply(200, {merge_commit_sha: null, base: {ref: 'main'}});
 
       sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
 
@@ -236,6 +246,15 @@ describe('cherry-pick-bot', () => {
         .reply(200, comments);
 
       sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
       cherryPickPullRequestStub.resolves({
         number: 123,
         html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
@@ -336,6 +355,15 @@ describe('cherry-pick-bot', () => {
         .reply(200, comments);
 
       sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
       cherryPickPullRequestStub.resolves({
         number: 123,
         html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
@@ -371,6 +399,97 @@ describe('cherry-pick-bot', () => {
       });
 
       sinon.assert.notCalled(cherryPickPullRequestStub);
+    });
+
+    it('cherry-picks branch protected request if base is protected', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+      const comments = require(resolve(fixturesPath, 'data', 'issue_comments'));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(true)
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'preview-branch'
+        )
+        .resolves(true)
+        .withArgs(sinon.match.any, 'Codertocat', 'Hello-World', 'master')
+        .resolves(true);
+      cherryPickPullRequestStub.resolves({
+        number: 123,
+        html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
+        title: 'chore: cherry-pick abc123',
+        body: null,
+      });
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledTwice(cherryPickPullRequestStub);
+      requests.done();
+    });
+
+    it('ignores branch protected requests if base is not protected', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+
+      const comments = require(resolve(fixturesPath, 'data', 'issue_comments'));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(true)
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'preview-branch'
+        )
+        .resolves(true)
+        .withArgs(sinon.match.any, 'Codertocat', 'Hello-World', 'master')
+        .resolves(false);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.notCalled(cherryPickPullRequestStub);
+      requests.done();
     });
   });
 });

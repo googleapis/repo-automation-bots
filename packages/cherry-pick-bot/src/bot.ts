@@ -19,6 +19,7 @@ import {RequestError} from '@octokit/request-error';
 import {logger} from 'gcf-utils';
 import {getConfig} from '@google-automations/bot-config-utils';
 import {parseCherryPickComment, cherryPickAsPullRequest} from './cherry-pick';
+import {branchRequiresReviews} from './branch-protection';
 
 const CONFIGURATION_FILE_PATH = 'cherry-pick-bot.yml';
 
@@ -73,7 +74,7 @@ export = (app: Probot) => {
       `${context.payload.comment.user.login} requested cherry-pick to branch ${targetBranch}`
     );
 
-    let pullRequest: {sha: string | null; number: number};
+    let pullRequest: {sha: string | null; number: number; baseRef: string};
     try {
       const {data: pullData} = await context.octokit.pulls.get(
         context.repo({
@@ -83,6 +84,7 @@ export = (app: Probot) => {
       pullRequest = {
         sha: pullData.merge_commit_sha,
         number: pullData.number,
+        baseRef: pullData.base.ref,
       };
     } catch (e) {
       if (e instanceof RequestError && e.status === 404) {
@@ -97,6 +99,23 @@ export = (app: Probot) => {
         `pull request ${pullRequest.number} is not merged, skipping.`
       );
       return;
+    }
+
+    const baseBranch = pullRequest.baseRef;
+    // If target branch requires review, ensure that the merged PR's branch also
+    // required review
+    if (
+      await branchRequiresReviews(context.octokit, owner, repo, targetBranch)
+    ) {
+      logger.info(
+        `${targetBranch} branch requires review, checking ${baseBranch}`
+      );
+      if (
+        !(await branchRequiresReviews(context.octokit, owner, repo, baseBranch))
+      ) {
+        logger.warn(`${baseBranch} does not require review, skipping.`);
+        return;
+      }
     }
 
     await cherryPickAsPullRequest(
@@ -163,6 +182,28 @@ export = (app: Probot) => {
 
     // Open cherry-pick commit PRs for each target
     for (const targetBranch of targetBranches.values()) {
+      // If target branch requires review, ensure that the merged PR's branch also
+      // required review
+      if (
+        await branchRequiresReviews(context.octokit, owner, repo, targetBranch)
+      ) {
+        const baseBranch = context.payload.pull_request.base.ref;
+        logger.info(
+          `${targetBranch} branch requires review, checking ${baseBranch}`
+        );
+        if (
+          !(await branchRequiresReviews(
+            context.octokit,
+            owner,
+            repo,
+            baseBranch
+          ))
+        ) {
+          logger.warn(`${baseBranch} does not require review, skipping.`);
+          continue;
+        }
+      }
+
       await cherryPickAsPullRequest(
         context.octokit,
         owner,
