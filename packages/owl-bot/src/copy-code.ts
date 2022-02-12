@@ -33,6 +33,7 @@ import {
   EMPTY_REGENERATE_CHECKBOX_TEXT,
   Force,
   REGENERATE_CHECKBOX_TEXT,
+  resplit,
   WithRegenerateCheckbox,
 } from './create-pr';
 import {AffectedRepo} from './configs-store';
@@ -389,16 +390,21 @@ export async function copyCodeAndAppendPullRequest(
       const commitBody: string = cmd('git log -1 --format=%B', {cwd: dest.dir})
         .toString('utf8')
         .trim();
-      const oldBody =
-        pull.body
-          ?.replace(REGENERATE_CHECKBOX_TEXT, '')
-          .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
-          .trim() ?? '';
+      const {title, body} = resplit(
+        `${commitBody}\n\n` +
+          `${pull.title}\n` +
+          pull.body
+            ?.replace(REGENERATE_CHECKBOX_TEXT, '')
+            .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
+            .trim() ?? '',
+        WithRegenerateCheckbox.Yes
+      );
       await octokit.pulls.update({
         owner: destRepo.repo.owner,
         repo: destRepo.repo.repo,
         pull_number: pull.number,
-        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${commitBody}\n\n${oldBody}`,
+        title,
+        body,
       });
     } catch (e) {
       // Catch the error because we still want to return the url of the
@@ -641,11 +647,13 @@ export async function regeneratePullRequest(
   cmd(`git push -f origin ${destBranch}`, {cwd: destDir});
 
   // Update the PR body with the full commit history.
+  const {title, body} = resplit(commitMsg, WithRegenerateCheckbox.Yes);
   await octokit.pulls.update({
     owner: destRepo.repo.owner,
     repo: destRepo.repo.repo,
     pull_number: pull.number,
-    body: EMPTY_REGENERATE_CHECKBOX_TEXT + '\n\n' + commitMsg,
+    title,
+    body,
   });
 }
 

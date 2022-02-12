@@ -289,7 +289,7 @@ Copy-Tag: ${copyTag}`
     pulls.create({
       owner: 'googleapis',
       repo: 'nodejs-spell-check',
-      title: 'b',
+      title: 'q',
       body: pullBody,
       head: 'owl-bot-copy',
     });
@@ -316,9 +316,10 @@ Copy-Tag: ${copyTag}`
         repo: 'nodejs-spell-check',
         pull_number: 1,
         body:
-          '- [ ] Regenerate this pull request now.\n\nb\n\n' +
+          '- [ ] Regenerate this pull request now.\n\n' +
           `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}\n` +
-          `Copy-Tag: ${copyTag}\n\nThis is the greatest pull request ever.`,
+          `Copy-Tag: ${copyTag}\n\nq\nThis is the greatest pull request ever.`,
+        title: 'b',
       },
     ]);
 
@@ -499,12 +500,16 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
     assert.strictEqual(gitLog, `${commitMessage2}\n\n${commitMessage1}\n\n`);
 
     // Confirm the pull request body was updated.
+    // The first line of commitMessage2 becomes PR title.
+    const newline = commitMessage2.indexOf('\n');
+    const body2 = commitMessage2.slice(newline).trim();
     assert.deepStrictEqual(pulls.updates, [
       {
-        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${commitMessage2}\n\n${commitMessage1}\n\n`,
+        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${body2}\n\n${commitMessage1}\n\n`,
         owner: 'googleapis',
         pull_number: 1,
         repo: 'nodejs-spell-check',
+        title: 'pull-commit-2',
       },
     ]);
   });
