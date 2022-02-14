@@ -1,0 +1,90 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This build gets invoked after owl bot has copied code from googleapis-gen
+# into a client library branch, but hasn't yet opened a pull request.
+#
+# This build runs the post processor to see if the final result contains 
+# changes.  When changes are detected, it opens a pull request.  Otherwise,
+# it deletes the branch.
+
+steps:
+  # Clone user/branch that created PR.
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - clone
+      - https://github.com/${_OWNER}/${_REPOSITORY}.git
+
+  # Observe the default branch name and save it for later.
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: bash
+    args: [
+      '-l',
+      '-c',
+      "git branch --show-current > /workspace/default-branch.txt"
+    ]
+    dir: ${_REPOSITORY}
+
+  # Populate global username, email for git.
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.email
+      - 'gcf-owl-bot[bot]@users.noreply.github.com'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.name
+      - 'Owl Bot'
+
+  # Check out the branch that contains the freshly copied code.
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - checkout
+      - -t
+      - origin/${_COPY_BRANCH}
+    dir: '${_REPOSITORY}'
+
+  # Run container listed in OwlBot.yaml.
+  - name: ${_CONTAINER}
+    dir: '${_REPOSITORY}'
+    env:
+      - 'DEFAULT_BRANCH_PATH=/workspace/default-branch.txt'
+
+  # Stage changes.
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - add
+      - -A
+
+  # Fetch our github credentials because we may need to push to github.
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/owl-bot-github-key.pem" ]
+
+  # Examine the changed files and possibly create a pull request.
+  - name: ${_OWL_BOT_CLI}
+    args:
+      - maybe-create-pull-request-for-copy
+      - --pem-path
+      - /workspace/owl-bot-github-key.pem
+      - --app-id
+      - '99011'
+      - --installation
+      - '14695777'
+      - --default-branch-path
+      - /workspace/default-branch.txt
+    dir: '${_REPOSITORY}'

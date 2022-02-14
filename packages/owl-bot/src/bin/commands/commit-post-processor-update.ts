@@ -130,16 +130,20 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
     }
   }
   // Commit new changes as a new commit.
-  // Use spawn() instead of cmd() to avoid the shell potentially
-  // misinterpreting commit message.
-  const commitMessage =
-    '🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md';
-  console.log(`git commit -m "${commitMessage}"`);
-  proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
+  commitOwlbotUpdate(repoDir);
   // There's no reason to run hooks, and they could potentially execute
   // untrusted code, so pass --no-verify.
   // Pull any recent changes to minimize risk of missing refs for the user.
   cmd('git pull --no-verify', {cwd: repoDir});
   // Push changes back to origin.
   cmd('git push --no-verify', {cwd: repoDir});
+}
+
+export function commitOwlbotUpdate(repoDir: string) {
+  // Use spawn() instead of cmd() to avoid the shell potentially
+  // misinterpreting commit message.
+  const commitMessage =
+    '🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md';
+  console.log(`git commit -m "${commitMessage}"`);
+  proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
 }

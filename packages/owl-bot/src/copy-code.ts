@@ -329,25 +329,30 @@ export function branchNameForCopy(yamlPath: string): string {
   }
 }
 
+export interface AppendedPullRequest {
+  kind: 'AppendedPullRequest';
+  /** Link to the pull request. */
+  link: string;
+}
+
 /**
- * Copies the code from googleapis-gen to the dest repo, and adds commits
- * to an existing pull request if there's one open.  Otherwise creates a new
- * pull request.
- *
- * In time, this will completely replace copyCodeAndCreatePullRequest().
+ * Copies the code from googleapis-gen into a local clone of dest repo.
+ * If there's an existing pull request, pushes the new commit.
  *
  * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
  * @param sourceRepoCommit: the commit from which to copy code. Empty means the most recent commit.
  * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
- * @returns a url to a github issue or pull request.
+ * @returns AppendedPullRequest when it appended an existing pull request.
+ *          LocalCopy when there wasn't an existing pull request to append.
+ *          CreatedGithubIssue when there was an error.
  */
-export async function copyCodeAndAppendPullRequest(
+async function copyCodeAndAppendPullRequest(
   sourceRepo: string,
   sourceRepoCommitHash: string,
   destRepo: AffectedRepo,
   octokitFactory: OctokitFactory,
   logger = console
-): Promise<string> {
+): Promise<AppendedPullRequest | LocalCopy | CreatedGithubIssue> {
   const destBranch = branchNameForCopy(destRepo.yamlPath);
   const octokit = await octokitFactory.getShortLivedOctokit();
 
@@ -362,10 +367,8 @@ export async function copyCodeAndAppendPullRequest(
   if (pulls.data.length > 0) {
     logger.info(`Appending ${pulls.data[0].html_url} with a new commit.`);
     cloneBranch = destBranch;
-  } else {
-    logger.info(`Creating new branch ${destBranch}`);
   }
-  const dest = await copyCodeIntoLocalBranch(
+  const whatHappened = await copyCodeIntoLocalBranch(
     sourceRepo,
     sourceRepoCommitHash,
     destRepo,
@@ -374,20 +377,22 @@ export async function copyCodeAndAppendPullRequest(
     cloneBranch,
     logger
   );
-  if (dest.kind === 'CreatedGithubIssue') {
-    return dest.link;
+  if (whatHappened.kind === 'CreatedGithubIssue') {
+    return whatHappened;
   }
-  const token = await octokitFactory.getGitHubShortLivedAccessToken();
-  const pushUrl = destRepo.repo.getCloneUrl(token);
   if (cloneBranch) {
     const pull = pulls.data[0];
     // Push the new commit to the existing pull request.
+    const token = await octokitFactory.getGitHubShortLivedAccessToken();
+    const pushUrl = destRepo.repo.getCloneUrl(token);
     const cmd = newCmd(logger);
-    cmd(`git remote set-url origin ${pushUrl}`, {cwd: dest.dir});
-    cmd(`git push origin ${destBranch}`, {cwd: dest.dir});
+    cmd(`git remote set-url origin ${pushUrl}`, {cwd: whatHappened.dir});
+    cmd(`git push origin ${destBranch}`, {cwd: whatHappened.dir});
     // Prepend the new commit message to the body.
     try {
-      const commitBody: string = cmd('git log -1 --format=%B', {cwd: dest.dir})
+      const commitBody: string = cmd('git log -1 --format=%B', {
+        cwd: whatHappened.dir,
+      })
         .toString('utf8')
         .trim();
       const {title, body} = resplit(
@@ -411,23 +416,64 @@ export async function copyCodeAndAppendPullRequest(
       // pull request that we did indeed push new commits to.
       console.error(e);
     }
-    return pull.html_url;
+    return {kind: 'AppendedPullRequest', link: pulls.data[0].html_url};
   } else {
-    // Create a pull request.
-    return await createPullRequestFromLastCommit(
-      destRepo.repo.owner,
-      destRepo.repo.repo,
-      dest.dir,
-      destBranch,
-      pushUrl,
-      [OWL_BOT_COPY],
-      await octokitFactory.getShortLivedOctokit(token),
-      WithRegenerateCheckbox.Yes,
-      dest.yaml['api-name'] ?? '',
-      Force.Yes,
-      logger
-    );
+    return whatHappened;
   }
+}
+
+/**
+ * Copies the code from googleapis-gen to the dest repo, and adds commits
+ * to an existing pull request if there's one open.  Otherwise, creates a new
+ * pull request.
+ *
+ * In time, this will completely replace copyCodeAndCreatePullRequest().
+ *
+ * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
+ * @param sourceRepoCommit: the commit from which to copy code. Empty means the most recent commit.
+ * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
+ * @returns a link to the pull request or github issue.
+ */
+export async function copyCodeAndAppendOrCreatePullRequest(
+  sourceRepo: string,
+  sourceRepoCommitHash: string,
+  destRepo: AffectedRepo,
+  octokitFactory: OctokitFactory,
+  logger = console
+): Promise<string> {
+  const whatHappened = await copyCodeAndAppendPullRequest(
+    sourceRepo,
+    sourceRepoCommitHash,
+    destRepo,
+    octokitFactory,
+    logger
+  );
+  if (
+    whatHappened.kind === 'AppendedPullRequest' ||
+    whatHappened.kind === 'CreatedGithubIssue'
+  ) {
+    return whatHappened.link;
+  }
+  // Push the new commit to the existing pull request.
+  const destBranch = branchNameForCopy(destRepo.yamlPath);
+  logger.info(`Creating new branch ${destBranch}`);
+  const token = await octokitFactory.getGitHubShortLivedAccessToken();
+  const pushUrl = destRepo.repo.getCloneUrl(token);
+
+  // Create a pull request.
+  return await createPullRequestFromLastCommit(
+    destRepo.repo.owner,
+    destRepo.repo.repo,
+    whatHappened.dir,
+    destBranch,
+    pushUrl,
+    [OWL_BOT_COPY],
+    await octokitFactory.getShortLivedOctokit(token),
+    WithRegenerateCheckbox.Yes,
+    whatHappened.yaml['api-name'] ?? '',
+    Force.Yes,
+    logger
+  );
 }
 
 /**
