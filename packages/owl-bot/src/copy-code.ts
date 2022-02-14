@@ -32,6 +32,8 @@ import {
   createPullRequestFromLastCommit,
   EMPTY_REGENERATE_CHECKBOX_TEXT,
   Force,
+  REGENERATE_CHECKBOX_TEXT,
+  resplit,
   WithRegenerateCheckbox,
 } from './create-pr';
 import {AffectedRepo} from './configs-store';
@@ -379,12 +381,41 @@ async function copyCodeAndAppendPullRequest(
     return whatHappened;
   }
   if (cloneBranch) {
+    const pull = pulls.data[0];
     // Push the new commit to the existing pull request.
     const token = await octokitFactory.getGitHubShortLivedAccessToken();
     const pushUrl = destRepo.repo.getCloneUrl(token);
     const cmd = newCmd(logger);
     cmd(`git remote set-url origin ${pushUrl}`, {cwd: whatHappened.dir});
     cmd(`git push origin ${destBranch}`, {cwd: whatHappened.dir});
+    // Prepend the new commit message to the body.
+    try {
+      const commitBody: string = cmd('git log -1 --format=%B', {
+        cwd: whatHappened.dir,
+      })
+        .toString('utf8')
+        .trim();
+      const {title, body} = resplit(
+        `${commitBody}\n\n` +
+          `${pull.title}\n` +
+          pull.body
+            ?.replace(REGENERATE_CHECKBOX_TEXT, '')
+            .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
+            .trim() ?? '',
+        WithRegenerateCheckbox.Yes
+      );
+      await octokit.pulls.update({
+        owner: destRepo.repo.owner,
+        repo: destRepo.repo.repo,
+        pull_number: pull.number,
+        title,
+        body,
+      });
+    } catch (e) {
+      // Catch the error because we still want to return the url of the
+      // pull request that we did indeed push new commits to.
+      console.error(e);
+    }
     return {kind: 'AppendedPullRequest', link: pulls.data[0].html_url};
   } else {
     return whatHappened;
@@ -662,11 +693,13 @@ export async function regeneratePullRequest(
   cmd(`git push -f origin ${destBranch}`, {cwd: destDir});
 
   // Update the PR body with the full commit history.
+  const {title, body} = resplit(commitMsg, WithRegenerateCheckbox.Yes);
   await octokit.pulls.update({
     owner: destRepo.repo.owner,
     repo: destRepo.repo.repo,
     pull_number: pull.number,
-    body: EMPTY_REGENERATE_CHECKBOX_TEXT + '\n\n' + commitMsg,
+    title,
+    body,
   });
 }
 

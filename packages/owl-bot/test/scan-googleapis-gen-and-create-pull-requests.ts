@@ -289,7 +289,7 @@ Copy-Tag: ${copyTag}`
     pulls.create({
       owner: 'googleapis',
       repo: 'nodejs-spell-check',
-      title: 'b',
+      title: 'q',
       body: pullBody,
       head: 'owl-bot-copy',
     });
@@ -307,17 +307,24 @@ Copy-Tag: ${copyTag}`
       true
     );
 
-    // Confirm it didn't create a new pull request and left its body, etc.
-    // the same.
-    assert.strictEqual(pulls.pulls.length, 1);
-    const pull = pulls.pulls[0];
-    assert.strictEqual(pull.owner, 'googleapis');
-    assert.strictEqual(pull.repo, 'nodejs-spell-check');
-    assert.strictEqual(pull.title, 'b');
-    assert.strictEqual(pull.body, pullBody);
+    // Confirm it updated the body.
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
+    assert.strictEqual(pulls.updates.length, 1);
+    assert.deepStrictEqual(pulls.updates, [
+      {
+        owner: 'googleapis',
+        repo: 'nodejs-spell-check',
+        pull_number: 1,
+        body:
+          '- [ ] Regenerate this pull request now.\n\n' +
+          `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}\n` +
+          `Copy-Tag: ${copyTag}\n\nq\nThis is the greatest pull request ever.`,
+        title: 'b',
+      },
+    ]);
 
     // Confirm the pull request branch contains the new file.
-    cmd(`git checkout ${pull.head}`, {cwd: destDir});
+    cmd(`git checkout ${pulls.pulls[0].head}`, {cwd: destDir});
     const bpath = path.join(destDir, 'src', 'b.txt');
     assert.strictEqual(fs.readFileSync(bpath).toString('utf8'), '2');
 
@@ -326,7 +333,6 @@ Copy-Tag: ${copyTag}`
     assert.ok(!cc.stat(bpath));
 
     // Confirm the PR was recorded in firestore.
-    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
     assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
 
     // Because the PR is recorded in firestore, a second call should skip
@@ -494,12 +500,16 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
     assert.strictEqual(gitLog, `${commitMessage2}\n\n${commitMessage1}\n\n`);
 
     // Confirm the pull request body was updated.
+    // The first line of commitMessage2 becomes PR title.
+    const newline = commitMessage2.indexOf('\n');
+    const body2 = commitMessage2.slice(newline).trim();
     assert.deepStrictEqual(pulls.updates, [
       {
-        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${commitMessage2}\n\n${commitMessage1}\n\n`,
+        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${body2}\n\n${commitMessage1}\n\n`,
         owner: 'googleapis',
         pull_number: 1,
         repo: 'nodejs-spell-check',
+        title: 'pull-commit-2',
       },
     ]);
   });
