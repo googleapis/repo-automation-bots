@@ -32,7 +32,11 @@ import {
 } from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
-import {Configuration, ConfigurationV2} from './interfaces';
+import {
+  AutoApproveNotConfigured,
+  Configuration,
+  ConfigurationV2,
+} from './interfaces';
 
 const APPROVER = 'yoshi-approver';
 
@@ -75,16 +79,29 @@ async function evaluateAndSubmitCheckForConfig(
   codeOwnersFile: string | undefined,
   octokit: Octokit,
   headSha: string
-): Promise<Boolean> {
+): Promise<Boolean | undefined> {
   // Check if the YAML is formatted correctly if it's in a PR
   // This will throw an error if auto-approve does not exist, causing the function to stop
   // executing, and prevent an auto-approve check from appearin
-  const isAutoApproveCorrect = await checkAutoApproveConfig(
-    octokit,
-    owner,
-    repo,
-    config
-  );
+
+  let isAutoApproveCorrect;
+  try {
+    isAutoApproveCorrect = await checkAutoApproveConfig(
+      octokit,
+      owner,
+      repo,
+      config
+    );
+  } catch (err) {
+    if ((err as AutoApproveNotConfigured).code === 'NOT_CONFIGURED') {
+      // This means auto-approve is not configured on the repo. Do not
+      // submit a status check, just return undefined so we do not
+      // log a submitted status check
+      return undefined;
+    } else {
+      throw err;
+    }
+  }
 
   // Check if codeowners includes @github-automation for auto-approve.yml file
   const isCodeOwnersCorrect = await checkCodeOwners(
@@ -203,7 +220,7 @@ export function handler(app: Probot) {
         // code block, it means that the PR has modified the config file,
         // and we do not want to do anything other than submit a check for
         // that config.
-        await evaluateAndSubmitCheckForConfig(
+        const wasCheckSubmitted = await evaluateAndSubmitCheckForConfig(
           owner,
           repo,
           prConfig,
@@ -212,10 +229,12 @@ export function handler(app: Probot) {
           context.payload.pull_request.head.sha
         );
 
-        logger.metric('auto_approve.status_check', {
-          repo: `${owner}/${repo}`,
-          pr: prNumber,
-        });
+        if (wasCheckSubmitted !== undefined) {
+          logger.metric('auto_approve.status_check', {
+            repo: `${owner}/${repo}`,
+            pr: prNumber,
+          });
+        }
       } else {
         let config: Configuration | ConfigurationV2 | null;
         // Get auto-approve.yml file if it exists

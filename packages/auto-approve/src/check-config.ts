@@ -17,7 +17,12 @@
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
 import {Octokit} from '@octokit/rest';
-import {Configuration, GHFile, ConfigurationV2} from './interfaces';
+import {
+  Configuration,
+  GHFile,
+  ConfigurationV2,
+  AutoApproveNotConfigured,
+} from './interfaces';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 
@@ -132,12 +137,12 @@ export async function checkAutoApproveConfig(
       } else {
         // This branch means auto-approve is not on this repo, so we're
         // throwing an error (essentially, skipping the check)
-        throw Error('Auto-Approve config does not exist on repo');
+        throw AutoApproveNotConfigured;
       }
     } catch (err) {
       // This branch means auto-approve is not on this repo, so we're
       // throwing an error (essentially, skipping the check)
-      throw Error('Auto-Approve config does not exist on repo');
+      throw AutoApproveNotConfigured;
     }
   } else {
     // This means auto-approve is on the PR, meaning we still need to confirm validity
