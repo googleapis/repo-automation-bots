@@ -34,6 +34,7 @@ import {
 } from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
 
+const API_NA_LABEL = 'api: N/A';
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 
 const storage = new Storage();
@@ -91,6 +92,12 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
     const apis = await handler.getDriftApis();
+    if (labelsOnIssue && labelsOnIssue?.find(x => x.name === API_NA_LABEL)) {
+      logger.info(
+        `${owner}/${repo}/${issueNumber} is marked as not applicable, skipping`
+      );
+      return;
+    }
     autoDetectedLabel = helper.autoDetectLabel(apis, issueTitle);
   }
   const githubLabel = driftRepo?.github_label || autoDetectedLabel;
