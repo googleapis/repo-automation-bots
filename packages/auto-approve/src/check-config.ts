@@ -17,7 +17,12 @@
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
 import {Octokit} from '@octokit/rest';
-import {Configuration, GHFile, ConfigurationV2, AutoApproveNotConfigured} from './interfaces';
+import {
+  Configuration,
+  GHFile,
+  ConfigurationV2,
+  AutoApproveNotConfigured,
+} from './interfaces';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 
