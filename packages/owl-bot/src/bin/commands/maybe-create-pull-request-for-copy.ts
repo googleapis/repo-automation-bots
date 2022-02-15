@@ -33,7 +33,7 @@ export const maybeCreatePullRequestForCopyCommand: yargs.CommandModule<
   {},
   Args
 > = {
-  command: 'maybe-create-pull-request-for-lock-copy',
+  command: 'maybe-create-pull-request-for-copy',
   describe: `Inspects the current working directory.  Expects all changes to
      have been added with git -A.  If the current status of the staged 
      directory differs with the last ancestor in common with the main branch,
