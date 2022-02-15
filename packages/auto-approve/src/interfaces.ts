@@ -118,6 +118,13 @@ export interface File {
 }
 
 /**
+ * Class
+ */
+export class AutoApproveNotConfigured extends Error {
+  code = 'NOT_CONFIGURED';
+}
+
+/**
  * Interface for a rule in a configuration that conforms to the valid-pr-schema.json rules
  */
 export interface ValidPr {

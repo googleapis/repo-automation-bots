@@ -52,6 +52,10 @@ export async function getChangedFiles(
       logger.error(
         `Not found error, ${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
       );
+    } else if (err.status === 503) {
+      logger.error(
+        `${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}, continuing to check`
+      );
     }
     throw new Error(
       `${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
