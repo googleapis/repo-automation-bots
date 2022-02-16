@@ -409,7 +409,7 @@ describe('owlBot', () => {
       .patch('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200)
       // Delete the branch
-      .delete('/repos/googleapis/owl-bot-testing/git/refs/abc123')
+      .delete('/repos/googleapis/owl-bot-testing/git/refs/heads%2Fabc123')
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
