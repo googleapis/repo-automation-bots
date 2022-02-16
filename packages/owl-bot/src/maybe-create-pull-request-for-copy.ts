@@ -70,7 +70,7 @@ export async function deleteCopyBranch(
   (await octokitFactory.getShortLivedOctokit()).git.deleteRef({
     owner: githubRepo.owner,
     repo: githubRepo.repo,
-    ref: branch,
+    ref: `heads/${branch}`,
   });
 }
 
