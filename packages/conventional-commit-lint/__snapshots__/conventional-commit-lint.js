@@ -1,3 +1,9 @@
+exports['ConventionalCommitLint PR With Multiple Commits has a valid title, invalid commit, automerge enabled 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
+
 exports['ConventionalCommitLint sets a "failure" context on PR, if commits fail linting 1'] = {
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
   "conclusion": "failure",
@@ -10,6 +16,24 @@ exports['ConventionalCommitLint sets a "failure" context on PR, if commits fail 
 }
 
 exports['ConventionalCommitLint sets a "success" context on PR, if commit lint succeeds 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
+
+exports['ConventionalCommitLint sets a "success" context on PR, if the body is less than 256 in length 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
+
+exports['ConventionalCommitLint sets a "success" context on PR, if the footer is less than 256 in length 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
+
+exports['ConventionalCommitLint sets a "success" context on PR, if subject contains a full stop 1'] = {
   "name": "conventionalcommits.org",
   "conclusion": "success",
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
@@ -33,24 +57,6 @@ exports['ConventionalCommitLint PR With Multiple Commits has an invalid pull req
 }
 
 exports['ConventionalCommitLint PR With Multiple Commits has a valid title, invalid commit, automerge label 1'] = {
-  "name": "conventionalcommits.org",
-  "conclusion": "success",
-  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
-}
-
-exports['ConventionalCommitLint sets a "success" context on PR, if the body is less than 256 in length 1'] = {
-  "name": "conventionalcommits.org",
-  "conclusion": "success",
-  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
-}
-
-exports['ConventionalCommitLint sets a "success" context on PR, if the footer is less than 256 in length 1'] = {
-  "name": "conventionalcommits.org",
-  "conclusion": "success",
-  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
-}
-
-exports['ConventionalCommitLint sets a "success" context on PR, if subject contains a full stop 1'] = {
   "name": "conventionalcommits.org",
   "conclusion": "success",
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"

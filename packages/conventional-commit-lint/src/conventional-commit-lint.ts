@@ -74,11 +74,20 @@ export = (app: Probot) => {
         return label.name;
       })
       .includes(AUTOMERGE_LABEL);
+
+    const autoMergeEnabledStatus = (
+      await context.octokit.pulls.get(commitParams)
+    ).data.auto_merge;
+
+    const hasAutoMergeEnabled =
+      autoMergeEnabledStatus &&
+      autoMergeEnabledStatus?.merge_method === 'squash';
+
     // if there is only one commit, and we're not not using automerge
     // to land the pull request, lint the commit rather than the title.
     // This is done because GitHub uses the commit title, rather than the
     // issue title, if there is only one commit:
-    if (commits.length === 1 && !hasAutomergeLabel) {
+    if (commits.length === 1 && !hasAutomergeLabel && !hasAutoMergeEnabled) {
       message = commits[0].commit.message;
     }
 
