@@ -18,7 +18,7 @@
     },
     "release_level": {
       "type": "string",
-      "enum": ["preview", "stable"]
+      "enum": ["unreleased", "preview", "stable"]
     }
   },
   "required": ["library_type", "release_level", "client_documentation"]
