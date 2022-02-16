@@ -226,4 +226,21 @@ describe('validate', () => {
     assert.strictEqual(result.status, 'success');
     sandbox.assert.calledOnce(validApiShortNames);
   });
+
+  it('succeeds for release_level of unreleased', async () => {
+    const validApiShortNames = mockValidApiShortNames();
+    const file = JSON.stringify({
+      release_level: 'unreleased',
+      library_type: 'GAPIC_AUTO',
+      client_documentation: 'https://example.com',
+      api_shortname: 'bigquery',
+    });
+    const validate = new Validate(octokit);
+    const result = await validate.validate(
+      'apis/foo/.repo-metadata.json',
+      file
+    );
+    assert.strictEqual(result.status, 'success');
+    sandbox.assert.calledOnce(validApiShortNames);
+  });
 });

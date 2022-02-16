@@ -49,7 +49,11 @@ describe('maybe-create-pull-request-for-copy', () => {
 
       await deleteCopyBranch(factory, abcRepo);
       assert.deepStrictEqual(deadRefs, [
-        {owner: 'googleapis', ref: 'deadBranch', repo: 'nodejs-data-fusion'},
+        {
+          owner: 'googleapis',
+          ref: 'heads/deadBranch',
+          repo: 'nodejs-data-fusion',
+        },
       ]);
     });
   });
