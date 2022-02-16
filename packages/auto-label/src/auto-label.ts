@@ -34,6 +34,10 @@ import {
 } from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
 
+// This is a label that, when applied to an issue, keeps auto-label
+// from attempting to autodetect a label. This is helpful if there's an
+// issue that would get labeled incorrectly by the auto-detector, and has
+// no corresponding product from its repo.
 const API_NA_LABEL = 'api: N/A';
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 
