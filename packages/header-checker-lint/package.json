@@ -30,7 +30,7 @@
   "dependencies": {
     "gcf-utils": "^13.1.0",
     "@google-automations/bot-config-utils": "^4.0.0",
-    "minimatch": "^4.0.0"
+    "minimatch": "^5.0.0"
   },
   "devDependencies": {
     "@types/minimatch": "^3.0.5",

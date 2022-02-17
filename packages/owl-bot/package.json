@@ -77,7 +77,7 @@
     "glob": "^7.1.7",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
-    "minimatch": "^4.0.0",
+    "minimatch": "^5.0.0",
     "node-fetch": "^2.6.1",
     "probot": "^12.1.1",
     "tmp": "^0.2.1",
