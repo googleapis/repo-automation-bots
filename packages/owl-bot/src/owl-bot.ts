@@ -298,7 +298,12 @@ export async function handlePullRequestLabeled(
   // do not run the post processor:
   if (
     isBotAccount(payload.sender.login) &&
-    (await core.lastCommitFromOwlBot(owner, repo, prNumber, octokit))
+    (await core.lastCommitFromOwlBotPostProcessor(
+      owner,
+      repo,
+      prNumber,
+      octokit
+    ))
   ) {
     logger.info(
       `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`

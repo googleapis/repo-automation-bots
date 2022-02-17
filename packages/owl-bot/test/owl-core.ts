@@ -19,6 +19,7 @@ import * as path from 'path';
 import rimraf from 'rimraf';
 import {core} from '../src/core';
 import {OWL_BOT_IGNORE} from '../src/labels';
+import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from '../src/constants';
 import nock from 'nock';
 import * as sinon from 'sinon';
 import {mkdirSync, writeFileSync} from 'fs';
@@ -410,27 +411,23 @@ describe('core', () => {
   });
   describe('hasOwlBotLoop', () => {
     /** A helper function for simulating a date-ordered list of commits */
-    function generateCommitList(commitOrderByAuthor: string[]) {
+    function generateCommitList(commitOrderByMessage: string[]) {
       const commits: {
-        author: {
-          login: string;
-        };
         commit: {
           author: {
             date: string;
           };
+          message: string;
         };
       }[] = [];
 
-      for (let i = 0; i < commitOrderByAuthor.length; i++) {
+      for (let i = 0; i < commitOrderByMessage.length; i++) {
         commits.push({
-          author: {
-            login: commitOrderByAuthor[i],
-          },
           commit: {
             author: {
               date: new Date(i).toISOString(),
             },
+            message: commitOrderByMessage[i],
           },
         });
       }
@@ -439,15 +436,15 @@ describe('core', () => {
     }
 
     it('returns false if post processor not looping', async () => {
-      // Two PRs from gcf-owl-bot[bot] are expected: a PR to
-      // submit files, followed by a commit from the post processor:
+      // Doesn't break post-processor loop if other commits
+      // occur in between post-processor commits:
       const commits = generateCommitList([
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'bcoe',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        'some other commit from user',
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
       ]);
 
       const githubMock = nock('https://api.github.com')
@@ -460,14 +457,14 @@ describe('core', () => {
 
     it('returns true if post processor looping', async () => {
       const commits = generateCommitList([
-        'bcoe',
-        'gcf-owl-bot[bot]',
-        'bcoe',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]', // this commit should trigger the breaker
+        'some other commit',
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        'another userland commit',
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE, // this commit should trigger the breaker
       ]);
 
       const githubMock = nock('https://api.github.com')
@@ -480,15 +477,15 @@ describe('core', () => {
 
     it('returns false if there was a loop in the past, but not within the last few commits', async () => {
       const commits = generateCommitList([
-        'bcoe',
-        'gcf-owl-bot[bot]',
-        'bcoe',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'gcf-owl-bot[bot]',
-        'bcoe', // this commit should break the loop
+        'commit 1',
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        'commit 2',
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+        'commit 3, this is fine 🔥', // this commit should break the loop
       ]);
 
       const githubMock = nock('https://api.github.com')
@@ -500,7 +497,9 @@ describe('core', () => {
     });
 
     it('returns false if there were less than the number of commits from the circuit breaker', async () => {
-      const commits = generateCommitList(['gcf-owl-bot[bot]']);
+      const commits = generateCommitList([
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE,
+      ]);
 
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
