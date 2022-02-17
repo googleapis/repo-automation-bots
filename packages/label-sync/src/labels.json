@@ -6,6 +6,11 @@
       "color": "00ff00"
     },
     {
+      "name": "api: N/A",
+      "description": "Tells auto-label to not auto-detect the API for this issue",
+      "color": "#6950f6"
+    },
+    {
       "name": "eol",
       "description": "End of life. Deprecating support for a previous version.",
       "color": "c9abb2"
