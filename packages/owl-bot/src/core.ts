@@ -31,7 +31,7 @@ import {
 } from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
-import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from './constants';
+import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER} from './constants';
 import {
   findCopyTag,
   findSourceHash,
@@ -537,7 +537,11 @@ async function hasOwlBotLoop(
   if (lastFewCommits.length < circuitBreaker) return false;
 
   for (const commit of lastFewCommits) {
-    if (!commit.commit.message.includes(OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE))
+    if (
+      !commit.commit.message.includes(
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER
+      )
+    )
       return false;
   }
 
@@ -575,7 +579,7 @@ async function lastCommitFromOwlBotPostProcessor(
     }
   }
   const message = commitMessages[commitMessages.length - 1];
-  return message.includes(OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE);
+  return message.includes(OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER);
 }
 
 /**

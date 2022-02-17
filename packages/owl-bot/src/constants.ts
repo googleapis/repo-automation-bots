@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE =
-  '🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md';
+export const OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER =
+  'Updates from OwlBot post-processor';
+export const OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE = `🦉 ${OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER}\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md`;
