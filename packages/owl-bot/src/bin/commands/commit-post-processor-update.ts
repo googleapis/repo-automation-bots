@@ -25,6 +25,7 @@ import yargs = require('yargs');
 import {newCmd} from '../../cmd';
 import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
 import {OWL_BOT_IGNORE} from '../../labels';
+import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from '../../constants';
 import {octokitFactoryFromToken} from '../../octokit-util';
 import * as proc from 'child_process';
 import path = require('path');
@@ -142,8 +143,7 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
 export function commitOwlbotUpdate(repoDir: string) {
   // Use spawn() instead of cmd() to avoid the shell potentially
   // misinterpreting commit message.
-  const commitMessage =
-    '🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md';
+  const commitMessage = OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE;
   console.log(`git commit -m "${commitMessage}"`);
   proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
 }
