@@ -211,7 +211,7 @@ describe('maybe-create-pull-request-for-copy', () => {
       assert.match(
         gitLog,
         new RegExp(
-          '.*🦉 Updates from OwlBot\n' +
+          '.*🦉 Updates from OwlBot post-processor\n' +
             '\n' +
             'See https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md\n' +
             '\n' +
@@ -327,7 +327,7 @@ describe('maybe-create-pull-request-for-copy', () => {
       assert.match(
         gitLog,
         new RegExp(
-          '.*🦉 Updates from OwlBot\n' +
+          '.*🦉 Updates from OwlBot post-processor\n' +
             '\n' +
             'See https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md\n' +
             '\n' +

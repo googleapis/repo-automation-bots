@@ -31,6 +31,7 @@ import {
 } from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
+import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER} from './constants';
 import {
   findCopyTag,
   findSourceHash,
@@ -487,7 +488,6 @@ export async function* commitsIterator(
   }
 }
 
-const OWLBOT_USER = 'gcf-owl-bot[bot]';
 /*
  * Detect whether there's an update loop created by OwlBot post-processor.
  *
@@ -537,7 +537,12 @@ async function hasOwlBotLoop(
   if (lastFewCommits.length < circuitBreaker) return false;
 
   for (const commit of lastFewCommits) {
-    if (commit?.author?.login !== OWLBOT_USER) return false;
+    if (
+      !commit.commit.message.includes(
+        OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER
+      )
+    )
+      return false;
   }
 
   // all of the recent commits were from owl-bot
@@ -545,7 +550,7 @@ async function hasOwlBotLoop(
 }
 
 /*
- * Return whether or not the last commit was from OwlBot.
+ * Return whether or not the last commit was from OwlBot post processor.
  *
  * @param owner owner of repo.
  * @param repo short repo name.
@@ -553,24 +558,28 @@ async function hasOwlBotLoop(
  * @param octokit authenticated instance of octokit.
  * @returns Promise was the last commit from OwlBot?
  */
-async function lastCommitFromOwlBot(
+async function lastCommitFromOwlBotPostProcessor(
   owner: string,
   repo: string,
   prNumber: number,
   octokit: Octokit
 ): Promise<boolean> {
-  // TODO(bcoe): we should move to an async iterator for listCommits in the
-  // future, so that we can handle more than 100:
-  const commits = (
-    await octokit.pulls.listCommits({
+  const commitMessages: Array<string> = [];
+  for await (const response of octokit.paginate.iterator(
+    octokit.rest.pulls.listCommits,
+    {
       pull_number: prNumber,
       owner,
       repo,
       per_page: 100,
-    })
-  ).data;
-  const commit = commits[commits.length - 1];
-  return commit?.author?.login === OWLBOT_USER;
+    }
+  )) {
+    for (const {commit} of response.data) {
+      commitMessages.push(commit.message);
+    }
+  }
+  const message = commitMessages[commitMessages.length - 1];
+  return message.includes(OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER);
 }
 
 /**
@@ -782,7 +791,7 @@ export const core = {
   fetchOwlBotLock,
   parseOwlBotLock,
   hasOwlBotLoop,
-  lastCommitFromOwlBot,
+  lastCommitFromOwlBotPostProcessor,
   OWL_BOT_LOCK_PATH,
   triggerPostProcessBuild,
   triggerRegeneratePullRequest,

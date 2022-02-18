@@ -4,11 +4,11 @@ The auto-label bot automatically label issues and pull requests.
 
 There are 3 types of labels available:
 1. Product labels (enabled by default): Product-specific repos are always labeled with the API label
-for that product. The product can also be auto-detected from the issue/PR title.
+for that product. The product can also be auto-detected from the issue/PR title. If you do not want an issue to have its api auto-detected by auto-label, label the issue with an "api: N/A" label.
 
 2. Language labels (enabled by configuration - [see below](#language-label)): PRs are labeled with a relevant language based on code changes. Language categorization and labeling by directory paths can be customized.
 
-2. Path labels (enabled by configuration - [see below](#path-label)): PRs are labeled according to directory structure. Customizable.
+3. Path labels (enabled by configuration - [see below](#path-label)): PRs are labeled according to directory structure. Customizable.
 
 Auto-label is different from label-sync, auto-label adds labels to your issues, whereas label-sync cleans up labels in your repository.
 

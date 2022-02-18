@@ -1502,7 +1502,7 @@ describe('owlBot', () => {
       .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const lastCommitFromOwlBotStub = sandbox
-      .stub(core, 'lastCommitFromOwlBot')
+      .stub(core, 'lastCommitFromOwlBotPostProcessor')
       .resolves(true);
     await probot.receive({
       name: 'pull_request',
@@ -1563,7 +1563,7 @@ describe('owlBot', () => {
       .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const lastCommitFromOwlBot = sandbox
-      .stub(core, 'lastCommitFromOwlBot')
+      .stub(core, 'lastCommitFromOwlBotPostProcessor')
       .resolves(false);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
