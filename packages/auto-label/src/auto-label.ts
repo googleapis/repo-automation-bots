@@ -34,6 +34,11 @@ import {
 } from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
 
+// This is a label that, when applied to an issue, keeps auto-label
+// from attempting to autodetect a label. This is helpful if there's an
+// issue that would get labeled incorrectly by the auto-detector, and has
+// no corresponding product from its repo.
+const API_NA_LABEL = 'api: N/A';
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 
 const storage = new Storage();
@@ -91,6 +96,12 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
     const apis = await handler.getDriftApis();
+    if (labelsOnIssue && labelsOnIssue?.find(x => x.name === API_NA_LABEL)) {
+      logger.info(
+        `${owner}/${repo}/${issueNumber} is marked as not applicable, skipping`
+      );
+      return;
+    }
     autoDetectedLabel = helper.autoDetectLabel(apis, issueTitle);
   }
   const githubLabel = driftRepo?.github_label || autoDetectedLabel;
