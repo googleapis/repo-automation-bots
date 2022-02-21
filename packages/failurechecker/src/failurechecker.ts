@@ -31,7 +31,9 @@ const SUCCESSFUL_PUBLISH_LABEL = 'autorelease: published';
 // hours and we're within normal working hours.
 const WARNING_THRESHOLD = 60 * 60 * 3 * 1000;
 
-const MAX_THRESHOLD = 60 * 60 * 24 * 3 * 1000;
+// Keep the issue open for 28 days
+const MAX_THRESHOLD = 60 * 60 * 24 * 28 * 1000;
+
 // We currently only open issues during the hours 9 to 7.
 const END_HOUR_UTC = 3;
 const START_HOUR_UTC = 17;
