@@ -17,7 +17,6 @@ import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import {
   copyCodeAndAppendOrCreatePullRequest,
-  copyCodeAndCreatePullRequest,
   copyTagFrom,
   toLocalRepo,
 } from './copy-code';
@@ -72,7 +71,6 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   configsStore: ConfigsStore,
   cloneDepth = 100,
   copyStateStore?: CopyStateStore,
-  multiCommit = false,
   logger = console
 ): Promise<number> {
   // Clone the source repo.
@@ -159,10 +157,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
 
   // Copy files beginning with the oldest commit hash.
   for (const todo of todoStack.reverse()) {
-    const copyFunction = multiCommit
-      ? copyCodeAndAppendOrCreatePullRequest
-      : copyCodeAndCreatePullRequest;
-    const htmlUrl = await copyFunction(
+    const htmlUrl = await copyCodeAndAppendOrCreatePullRequest(
       sourceDir,
       todo.commitHash,
       todo.repo,

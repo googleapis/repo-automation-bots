@@ -182,84 +182,67 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     assert.strictEqual(prCount, 0);
   });
 
-  // Execute this test with different parameters for calling either
-  // copyCodeAndCreatePullRequest() or copyCodeAndAppendPullRequest().
-  function itCopiesFilesAndCreatesAPullRequest(multiCommit: boolean) {
-    const test = async () => {
-      const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+  it('copies files and creates a pull request (multicommit)', async () => {
+    const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 
-      const pulls = new FakePulls();
-      const issues = new FakeIssues();
-      const octokit = newFakeOctokit(pulls, issues);
-      const copyStateStore = new FakeCopyStateStore();
-      await scanGoogleapisGenAndCreatePullRequests(
-        abcRepo,
-        factory(octokit),
-        configsStore,
-        undefined,
-        copyStateStore,
-        multiCommit
-      );
+    const pulls = new FakePulls();
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore
+    );
 
-      // Confirm it created one pull request.
-      assert.strictEqual(pulls.pulls.length, 1);
-      const pull = pulls.pulls[0];
-      assert.strictEqual(pull.owner, 'googleapis');
-      assert.strictEqual(pull.repo, 'nodejs-spell-check');
-      assert.strictEqual(pull.title, 'b');
-      assert.strictEqual(pull.base, 'main');
-      const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
-      assert.strictEqual(
-        pull.body,
-        `- [ ] Regenerate this pull request now.
+    // Confirm it created one pull request.
+    assert.strictEqual(pulls.pulls.length, 1);
+    const pull = pulls.pulls[0];
+    assert.strictEqual(pull.owner, 'googleapis');
+    assert.strictEqual(pull.repo, 'nodejs-spell-check');
+    assert.strictEqual(pull.title, 'b');
+    assert.strictEqual(pull.base, 'main');
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
+    assert.strictEqual(
+      pull.body,
+      `- [ ] Regenerate this pull request now.
 
 Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}
 Copy-Tag: ${copyTag}`
-      );
+    );
 
-      // Confirm the pull request body contains a properly formatted Copy-Tag footer.
-      assert.strictEqual(true, cc.bodyIncludesCopyTagFooter(pull.body));
+    // Confirm the pull request body contains a properly formatted Copy-Tag footer.
+    assert.strictEqual(true, cc.bodyIncludesCopyTagFooter(pull.body));
 
-      // Confirm it set the label.
-      assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
+    // Confirm it set the label.
+    assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
 
-      // Confirm the pull request branch contains the new file.
-      const destDir = destRepo.getCloneUrl();
-      cmd(`git checkout ${pull.head}`, {cwd: destDir});
-      const bpath = path.join(destDir, 'src', 'b.txt');
-      assert.strictEqual(fs.readFileSync(bpath).toString('utf8'), '2');
+    // Confirm the pull request branch contains the new file.
+    const destDir = destRepo.getCloneUrl();
+    cmd(`git checkout ${pull.head}`, {cwd: destDir});
+    const bpath = path.join(destDir, 'src', 'b.txt');
+    assert.strictEqual(fs.readFileSync(bpath).toString('utf8'), '2');
 
-      // But of course the main branch doesn't have it until the PR is merged.
-      cmd('git checkout main', {cwd: destDir});
-      assert.ok(!cc.stat(bpath));
+    // But of course the main branch doesn't have it until the PR is merged.
+    cmd('git checkout main', {cwd: destDir});
+    assert.ok(!cc.stat(bpath));
 
-      // Confirm the PR was recorded in firestore.
-      assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
+    // Confirm the PR was recorded in firestore.
+    assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
 
-      // Because the PR is recorded in firestore, a second call should skip
-      // creating a new one.
-      const prCount = await scanGoogleapisGenAndCreatePullRequests(
-        abcRepo,
-        factory(octokit),
-        configsStore,
-        undefined,
-        copyStateStore,
-        multiCommit
-      );
-      assert.strictEqual(prCount, 0);
-    };
-    return test;
-  }
-
-  it(
-    'copies files and creates a pull request',
-    itCopiesFilesAndCreatesAPullRequest(false)
-  );
-
-  it(
-    'copies files and creates a pull request (multicommit)',
-    itCopiesFilesAndCreatesAPullRequest(true)
-  );
+    // Because the PR is recorded in firestore, a second call should skip
+    // creating a new one.
+    const prCount = await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore
+    );
+    assert.strictEqual(prCount, 0);
+  });
 
   it('copies files and appends a pull request', async () => {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
@@ -287,8 +270,7 @@ Copy-Tag: ${copyTag}`
       factory(octokit),
       configsStore,
       undefined,
-      copyStateStore,
-      true
+      copyStateStore
     );
 
     // Confirm it updated the body.
@@ -326,13 +308,12 @@ Copy-Tag: ${copyTag}`
       factory(octokit),
       configsStore,
       undefined,
-      copyStateStore,
-      true
+      copyStateStore
     );
     assert.strictEqual(prCount, 0);
   });
 
-  it('creates 3 pull requests for 3 matching commits', async () => {
+  it('creates 1 pull requests for 3 matching commits', async () => {
     const myYaml = JSON.parse(JSON.stringify(bYaml)) as OwlBotYaml;
     myYaml['deep-copy-regex']?.push({
       source: '/.*',
@@ -351,7 +332,7 @@ Copy-Tag: ${copyTag}`
     );
 
     // Confirm it created one pull request.
-    assert.strictEqual(pulls.pulls.length, 3);
+    assert.strictEqual(pulls.pulls.length, 1);
   });
 
   it('ignores pull requests older than begin', async () => {
