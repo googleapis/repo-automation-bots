@@ -35,6 +35,7 @@ import {
   REGENERATE_CHECKBOX_TEXT,
   resplit,
   WithRegenerateCheckbox,
+  insertApiName,
 } from './create-pr';
 import {AffectedRepo} from './configs-store';
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
@@ -689,7 +690,7 @@ export async function regeneratePullRequest(
     owner: destRepo.repo.owner,
     repo: destRepo.repo.repo,
     pull_number: pull.number,
-    title,
+    title: insertApiName(title, loaded.yaml['api-name'] ?? ''),
     body,
   });
 }

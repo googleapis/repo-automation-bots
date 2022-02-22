@@ -167,6 +167,26 @@ describe('auto-label', () => {
       });
     });
 
+    it('does nothing if api: N/A label is on an issue', async () => {
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
+
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_spanner'
+      ));
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200, [{name: 'api: N/A'}]);
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
     it('auto detects and labels a Spanner issue', async () => {
       const config = loadConfig('valid-config.yml');
       getConfigWithDefaultStub.resolves(config);
