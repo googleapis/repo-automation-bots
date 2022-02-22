@@ -164,35 +164,22 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
   });
 
   it('skips pull requests that were already created', async () => {
-    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+    const [dest, configsStore] = makeDestRepoAndConfigsStore(bYaml);
     const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
     const pulls = new FakePulls();
     pulls.create({body: `Copy-Tag: ${copyTag}`});
     const issues = new FakeIssues();
     const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await copyStateStore.recordBuildForCopy(dest, copyTag, 'x');
     const prCount = await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
       configsStore,
-      1000
+      undefined,
+      copyStateStore
     );
     assert.strictEqual(prCount, 0);
-  });
-
-  it("doesn't skip pull requests when search depth is zero", async () => {
-    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml);
-    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
-    const pulls = new FakePulls();
-    pulls.create({body: `Copy-Tag: ${copyTag}`});
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const prCount = await scanGoogleapisGenAndCreatePullRequests(
-      abcRepo,
-      factory(octokit),
-      configsStore,
-      0
-    );
-    assert.strictEqual(prCount, 1);
   });
 
   // Execute this test with different parameters for calling either
@@ -209,7 +196,6 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
         abcRepo,
         factory(octokit),
         configsStore,
-        1000,
         undefined,
         copyStateStore,
         multiCommit
@@ -256,7 +242,6 @@ Copy-Tag: ${copyTag}`
         abcRepo,
         factory(octokit),
         configsStore,
-        1000,
         undefined,
         copyStateStore,
         multiCommit
@@ -301,7 +286,6 @@ Copy-Tag: ${copyTag}`
       abcRepo,
       factory(octokit),
       configsStore,
-      0,
       undefined,
       copyStateStore,
       true
@@ -341,7 +325,6 @@ Copy-Tag: ${copyTag}`
       abcRepo,
       factory(octokit),
       configsStore,
-      0,
       undefined,
       copyStateStore,
       true

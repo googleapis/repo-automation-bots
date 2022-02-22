@@ -18,9 +18,7 @@ import tmp from 'tmp';
 import {
   copyCodeAndAppendOrCreatePullRequest,
   copyCodeAndCreatePullRequest,
-  copyExists,
   copyTagFrom,
-  newRepoHistoryCache,
   toLocalRepo,
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
@@ -72,7 +70,6 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   sourceRepo: string,
   octokitFactory: OctokitFactory,
   configsStore: ConfigsStore,
-  copyExistsSearchDepth: number,
   cloneDepth = 100,
   copyStateStore?: CopyStateStore,
   multiCommit = false,
@@ -101,7 +98,6 @@ export async function scanGoogleapisGenAndCreatePullRequests(
 
   const todoStack: Todo[] = [];
   let octokit: null | OctokitType = null;
-  const repoHistoryCache = newRepoHistoryCache();
 
   // Search the commit history for commits that still need to be copied
   // to destination repos.
@@ -145,18 +141,6 @@ export async function scanGoogleapisGenAndCreatePullRequests(
           `Found build ${copyBuildId} for ${commitHash} ` +
             `for ${repo.repo.owner}:${repo.repo.repo} ${repo.yamlPath}.`
         );
-      } else if (
-        copyExistsSearchDepth > 0 &&
-        (await copyExists(
-          octokit,
-          repo,
-          commitHash,
-          copyExistsSearchDepth,
-          repoHistoryCache,
-          logger
-        ))
-      ) {
-        // copyExists already logged that we found it.
       } else {
         const todo: Todo = {repo, commitHash};
         logger.info(`Pushing todo onto stack: ${todo}`);

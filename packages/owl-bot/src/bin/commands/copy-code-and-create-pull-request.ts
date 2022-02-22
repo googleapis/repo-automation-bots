@@ -85,25 +85,14 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
   },
   async handler(argv) {
     const octokitFactory = await octokitFactoryFrom(argv);
-    const exists = await cc.copyExists(
-      await octokitFactory.getShortLivedOctokit(),
+    await cc.copyCodeAndCreatePullRequest(
+      argv['source-repo'],
+      argv['source-repo-commit-hash'],
       {
         repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
         yamlPath: argv['dest-owlbot-yaml'],
       },
-      argv['source-repo-commit-hash'],
-      argv['search-depth']
+      octokitFactory
     );
-    if (!exists) {
-      await cc.copyCodeAndCreatePullRequest(
-        argv['source-repo'],
-        argv['source-repo-commit-hash'],
-        {
-          repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-          yamlPath: argv['dest-owlbot-yaml'],
-        },
-        octokitFactory
-      );
-    }
   },
 };
