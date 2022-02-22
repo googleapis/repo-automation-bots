@@ -71,7 +71,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   octokitFactory: OctokitFactory,
   configsStore: ConfigsStore,
   cloneDepth = 100,
-  copyStateStore?: CopyStateStore,
+  copyStateStore: CopyStateStore,
   multiCommit = false,
   logger = console
 ): Promise<number> {
@@ -132,7 +132,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
           `Ignoring ${repoFullName} because ${commitHash} is too old.`
         );
       } else if (
-        (copyBuildId = await copyStateStore?.findBuildForCopy(
+        (copyBuildId = await copyStateStore.findBuildForCopy(
           repo.repo,
           copyTagFrom(repo.yamlPath, commitHash)
         ))

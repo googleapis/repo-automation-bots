@@ -157,7 +157,8 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
           getGitHubShortLivedAccessToken: () => Promise.resolve(''),
         } as OctokitFactory,
         new FakeConfigsStore(),
-        1000
+        1000,
+        new FakeCopyStateStore()
       ),
       0
     );
@@ -347,7 +348,8 @@ Copy-Tag: ${copyTag}`
       abcRepo,
       factory(octokit),
       configsStore,
-      1000
+      1000,
+      new FakeCopyStateStore()
     );
 
     // Confirm it created one pull request.
@@ -370,7 +372,8 @@ Copy-Tag: ${copyTag}`
       abcRepo,
       factory(octokit),
       configsStore,
-      1000
+      1000,
+      new FakeCopyStateStore()
     );
 
     // Confirm it created one pull request.
@@ -389,7 +392,8 @@ Copy-Tag: ${copyTag}`
       abcRepo,
       factory(octokit),
       configsStore,
-      1000
+      1000,
+      new FakeCopyStateStore()
     );
 
     // Confirm it created one pull request.
