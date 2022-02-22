@@ -235,8 +235,6 @@ export async function getHeadCommit(
   octokit: OctokitType
 ): Promise<Commit | undefined> {
   let headCommit: Commit | undefined = undefined;
-  // If a PR has more than 100 updates to it, we will currently have issues
-  // in practice this should be rare:
   for await (const {data: commits} of octokit.paginate.iterator(
     octokit.pulls.listCommits,
     {
