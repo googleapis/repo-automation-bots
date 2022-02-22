@@ -24,7 +24,6 @@ interface Args extends OctokitParams {
   'source-repo': string;
   'firestore-project': string;
   'clone-depth': number;
-  'search-depth': number;
   'track-builds-in-firestore': boolean;
   'multi-commit': boolean;
 }
@@ -70,13 +69,6 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
         type: 'number',
         default: 100,
       })
-      .option('search-depth', {
-        describe:
-          'When searching pull request and issue histories to see if a pull' +
-          ' request for the commit was already created, search this deep',
-        type: 'number',
-        default: 0,
-      })
       .option('track-builds-in-firestore', {
         describe:
           "Record copy jobs in firestore, so that we don't try" +
@@ -106,7 +98,6 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       argv['source-repo'],
       octokitFactoryFrom(argv),
       configsStore,
-      argv['search-depth'],
       argv['clone-depth'],
       copyStateStore,
       argv['multi-commit']
