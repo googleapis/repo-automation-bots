@@ -412,32 +412,6 @@ describe('regenerate pull requests', function () {
     cmd('git checkout main', {cwd: abcRepo});
   });
 
-  it('copies files into a pull request', async () => {
-    const destRepo = makeDestRepo(bYaml);
-    const pulls = new FakePulls();
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const factory = newFakeOctokitFactory(octokit, 'test-token');
-    const sourceHash = abcCommits[1];
-
-    await cc.copyCodeIntoPullRequest(
-      abcRepo,
-      sourceHash,
-      {repo: destRepo, yamlPath: '.github/.OwlBot.yaml'},
-      'test-branch',
-      factory
-    );
-    // Confirm new pull request was pushed to test-branch.
-    const destDir = destRepo.getCloneUrl();
-    const gitLog = cmd('git log test-branch', {cwd: destDir}).toString('utf-8');
-    assert.match(
-      gitLog,
-      RegExp(
-        `.*Source-Link: https://github.com/googleapis/googleapis-gen/commit/${sourceHash}.*`
-      )
-    );
-  });
-
   it('regenerates a pull request', async () => {
     const destRepo = makeDestRepo(bYaml);
     const pulls = new FakePulls();

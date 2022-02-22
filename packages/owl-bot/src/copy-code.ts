@@ -696,42 +696,6 @@ export async function regeneratePullRequest(
 }
 
 /**
- * Copies the code from googleapis-gen into an existing pull request.
- * Uses `git push -f` to completely replace the existing contents of the branch.
- *
- * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
- * @param sourceRepoCommit: the commit from which to copy code. Empty means the most recent commit.
- * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
- */
-export async function copyCodeIntoPullRequest(
-  sourceRepo: string,
-  sourceRepoCommitHash: string,
-  destRepo: AffectedRepo,
-  destBranch: string,
-  octokitFactory: OctokitFactory,
-  logger = console
-): Promise<void> {
-  const dest = await copyCodeIntoLocalBranch(
-    sourceRepo,
-    sourceRepoCommitHash,
-    destRepo,
-    destBranch,
-    octokitFactory,
-    undefined,
-    logger
-  );
-  if (dest.kind === 'CreatedGithubIssue') {
-    return;
-  }
-
-  const token = await octokitFactory.getGitHubShortLivedAccessToken();
-  const cmd = newCmd(logger);
-  const pushUrl = destRepo.repo.getCloneUrl(token);
-  cmd(`git remote set-url origin ${pushUrl}`, {cwd: dest.dir});
-  cmd(`git push -f origin ${destBranch}`, {cwd: dest.dir});
-}
-
-/**
  * Loads the OwlBot yaml from the dest directory.  Throws an exception if not found
  * or invalid.
  */

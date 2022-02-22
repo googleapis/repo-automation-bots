@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// To Run: node ./build/src/bin/owl-bot.js copy-code <args>
-
 import yargs = require('yargs');
 import {DEFAULT_OWL_BOT_YAML_PATH} from '../../config-files';
-import {copyCodeIntoPullRequest, regeneratePullRequest} from '../../copy-code';
+import {regeneratePullRequest} from '../../copy-code';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {octokitFactoryFromToken} from '../../octokit-util';
 
@@ -27,7 +25,6 @@ interface Args {
   'dest-repo': string;
   'dest-branch': string;
   'github-token': string;
-  'multi-commit': boolean;
 }
 
 export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
@@ -69,37 +66,17 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
         describe: 'Short-lived github token.',
         type: 'string',
         demand: true,
-      })
-      .option('multi-commit', {
-        describe:
-          'Use an entirely new code path that works with multiple commits in a single pull request.',
-        type: 'boolean',
-        demand: false,
-        default: true,
       });
   },
   async handler(argv) {
-    if (argv['multi-commit']) {
-      await regeneratePullRequest(
-        argv['source-repo'],
-        {
-          repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-          yamlPath: argv['owl-bot-yaml-path'],
-        },
-        argv['dest-branch'],
-        octokitFactoryFromToken(argv['github-token'])
-      );
-    } else {
-      await copyCodeIntoPullRequest(
-        argv['source-repo'],
-        argv['source-repo-commit-hash'],
-        {
-          repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-          yamlPath: argv['owl-bot-yaml-path'],
-        },
-        argv['dest-branch'],
-        octokitFactoryFromToken(argv['github-token'])
-      );
-    }
+    await regeneratePullRequest(
+      argv['source-repo'],
+      {
+        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
+        yamlPath: argv['owl-bot-yaml-path'],
+      },
+      argv['dest-branch'],
+      octokitFactoryFromToken(argv['github-token'])
+    );
   },
 };
