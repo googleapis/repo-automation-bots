@@ -107,7 +107,10 @@ export async function createPullRequestForCopyBranch(
     apiName = yaml['api-name'];
   }
 
-  if (squash) {
+  const changes = cmd('git status --porcelain', {cwd}).toString('utf-8').trim();
+  if (!changes) {
+    // There are no changes to commit.
+  } else if (squash) {
     // Squash the copy-code commit and the post-processor commit into a
     // single commit.
     cmd('git commit --amend --no-edit', {cwd});

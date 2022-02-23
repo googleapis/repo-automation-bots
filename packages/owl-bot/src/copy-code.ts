@@ -20,7 +20,6 @@ import {
   toFrontMatchRegExp,
 } from './config-files';
 import path from 'path';
-import {v4 as uuidv4} from 'uuid';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
 import {OctokitType, OctokitFactory} from './octokit-util';
@@ -478,55 +477,6 @@ export async function copyCodeAndAppendOrCreatePullRequest(
 }
 
 /**
- * Copies the code from googleapis-gen to the dest repo, and creates a
- * pull request.
- * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
- * @param sourceRepoCommit: the commit from which to copy code. Empty means the most recent commit.
- * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
- * @returns a url to a github issue or pull request.
- */
-export async function copyCodeAndCreatePullRequest(
-  sourceRepo: string,
-  sourceRepoCommitHash: string,
-  destRepo: AffectedRepo,
-  octokitFactory: OctokitFactory,
-  logger = console
-): Promise<string> {
-  const destBranch = 'owl-bot-' + uuidv4();
-  const dest = await copyCodeIntoLocalBranch(
-    sourceRepo,
-    sourceRepoCommitHash,
-    destRepo,
-    destBranch,
-    octokitFactory,
-    undefined,
-    logger
-  );
-  if (dest.kind === 'CreatedGithubIssue') {
-    return dest.link;
-  }
-
-  // Check for existing pull request one more time before we push.
-  const token = await octokitFactory.getGitHubShortLivedAccessToken();
-  // Octokit token may have expired; refresh it.
-  const octokit = await octokitFactory.getShortLivedOctokit(token);
-
-  return await createPullRequestFromLastCommit(
-    destRepo.repo.owner,
-    destRepo.repo.repo,
-    dest.dir,
-    destBranch,
-    destRepo.repo.getCloneUrl(token),
-    [OWL_BOT_COPY],
-    octokit,
-    WithRegenerateCheckbox.Yes,
-    dest.yaml['api-name'] ?? '',
-    Force.No,
-    logger
-  );
-}
-
-/**
  * Loads the copy tag.  If for some reason it fails, reports the reason on
  * the pull request and returns undefined.
  */
@@ -693,42 +643,6 @@ export async function regeneratePullRequest(
     title: insertApiName(title, loaded.yaml['api-name'] ?? ''),
     body,
   });
-}
-
-/**
- * Copies the code from googleapis-gen into an existing pull request.
- * Uses `git push -f` to completely replace the existing contents of the branch.
- *
- * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
- * @param sourceRepoCommit: the commit from which to copy code. Empty means the most recent commit.
- * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
- */
-export async function copyCodeIntoPullRequest(
-  sourceRepo: string,
-  sourceRepoCommitHash: string,
-  destRepo: AffectedRepo,
-  destBranch: string,
-  octokitFactory: OctokitFactory,
-  logger = console
-): Promise<void> {
-  const dest = await copyCodeIntoLocalBranch(
-    sourceRepo,
-    sourceRepoCommitHash,
-    destRepo,
-    destBranch,
-    octokitFactory,
-    undefined,
-    logger
-  );
-  if (dest.kind === 'CreatedGithubIssue') {
-    return;
-  }
-
-  const token = await octokitFactory.getGitHubShortLivedAccessToken();
-  const cmd = newCmd(logger);
-  const pushUrl = destRepo.repo.getCloneUrl(token);
-  cmd(`git remote set-url origin ${pushUrl}`, {cwd: dest.dir});
-  cmd(`git push -f origin ${destBranch}`, {cwd: dest.dir});
 }
 
 /**

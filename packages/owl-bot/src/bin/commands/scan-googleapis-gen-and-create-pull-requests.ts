@@ -24,7 +24,6 @@ interface Args extends OctokitParams {
   'source-repo': string;
   'firestore-project': string;
   'clone-depth': number;
-  'multi-commit': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -67,13 +66,6 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'The depth to clone googleapis-gen, and therefore an upper bound on the number of commits to examine.',
         type: 'number',
         default: 100,
-      })
-      .option('multi-commit', {
-        describe:
-          "Add new commits to open PRs when there's already one open. " +
-          'Otherwise, opens a new PR for every new upstream change.',
-        type: 'boolean',
-        default: true,
       });
   },
   async handler(argv) {
@@ -89,8 +81,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       octokitFactoryFrom(argv),
       configsStore,
       argv['clone-depth'],
-      copyStateStore,
-      argv['multi-commit']
+      copyStateStore
     );
   },
 };
