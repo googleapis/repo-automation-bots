@@ -25,7 +25,6 @@ interface Args extends OctokitParams {
   'firestore-project': string;
   'clone-depth': number;
   'track-builds-in-firestore': boolean;
-  'multi-commit': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -75,13 +74,6 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           ' to copy the same code twice.',
         type: 'boolean',
         default: true,
-      })
-      .option('multi-commit', {
-        describe:
-          "Add new commits to open PRs when there's already one open. " +
-          'Otherwise, opens a new PR for every new upstream change.',
-        type: 'boolean',
-        default: true,
       });
   },
   async handler(argv) {
@@ -99,8 +91,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       octokitFactoryFrom(argv),
       configsStore,
       argv['clone-depth'],
-      copyStateStore,
-      argv['multi-commit']
+      copyStateStore
     );
   },
 };
