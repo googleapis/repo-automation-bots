@@ -397,7 +397,7 @@ describe('failurechecker', () => {
       .reply(200, [
         {
           number: 33,
-          updated_at: '2020-01-25T13:33:48Z',
+          updated_at: '2019-12-25T13:33:48Z',
         },
       ])
       .get('/rate_limit')
