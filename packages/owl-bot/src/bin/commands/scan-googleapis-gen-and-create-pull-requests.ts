@@ -24,7 +24,6 @@ interface Args extends OctokitParams {
   'source-repo': string;
   'firestore-project': string;
   'clone-depth': number;
-  'track-builds-in-firestore': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -67,13 +66,6 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'The depth to clone googleapis-gen, and therefore an upper bound on the number of commits to examine.',
         type: 'number',
         default: 100,
-      })
-      .option('track-builds-in-firestore', {
-        describe:
-          "Record copy jobs in firestore, so that we don't try" +
-          ' to copy the same code twice.',
-        type: 'boolean',
-        default: true,
       });
   },
   async handler(argv) {
@@ -83,9 +75,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
     });
     const db = admin.firestore();
     const configsStore = new FirestoreConfigsStore(db!);
-    const copyStateStore = argv['track-builds-in-firestore']
-      ? new FirestoreCopyStateStore(db!)
-      : undefined;
+    const copyStateStore = new FirestoreCopyStateStore(db!);
     await scanGoogleapisGenAndCreatePullRequests(
       argv['source-repo'],
       octokitFactoryFrom(argv),
