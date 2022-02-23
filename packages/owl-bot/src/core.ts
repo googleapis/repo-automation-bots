@@ -234,17 +234,19 @@ export async function getHeadCommit(
   pr: number,
   octokit: OctokitType
 ): Promise<Commit | undefined> {
-  // If a PR has more than 100 updates to it, we will currently have issues
-  // in practice this should be rare:
-  const {data: commits} = await octokit.pulls.listCommits({
-    owner,
-    repo,
-    pull_number: pr,
-    per_page: 100,
-  });
-  const headCommit = commits[commits.length - 1];
-  if (!headCommit) return;
-  else return headCommit as Commit;
+  let headCommit: Commit | undefined = undefined;
+  for await (const {data: commits} of octokit.paginate.iterator(
+    octokit.pulls.listCommits,
+    {
+      owner,
+      repo,
+      pull_number: pr,
+      per_page: 250,
+    }
+  )) {
+    headCommit = commits[commits.length - 1];
+  }
+  return headCommit;
 }
 
 export async function createCheck(args: CheckArgs, octokit?: OctokitType) {

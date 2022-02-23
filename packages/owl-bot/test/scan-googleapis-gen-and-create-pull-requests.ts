@@ -164,117 +164,85 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
   });
 
   it('skips pull requests that were already created', async () => {
-    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+    const [dest, configsStore] = makeDestRepoAndConfigsStore(bYaml);
     const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
     const pulls = new FakePulls();
     pulls.create({body: `Copy-Tag: ${copyTag}`});
     const issues = new FakeIssues();
     const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await copyStateStore.recordBuildForCopy(dest, copyTag, 'x');
     const prCount = await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
       configsStore,
-      1000
+      undefined,
+      copyStateStore
     );
     assert.strictEqual(prCount, 0);
   });
 
-  it("doesn't skip pull requests when search depth is zero", async () => {
-    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml);
-    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
+  it('copies files and creates a pull request (multicommit)', async () => {
+    const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+
     const pulls = new FakePulls();
-    pulls.create({body: `Copy-Tag: ${copyTag}`});
     const issues = new FakeIssues();
     const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore
+    );
+
+    // Confirm it created one pull request.
+    assert.strictEqual(pulls.pulls.length, 1);
+    const pull = pulls.pulls[0];
+    assert.strictEqual(pull.owner, 'googleapis');
+    assert.strictEqual(pull.repo, 'nodejs-spell-check');
+    assert.strictEqual(pull.title, 'b');
+    assert.strictEqual(pull.base, 'main');
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
+    assert.strictEqual(
+      pull.body,
+      `- [ ] Regenerate this pull request now.
+
+Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}
+Copy-Tag: ${copyTag}`
+    );
+
+    // Confirm the pull request body contains a properly formatted Copy-Tag footer.
+    assert.strictEqual(true, cc.bodyIncludesCopyTagFooter(pull.body));
+
+    // Confirm it set the label.
+    assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
+
+    // Confirm the pull request branch contains the new file.
+    const destDir = destRepo.getCloneUrl();
+    cmd(`git checkout ${pull.head}`, {cwd: destDir});
+    const bpath = path.join(destDir, 'src', 'b.txt');
+    assert.strictEqual(fs.readFileSync(bpath).toString('utf8'), '2');
+
+    // But of course the main branch doesn't have it until the PR is merged.
+    cmd('git checkout main', {cwd: destDir});
+    assert.ok(!cc.stat(bpath));
+
+    // Confirm the PR was recorded in firestore.
+    assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
+
+    // Because the PR is recorded in firestore, a second call should skip
+    // creating a new one.
     const prCount = await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
       configsStore,
-      0
+      undefined,
+      copyStateStore
     );
-    assert.strictEqual(prCount, 1);
+    assert.strictEqual(prCount, 0);
   });
-
-  // Execute this test with different parameters for calling either
-  // copyCodeAndCreatePullRequest() or copyCodeAndAppendPullRequest().
-  function itCopiesFilesAndCreatesAPullRequest(multiCommit: boolean) {
-    const test = async () => {
-      const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
-
-      const pulls = new FakePulls();
-      const issues = new FakeIssues();
-      const octokit = newFakeOctokit(pulls, issues);
-      const copyStateStore = new FakeCopyStateStore();
-      await scanGoogleapisGenAndCreatePullRequests(
-        abcRepo,
-        factory(octokit),
-        configsStore,
-        1000,
-        undefined,
-        copyStateStore,
-        multiCommit
-      );
-
-      // Confirm it created one pull request.
-      assert.strictEqual(pulls.pulls.length, 1);
-      const pull = pulls.pulls[0];
-      assert.strictEqual(pull.owner, 'googleapis');
-      assert.strictEqual(pull.repo, 'nodejs-spell-check');
-      assert.strictEqual(pull.title, 'b');
-      assert.strictEqual(pull.base, 'main');
-      const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
-      assert.strictEqual(
-        pull.body,
-        `- [ ] Regenerate this pull request now.
-
-Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}
-Copy-Tag: ${copyTag}`
-      );
-
-      // Confirm the pull request body contains a properly formatted Copy-Tag footer.
-      assert.strictEqual(true, cc.bodyIncludesCopyTagFooter(pull.body));
-
-      // Confirm it set the label.
-      assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
-
-      // Confirm the pull request branch contains the new file.
-      const destDir = destRepo.getCloneUrl();
-      cmd(`git checkout ${pull.head}`, {cwd: destDir});
-      const bpath = path.join(destDir, 'src', 'b.txt');
-      assert.strictEqual(fs.readFileSync(bpath).toString('utf8'), '2');
-
-      // But of course the main branch doesn't have it until the PR is merged.
-      cmd('git checkout main', {cwd: destDir});
-      assert.ok(!cc.stat(bpath));
-
-      // Confirm the PR was recorded in firestore.
-      assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
-
-      // Because the PR is recorded in firestore, a second call should skip
-      // creating a new one.
-      const prCount = await scanGoogleapisGenAndCreatePullRequests(
-        abcRepo,
-        factory(octokit),
-        configsStore,
-        1000,
-        undefined,
-        copyStateStore,
-        multiCommit
-      );
-      assert.strictEqual(prCount, 0);
-    };
-    return test;
-  }
-
-  it(
-    'copies files and creates a pull request',
-    itCopiesFilesAndCreatesAPullRequest(false)
-  );
-
-  it(
-    'copies files and creates a pull request (multicommit)',
-    itCopiesFilesAndCreatesAPullRequest(true)
-  );
 
   it('copies files and appends a pull request', async () => {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
@@ -301,10 +269,8 @@ Copy-Tag: ${copyTag}`
       abcRepo,
       factory(octokit),
       configsStore,
-      0,
       undefined,
-      copyStateStore,
-      true
+      copyStateStore
     );
 
     // Confirm it updated the body.
@@ -341,15 +307,13 @@ Copy-Tag: ${copyTag}`
       abcRepo,
       factory(octokit),
       configsStore,
-      0,
       undefined,
-      copyStateStore,
-      true
+      copyStateStore
     );
     assert.strictEqual(prCount, 0);
   });
 
-  it('creates 3 pull requests for 3 matching commits', async () => {
+  it('creates 1 pull requests for 3 matching commits', async () => {
     const myYaml = JSON.parse(JSON.stringify(bYaml)) as OwlBotYaml;
     myYaml['deep-copy-regex']?.push({
       source: '/.*',
@@ -368,7 +332,7 @@ Copy-Tag: ${copyTag}`
     );
 
     // Confirm it created one pull request.
-    assert.strictEqual(pulls.pulls.length, 3);
+    assert.strictEqual(pulls.pulls.length, 1);
   });
 
   it('ignores pull requests older than begin', async () => {
@@ -427,32 +391,6 @@ describe('regenerate pull requests', function () {
 
   beforeEach(() => {
     cmd('git checkout main', {cwd: abcRepo});
-  });
-
-  it('copies files into a pull request', async () => {
-    const destRepo = makeDestRepo(bYaml);
-    const pulls = new FakePulls();
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const factory = newFakeOctokitFactory(octokit, 'test-token');
-    const sourceHash = abcCommits[1];
-
-    await cc.copyCodeIntoPullRequest(
-      abcRepo,
-      sourceHash,
-      {repo: destRepo, yamlPath: '.github/.OwlBot.yaml'},
-      'test-branch',
-      factory
-    );
-    // Confirm new pull request was pushed to test-branch.
-    const destDir = destRepo.getCloneUrl();
-    const gitLog = cmd('git log test-branch', {cwd: destDir}).toString('utf-8');
-    assert.match(
-      gitLog,
-      RegExp(
-        `.*Source-Link: https://github.com/googleapis/googleapis-gen/commit/${sourceHash}.*`
-      )
-    );
   });
 
   it('regenerates a pull request', async () => {
