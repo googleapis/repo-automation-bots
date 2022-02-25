@@ -61,5 +61,5 @@ export function githubRepoFromUri(uri: string): GithubRepo {
   if (matchHttps) {
     return githubRepo(matchHttps[1], matchHttps[2]);
   }
-  throw `Unable to parse owner and repo name from github uri ${uri}`;
+  throw new Error(`Unable to parse owner and repo name from github uri ${uri}`);
 }

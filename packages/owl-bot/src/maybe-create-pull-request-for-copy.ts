@@ -53,6 +53,7 @@ export function shouldCreatePullRequestForCopyBranch(
 
 /**
  * Deletes the currently checked out branch from github.
+ * @param repo only used for tests
  */
 export async function deleteCopyBranch(
   octokitFactory: OctokitFactory,
@@ -62,16 +63,33 @@ export async function deleteCopyBranch(
   const cmd = newCmd(logger);
   const cwd = localRepoDir;
 
+  // If somebody or something else has modified the branch since we cloned it,
+  // then don't delete it.
+  const myHead = cmd('git log -1 --format=%H', {cwd}).toString('utf-8').trim();
   const branch = cmd('git branch --show-current', {cwd})
     .toString('utf-8')
     .trim();
-  const uri = cmd('git remote get-url origin', {cwd}).toString('utf8').trim();
+  cmd('git fetch origin', {cwd});
+  const originHead = cmd(`git log -1 --format=%H origin/${branch}`, {cwd})
+    .toString('utf-8')
+    .trim();
+  const uri = cmd('git remote get-url --push origin', {cwd})
+    .toString('utf8')
+    .trim();
   const githubRepo = githubRepoFromUri(uri);
-  (await octokitFactory.getShortLivedOctokit()).git.deleteRef({
-    owner: githubRepo.owner,
-    repo: githubRepo.repo,
-    ref: `heads/${branch}`,
-  });
+  const fullBranchName = `${githubRepo.owner}/${githubRepo.repo}:${branch}`;
+  if (originHead === myHead) {
+    logger.log(`Deleting branch ${fullBranchName}`);
+    (await octokitFactory.getShortLivedOctokit()).git.deleteRef({
+      owner: githubRepo.owner,
+      repo: githubRepo.repo,
+      ref: `heads/${branch}`,
+    });
+  } else {
+    logger.log(
+      `I won't delete ${fullBranchName} because the heads don't match: ${myHead} $= ${originHead}`
+    );
+  }
 }
 
 /**

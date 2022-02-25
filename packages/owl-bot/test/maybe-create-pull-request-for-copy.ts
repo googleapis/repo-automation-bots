@@ -35,6 +35,19 @@ describe('maybe-create-pull-request-for-copy', () => {
 
   beforeEach(() => cmd('git checkout main', {cwd: abcRepo}));
 
+  function cloneAbcRepo(): string {
+    const clone = tmp.dirSync().name;
+    cmd(`git clone ${abcRepo} ${clone}`);
+    cmd('git config user.email "test@example.com"', {cwd: clone});
+    cmd('git config user.name "test"', {cwd: clone});
+
+    cmd(
+      'git remote set-url --push origin https://github.com/googleapis/nodejs-data-fusion.git',
+      {cwd: clone}
+    );
+    return clone;
+  }
+
   describe('deleteCopyBranch', () => {
     it('should delete a copy branch', async () => {
       const deadRefs: unknown[] = [];
@@ -42,12 +55,12 @@ describe('maybe-create-pull-request-for-copy', () => {
       const factory = newFakeOctokitFactory(octokit);
 
       cmd('git checkout -b deadBranch', {cwd: abcRepo});
-      cmd(
-        'git remote add origin https://github.com/googleapis/nodejs-data-fusion.git',
-        {cwd: abcRepo}
-      );
+      cmd('git checkout main', {cwd: abcRepo});
 
-      await deleteCopyBranch(factory, abcRepo);
+      const clone = cloneAbcRepo();
+      cmd('git checkout -t origin/deadBranch', {cwd: clone});
+
+      await deleteCopyBranch(factory, clone);
       assert.deepStrictEqual(deadRefs, [
         {
           owner: 'googleapis',
@@ -56,26 +69,37 @@ describe('maybe-create-pull-request-for-copy', () => {
         },
       ]);
     });
-  });
 
-  function cloneAbc(): string {
-    const cloneDir = tmp.dirSync().name;
-    cmd(`git clone ${abcRepo} ${cloneDir}`);
-    cmd('git config user.email "test@example.com"', {cwd: cloneDir});
-    cmd('git config user.name "test"', {cwd: cloneDir});
-    return cloneDir;
-  }
+    it("shouldn't delete a modified copy branch", async () => {
+      const deadRefs: unknown[] = [];
+      const octokit = newFakeOctokit(undefined, undefined, undefined, deadRefs);
+      const factory = newFakeOctokitFactory(octokit);
+
+      cmd('git checkout -b deadBranch2', {cwd: abcRepo});
+      cmd('git checkout main', {cwd: abcRepo});
+
+      const clone = cloneAbcRepo();
+      cmd('git checkout -t origin/deadBranch2', {cwd: clone});
+
+      // Modify the origin's branch after the clone.
+      cmd('git checkout deadBranch2', {cwd: abcRepo});
+      cmd('git commit --allow-empty -m "Empty change"', {cwd: abcRepo});
+
+      await deleteCopyBranch(factory, clone);
+      assert.deepStrictEqual(deadRefs, []);
+    });
+  });
 
   describe('shouldCreatePullRequestForCopyBranch', () => {
     it('creates a pull request when contents changed', async () => {
-      const cloneDir = cloneAbc();
+      const cloneDir = cloneAbcRepo();
       makeDirTree(cloneDir, ['x.txt:New file added.']);
       cmd('git add -A', {cwd: cloneDir});
       assert.ok(shouldCreatePullRequestForCopyBranch('main', cloneDir));
     });
 
     it("doesn't create a pull request when final result is the same", async () => {
-      const cloneDir = cloneAbc();
+      const cloneDir = cloneAbcRepo();
       cmd('git checkout -b owl-bot-copy', {cwd: cloneDir});
       makeDirTree(cloneDir, ['x.txt:New file added.']);
       cmd('git add -A', {cwd: cloneDir});
