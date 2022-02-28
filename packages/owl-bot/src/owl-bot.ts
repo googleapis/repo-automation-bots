@@ -89,6 +89,11 @@ export function OwlBot(
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
   app.on(['pull_request.labeled'], async context => {
+    const head = context.payload.pull_request.head.repo.full_name;
+    const [owner, repo] = head.split('/');
+    logger.info(
+      `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
+    );
     await exports.handlePullRequestLabeled(
       appId,
       privateKey,
@@ -156,6 +161,9 @@ export function OwlBot(
         return;
       }
 
+      logger.info(
+        `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
+      );
       await runPostProcessor(
         appId,
         privateKey,
