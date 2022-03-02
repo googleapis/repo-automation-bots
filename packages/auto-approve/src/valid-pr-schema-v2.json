@@ -18,9 +18,11 @@
           "PythonDependency",
           "NodeDependency",
           "NodeRelease",
+          "JavaApiaryCodegen",
           "JavaDependency",
           "OwlBotTemplateChanges",
-          "OwlBotAPIChanges"
+          "OwlBotAPIChanges",
+          "PHPApiaryCodegen"
         ]
       }
     }
