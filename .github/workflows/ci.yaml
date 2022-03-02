@@ -13,7 +13,7 @@ jobs:
       bashPaths: ${{ steps.interrogate.outputs.bashPaths }}
       requiredJobs: ${{ steps.interrogate.outputs.requiredJobs }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v3
@@ -31,7 +31,7 @@ jobs:
       matrix:
         package: ${{fromJson(needs.changeFinder.outputs.nodePaths)}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -59,7 +59,7 @@ jobs:
     - name: Install goimports
       run: go get golang.org/x/tools/cmd/goimports
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: goimports
       run: |
         test -z "$($(go env GOPATH)/bin/goimports -l .)"
@@ -78,7 +78,7 @@ jobs:
         module: ${{fromJson(needs.changeFinder.outputs.bashPaths)}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: bashtest
         run: |
           ./test.sh
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: changeFinder
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 12
@@ -96,7 +96,7 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: JustinBeckwith/linkinator-action@v1
         with:
           paths: '**/*.md'
