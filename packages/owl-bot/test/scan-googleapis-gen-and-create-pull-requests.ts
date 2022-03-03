@@ -407,7 +407,7 @@ describe('regenerate pull requests', function () {
     // Create the pull request.
     pulls.create({});
 
-    // Create a pull request branch with two more commits.
+    // Create a pull request branch with three more commits.
     const destDir = destRepo.getCloneUrl();
     cmd('git checkout -b pull-branch', {cwd: destDir});
     const f1 = tmp.fileSync();
@@ -417,6 +417,11 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[1])}`;
     fs.writeSync(f1.fd, commitMessage1);
     fs.close(f1.fd);
     cmd(`git commit --allow-empty -F ${f1.name}`, {cwd: destDir});
+
+    // This commit doesn't have a copy tag and shouldn't be included in
+    // the body of the regenerated pull request.
+    cmd('git commit --allow-empty -m "Updates from OwlBot"', {cwd: destDir});
+
     const f2 = tmp.fileSync();
     const commitMessage2 = `pull-commit-2
 
@@ -447,7 +452,7 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
     const body2 = commitMessage2.slice(newline).trim();
     assert.deepStrictEqual(pulls.updates, [
       {
-        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${body2}\n\n${commitMessage1}\n\n`,
+        body: `${EMPTY_REGENERATE_CHECKBOX_TEXT}\n\n${body2}\n\n${commitMessage1}`,
         owner: 'googleapis',
         pull_number: 1,
         repo: 'nodejs-spell-check',
