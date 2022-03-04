@@ -1913,6 +1913,10 @@ describe('locking behavior', () => {
       id: 'abc123',
     });
     assert.ok(deleteLabelCalledFirst);
+    // We should have called release after receive, the way we've
+    // setup this test, release is a noop; this is just a safety check
+    // to ensure we actually do release the lock:
+    sandbox.assert.calledOnce(fakeDatastoreLock.release);
     githubMock.done();
     // The next receive should return immediately.
     const payload2 = {
@@ -1949,6 +1953,65 @@ describe('locking behavior', () => {
       payload: payload2 as any,
       id: 'abc123',
     });
+  });
+
+  it('synchronize event releases lock', async () => {
+    const fakeDatastoreLock = sinon.createStubInstance(DatastoreLock, {
+      release: Promise.resolve(true),
+    });
+    sandbox.replace(owlbot, 'acquireLock', async () => {
+      return fakeDatastoreLock;
+    });
+    const payload = {
+      action: 'synchronize',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'rennie',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+          sha: 'abc123',
+          ref: 'abc123',
+        },
+        base: {
+          ref: 'main',
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+        },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
+      },
+    };
+    sandbox.stub(core, 'triggerPostProcessBuild').resolves({
+      text: 'the text for check',
+      summary: 'summary for check',
+      conclusion: 'success',
+      detailsURL: 'https://www.example.com',
+    });
+    sandbox.stub(core, 'updatePullRequestAfterPostProcessor');
+    sandbox.stub(core, 'createCheck');
+    sandbox.stub(core, 'hasOwlBotLoop').resolves(false);
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+    // Do we try to release the lock?
+    sandbox.assert.calledOnce(fakeDatastoreLock.release);
   });
 });
 
