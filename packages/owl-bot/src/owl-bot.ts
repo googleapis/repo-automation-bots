@@ -50,20 +50,18 @@ interface PubSubContext {
   };
 }
 
-async function acquireLock(target: string): Promise<DatastoreLock | boolean> {
-  const lock = new DatastoreLock('owlbot', target, 25 * 1000);
+const LOCK_TIMEOUT = 25 * 1000;
+class LockError extends Error {}
+async function acquireLock(target: string): Promise<DatastoreLock> {
+  const lock = new DatastoreLock('owlbot', target, LOCK_TIMEOUT);
   if (await lock.peek()) {
-    return false;
+    throw new LockError();
   }
   const result = await lock.acquire();
   if (!result) {
-    return false;
+    throw new LockError();
   }
   return lock;
-}
-
-function isLock(lock: DatastoreLock | boolean): lock is DatastoreLock {
-  return typeof lock !== 'boolean';
 }
 
 function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
@@ -106,10 +104,16 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     const [owner, repo] = head.split('/');
     // Short-circuit if post-processor already running for this SHA:
     const target = `${owner}_${repo}_${context.payload.pull_request.head.sha}`;
-    const lock = await owlbot.acquireLock(target);
-    if (!isLock(lock)) {
-      logger.info(`acquireLock failed: target=${target}`);
-      return;
+    let lock: DatastoreLock;
+    try {
+      lock = await owlbot.acquireLock(target);
+    } catch (err) {
+      if (err instanceof LockError) {
+        logger.info(`acquireLock failed: target=${target}`);
+        return;
+      } else {
+        throw err;
+      }
     }
     logger.info(
       `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
@@ -184,10 +188,16 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
 
       // Short-circuit if post-processor already running for this SHA:
       const target = `${owner}_${repo}_${context.payload.pull_request.head.sha}`;
-      const lock = await owlbot.acquireLock(target);
-      if (!isLock(lock)) {
-        logger.info(`acquireLock failed: target=${target}`);
-        return;
+      let lock: DatastoreLock;
+      try {
+        lock = await owlbot.acquireLock(target);
+      } catch (err) {
+        if (err instanceof LockError) {
+          logger.info(`acquireLock failed: target=${target}`);
+          return;
+        } else {
+          throw err;
+        }
       }
 
       logger.info(
@@ -649,6 +659,7 @@ function userCheckedRegenerateBox(
 export const owlbot = {
   acquireLock,
   handlePullRequestLabeled,
+  LockError,
   OwlBot,
   userCheckedRegenerateBox,
 };

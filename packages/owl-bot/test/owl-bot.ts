@@ -1774,7 +1774,7 @@ describe('locking behavior', () => {
   });
   it('returns immediately if lock cannot be acquired', async () => {
     sandbox.replace(owlbot, 'acquireLock', async () => {
-      return false;
+      return Promise.reject(new owlbot.LockError());
     });
     const payload = {
       action: 'labeled',
@@ -1828,7 +1828,7 @@ describe('locking behavior', () => {
         first = false;
         return fakeDatastoreLock;
       } else {
-        return false;
+        return Promise.reject(new owlbot.LockError());
       }
     });
     const payload = {
