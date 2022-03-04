@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// To Run: node ./build/src/bin/owl-bot.js copy-code-and-create-pull-request <args>
+
 import yargs = require('yargs');
 import * as cc from '../../copy-code';
 import {octokitFactoryFrom, OctokitParams} from '../../octokit-util';
@@ -76,15 +78,17 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
   },
   async handler(argv) {
     const octokitFactory = await octokitFactoryFrom(argv);
-    await cc.copyCodeAndAppendOrCreatePullRequest(
-      argv['source-repo'],
-      argv['source-repo-commit-hash'],
-      githubRepoFromOwnerSlashName(argv['dest-repo']),
-      [argv['dest-owlbot-yaml']],
+    const params: cc.CopyParams = {
+      sourceRepo: argv['source-repo'],
+      sourceRepoCommitHash: argv['source-repo-commit-hash'],
+      destRepo: githubRepoFromOwnerSlashName(argv['dest-repo']),
       // Fake copy state store because this command is invoked by humans only
       // and it shouldn't interfere with Owl Bot state.
-      new FakeCopyStateStore(),
-      octokitFactory
-    );
+      copyStateStore: new FakeCopyStateStore(),
+      octokitFactory,
+    };
+    await cc.copyCodeAndAppendOrCreatePullRequest(params, [
+      argv['dest-owlbot-yaml'],
+    ]);
   },
 };

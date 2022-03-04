@@ -17,6 +17,7 @@ import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import {
   copyCodeAndAppendOrCreatePullRequest,
+  CopyParams,
   copyTagFrom,
   toLocalRepo,
 } from './copy-code';
@@ -170,15 +171,14 @@ export async function scanGoogleapisGenAndCreatePullRequests(
 
   // Copy files beginning with the oldest commit hash.
   for (const todo of todoStack.reverse()) {
-    await copyCodeAndAppendOrCreatePullRequest(
-      sourceDir,
-      todo.commitHash,
-      todo.repo,
-      todo.yamlPaths,
+    const params: CopyParams = {
+      sourceRepo: sourceDir,
+      sourceRepoCommitHash: todo.commitHash,
+      destRepo: todo.repo,
       copyStateStore,
       octokitFactory,
-      logger
-    );
+    };
+    await copyCodeAndAppendOrCreatePullRequest(params, todo.yamlPaths, logger);
   }
   return todoStack.length;
 }
