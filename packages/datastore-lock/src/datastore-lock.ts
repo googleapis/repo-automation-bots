@@ -35,6 +35,15 @@ const sleep = (ms: number) => {
   return new Promise(r => setTimeout(r, ms));
 };
 
+interface LockEntity {
+  expiry: number;
+  uuid: string;
+}
+
+function isExpired(entity: LockEntity) {
+  return Date.now() > entity.expiry;
+}
+
 /**
  * A simple lock backed by Cloud Datastore
  */
@@ -110,10 +119,10 @@ export class DatastoreLock {
     try {
       await transaction.run();
       // First get the entity
-      const [entity] = await transaction.get(this.key);
+      const entity: LockEntity = (await transaction.get(this.key))[0];
       logger.debug(entity);
 
-      if (entity === undefined || Date.now() > entity.expiry) {
+      if (entity === undefined || isExpired(entity)) {
         const entity = {
           key: this.key,
           data: {
@@ -172,5 +181,14 @@ export class DatastoreLock {
       await transaction.rollback();
       return false;
     }
+  }
+
+  /**
+   * Check whether or not a lock currently exists for a key.
+   */
+  public async peek(): Promise<boolean> {
+    const entity: LockEntity = (await this.datastore.get(this.key))[0];
+    if (entity?.expiry) return !isExpired(entity);
+    else return false;
   }
 }
