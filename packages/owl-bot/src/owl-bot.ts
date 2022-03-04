@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import admin from 'firebase-admin';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
@@ -49,11 +50,23 @@ interface PubSubContext {
   };
 }
 
-export function OwlBot(
-  privateKey: string | undefined,
-  app: Probot,
-  db?: Db
-): void {
+async function acquireLock(target: string): Promise<DatastoreLock | boolean> {
+  const lock = new DatastoreLock('owlbot', target, 60 * 1000);
+  if (await lock.peek()) {
+    return false;
+  }
+  const result = await lock.acquire();
+  if (!result) {
+    return false;
+  }
+  return lock;
+}
+
+function isLock(lock: DatastoreLock | boolean): lock is DatastoreLock {
+  return typeof lock !== 'boolean';
+}
+
+function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // Fail fast if the Cloud Function doesn't have its environment configured:
   if (!process.env.APP_ID) {
     throw Error('must set APP_ID');
@@ -91,10 +104,17 @@ export function OwlBot(
   app.on(['pull_request.labeled'], async context => {
     const head = context.payload.pull_request.head.repo.full_name;
     const [owner, repo] = head.split('/');
+    // Short-circuit if post-processor already running for this SHA:
+    const target = `${owner}_${repo}_${context.payload.pull_request.head.sha}`;
+    const lock = await owlbot.acquireLock(target);
+    if (!isLock(lock)) {
+      logger.info(`acquireLock failed: target=${target}`);
+      return;
+    }
     logger.info(
       `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
     );
-    await exports.handlePullRequestLabeled(
+    await owlbot.handlePullRequestLabeled(
       appId,
       privateKey,
       project,
@@ -102,6 +122,7 @@ export function OwlBot(
       context.payload,
       context.octokit
     );
+    await lock.release();
   });
 
   // Did someone click the "Regenerate this pull request" checkbox?
@@ -158,6 +179,14 @@ export function OwlBot(
         logger.info(
           `base ${base} is not allowed to run the post processor, skipping`
         );
+        return;
+      }
+
+      // Short-circuit if post-processor already running for this SHA:
+      const target = `${owner}_${repo}_${context.payload.pull_request.head.sha}`;
+      const lock = await owlbot.acquireLock(target);
+      if (!isLock(lock)) {
+        logger.info(`acquireLock failed: target=${target}`);
         return;
       }
 
@@ -258,7 +287,7 @@ export function OwlBot(
   });
 }
 
-export async function handlePullRequestLabeled(
+async function handlePullRequestLabeled(
   appId: number,
   privateKey: string,
   project: string,
@@ -580,7 +609,7 @@ const runPostProcessor = async (
  * We're interested if they checked the box to "regenerate this pull request."
  * Returns null if the box was not checked.
  */
-export function userCheckedRegenerateBox(
+function userCheckedRegenerateBox(
   project: string,
   trigger: string,
   payload: PullRequestEditedEvent,
@@ -615,3 +644,10 @@ export function userCheckedRegenerateBox(
     branch: payload.pull_request.head.ref,
   };
 }
+
+export const owlbot = {
+  acquireLock,
+  handlePullRequestLabeled,
+  OwlBot,
+  userCheckedRegenerateBox,
+};

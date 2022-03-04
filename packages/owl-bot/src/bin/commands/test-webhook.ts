@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {handlePullRequestLabeled} from '../../owl-bot';
+import {owlbot} from '../../owl-bot';
 import yargs = require('yargs');
 import {octokitFrom} from '../../octokit-util';
 import {readFileSync} from 'fs';
@@ -80,7 +80,7 @@ export const testWebhook: yargs.CommandModule<{}, Args> = {
     const octokit = await octokitFrom(argv);
     switch (argv.event) {
       case 'pull_request.labeled':
-        await handlePullRequestLabeled(
+        await owlbot.handlePullRequestLabeled(
           argv['app-id'],
           privateKey,
           argv.project,

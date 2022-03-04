@@ -14,11 +14,12 @@
 
 import * as assert from 'assert';
 import {core} from '../src/core';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from '../src/labels';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
-import {OwlBot, userCheckedRegenerateBox} from '../src/owl-bot';
+import {owlbot} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {
@@ -36,7 +37,7 @@ import {REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
-describe('owlBot', () => {
+describe('OwlBot', () => {
   let probot: Probot;
   beforeEach(async () => {
     sandbox.stub(process, 'env').value({
@@ -55,9 +56,15 @@ describe('owlBot', () => {
         }),
       },
     });
+    const fakeDatastoreLock = sinon.createStubInstance(DatastoreLock, {
+      release: Promise.resolve(true),
+    });
+    sandbox.replace(owlbot, 'acquireLock', async () => {
+      return fakeDatastoreLock;
+    });
     await probot.load((app: Probot) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      OwlBot('abc123', app, sandbox.stub() as any);
+      owlbot.OwlBot('abc123', app, sandbox.stub() as any);
     });
   });
   afterEach(() => {
@@ -910,7 +917,7 @@ describe('owlBot', () => {
         }, 100);
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      OwlBot('abc123', app, sandbox.stub() as any);
+      owlbot.OwlBot('abc123', app, sandbox.stub() as any);
     });
     const loggerStub = sandbox.stub(logger, 'info');
     await probot.receive({
@@ -1738,6 +1745,213 @@ describe('owlBot', () => {
   });
 });
 
+describe('locking behavior', () => {
+  let probot: Probot;
+  beforeEach(async () => {
+    sandbox.stub(process, 'env').value({
+      APP_ID: '1234354',
+      PROJECT_ID: 'foo-project',
+      CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
+      CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST:
+        'aef1e540-d401-4b85-8127-b72b5993c20e',
+    });
+    probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
+    await probot.load((app: Probot) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      owlbot.OwlBot('abc123', app, sandbox.stub() as any);
+    });
+  });
+  afterEach(() => {
+    sandbox.restore();
+  });
+  it('returns immediately if lock cannot be acquired', async () => {
+    sandbox.replace(owlbot, 'acquireLock', async () => {
+      return false;
+    });
+    const payload = {
+      action: 'labeled',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'rennie',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+          sha: 'abc123',
+          ref: 'abc123',
+        },
+        base: {
+          ref: 'main',
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+        },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
+      },
+    };
+    // Nothing needs to be mocked, and probot.receive will return
+    // immediately without error:
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+  });
+  it('returns immediately from synchronize event if lock acquired in labeled event', async () => {
+    let first = true;
+    const fakeDatastoreLock = sinon.createStubInstance(DatastoreLock, {
+      release: Promise.resolve(true),
+    });
+    sandbox.replace(owlbot, 'acquireLock', async () => {
+      if (first) {
+        first = false;
+        return fakeDatastoreLock;
+      } else {
+        return false;
+      }
+    });
+    const payload = {
+      action: 'labeled',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'rennie',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+          sha: 'abc123',
+          ref: 'abc123',
+        },
+        base: {
+          ref: 'main',
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+        },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+
+    let deleteLabelCalledFirst: boolean | void = undefined;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= false;
+
+        return payload.pull_request;
+      })
+      .get(
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= false;
+
+        return {
+          content: Buffer.from(config).toString('base64'),
+          encoding: 'base64',
+        };
+      })
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= true;
+
+        return {};
+      });
+
+    sandbox.stub(core, 'triggerPostProcessBuild').resolves({
+      text: 'the text for check',
+      summary: 'summary for check',
+      conclusion: 'success',
+      detailsURL: 'https://www.example.com',
+    });
+    const updatePRStub = sandbox.stub(
+      core,
+      'updatePullRequestAfterPostProcessor'
+    );
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    sandbox.stub(core, 'hasOwlBotLoop').resolves(false);
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+    assert.ok(deleteLabelCalledFirst);
+    githubMock.done();
+    // The next receive should return immediately.
+    const payload2 = {
+      action: 'synchronize',
+      installation: {
+        id: 12345,
+      },
+      pull_request: {
+        labels: [],
+        number: 33,
+        head: {
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+          ref: 'abc123',
+          sha: 'abc123',
+        },
+        base: {
+          ref: 'main',
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+        },
+      },
+    };
+    // With the stubs restored, we will begin throwing if we
+    // hit the actual code path of the library. This should not happen
+    // as a lock will not be acquired:s
+    updatePRStub.restore();
+    createCheckStub.restore();
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload2 as any,
+      id: 'abc123',
+    });
+  });
+});
+
 /**
  * Create a PullRequestEditedEvent with the given new body and old body.
  */
@@ -1774,12 +1988,16 @@ function pullRequestEditedEventFrom(
 describe('userCheckedRegenerateBox()', () => {
   it('does nothing with empty bodies', () => {
     const payload = pullRequestEditedEventFrom();
-    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+    assert.ok(
+      !owlbot.userCheckedRegenerateBox('project-1', 'trigger-4', payload)
+    );
   });
 
   it('does nothing with bodies without check boxes', () => {
     const payload = pullRequestEditedEventFrom('foo', 'bar');
-    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+    assert.ok(
+      !owlbot.userCheckedRegenerateBox('project-1', 'trigger-4', payload)
+    );
   });
 
   it('does nothing when checkbox found in old but not the new', () => {
@@ -1787,7 +2005,9 @@ describe('userCheckedRegenerateBox()', () => {
       'new body',
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n'
     );
-    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+    assert.ok(
+      !owlbot.userCheckedRegenerateBox('project-1', 'trigger-4', payload)
+    );
   });
 
   it('does nothing when checkbox found in old and new', () => {
@@ -1795,7 +2015,9 @@ describe('userCheckedRegenerateBox()', () => {
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n'
     );
-    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+    assert.ok(
+      !owlbot.userCheckedRegenerateBox('project-1', 'trigger-4', payload)
+    );
   });
 
   it('creates RegenerateArgs when checkbox found in new body only.', () => {
@@ -1803,7 +2025,11 @@ describe('userCheckedRegenerateBox()', () => {
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
       'old body\n'
     );
-    const args = userCheckedRegenerateBox('project-1', 'trigger-4', payload);
+    const args = owlbot.userCheckedRegenerateBox(
+      'project-1',
+      'trigger-4',
+      payload
+    );
     assert.ok(args);
     assert.deepStrictEqual(args, {
       owner: 'googleapis',
