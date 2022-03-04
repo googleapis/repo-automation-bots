@@ -25,6 +25,8 @@ const BACKOFF_INITIAL_DELAY = 2 * 1000; // 1 seconds
 const BACKOFF_MAX_DELAY = 10 * 1000; // 10 seconds
 const DATASTORE_LOCK_ERROR_NAME = 'DatastoreLockError';
 
+let cachedClient: Datastore;
+
 enum AcquireResult {
   Success = 1,
   Failure,
@@ -68,7 +70,12 @@ export class DatastoreLock {
           `given ${lockExpiry}`
       );
     }
-    this.datastore = new Datastore();
+    // It reduces memory overhead on Cloud Function if we
+    // only instantiate GRPC client once:
+    if (!cachedClient) {
+      cachedClient = new Datastore();
+    }
+    this.datastore = cachedClient;
     this.kind = `ds-lock-${lockId}`;
     this.target = target;
     const hash = crypto.createHash('sha1');
