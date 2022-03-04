@@ -1940,7 +1940,7 @@ describe('locking behavior', () => {
     };
     // With the stubs restored, we will begin throwing if we
     // hit the actual code path of the library. This should not happen
-    // as a lock will not be acquired:s
+    // as a lock will not be acquired:
     updatePRStub.restore();
     createCheckStub.restore();
     await probot.receive({
