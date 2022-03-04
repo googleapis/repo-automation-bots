@@ -1,5 +1,12 @@
 # Changelog
 
+### [3.1.1](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v3.1.0...datastore-lock-v3.1.1) (2022-03-04)
+
+
+### Bug Fixes
+
+* **datastore-lock:** cache long-running client ([#3255](https://github.com/googleapis/repo-automation-bots/issues/3255)) ([737ad60](https://github.com/googleapis/repo-automation-bots/commit/737ad60e28744ec8fa1e758d803855efed564c8d))
+
 ## [3.1.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v3.0.0...datastore-lock-v3.1.0) (2022-03-03)
 
 
