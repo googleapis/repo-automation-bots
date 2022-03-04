@@ -51,7 +51,7 @@ interface PubSubContext {
 }
 
 async function acquireLock(target: string): Promise<DatastoreLock | boolean> {
-  const lock = new DatastoreLock('owlbot', target, 60 * 1000);
+  const lock = new DatastoreLock('owlbot', target, 25 * 1000);
   if (await lock.peek()) {
     return false;
   }
@@ -210,6 +210,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         },
         context.octokit
       );
+      lock.release();
     }
   );
 
