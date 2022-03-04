@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v3.0.0...datastore-lock-v3.1.0) (2022-03-03)
+
+
+### Features
+
+* **datastor-lock:** add peek method ([#3253](https://github.com/googleapis/repo-automation-bots/issues/3253)) ([5bf0ca4](https://github.com/googleapis/repo-automation-bots/commit/5bf0ca42897a8b2f5771a83c928dc3647a02aa31))
+
 ## [3.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/datastore-lock-v2.1.0...datastore-lock-v3.0.0) (2021-08-09)
 
 
