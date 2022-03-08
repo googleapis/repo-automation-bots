@@ -126,7 +126,8 @@ export async function triggerPostProcessBuild(
     );
     return null;
   }
-
+  if (!prData?.head?.repo?.full_name)
+    throw Error(`invalid response ${owner}/${repo} pr=${args.pr}`);
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
   const cb = core.getCloudBuildInstance();
   const [resp] = await cb.runBuildTrigger({
@@ -371,6 +372,8 @@ export async function fetchOwlBotLock(
     repo,
     pull_number: pullNumber,
   });
+  if (!prData?.head?.repo?.full_name)
+    throw Error(`invalid response ${owner}/${repo} pr=${pullNumber}`);
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
   const configString = await getFileContent(
     prOwner,
@@ -630,6 +633,8 @@ async function updatePullRequestAfterPostProcessor(
       pull_number: prNumber,
       state: 'closed',
     });
+    if (!pull?.head?.repo?.full_name)
+      throw Error(`invalid response ${owner}/${repo} pr=${prNumber}`);
     if (pull.head.repo.full_name === `${owner}/${repo}`) {
       logger.info(`Deleting branch ${pull.head.ref}`);
       await octokit.git.deleteRef({owner, repo, ref: `heads/${pull.head.ref}`});

@@ -61,4 +61,33 @@ describe('datastore-lock', () => {
       }, Error);
     });
   });
+
+  describe('peek', () => {
+    it('returns true if a lock already exists on a key', async () => {
+      // First request for lock.
+      const l = new DatastoreLock('datastore-lock-test', 'test');
+      assert(await l.acquire());
+      // Second request asks, is there a lock?
+      const l2 = new DatastoreLock('datastore-lock-test', 'test');
+      assert(await l2.peek());
+      // Cleanup.
+      await l.release();
+    });
+    it('returns false if no lock exists on the key', async () => {
+      // First request for lock.
+      const l = new DatastoreLock('datastore-lock-test', 'test');
+      assert.strictEqual(await l.peek(), false);
+    });
+    it('return false if peek is called after timeout', async () => {
+      // First request for lock.
+      const l = new DatastoreLock('datastore-lock-test', 'test', 100);
+      assert(await l.acquire());
+      await new Promise(resolve => {
+        setTimeout(resolve, 250);
+      });
+      // Second request asks, is there a lock? It should have timed out:
+      const l2 = new DatastoreLock('datastore-lock-test', 'test');
+      assert.strictEqual(await l2.peek(), false);
+    });
+  });
 });
