@@ -47,7 +47,7 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
       })
       .option('owl-bot-yaml-path', {
         describe:
-          'The path in the source repo to .OwlBot.yaml in that triggered the pull request.',
+          "Obsolete. .OwlBot.yaml paths are now pulled from the pull request's Copy-Tags.",
         type: 'string',
         demand: false,
         default: DEFAULT_OWL_BOT_YAML_PATH,
@@ -71,10 +71,7 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
   async handler(argv) {
     await regeneratePullRequest(
       argv['source-repo'],
-      {
-        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-        yamlPath: argv['owl-bot-yaml-path'],
-      },
+      githubRepoFromOwnerSlashName(argv['dest-repo']),
       argv['dest-branch'],
       octokitFactoryFromToken(argv['github-token'])
     );

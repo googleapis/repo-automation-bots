@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// To Run: node ./build/src/bin/owl-bot.js copy-code-and-create-pull-request <args>
-
 import admin from 'firebase-admin';
 import yargs = require('yargs');
 import {scanGoogleapisGenAndCreatePullRequests} from '../../scan-googleapis-gen-and-create-pull-requests';
@@ -24,6 +22,7 @@ interface Args extends OctokitParams {
   'source-repo': string;
   'firestore-project': string;
   'clone-depth': number;
+  'combine-pulls': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -66,6 +65,16 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'The depth to clone googleapis-gen, and therefore an upper bound on the number of commits to examine.',
         type: 'number',
         default: 100,
+      })
+      .option('combine-pulls', {
+        describe:
+          'Normally, if a single commit to googleapis-gen affects multiple ' +
+          'apis in a mono repo like google-cloud-ruby, then Owl Bot will ' +
+          'open one pull request for each API.\n\n' +
+          'With this flag set, Owl Bot will open one combined pull request ' +
+          'with changes to all the APIs.',
+        type: 'boolean',
+        default: false,
       });
   },
   async handler(argv) {
@@ -81,7 +90,8 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       octokitFactoryFrom(argv),
       configsStore,
       argv['clone-depth'],
-      copyStateStore
+      copyStateStore,
+      argv['combine-pulls']
     );
   },
 };

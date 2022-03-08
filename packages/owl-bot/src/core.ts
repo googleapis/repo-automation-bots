@@ -33,7 +33,7 @@ import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER} from './constants';
 import {
-  findCopyTag,
+  findCopyTags,
   findSourceHash,
   sourceLinkFrom,
   sourceLinkLineFrom,
@@ -713,22 +713,25 @@ export async function triggerRegeneratePullRequest(
   };
 
   let sourceHash = '';
-  let yamlPath = DEFAULT_OWL_BOT_YAML_PATH;
-
+  const yamlPaths = [];
   // The user checked the "Regenerate this pull request" box.
 
   // First try to unpack the source commit hash and .OwlBot.yaml path from
   // a Copy Tag.
-  const copyTagText = findCopyTag(args.prBody);
-  if (copyTagText) {
+  const copyTagTexts = findCopyTags(args.prBody);
+  for (const text of copyTagTexts) {
     try {
-      const copyTag = unpackCopyTag(copyTagText);
+      const copyTag = unpackCopyTag(text);
+      if (sourceHash && sourceHash !== copyTag.h) {
+        // We've seen all the copy tags for the one commit hash.
+        break;
+      }
       sourceHash = copyTag.h;
-      yamlPath = copyTag.p;
+      yamlPaths.push(copyTag.p);
       console.info(`Found Copy-Tag: ${copyTag}`);
     } catch (e) {
       await reportError(
-        `Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag is corrupt.\n${e}`
+        `Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag ${text} is corrupt.\n${e}`
       );
       return;
     }
@@ -737,6 +740,7 @@ export async function triggerRegeneratePullRequest(
   // Older pull requests won't have a Copy-Tag, so use the commit hash
   if (!sourceHash) {
     sourceHash = findSourceHash(args.prBody);
+    yamlPaths.push(DEFAULT_OWL_BOT_YAML_PATH);
   }
   if (!sourceHash) {
     // But there's no source hash to regenerate from.  Oh no!
@@ -765,7 +769,7 @@ ${sourceLine}`);
           _PR_OWNER: args.owner,
           _REPOSITORY: args.repo,
           _SOURCE_HASH: sourceHash,
-          _OWL_BOT_YAML_PATH: yamlPath,
+          _OWL_BOT_YAML_PATH: yamlPaths.join(','),
         },
       },
     });
