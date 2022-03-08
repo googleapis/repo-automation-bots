@@ -90,7 +90,8 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       octokitFactoryFrom(argv),
       configsStore,
       argv['clone-depth'],
-      copyStateStore
+      copyStateStore,
+      argv['combine-pulls']
     );
   },
 };
