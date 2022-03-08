@@ -19,6 +19,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 import {OwlBotYaml, DEFAULT_OWL_BOT_YAML_PATH} from '../src/config-files';
 import {newCmd} from '../src/cmd';
+import {OwlBotYamlAndPath} from '../src/configs-store';
 
 /**
  * Makes a repo with three commits and 3 simple text files.
@@ -56,19 +57,24 @@ export function makeAbcRepo(logger = console): string {
  */
 export function makeRepoWithOwlBotYaml(
   owlBotYaml: OwlBotYaml,
-  logger = console
+  moreYamls: OwlBotYamlAndPath[] = []
 ): string {
-  const cmd = newCmd(logger);
+  const cmd = newCmd(console);
 
   const dir = tmp.dirSync().name;
   cmd('git init -b main', {cwd: dir});
   cmd('git config user.email "test@example.com"', {cwd: dir});
   cmd('git config user.name "test"', {cwd: dir});
 
-  const yamlPath = path.join(dir, DEFAULT_OWL_BOT_YAML_PATH);
-  fs.mkdirSync(path.dirname(yamlPath), {recursive: true});
-  const text = yaml.dump(owlBotYaml);
-  fs.writeFileSync(yamlPath, text);
+  for (const y of [
+    {yaml: owlBotYaml, path: DEFAULT_OWL_BOT_YAML_PATH},
+    ...moreYamls,
+  ]) {
+    const yamlPath = path.join(dir, y.path);
+    fs.mkdirSync(path.dirname(yamlPath), {recursive: true});
+    const text = yaml.dump(y.yaml);
+    fs.writeFileSync(yamlPath, text);
+  }
 
   cmd('git add -A', {cwd: dir});
   cmd('git commit -m "Hello OwlBot"', {cwd: dir});

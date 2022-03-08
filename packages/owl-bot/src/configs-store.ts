@@ -46,12 +46,12 @@ export interface Configs {
 }
 
 /**
- * A repo affected by a change and the path to .OwlBot.yaml
+ * A repo affected by a change.
  */
 export interface AffectedRepo {
   repo: GithubRepo;
-  // path to .OwlBot.yaml
-  yamlPath: string;
+  // List of .OwlBot.yamls that copy the affected files.
+  yamls: OwlBotYamlAndPath[];
 }
 
 export interface ConfigsStore {

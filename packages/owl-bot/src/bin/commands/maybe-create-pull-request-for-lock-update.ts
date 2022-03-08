@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// To Run: node ./build/src/bin/owl-bot.js copy-code-and-create-pull-request <args>
-
 import yargs = require('yargs');
 import {octokitFactoryFrom, OctokitParams} from '../../octokit-util';
 import {
