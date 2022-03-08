@@ -14,7 +14,7 @@
 
 import yargs = require('yargs');
 import {DEFAULT_OWL_BOT_YAML_PATH} from '../../config-files';
-import {loadOwlBotYaml, regeneratePullRequest} from '../../copy-code';
+import {regeneratePullRequest} from '../../copy-code';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {octokitFactoryFromToken} from '../../octokit-util';
 
@@ -47,7 +47,7 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
       })
       .option('owl-bot-yaml-path', {
         describe:
-          'A comma-separated list of paths to .OwlBot.yamls in that triggered the pull request.',
+          "Obsolete. .OwlBot.yaml paths are now pulled from the pull request's Copy-Tags.",
         type: 'string',
         demand: false,
         default: DEFAULT_OWL_BOT_YAML_PATH,
@@ -69,20 +69,9 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    const yamlPaths = argv['owl-bot-yaml-path']
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-    const loadedYamls = [];
-    for (const yamlPath of yamlPaths) {
-      loadedYamls.push({yaml: await loadOwlBotYaml(yamlPath), path: yamlPath});
-    }
     await regeneratePullRequest(
       argv['source-repo'],
-      {
-        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-        yamls: loadedYamls,
-      },
+      githubRepoFromOwnerSlashName(argv['dest-repo']),
       argv['dest-branch'],
       octokitFactoryFromToken(argv['github-token'])
     );

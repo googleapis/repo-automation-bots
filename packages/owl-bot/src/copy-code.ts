@@ -36,7 +36,6 @@ import {
   WithRegenerateCheckbox,
   insertApiName,
 } from './create-pr';
-import {AffectedRepo} from './configs-store';
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {CopyStateStore} from './copy-state-store';
 import * as crypto from 'crypto';
@@ -528,7 +527,7 @@ command in a local clone of this repo:
  */
 export async function regeneratePullRequest(
   sourceRepo: string,
-  destRepo: AffectedRepo,
+  destRepo: GithubRepo,
   destBranch: string,
   octokitFactory: OctokitFactory,
   logger = console
@@ -540,7 +539,7 @@ export async function regeneratePullRequest(
   let token = await octokitFactory.getGitHubShortLivedAccessToken();
 
   // Clone the dest repo.
-  const cloneUrl = destRepo.repo.getCloneUrl(token);
+  const cloneUrl = destRepo.getCloneUrl(token);
   cmd(`git clone  "${cloneUrl}" ${destDir}`);
   const mainBranch = cmd('git branch --show-current', {cwd: destDir})
     .toString('utf-8')
@@ -581,10 +580,10 @@ export async function regeneratePullRequest(
   // its body or add a comment describing failure.
   let octokit = await octokitFactory.getShortLivedOctokit(token);
   const pulls = await octokit.pulls.list({
-    owner: destRepo.repo.owner,
-    repo: destRepo.repo.repo,
+    owner: destRepo.owner,
+    repo: destRepo.repo,
     state: 'open',
-    head: `${destRepo.repo.owner}:${destBranch}`,
+    head: `${destRepo.owner}:${destBranch}`,
   });
   if (pulls.data.length < 1) {
     logger.error(
@@ -599,8 +598,8 @@ export async function regeneratePullRequest(
   const reportError = async (error: string) => {
     logger.error(`Error in ${pull.html_url}:\n${error}`);
     await octokit.pulls.createReviewComment({
-      owner: destRepo.repo.owner,
-      repo: destRepo.repo.repo,
+      owner: destRepo.owner,
+      repo: destRepo.repo,
       pull_number: pull.number,
       body: error,
     });
@@ -658,7 +657,7 @@ export async function regeneratePullRequest(
   octokit = await octokitFactory.getShortLivedOctokit(token);
 
   // Force push the code to the pull request branch.
-  const pushUrl = destRepo.repo.getCloneUrl(token);
+  const pushUrl = destRepo.getCloneUrl(token);
   cmd(`git remote set-url origin ${pushUrl}`, {cwd: destDir});
   cmd(`git push -f origin ${destBranch}`, {cwd: destDir});
 
@@ -667,8 +666,8 @@ export async function regeneratePullRequest(
 
   const apiList = apiNames.length > 3 ? 'Many APIs' : apiNames.join(',');
   await octokit.pulls.update({
-    owner: destRepo.repo.owner,
-    repo: destRepo.repo.repo,
+    owner: destRepo.owner,
+    repo: destRepo.repo,
     pull_number: pull.number,
     title: insertApiName(title, apiList),
     body,

@@ -581,12 +581,7 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
     // Switch back to the main branch.
     cmd('git checkout main', {cwd: destDir});
 
-    await cc.regeneratePullRequest(
-      abcRepo,
-      {repo: destRepo, yamls: [{path: '.github/.OwlBot.yaml', yaml: bYaml}]},
-      'pull-branch',
-      factory
-    );
+    await cc.regeneratePullRequest(abcRepo, destRepo, 'pull-branch', factory);
 
     // Confirm commit messages were merged and pushed to pull-branch.
     const gitLog = cmd('git log -1 --format=%B pull-branch', {
