@@ -19,7 +19,7 @@ import {
   copyCode,
   copyDirs,
   copyTagFrom,
-  findCopyTags,
+  findCopyTag,
   findSourceHash,
   sourceLinkFrom,
   stat,
@@ -336,13 +336,12 @@ describe('findSourceHash', () => {
   });
 });
 
-describe('findCopyTags', () => {
+describe('findCopyTag', () => {
   it('finds a copy tag in a pull request body', () => {
-    const tag1 = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
-    const tag2 = copyTagFrom('.github/Speech/.OwlBot.yaml', 'xyz987');
-    const prBody = `Great code!\nCopy-Tag: ${tag1}\nBye.\n\tCopy-Tag: ${tag2}`;
-    const found = findCopyTags(prBody);
-    assert.deepStrictEqual(found, [tag1, tag2]);
+    const tag = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
+    const prBody = `Great code!\nCopy-Tag: ${tag}\nBye.`;
+    const found = findCopyTag(prBody);
+    assert.strictEqual(found, tag);
   });
 });
 
