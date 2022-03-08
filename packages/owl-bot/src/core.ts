@@ -627,6 +627,9 @@ async function updatePullRequestAfterPostProcessor(
     })
   ).data;
   if (!files.length) {
+    logger.info(
+      `Closing pull request ${pull.html_url} because listFiles() returned empty.`
+    );
     await octokit.pulls.update({
       owner,
       repo,
