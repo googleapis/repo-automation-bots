@@ -23,7 +23,7 @@
 import {cwd} from 'process';
 import yargs = require('yargs');
 import {newCmd} from '../../cmd';
-import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
+import {findCopyTags, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
 import {OWL_BOT_IGNORE} from '../../labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from '../../constants';
 import {octokitFactoryFromToken} from '../../octokit-util';
@@ -111,7 +111,7 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
 
   // Unpack the Copy-Tag.
   const body = cmd('git log -1 --format=%B', {cwd: repoDir}).toString('utf-8');
-  const copyTagText = findCopyTag(body);
+  const copyTagText = findCopyTags(body)[0];
   if (copyTagText) {
     try {
       const copyTag = unpackCopyTag(copyTagText);
