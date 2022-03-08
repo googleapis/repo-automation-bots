@@ -18,7 +18,6 @@ import yargs = require('yargs');
 import * as cc from '../../copy-code';
 import {octokitFactoryFrom, OctokitParams} from '../../octokit-util';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
-import {FakeCopyStateStore} from '../../fake-copy-state-store';
 
 interface Args extends OctokitParams {
   'source-repo': string;
@@ -78,17 +77,14 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
   },
   async handler(argv) {
     const octokitFactory = await octokitFactoryFrom(argv);
-    const params: cc.CopyParams = {
-      sourceRepo: argv['source-repo'],
-      sourceRepoCommitHash: argv['source-repo-commit-hash'],
-      destRepo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-      // Fake copy state store because this command is invoked by humans only
-      // and it shouldn't interfere with Owl Bot state.
-      copyStateStore: new FakeCopyStateStore(),
-      octokitFactory,
-    };
-    await cc.copyCodeAndAppendOrCreatePullRequest(params, [
-      argv['dest-owlbot-yaml'],
-    ]);
+    await cc.copyCodeAndAppendOrCreatePullRequest(
+      argv['source-repo'],
+      argv['source-repo-commit-hash'],
+      {
+        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
+        yamlPath: argv['dest-owlbot-yaml'],
+      },
+      octokitFactory
+    );
   },
 };

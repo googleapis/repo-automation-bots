@@ -13,7 +13,7 @@
 // limitations under the License.
 import {OWL_BOT_COPY} from '.';
 import {newCmd} from './cmd';
-import {findCopyTags, loadOwlBotYaml, unpackCopyTag} from './copy-code';
+import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from './copy-code';
 import path from 'path';
 import * as createPr from './create-pr';
 import {GithubRepo, githubRepoFromUri} from './github-repo';
@@ -98,7 +98,7 @@ export async function createPullRequestForCopyBranch(
     // Don't attempt to parse the commit message and yamls because that may
     // be what's causing the non-forced attempts to fail.
   } else {
-    const copyTag = unpackCopyTag(findCopyTags(lastCommitMessage)[0]);
+    const copyTag = unpackCopyTag(findCopyTag(lastCommitMessage));
     const yaml = await loadOwlBotYaml(path.join(localRepoDir, copyTag.p));
     const rootYaml = await loadOwlBotYaml(
       path.join(localRepoDir, DEFAULT_OWL_BOT_YAML_PATH)
