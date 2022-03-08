@@ -17,12 +17,12 @@ import {describe, it} from 'mocha';
 import {scanGoogleapisGenAndCreatePullRequests} from '../src/scan-googleapis-gen-and-create-pull-requests';
 import * as cc from '../src/copy-code';
 import {OctokitFactory, OctokitType} from '../src/octokit-util';
-import {DEFAULT_OWL_BOT_YAML_PATH, OwlBotYaml} from '../src/config-files';
+import {OwlBotYaml} from '../src/config-files';
 import * as fs from 'fs';
 import path from 'path';
 import {GithubRepo} from '../src/github-repo';
 import {FakeConfigsStore} from './fake-configs-store';
-import {ConfigsStore, OwlBotYamlAndPath} from '../src/configs-store';
+import {ConfigsStore} from '../src/configs-store';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 import {newCmd} from '../src/cmd';
 import {
@@ -31,10 +31,10 @@ import {
   newFakeOctokit,
   newFakeOctokitFactory,
 } from './fake-octokit';
+import {CopyStateStore} from '../src/copy-state-store';
 import tmp from 'tmp';
 import {copyTagFrom} from '../src/copy-code';
 import {EMPTY_REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
-import {FakeCopyStateStore} from '../src/fake-copy-state-store';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -42,6 +42,28 @@ import {FakeCopyStateStore} from '../src/fake-copy-state-store';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const cmd = newCmd();
+
+class FakeCopyStateStore implements CopyStateStore {
+  readonly store: Map<string, string> = new Map();
+
+  makeKey(repo: {owner: string; repo: string}, copyTag: string) {
+    return `${repo.owner}+${repo.repo}+${copyTag}`;
+  }
+  recordBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string,
+    buildId: string
+  ): Promise<void> {
+    this.store.set(this.makeKey(repo, copyTag), buildId);
+    return Promise.resolve();
+  }
+  findBuildForCopy(
+    repo: {owner: string; repo: string},
+    copyTag: string
+  ): Promise<string | undefined> {
+    return Promise.resolve(this.store.get(this.makeKey(repo, copyTag)));
+  }
+}
 
 function factory(octokit: any): OctokitFactory {
   return {
@@ -67,11 +89,8 @@ const bYaml: OwlBotYaml = {
 /**
  * Makes a local destination repo where files will be copied to.
  */
-function makeDestRepo(
-  yaml: OwlBotYaml,
-  moreYamls: OwlBotYamlAndPath[] = []
-): GithubRepo {
-  const destDir = makeRepoWithOwlBotYaml(yaml, moreYamls);
+function makeDestRepo(yaml: OwlBotYaml): GithubRepo {
+  const destDir = makeRepoWithOwlBotYaml(yaml);
   const destRepo: GithubRepo = {
     owner: 'googleapis',
     repo: 'nodejs-spell-check',
@@ -86,10 +105,9 @@ function makeDestRepo(
 }
 
 function makeDestRepoAndConfigsStore(
-  yaml: OwlBotYaml,
-  moreYamls: OwlBotYamlAndPath[] = []
+  yaml: OwlBotYaml
 ): [GithubRepo, ConfigsStore] {
-  const destRepo: GithubRepo = makeDestRepo(yaml, moreYamls);
+  const destRepo: GithubRepo = makeDestRepo(yaml);
 
   const configsStore = new FakeConfigsStore(
     new Map([
@@ -104,7 +122,6 @@ function makeDestRepoAndConfigsStore(
               yaml: yaml,
               path: '.github/.OwlBot.yaml',
             },
-            ...moreYamls,
           ],
         },
       ],
@@ -112,7 +129,7 @@ function makeDestRepoAndConfigsStore(
   );
   configsStore.githubRepos.set(destRepo.toString(), {
     repo: destRepo,
-    yamls: [{path: '.github/.OwlBot.yaml', yaml}, ...moreYamls],
+    yamlPath: '.github/.OwlBot.yaml',
   });
   return [destRepo, configsStore];
 }
@@ -120,18 +137,13 @@ function makeDestRepoAndConfigsStore(
 describe('scanGoogleapisGenAndCreatePullRequests', function () {
   // These tests use git locally and read and write a lot to the file system,
   // so a slow file system will slow them down.
-  this.timeout(3600000); // 1 hour.
-
-  let abcRepo = '';
-  let abcCommits: string[] = [];
-  before(() => {
-    abcRepo = makeAbcRepo();
-    abcCommits = cmd('git log --format=%H', {cwd: abcRepo})
-      .toString('utf8')
-      .split(/\r?\n/)
-      .map(s => s.trim())
-      .filter(s => s);
-  });
+  this.timeout(60000); // 1 minute.
+  const abcRepo = makeAbcRepo();
+  const abcCommits = cmd('git log --format=%H', {cwd: abcRepo})
+    .toString('utf8')
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(s => s);
 
   beforeEach(() => {
     cmd('git checkout main', {cwd: abcRepo});
@@ -171,7 +183,7 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     assert.strictEqual(prCount, 0);
   });
 
-  it('copies files and creates a pull request', async () => {
+  it('copies files and creates a pull request (multicommit)', async () => {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 
     const pulls = new FakePulls();
@@ -231,87 +243,6 @@ Copy-Tag: ${copyTag}`
       copyStateStore
     );
     assert.strictEqual(prCount, 0);
-  });
-
-  it('copies files and creates 2 pull requests when combinePulls=false', async () => {
-    const anotherYaml: OwlBotYaml = {
-      'deep-copy-regex': [
-        {
-          source: '/b.txt',
-          dest: '/another/b.txt',
-        },
-      ],
-    };
-    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml, [
-      {
-        yaml: anotherYaml,
-        path: 'SpellCheck/.OwlBot.yaml',
-      },
-    ]);
-
-    const pulls = new FakePulls();
-    pulls.list = () => {
-      return Promise.resolve({data: []});
-    };
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const copyStateStore = new FakeCopyStateStore();
-    await scanGoogleapisGenAndCreatePullRequests(
-      abcRepo,
-      factory(octokit),
-      configsStore,
-      undefined,
-      copyStateStore,
-      false
-    );
-
-    // Confirm it created two pull requests.
-    assert.strictEqual(pulls.pulls.length, 2);
-
-    // Confirm both were recorded in the copy state store.
-    assert.strictEqual(copyStateStore.store.size, 2);
-  });
-
-  it('copies files and creates 1 pull request when combinePulls=true', async () => {
-    const anotherYaml: OwlBotYaml = {
-      'deep-copy-regex': [
-        {
-          source: '/b.txt',
-          dest: '/another/b.txt',
-        },
-      ],
-    };
-    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml, [
-      {
-        yaml: anotherYaml,
-        path: 'SpellCheck/.OwlBot.yaml',
-      },
-    ]);
-
-    const pulls = new FakePulls();
-    pulls.list = () => {
-      return Promise.resolve({data: []});
-    };
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const copyStateStore = new FakeCopyStateStore();
-    await scanGoogleapisGenAndCreatePullRequests(
-      abcRepo,
-      factory(octokit),
-      configsStore,
-      undefined,
-      copyStateStore,
-      true
-    );
-
-    // Confirm it created one combined pull request.
-    assert.strictEqual(pulls.pulls.length, 1);
-
-    // The pull request should have both copy tags.
-    assert.strictEqual(cc.findCopyTags(pulls.pulls[0].body).length, 2);
-
-    // Confirm both were recorded in the copy state store.
-    assert.strictEqual(copyStateStore.store.size, 2);
   });
 
   it('copies files and appends a pull request', async () => {
@@ -381,80 +312,6 @@ Copy-Tag: ${copyTag}`
       copyStateStore
     );
     assert.strictEqual(prCount, 0);
-  });
-
-  it('reports error for corrupt yaml in new pull request', async () => {
-    const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
-
-    // Corrupt the yaml.
-    const destDir = destRepo.getCloneUrl();
-    fs.writeFileSync(path.join(destDir, DEFAULT_OWL_BOT_YAML_PATH), 'corrupt');
-    cmd('git commit --amend --no-edit -a', {cwd: destDir});
-
-    const pulls = new FakePulls();
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const copyStateStore = new FakeCopyStateStore();
-    await scanGoogleapisGenAndCreatePullRequests(
-      abcRepo,
-      factory(octokit),
-      configsStore,
-      undefined,
-      copyStateStore
-    );
-
-    // Confirm it created no pull request.
-    assert.strictEqual(pulls.pulls.length, 0);
-
-    // Confirm it created an issue.
-    assert.strictEqual(issues.issues.length, 1);
-
-    // Confirm the PR was recorded in firestore.
-    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
-    assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
-  });
-
-  it('reports error for corrupt yaml while appending PR', async () => {
-    const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
-
-    // Create a branch in the dest dir for the existing pull request.
-    const destDir = destRepo.getCloneUrl();
-    cmd('git checkout -b owl-bot-copy', {cwd: destDir});
-    fs.writeFileSync(path.join(destDir, DEFAULT_OWL_BOT_YAML_PATH), 'corrupt');
-    cmd('git commit --amend --no-edit -a', {cwd: destDir});
-    cmd('git checkout main', {cwd: destDir});
-
-    // Create an existing pull request to be appended.
-    const pullBody = 'This is the greatest pull request ever.';
-    const pulls = new FakePulls();
-    pulls.create({
-      owner: 'googleapis',
-      repo: 'nodejs-spell-check',
-      title: 'q',
-      body: pullBody,
-      head: 'owl-bot-copy',
-    });
-
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const copyStateStore = new FakeCopyStateStore();
-    await scanGoogleapisGenAndCreatePullRequests(
-      abcRepo,
-      factory(octokit),
-      configsStore,
-      undefined,
-      copyStateStore
-    );
-
-    // Confirm it didn't add commits to the exiting pull request.
-    assert.strictEqual(pulls.updates.length, 0);
-
-    // Confirm it created a comment on the open pull request.
-    assert.strictEqual(pulls.reviewComments.length, 1);
-
-    // Confirm the PR was recorded in firestore.
-    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
-    assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
   });
 
   it('creates 1 pull requests for 3 matching commits', async () => {
@@ -529,17 +386,12 @@ describe('regenerate pull requests', function () {
   // These tests use git locally and read and write a lot to the file system,
   // so a slow file system will slow them down.
   this.timeout(60000); // 1 minute.
-
-  let abcRepo = '';
-  let abcCommits: string[] = [];
-  before(() => {
-    abcRepo = makeAbcRepo();
-    abcCommits = cmd('git log --format=%H', {cwd: abcRepo})
-      .toString('utf8')
-      .split(/\r?\n/)
-      .map(s => s.trim())
-      .filter(s => s);
-  });
+  const abcRepo = makeAbcRepo();
+  const abcCommits = cmd('git log --format=%H', {cwd: abcRepo})
+    .toString('utf8')
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(s => s);
 
   beforeEach(() => {
     cmd('git checkout main', {cwd: abcRepo});
@@ -583,7 +435,7 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
 
     await cc.regeneratePullRequest(
       abcRepo,
-      {repo: destRepo, yamls: [{path: '.github/.OwlBot.yaml', yaml: bYaml}]},
+      {repo: destRepo, yamlPath: '.github/.OwlBot.yaml'},
       'pull-branch',
       factory
     );

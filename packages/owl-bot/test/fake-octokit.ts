@@ -51,7 +51,6 @@ export class FakeIssues {
 export class FakePulls {
   pulls: any[] = [];
   updates: any[] = [];
-  reviewComments: any[] = [];
 
   list() {
     return Promise.resolve({data: this.pulls});
@@ -72,11 +71,6 @@ export class FakePulls {
 
   update(pull: any) {
     this.updates.push(pull);
-    return Promise.resolve();
-  }
-
-  createReviewComment(comment: any) {
-    this.reviewComments.push(comment);
     return Promise.resolve();
   }
 }
