@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import {GCFBootstrapper} from 'gcf-utils';
-import {OwlBot} from './owl-bot';
+import {owlbot} from './owl-bot';
 const bootstrap = new GCFBootstrapper();
 // Unlike other probot apps, owl-bot-post-processor requires the ability
 // to generate its own auth token for Cloud Build, we use the helper in
@@ -23,7 +23,7 @@ const bootstrap = new GCFBootstrapper();
 module.exports.owl_bot = bootstrap.gcf(
   async (app: Probot) => {
     const config = await bootstrap.getProbotConfig(false);
-    OwlBot(config.privateKey, app);
+    owlbot.OwlBot(config.privateKey, app);
   },
   // owl-bot typically waits for a Cloud Build build to finish.
   // Cloud Build has a limit for number of concurrent builds, so

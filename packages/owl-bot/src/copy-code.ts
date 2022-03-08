@@ -556,13 +556,26 @@ export async function regeneratePullRequest(
 
   // Create a single commit message by combining the multiple commit messages
   // in the pull request.
-  const commitMsgBuf = cmd(
-    `git log ${ancestor}..origin/${destBranch} --format=%B`,
-    {cwd: destDir}
-  );
+  const history = cmd(`git log ${ancestor}..origin/${destBranch} --format=%H`, {
+    cwd: destDir,
+  })
+    .toString('utf-8')
+    .split(/\s+/)
+    .filter(Boolean);
+  const commitMessages: string[] = [];
+  for (const hash of history) {
+    const commitMessage = cmd(`git log -1 --format=%B ${hash}`, {cwd: destDir})
+      .toString('utf-8')
+      .trim();
+    // Drop commit messages that don't have a Copy-Tag, because those commits
+    // get dropped during regeneration.
+    if (bodyIncludesCopyTagFooter(commitMessage)) {
+      commitMessages.push(commitMessage);
+    }
+  }
   const commitMsgFilePath = path.join(workDir, 'commit.txt');
-  fs.writeFileSync(commitMsgFilePath, commitMsgBuf);
-  const commitMsg = commitMsgBuf.toString('utf-8');
+  const commitMsg = commitMessages.join('\n\n');
+  fs.writeFileSync(commitMsgFilePath, commitMsg);
 
   // Find the corresponding pull request because we'll either have to update
   // its body or add a comment describing failure.

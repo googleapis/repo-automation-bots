@@ -25,7 +25,9 @@ export function newCmd(logger = console): Cmd {
     options?: proc.ExecSyncOptions | undefined
   ): Buffer => {
     logger.info(command);
-    return proc.execSync(command, options);
+    const output = proc.execSync(command, options);
+    if (typeof output === 'string') return Buffer.from(output);
+    else return output;
   };
   return cmd;
 }
