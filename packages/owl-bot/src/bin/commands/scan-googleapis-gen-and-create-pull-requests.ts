@@ -74,7 +74,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'With this flag set, Owl Bot will open one combined pull request ' +
           'with changes to all the APIs.',
         type: 'boolean',
-        default: false,
+        default: true,
       });
   },
   async handler(argv) {
