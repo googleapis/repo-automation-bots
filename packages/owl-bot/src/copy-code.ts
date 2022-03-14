@@ -538,6 +538,15 @@ export async function regeneratePullRequest(
   const cmd = newCmd(logger);
   let token = await octokitFactory.getGitHubShortLivedAccessToken();
 
+  // Clone the source repo.
+  const sourceDir = toLocalRepo(
+    sourceRepo,
+    workDir,
+    logger,
+    undefined,
+    await octokitFactory.getGitHubShortLivedAccessToken()
+  );
+
   // Clone the dest repo.
   const cloneUrl = destRepo.getCloneUrl(token);
   cmd(`git clone  "${cloneUrl}" ${destDir}`);
@@ -611,6 +620,7 @@ export async function regeneratePullRequest(
     await reportError('No Copy-Tags found in commit message.');
     return;
   }
+  logger.info(['Found Copy-Tags: ', ...copyTagTexts].join('\n'));
 
   const copyTags: CopyTag[] = [];
   for (const text of copyTagTexts) {
@@ -629,19 +639,30 @@ export async function regeneratePullRequest(
   const apiNames: string[] = [];
   for (const tag of copyTags) {
     if (sourceRepoCommitHash !== tag.h) {
+      logger.info(
+        [
+          'Skipping Copy-Tag because its commit hash is older.',
+          JSON.stringify(tag),
+          JSON.stringify(copyTags[0]),
+        ].join('\n')
+      );
       continue; // Only copy from the most recent commit hash.
     }
     // Load the yaml so we know which code to copy.
     let yaml: OwlBotYaml | undefined;
     try {
-      yaml = await loadOwlBotYaml(path.join(destDir, tag.p));
+      const yamlPath = path.join(destDir, tag.p);
+      console.info(`Loading ${yamlPath}`);
+      yaml = await loadOwlBotYaml(yamlPath);
     } catch (e) {
       await reportError(`Error loading ${tag.p}:\n${e}`);
       return;
     }
 
     // Copy the files specified in the yaml.
-    copyDirs(sourceRepo, destDir, yaml, logger);
+    const yamlText = JSON.stringify(yaml, undefined, 2);
+    console.info(`copyDirs(${sourceDir}, ${destDir}, ${yamlText}}`);
+    copyDirs(sourceDir, destDir, yaml, logger);
 
     if (yaml['api-name']) {
       apiNames.push(yaml['api-name']);
