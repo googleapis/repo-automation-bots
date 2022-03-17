@@ -20,7 +20,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "start": "probot run ./build/src/googleapis-bootstrapper.js",
-    "start:local": "node ./build/src/local.js",
+    "start:local": "node ./build/common-container/common-container.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "fix": "gts fix",
@@ -28,13 +28,21 @@
   },
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.6.0",
+    "@google-cloud/secret-manager": "^3.11.0",
+    "@octokit/auth-app": "^3.6.1",
+    "@octokit/rest": "^18.12.0",
     "@types/yargs": "^17.0.9",
-    "gcf-utils": "^11.0.0",
+    "gcf-utils": "^11.4.3",
+    "jsonwebtoken": "^8.5.1",
+    "node-fetch": "^2.6.1",
+    "nodejs-fetch": "^1.0.0",
     "yargs": "^17.3.1"
   },
   "devDependencies": {
+    "@types/jwt-encode": "^1.0.0",
     "@types/mocha": "^8.0.0",
     "@types/node": "^14.0.0",
+    "@types/node-fetch": "^2.6.1",
     "c8": "^7.3.5",
     "cross-env": "^7.0.0",
     "gts": "^3.0.0",

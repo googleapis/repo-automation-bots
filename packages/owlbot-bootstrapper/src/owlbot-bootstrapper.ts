@@ -28,10 +28,7 @@ export = (app: Probot) => {
       {}
     )) as Configuration;
 
-    if (
-      (context.payload.pull_request) &&
-      config.randomBoolean
-    ) {
+    if (context.payload.pull_request && config.randomBoolean) {
       logger.info('The bot is alive!');
       return;
     }
@@ -43,10 +40,7 @@ export = (app: Probot) => {
       {}
     )) as Configuration;
 
-    if (
-      (context.payload.issue) &&
-      config.randomBoolean
-    ) {
+    if (context.payload.issue && config.randomBoolean) {
       logger.info('The bot is alive!');
       return;
     }

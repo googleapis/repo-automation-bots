@@ -19,7 +19,7 @@
 FROM node:14-slim AS BUILD
 
 # Create and change to the app directory.
-WORKDIR /usr/src/app
+WORKDIR /usr/common-container/common-container
 
 # Copy application dependency manifests to the container image.
 # A wildcard is used to ensure copying both package.json AND package-lock.json (when available).
@@ -37,13 +37,16 @@ RUN npm run compile
 FROM node:14-slim
 
 # Create and change to the app directory.
-WORKDIR /usr/src/app
+WORKDIR /usr/common-container/common-container
 
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build
+COPY --from=BUILD /usr/common-container/common-container/build build
+RUN apt-get update && apt-get install -y git
+
 RUN npm ci --only=production
 
 ENV NODE_ENV "production"
 
 # Run the web service on container startup.
-CMD [ "npm", "--no-update-notifier", "run", "start" ]
+CMD [ "node", "/usr/common-container/common-container/build/common-container/common-container.js" ]
+
