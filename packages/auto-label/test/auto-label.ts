@@ -29,11 +29,13 @@ import {
   autoDetectLabel,
   DriftRepo,
   DriftApi,
+  PULL_REQUEST_SIZE_LABELS,
 } from '../src/helper';
 import {loadConfig} from './test-helper';
 import {logger} from 'gcf-utils';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -57,6 +59,8 @@ describe('auto-label', () => {
   let repoStub: sinon.SinonStub;
   let getConfigWithDefaultStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
+  let datastoreLockAcquireStub: sinon.SinonStub;
+  let datastoreLockReleaseStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -80,6 +84,11 @@ describe('auto-label', () => {
       ConfigChecker.prototype,
       'validateConfigChanges'
     );
+    // DatastoreLock just succeeds.
+    datastoreLockAcquireStub = sandbox.stub(DatastoreLock.prototype, 'acquire');
+    datastoreLockAcquireStub.resolves(true);
+    datastoreLockReleaseStub = sandbox.stub(DatastoreLock.prototype, 'release');
+    datastoreLockReleaseStub.resolves(true);
     // We test the config schema compatibility in config-compatibility.ts
     validateConfigStub.resolves();
     sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
@@ -666,6 +675,20 @@ describe('auto-label', () => {
       // TODO: Migrate to a test without the config stub.
       getConfigWithDefaultStub.resolves(DEFAULT_CONFIGS);
       const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/labels?per_page=100')
+        .reply(200, PULL_REQUEST_SIZE_LABELS)
+        .patch('/repos/testOwner/testRepo/labels/size%3A%20xs')
+        .reply(200)
+        .patch('/repos/testOwner/testRepo/labels/size%3A%20s')
+        .reply(200)
+        .patch('/repos/testOwner/testRepo/labels/size%3A%20m')
+        .reply(200)
+        .patch('/repos/testOwner/testRepo/labels/size%3A%20l')
+        .reply(200)
+        .patch('/repos/testOwner/testRepo/labels/size%3A%20xl')
+        .reply(200)
+        .patch('/repos/testOwner/testRepo/labels/size%3A%20xxl')
+        .reply(200)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {

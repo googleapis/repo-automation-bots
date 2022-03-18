@@ -52,7 +52,7 @@ export const DEFAULT_CONFIGS = {
     pullrequest: false,
   },
   requestsize: {
-    enabled: false,
+    enabled: true,
   },
 };
 
@@ -72,27 +72,27 @@ export const PULL_REQUEST_SIZE_LABELS = [
   {
     name: 'size: xs',
     description: 'Pull request size is extra small.',
-    color: '2deb01',
+    color: '00ff4b',
   },
   {
     name: 'size: s',
     description: 'Pull request size is small.',
-    color: '2cc785',
+    color: '9cfa00',
   },
   {
     name: 'size: m',
     description: 'Pull request size is medium.',
-    color: '5d743d',
+    color: 'effa00',
   },
   {
     name: 'size: l',
     description: 'Pull request size is large.',
-    color: 'd65692',
+    color: 'ff7a00',
   },
   {
     name: 'size: xl',
     description: 'Pull request size is extra large.',
-    color: '912925',
+    color: 'c6040f',
   },
   {
     name: 'size: xxl',

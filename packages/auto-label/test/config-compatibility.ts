@@ -60,7 +60,16 @@ function fetchFilesInPR(configFile: string) {
       },
     ])
     .get('/repos/testOwner/testRepo/git/blobs/testsha')
-    .reply(200, createConfigResponse(configFile));
+    .reply(200, createConfigResponse(configFile))
+    .get('/repos/testOwner/testRepo/pulls/12/files')
+    .reply(200, [
+      {
+        filename: `.github/${helper.CONFIG_FILE_NAME}`,
+        sha: 'testsha',
+      },
+    ])
+    .post('/repos/testOwner/testRepo/issues/12/labels')
+    .reply(200);
 }
 
 describe('getConfigWithDefault', () => {
