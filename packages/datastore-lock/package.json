@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/datastore-lock",
-  "version": "3.0.0",
+  "version": "3.1.1",
   "description": "Distributed lock backed by Google Cloud Datastore",
   "scripts": {
     "compile": "tsc -p .",
@@ -16,7 +16,7 @@
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
     "@google-cloud/datastore": "^6.6.2",
-    "gcf-utils": "^13.2.1",
+    "gcf-utils": "^13.2.2",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
@@ -28,10 +28,10 @@
     "dotenv": "^16.0.0",
     "google-datastore-emulator": "^5.2.0",
     "gts": "^3.1.0",
-    "mocha": "^9.2.1",
+    "mocha": "^9.2.2",
     "nock": "^13.2.4",
     "sinon": "^13.0.1",
-    "typescript": "~4.5.5"
+    "typescript": "~4.6.2"
   },
   "engines": {
     "node": ">= 12.18.2"

@@ -29,7 +29,6 @@ import {copyCodeIntoPullRequestCommand} from './commands/copy-code-into-pull-req
 import {copyBazelBin} from './commands/copy-bazel-bin';
 import {scanAndRetryFailedLockUpdatesCommand} from './commands/scan-and-retry-failed-lock-updates';
 import {commitPostProcessorUpdateCommand} from './commands/commit-post-processor-update';
-import {maybeCreatePullRequestForCopyCommand} from './commands/maybe-create-pull-request-for-copy';
 
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
@@ -43,7 +42,6 @@ yargs(process.argv.slice(2))
   .command(copyCodeAndCreatePullRequestCommand)
   .command(writeLock)
   .command(maybeCreatePullRequestForLockUpdateCommand)
-  .command(maybeCreatePullRequestForCopyCommand)
   .command(testWebhook)
   .command(copyCodeIntoPullRequestCommand)
   .command(scanAndRetryFailedLockUpdatesCommand)
