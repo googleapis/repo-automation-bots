@@ -26,6 +26,8 @@ import {NodeRelease} from './process-checks/node/release';
 import {JavaDependency} from './process-checks/java/dependency';
 import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
 import {OwlBotAPIChanges} from './process-checks/owl-bot-api-changes';
+import {JavaApiaryCodegen} from './process-checks/java/apiary-codegen';
+import {PHPApiaryCodegen} from './process-checks/php/apiary-codegen';
 // This file manages the logic to check whether a given PR matches the config in the repository
 
 // We need this typeMap to convert the JSON input (string) into a corresponding type.
@@ -55,6 +57,10 @@ const typeMap = [
     configType: NodeRelease,
   },
   {
+    configValue: 'JavaApiaryCodegen',
+    configType: JavaApiaryCodegen,
+  },
+  {
     configValue: 'JavaDependency',
     configType: JavaDependency,
   },
@@ -65,6 +71,10 @@ const typeMap = [
   {
     configValue: 'OwlBotAPIChanges',
     configType: OwlBotAPIChanges,
+  },
+  {
+    configValue: 'PHPApiaryCodegen',
+    configType: PHPApiaryCodegen,
   },
 ];
 

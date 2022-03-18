@@ -21,9 +21,11 @@ processes:
   - "PythonDependency"
   - "NodeDependency"
   - "NodeRelease"
+  - "JavaApiaryCodegen"
   - "JavaDependency"
   - "OwlBotTemplateChanges"
   - "OwlBotAPIChanges"
+  - "PHPApiaryCodegen"
 ```
 
 These seven processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
@@ -84,6 +86,9 @@ Below is what each process checks for:
     - Increase the non-major package version
     - Only change the top-level package
     - Approve on a day between Mon - Thurs PST (so as to not trigger a weekend release)
+* JavaApiaryCodegen
+  - Checks that the author is 'yoshi-code-bot'
+  - Checks that the title of the PR matches the regexp: /^Regenerate .* client$/
 * JavaDependency:
   - Checks that the author is 'renovate-bot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
@@ -107,6 +112,9 @@ Below is what each process checks for:
   - Checks that the .repo-metadata.json of the repo contains "library_type": "GAPIC_AUTO"
   - Checks that there are no other PRs in that repository that have been opened by gcf-owl-bot[bot]
   - Checks that the PR does not have any commits from any other authors other than gcf-owl-bot[bot]
+* PHPApiaryCodegen
+  - Checks that the author is 'yoshi-code-bot'
+  - Checks that the title of the PR matches the regexp: /^Regenerate .* client$/
 
   
 

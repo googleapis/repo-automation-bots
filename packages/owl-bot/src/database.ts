@@ -181,8 +181,9 @@ export class FirestoreConfigsStore implements ConfigsStore {
     snapshot.forEach(doc => {
       i++;
       const configs = doc.data() as Configs | undefined;
+      const affectedYamls = [];
       for (const yaml of configs?.yamls ?? []) {
-        match_loop: for (const copy of yaml.yaml['deep-copy-regex'] ?? []) {
+        regexLoop: for (const copy of yaml.yaml['deep-copy-regex'] ?? []) {
           let regExp;
           try {
             regExp = toFrontMatchRegExp(copy.source);
@@ -194,14 +195,17 @@ export class FirestoreConfigsStore implements ConfigsStore {
           }
           for (const path of changedFilePaths) {
             if (regExp.test(path)) {
-              result.push({
-                repo: githubRepoFromOwnerSlashName(decodeId(doc.id)),
-                yamlPath: yaml.path,
-              });
-              break match_loop;
+              affectedYamls.push(yaml);
+              break regexLoop;
             }
           }
         }
+      }
+      if (affectedYamls.length > 0) {
+        result.push({
+          repo: githubRepoFromOwnerSlashName(decodeId(doc.id)),
+          yamls: affectedYamls,
+        });
       }
     });
     console.info(`walked ${i} configs`);
