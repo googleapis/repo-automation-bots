@@ -46,7 +46,7 @@
     "probot": "^12.1.0",
     "tmp": "^0.2.1",
     "uuid": "^8.3.2",
-    "yargs": "^16.0.0"
+    "yargs": "^17.0.0"
   },
   "devDependencies": {
     "@types/get-stream": "^3.0.2",
@@ -55,7 +55,7 @@
     "@types/pino": "^6.3.9",
     "@types/sinon": "^10.0.2",
     "@types/tmp": "^0.2.1",
-    "@types/yargs": "^16.0.0",
+    "@types/yargs": "^17.0.0",
     "c8": "^7.7.3",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.0",
