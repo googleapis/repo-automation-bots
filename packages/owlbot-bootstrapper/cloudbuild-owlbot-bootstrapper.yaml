@@ -1,0 +1,6 @@
+steps:
+  - name: ${_CONTAINER}
+  - name: ${_CONTAINER_2}
+  - name: ${_CONTAINER}
+    env:
+      - _IS_PRE_PROCESS=false
