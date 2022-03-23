@@ -1776,6 +1776,9 @@ describe('locking behavior', () => {
     sandbox.replace(owlbot, 'acquireLock', async () => {
       return Promise.reject(new owlbot.LockError());
     });
+    const githubMock = nock('https://api.github.com')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(200);
     const payload = {
       action: 'labeled',
       installation: {
@@ -1817,6 +1820,7 @@ describe('locking behavior', () => {
       payload: payload as any,
       id: 'abc123',
     });
+    githubMock.done();
   });
   it('returns immediately from synchronize event if lock acquired in labeled event', async () => {
     let first = true;
