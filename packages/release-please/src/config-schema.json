@@ -84,7 +84,11 @@
                 "extraFiles": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "anyOf": [
+                            {"type": "string"},
+                            {"$ref": "#/definitions/ExtraJsonFile"},
+                            {"$ref": "#/definitions/ExtraXmlFile"}
+                        ]
                     }
                 },
                 "releaseLabel": {
@@ -103,6 +107,34 @@
                     "type": "string"
                 }
             }
+        },
+        "ExtraJsonFile": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "jsonpath": {
+                    "type": "string"
+                }
+            }
+        },
+        "ExtraXmlFile": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "xpath": {
+                    "type": "string"
+                }
+            }            
         }
     },
     "properties": {

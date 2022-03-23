@@ -7,5 +7,5 @@ require (
 	cloud.google.com/go/iam v0.1.0 // indirect
 	cloud.google.com/go/secretmanager v1.3.0
 	github.com/google/uuid v1.3.0
-	google.golang.org/genproto v0.0.0-20220314164441-57ef72a4c106
+	google.golang.org/genproto v0.0.0-20220322021311-435b647f9ef2
 )
