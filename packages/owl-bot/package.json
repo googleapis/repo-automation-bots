@@ -11,7 +11,7 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "start": "node ./build/src/server.js",
+    "start-frontend": "node ./build/src/server-frontend.js",
     "start:local": "probot run ./build/src/run-probot-locally.js",
     "clean": "gts clean",
     "compile": "tsc -p .",

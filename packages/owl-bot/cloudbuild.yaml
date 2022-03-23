@@ -52,7 +52,7 @@ steps:
       - "$_DIRECTORY"
 
   - name: gcr.io/cloud-builders/docker
-    id: "build-docker"
+    id: "build-docker-frontend"
     waitFor: ["-"]
     dir: packages/owl-bot
     args:
@@ -60,18 +60,20 @@ steps:
       - "-f"
       - "Dockerfile.frontend"
       - "-t"
-      - "gcr.io/$PROJECT_ID/owl-bot"
+      - "gcr.io/$PROJECT_ID/owl-bot-frontend"
       - "."
 
   - name: gcr.io/cloud-builders/docker
-    id: "push-docker"
-    waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/owl-bot"]
+    id: "push-docker-frontend"
+    waitFor: ["build-docker-frontend"]
+    args: ["push", "gcr.io/$PROJECT_ID/owl-bot-frontend"]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
-    waitFor: ["push-docker"]
+    waitFor: ["push-docker-frontend"]
     entrypoint: bash
+    env:
+      - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-frontend"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"

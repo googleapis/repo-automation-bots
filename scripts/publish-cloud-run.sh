@@ -65,13 +65,17 @@ if [ -z "${SERVICE_NAME}" ]; then
   SERVICE_NAME=${botName//_/-}
 fi
 
+if [ -z "${IMAGE_NAME}" ]; then
+  IMAGE_NAME="gcr.io/${project}/${botName}"
+fi
+
 pushd "${directoryName}"
 functionName=${botName//-/_}
 queueName=${botName//_/-}
 
 deployArgs=(
   "--image"
-  "gcr.io/${project}/${botName}"
+  "${IMAGE_NAME}"
   "--set-env-vars"
   "DRIFT_PRO_BUCKET=${bucket}"
   "--set-env-vars"
