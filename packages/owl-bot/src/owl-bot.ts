@@ -415,7 +415,8 @@ async function runPostProcessorWithLock(
   octokit: Octokit,
   breakLoop = true
 ) {
-  // Short-circuit if post-processor already running for this SHA:
+  // Short-circuit if post-processor already running for this SHA, preventing two post-processor images
+  // from both executing and pushing changes against the same PR.
   const target = `${opts.owner}_${opts.repo}_${opts.sha}`;
   let lock: DatastoreLock;
   try {
