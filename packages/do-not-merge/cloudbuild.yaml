@@ -36,3 +36,40 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "nodejs12"
+
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker"
+    waitFor: ["-"]
+    dir: packages/do-not-merge
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/do-not-merge"
+      - "."
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker"
+    waitFor: ["build-docker"]
+    args: ["push", "gcr.io/$PROJECT_ID/do-not-merge"]
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run"
+    waitFor: ["push-docker"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+      # botName
+      - "do-not-merge"
+      # timeout
+      - "3600"
+      # minInstances: We want to serve Github webhook quickly, so keep one instance.
+      - "1"
