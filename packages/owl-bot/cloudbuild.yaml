@@ -120,9 +120,15 @@ steps:
       - "MEMORY=1G"
       # we could go higher
       - "CONCURRENCY=20"
+      # Substitutions
+      - "APP_ID=${_APP_ID}"
+      - "CLOUD_BUILD_TRIGGER=${_CLOUD_BUILD_TRIGGER}"
+      - "CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST=${_CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST}"
+      - "FIRESTORE_PROJECT_ID=${_FIRESTORE_PROJECT_ID}"
+      - "UPDATE_LOCK_BUILD_TRIGGER_ID=${_UPDATE_LOCK_BUILD_TRIGGER_ID}"
     args:
       - "-e"
-      - "./scripts/publish-cloud-run.sh"
+      - "./packages/owl-bot/publish-cloud-run-backend.sh"
       - "$_DIRECTORY"
       - "$PROJECT_ID"
       - "$_BUCKET"
