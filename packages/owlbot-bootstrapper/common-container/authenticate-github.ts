@@ -38,11 +38,10 @@ export async function parseSecretInfo(projectId: string, secretName: string) {
 }
 
 export async function authenticateOctokit(
-  asInstallation: boolean,
-  secretValues: any,
+  secretValues?: any,
   installationId?: string
 ) {
-  if (asInstallation) {
+  if (installationId) {
     return new Octokit({
       authStrategy: createAppAuth,
       auth: {
@@ -53,35 +52,35 @@ export async function authenticateOctokit(
     });
   } else {
     return new Octokit({
-      auth: secretValues.privateToken,
+      auth: secretValues.privateKey,
     });
   }
 }
 
 export async function getAccessTokenFromInstallation(
-  projectId: string,
-  appInstallationId: string
+  authValues: any,
+  appInstallationId: string,
+  repoName: string
 ) {
-  const authValues = await parseSecretInfo(projectId, SECRET_NAME_APP);
-
-  const appOctokit = await authenticateOctokit(
-    true,
-    authValues,
-    appInstallationId
-  );
+  const appOctokit = await authenticateOctokit(authValues, appInstallationId);
 
   const token = (
     await appOctokit.request(
       `POST /app/installations/${appInstallationId}/access_tokens`,
       {
         installation_id: appInstallationId,
+        repositories: repoName,
+        permissions: {
+          contents: 'write',
+          administration: 'write',
+          pull_requests: 'write',
+          organization_administration: 'write',
+        },
       }
     )
-  ).data.token;
+  ).data;
 
-  console.log(token);
-
-  return token;
+  return token.token;
 }
 
 export async function saveCredentialsToGitWorkspace(githubToken: string) {

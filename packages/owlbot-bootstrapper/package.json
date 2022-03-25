@@ -32,10 +32,12 @@
     "@octokit/auth-app": "^3.6.1",
     "@octokit/rest": "^18.12.0",
     "@types/yargs": "^17.0.9",
+    "fs": "0.0.1-security",
     "gcf-utils": "^11.4.3",
     "jsonwebtoken": "^8.5.1",
     "node-fetch": "^2.6.1",
     "nodejs-fetch": "^1.0.0",
+    "uuidv4": "^6.2.12",
     "yargs": "^17.3.1"
   },
   "devDependencies": {

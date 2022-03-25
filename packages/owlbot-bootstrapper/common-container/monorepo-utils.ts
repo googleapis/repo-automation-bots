@@ -1,6 +1,10 @@
 import {execSync} from 'child_process';
 import {authenticateOctokit, parseSecretInfo} from './authenticate-github';
 import {SECRET_NAME_APP} from './authenticate-github';
+import {uuid} from 'uuidv4';
+import {logger} from 'gcf-utils';
+
+export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 
 export async function cloneRepo(
   githubToken: string,
@@ -14,8 +18,15 @@ export async function cloneRepo(
   execSync(`git clone https://x-access-token:${githubToken}@${repoToClone}`);
 }
 
-export async function openBranch(repoToClone: string) {
-  execSync(`cd ${repoToClone}; git checkout -b owlbot-googleapis-initial-PR`);
+export async function openBranch(repoName: string) {
+  const UUID = uuid().split('-')[4];
+  const branchName = `${BRANCH_NAME_PREFIX}-${UUID}`;
+  console.log('a thing');
+  logger.info(execSync('pwd').toString());
+  execSync(`echo '${branchName}' >> branchName.md`);
+  execSync(
+    `cd ${repoName}; git checkout -b ${branchName}; git commit --allow-empty -m "initial commit"; git push -u origin ${branchName}`
+  );
 }
 
 export function isMonoRepo(language: string | undefined) {
@@ -31,14 +42,12 @@ export function isMonoRepo(language: string | undefined) {
 }
 
 export async function openAPR(
-  projectId: string,
   branchName: string,
   owner: string,
   repo: string,
-  installationId: string
+  token: string
 ) {
-  const authValues = parseSecretInfo(projectId, SECRET_NAME_APP);
-  const octokit = await authenticateOctokit(true, authValues, installationId);
+  const octokit = await authenticateOctokit(token);
   await octokit.rest.pulls.create({
     owner,
     repo,

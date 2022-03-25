@@ -16,7 +16,10 @@ import {execSync} from 'child_process';
 import {
   authenticateOctokit,
   getAccessTokenFromInstallation,
+  parseSecretInfo,
   saveCredentialsToGitWorkspace,
+  SECRET_NAME_APP,
+  SECRET_NAME_INDIVIDUAL,
   setConfig,
 } from './authenticate-github';
 import {isMonoRepo, cloneRepo, openBranch, openAPR} from './monorepo-utils';
@@ -28,6 +31,7 @@ import {
   initializeEmptyGitRepo,
   ORG,
 } from './split-repo-utils';
+import * as fs from 'fs';
 
 const repoToClone = process.env.REPO_TO_CLONE;
 const isPreProcess = process.env.IS_PRE_PROCESS;
@@ -35,6 +39,8 @@ const apiId = process.env.API_ID;
 const language = process.env.LANGUAGE;
 const projectId = process.env.PROJECT_ID;
 const appInstallationId = process.env.APP_INSTALLATION_ID;
+
+const BRANCH_NAME_PATH = '/workspace/branchName.md';
 
 function validateEnvVariables() {
   if (!repoToClone && isMonoRepo(language)) {
@@ -65,28 +71,41 @@ function validateEnvVariables() {
 async function main() {
   // Will fail if any arguments are missing
   validateEnvVariables();
-  await setConfig();
-
   console.log(isPreProcess);
 
-  const repoName = isMonoRepo(language)
+  const isMonoRepository = isMonoRepo(language);
+
+  const repoName = isMonoRepository
     ? repoToClone!.split('/')[2].split('.')[0]
     : createRepoName(language!, apiId!);
+
+  const secrets = isMonoRepository
+    ? await parseSecretInfo(projectId!, SECRET_NAME_APP)
+    : (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL)).privateToken;
+
+  const githubToken = isMonoRepository
+    ? await getAccessTokenFromInstallation(
+        secrets,
+        appInstallationId!,
+        repoName
+      )
+    : secrets.privateKey;
+  await setConfig();
+  await saveCredentialsToGitWorkspace(githubToken);
+  await execSync('cat .git-credentials');
 
   if (isPreProcess === 'true') {
     logger.info(`Entering pre-process for ${apiId}/${language}`);
     if (isMonoRepo(language)) {
       logger.info(`${language} is a monorepo`);
       // clone repo and open branch
-      const githubToken = await getAccessTokenFromInstallation(
-        projectId!,
-        appInstallationId!
-      );
       await cloneRepo(githubToken, repoToClone!);
       await openBranch(repoName);
+      const branchName = fs.readFileSync(BRANCH_NAME_PATH).toString();
+      console.log(branchName);
       logger.info(
         `Repo ${repoToClone} cloned, in branch ${execSync(
-          'git rev-parse --abbrev-ref HEAD'
+          'git branch; git rev-parse --abbrev-ref HEAD'
         )} in directory ${execSync('pwd; ls -a')}`
       );
     } else {
@@ -97,25 +116,16 @@ async function main() {
           `cd ${repoName}; pwd`
         )}`
       );
-      const octokit = await authenticateOctokit(false, projectId!);
+      const octokit = await authenticateOctokit(githubToken);
       await createRepo(octokit, repoName);
     }
   } else {
     logger.info(`Entering post-process for ${apiId}/${language}`);
-    const githubToken = await getAccessTokenFromInstallation(
-      projectId!,
-      appInstallationId!
-    );
-    await saveCredentialsToGitWorkspace(githubToken);
     if (isMonoRepo(language)) {
-      await commitAndPushChanges(repoName, 'owlbot-googleapis-initial-PR');
-      await openAPR(
-        projectId!,
-        'owlbot-googleapis-initial-PR',
-        ORG,
-        repoName,
-        appInstallationId!
-      );
+      const branchName = fs.readFileSync(BRANCH_NAME_PATH).toString();
+      console.log(branchName);
+      await commitAndPushChanges(repoName, branchName);
+      await openAPR(branchName, ORG, repoName, githubToken);
       // still have to open a PR
     } else {
       await commitAndPushChanges(repoName, 'main');
