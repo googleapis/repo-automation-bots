@@ -423,7 +423,9 @@ async function runPostProcessorWithLock(
     lock = await owlbot.acquireLock(target);
   } catch (err) {
     if (err instanceof LockError) {
-      logger.info(`acquireLock failed: target=${target}`);
+      logger.info(
+        `acquireLock failed: target=${target} - post processor is likely already running from another trigger`
+      );
       return;
     } else {
       throw err;
