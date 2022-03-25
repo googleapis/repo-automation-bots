@@ -11,6 +11,7 @@
     "node": ">=14.0.0"
   },
   "scripts": {
+    "start-backend": "node ./build/src/server-backend.js",
     "start-frontend": "node ./build/src/server-frontend.js",
     "start:local": "probot run ./build/src/run-probot-locally.js",
     "clean": "gts clean",
@@ -75,7 +76,7 @@
     "firebase-admin": "^10.0.0",
     "fs-extra": "^10.0.0",
     "gaxios": "^4.3.0",
-    "gcf-utils": "^13.1.0",
+    "gcf-utils": "^13.2.0",
     "glob": "^7.1.7",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
