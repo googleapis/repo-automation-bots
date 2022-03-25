@@ -102,19 +102,6 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   app.on(['pull_request.labeled'], async context => {
     const head = context.payload.pull_request.head.repo.full_name;
     const [owner, repo] = head.split('/');
-    // Short-circuit if post-processor already running for this SHA:
-    const target = `${owner}_${repo}_${context.payload.pull_request.head.sha}`;
-    let lock: DatastoreLock;
-    try {
-      lock = await owlbot.acquireLock(target);
-    } catch (err) {
-      if (err instanceof LockError) {
-        logger.info(`acquireLock failed: target=${target}`);
-        return;
-      } else {
-        throw err;
-      }
-    }
     logger.info(
       `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
     );
@@ -126,7 +113,6 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       context.payload,
       context.octokit
     );
-    await lock.release();
   });
 
   // Did someone click the "Regenerate this pull request" checkbox?
@@ -186,24 +172,10 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         return;
       }
 
-      // Short-circuit if post-processor already running for this SHA:
-      const target = `${owner}_${repo}_${context.payload.pull_request.head.sha}`;
-      let lock: DatastoreLock;
-      try {
-        lock = await owlbot.acquireLock(target);
-      } catch (err) {
-        if (err instanceof LockError) {
-          logger.info(`acquireLock failed: target=${target}`);
-          return;
-        } else {
-          throw err;
-        }
-      }
-
       logger.info(
         `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
       );
-      await runPostProcessor(
+      await runPostProcessorWithLock(
         appId,
         privateKey,
         project,
@@ -217,10 +189,10 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
           owner,
           repo,
           defaultBranch,
+          sha: context.payload.pull_request.head.sha,
         },
         context.octokit
       );
-      lock.release();
     }
   );
 
@@ -369,7 +341,7 @@ async function handlePullRequestLabeled(
 
   // If label is explicitly added, run as if PR is made against default branch:
   const defaultBranch = payload?.repository?.default_branch;
-  await runPostProcessor(
+  await runPostProcessorWithLock(
     appId,
     privateKey,
     project,
@@ -383,6 +355,7 @@ async function handlePullRequestLabeled(
       owner,
       repo,
       defaultBranch,
+      sha: payload.pull_request.head.sha,
     },
     octokit,
     isBotAccount(payload.sender.login)
@@ -433,6 +406,47 @@ function isBotAccount(sender: string): boolean {
   return /.*\[bot]$/.test(sender);
 }
 
+async function runPostProcessorWithLock(
+  appId: number,
+  privateKey: string,
+  project: string,
+  trigger: string,
+  opts: RunPostProcessorOpts,
+  octokit: Octokit,
+  breakLoop = true
+) {
+  // Short-circuit if post-processor already running for this SHA, preventing two post-processor images
+  // from both executing and pushing changes against the same PR.
+  const target = `${opts.owner}_${opts.repo}_${opts.sha}`;
+  let lock: DatastoreLock;
+  try {
+    lock = await owlbot.acquireLock(target);
+  } catch (err) {
+    if (err instanceof LockError) {
+      logger.info(
+        `acquireLock failed: target=${target} - post processor is likely already running from another trigger`
+      );
+      return;
+    } else {
+      throw err;
+    }
+  }
+
+  try {
+    return await runPostProcessor(
+      appId,
+      privateKey,
+      project,
+      trigger,
+      opts,
+      octokit,
+      breakLoop
+    );
+  } finally {
+    await lock.release();
+  }
+}
+
 interface RunPostProcessorOpts {
   head: string;
   base: string;
@@ -441,6 +455,7 @@ interface RunPostProcessorOpts {
   installation: number;
   owner: string;
   repo: string;
+  sha: string;
   defaultBranch?: string;
 }
 const runPostProcessor = async (
