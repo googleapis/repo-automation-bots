@@ -69,7 +69,7 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/owl-bot-frontend"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
+    id: "deploy-cloud-run-frontend"
     waitFor: ["push-docker-frontend"]
     entrypoint: bash
     env:
@@ -111,7 +111,7 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/owl-bot-backend"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
+    id: "deploy-cloud-run-backend"
     waitFor: ["push-docker-backend"]
     entrypoint: bash
     env:
