@@ -10,16 +10,23 @@ export async function commitAndPushChanges(
       'git rev-parse --abbrev-ref HEAD'
     )} in directory ${execSync(`pwd; cd ${repoName}; ls -a`)}`
   );
-  logger.info(`${execSync('cat .git-credentials')}`);
+  // logger.info(`${execSync('cat .git-credentials')}`);
   console.log(branchName);
   try {
     execSync(
-      `cd ${repoName}; git commit -am "feat: initial generation of library"`
+      `cd ${repoName}; git add .; git status; git commit -m "feat: initial generation of library"`
     );
   } catch (err: any) {
     console.log(err);
     console.log(err.output.toString());
     throw err;
   }
-  execSync(`cd ${repoName}; git push`);
+
+  try {
+    execSync(`cd ${repoName}; git push -u origin ${branchName}`);
+  } catch (err: any) {
+    console.log(err);
+    console.log(err.output.toString());
+    throw err;
+  }
 }

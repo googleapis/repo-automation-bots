@@ -2,6 +2,9 @@ import {execSync} from 'child_process';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
 import {createAppAuth} from '@octokit/auth-app';
+import {logger} from 'gcf-utils';
+import {sign} from 'jsonwebtoken';
+import {request} from 'gaxios';
 
 export const SECRET_NAME_APP = 'owlbot-bootstrapper-app';
 export const SECRET_NAME_INDIVIDUAL = 'owlbot-bootstrapper';
@@ -9,7 +12,10 @@ export const SECRET_NAME_INDIVIDUAL = 'owlbot-bootstrapper';
 export async function setConfig() {
   execSync('git config --global user.name "Googleapis Bootstrapper"');
   execSync(
-    'git config --global user.email "googleapis-bootstrapper[bot]@users.noreply.github.com"'
+    'git config --global user.email "googleapis-bootsrapper[bot]@users.noreply.github.com"'
+  );
+  execSync(
+    "git config --global credential.helper 'store --file /workspace/.git-credentials'"
   );
 }
 
@@ -38,6 +44,7 @@ export async function parseSecretInfo(projectId: string, secretName: string) {
 }
 
 export async function authenticateOctokit(
+  token: string,
   secretValues?: any,
   installationId?: string
 ) {
@@ -52,7 +59,7 @@ export async function authenticateOctokit(
     });
   } else {
     return new Octokit({
-      auth: secretValues.privateKey,
+      auth: token,
     });
   }
 }
@@ -69,12 +76,14 @@ export async function getAccessTokenFromInstallation(
       `POST /app/installations/${appInstallationId}/access_tokens`,
       {
         installation_id: appInstallationId,
-        repositories: repoName,
+        repositories: [repoName],
         permissions: {
-          contents: 'write',
+          contents: 'admin',
           administration: 'write',
           pull_requests: 'write',
           organization_administration: 'write',
+          issues: 'write',
+          metadata: 'read',
         },
       }
     )
@@ -83,12 +92,48 @@ export async function getAccessTokenFromInstallation(
   return token.token;
 }
 
+export async function getGitHubShortLivedAccessToken(
+  privateKey: string,
+  appInstallationId: number,
+  appId: number
+) {
+  const payload = {
+    // issued at time
+    // Note: upstream API seems to fail if decimals are included
+    // in unixtime, this is why parseInt is run:
+    iat: parseInt('' + Date.now() / 1000),
+    // JWT expiration time (10 minute maximum)
+    exp: parseInt('' + Date.now() / 1000 + 10 * 60),
+    // GitHub App's identifier
+    iss: appId,
+  };
+  const jwt = sign(payload, privateKey, {algorithm: 'RS256'});
+  const resp = await request({
+    url: `https://api.github.com/app/installations/${appInstallationId}/access_tokens`,
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${jwt}`,
+      Accept: 'application/vnd.github.v3+json',
+    },
+  });
+  if (resp.status !== 201) {
+    throw Error(`unexpected response http = ${resp.status}`);
+  } else {
+    console.log((resp.data as any).token);
+    return (resp.data as any).token;
+  }
+}
+
 export async function saveCredentialsToGitWorkspace(githubToken: string) {
-  console.log(`Entering save credentials to git workspace: ${githubToken}`);
-  execSync(
-    `echo https://x-access-token:${githubToken}@github.com >> /workspace/.git-credentials`
-  );
-  execSync(
-    "git config --global credential.helper 'store --file /workspace/.git-credentials'"
-  );
+  // console.log(`Entering save credentials to git workspace: ${githubToken}`);
+  // execSync(
+  //   `echo https://x-access-token:${githubToken}@github.com >> /workspace/.git-credentials`
+  // );
+  // execSync(
+  //   "git config --global credential.helper 'store --file /workspace/.git-credentials'"
+  // );
+  // console.log('read below for .git-credentials');
+  // logger.info(execSync('cat .git-credentials').toString());
+  // process.env.GITHUB_TOKEN = githubToken;
+  // console.log(`GITHUB TOKEN: ${process.env.GITHUB_TOKEN}`);
 }

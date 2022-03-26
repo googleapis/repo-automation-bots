@@ -16,6 +16,7 @@ import {execSync} from 'child_process';
 import {
   authenticateOctokit,
   getAccessTokenFromInstallation,
+  getGitHubShortLivedAccessToken,
   parseSecretInfo,
   saveCredentialsToGitWorkspace,
   SECRET_NAME_APP,
@@ -84,15 +85,14 @@ async function main() {
     : (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL)).privateToken;
 
   const githubToken = isMonoRepository
-    ? await getAccessTokenFromInstallation(
-        secrets,
-        appInstallationId!,
-        repoName
+    ? await getGitHubShortLivedAccessToken(
+        secrets.privateKey,
+        parseInt(appInstallationId!),
+        secrets.appId
       )
     : secrets.privateKey;
   await setConfig();
-  await saveCredentialsToGitWorkspace(githubToken);
-  await execSync('cat .git-credentials');
+  // logger.info(execSync('cat .git-credentials').toString());
 
   if (isPreProcess === 'true') {
     logger.info(`Entering pre-process for ${apiId}/${language}`);
@@ -124,6 +124,12 @@ async function main() {
     if (isMonoRepo(language)) {
       const branchName = fs.readFileSync(BRANCH_NAME_PATH).toString();
       console.log(branchName);
+      // const token = (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL))
+      //   .privateToken;
+      process.env.GITHUB_TOKEN = githubToken;
+      execSync(
+        `echo https://${githubToken}@github.com >> /workspace/.git-credentials`
+      );
       await commitAndPushChanges(repoName, branchName);
       await openAPR(branchName, ORG, repoName, githubToken);
       // still have to open a PR

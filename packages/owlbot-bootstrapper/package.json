@@ -33,6 +33,7 @@
     "@octokit/rest": "^18.12.0",
     "@types/yargs": "^17.0.9",
     "fs": "0.0.1-security",
+    "gaxios": "^4.3.2",
     "gcf-utils": "^11.4.3",
     "jsonwebtoken": "^8.5.1",
     "node-fetch": "^2.6.1",

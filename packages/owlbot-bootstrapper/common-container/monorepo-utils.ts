@@ -3,6 +3,7 @@ import {authenticateOctokit, parseSecretInfo} from './authenticate-github';
 import {SECRET_NAME_APP} from './authenticate-github';
 import {uuid} from 'uuidv4';
 import {logger} from 'gcf-utils';
+import { ORG } from './split-repo-utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 
@@ -41,6 +42,8 @@ export function isMonoRepo(language: string | undefined) {
   return false;
 }
 
+//As of 3/25, here is the error:
+// Validation Failed: {"resource":"PullRequest","field":"base","code":"invalid"}
 export async function openAPR(
   branchName: string,
   owner: string,
@@ -48,10 +51,18 @@ export async function openAPR(
   token: string
 ) {
   const octokit = await authenticateOctokit(token);
-  await octokit.rest.pulls.create({
-    owner,
-    repo,
-    head: 'main',
-    base: branchName,
-  });
+  console.log(branchName);
+  try {
+    await octokit.rest.pulls.create({
+      owner,
+      repo,
+      head: branchName.replace(/\s+/g, ''),
+      base: 'main',
+      title: 'title',
+    });
+  } catch (err: any) {
+    console.log(err);
+    console.log(err.response.data.errors);
+    throw err;
+  }
 }
