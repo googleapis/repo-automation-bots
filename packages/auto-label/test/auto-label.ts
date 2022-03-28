@@ -301,7 +301,7 @@ describe('auto-label', () => {
         './events/pr_opened_files.json'
       ));
       const expected_labels = {
-        labels: ['size: s'],
+        labels: ['size: m'],
       };
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/12/files')
@@ -341,15 +341,15 @@ describe('auto-label', () => {
         './events/pr_opened_files.json'
       ));
       const expected_labels = {
-        labels: ['size: s'],
+        labels: ['size: m'],
       };
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/12/files')
         .reply(200, pr_files_payload)
-        .delete('/repos/testOwner/testRepo/issues/12/labels/size%3A%20xxl')
+        .delete('/repos/testOwner/testRepo/issues/12/labels/size%3A%20xl')
         .reply(200, [
           {
-            name: 'size: xxl',
+            name: 'size: xl',
             color: 'C9FFE5',
           },
         ])
