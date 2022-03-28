@@ -61,14 +61,19 @@ export const DEFAULT_CONFIGS = {
  * Given a fact that by default pull request size labeling feature is off,
  * we will update those labels in repo only when configuration is enabled
  * Currently there are following labels available:
- *   "size: xs" for pull request with less than 50 changes.
- *   "size: s" for pull request with less than 250 changes.
- *   "size: m" for pull request with less than 1000 changes.
- *   "size: l" for pull request with less than 1250 changes.
- *   "size: xl" for pull request with less than 1500 changes.
- *   "size: xxl" for pull request with more than 1500 changes.
+ *   "size: u" for empty pull request.
+ *   "size: xs" for pull request with less than 10 changes.
+ *   "size: s" for pull request with less than 50 changes.
+ *   "size: m" for pull request with less than 250 changes.
+ *   "size: l" for pull request with less than 1000 changes.
+ *   "size: xl" for pull request with 1000 or more changes.
  */
 export const PULL_REQUEST_SIZE_LABELS = [
+  {
+    name: 'size: u',
+    description: 'Pull request is empty.',
+    color: 'a2ff00',
+  },
   {
     name: 'size: xs',
     description: 'Pull request size is extra small.',
@@ -93,11 +98,6 @@ export const PULL_REQUEST_SIZE_LABELS = [
     name: 'size: xl',
     description: 'Pull request size is extra large.',
     color: 'c6040f',
-  },
-  {
-    name: 'size: xxl',
-    description: 'Pull request size is extra extra large.',
-    color: 'd22b5f',
   },
 ];
 
@@ -150,18 +150,18 @@ export function isExpiredByDays(time: string, limit: number) {
  * Checks whether the intended label already exists by given prefix
  */
 export function getPullRequestSize(changes: number): string {
-  if (changes >= 1500) {
-    return 'xxl';
-  } else if (changes >= 1250) {
-    return 'xl';
-  } else if (changes >= 1000) {
-    return 'l';
-  } else if (changes >= 250) {
-    return 'm';
-  } else if (changes >= 50) {
+  if (changes <= 0) {
+    return 'u';
+  } else if (changes < 10) {
+    return 'xs';
+  } else if (changes < 50) {
     return 's';
+  } else if (changes < 250) {
+    return 'm';
+  } else if (changes < 1000) {
+    return 'l';
   }
-  return 'xs';
+  return 'xl';
 }
 
 // *** Helper functions for product type labels ***
