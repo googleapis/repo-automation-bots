@@ -677,6 +677,8 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/labels?per_page=100')
         .reply(200, PULL_REQUEST_SIZE_LABELS)
+        .patch('/repos/testOwner/testRepo/labels/size%3A%20u')
+        .reply(200)
         .patch('/repos/testOwner/testRepo/labels/size%3A%20xs')
         .reply(200)
         .patch('/repos/testOwner/testRepo/labels/size%3A%20s')
@@ -686,8 +688,6 @@ describe('auto-label', () => {
         .patch('/repos/testOwner/testRepo/labels/size%3A%20l')
         .reply(200)
         .patch('/repos/testOwner/testRepo/labels/size%3A%20xl')
-        .reply(200)
-        .patch('/repos/testOwner/testRepo/labels/size%3A%20xxl')
         .reply(200)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
