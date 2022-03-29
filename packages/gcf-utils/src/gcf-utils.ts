@@ -59,7 +59,8 @@ const SCHEDULER_EVENT_NAMES = [
   SCHEDULER_REPOSITORY_EVENT_NAME,
 ];
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
-const DEFAULT_TASK_CALLER = 'task-caller@repo-automation-bots.iam.gserviceaccount.com';
+const DEFAULT_TASK_CALLER =
+  'task-caller@repo-automation-bots.iam.gserviceaccount.com';
 
 type BotEnvironment = 'functions' | 'run';
 
@@ -236,7 +237,7 @@ export class GCFBootstrapper {
   payloadBucket: string | undefined;
   taskTargetEnvironment: BotEnvironment;
   taskTargetName: string;
-  taskCaller: string
+  taskCaller: string;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -382,8 +383,8 @@ export class GCFBootstrapper {
       '';
     const taskRetries = parseInt(
       request.get('X-CloudTasks-TaskRetryCount') ||
-      request.get('x-cloudtasks-taskretrycount') ||
-      '0'
+        request.get('x-cloudtasks-taskretrycount') ||
+        '0'
     );
     return {name, id, signature, taskId, taskRetries};
   }
@@ -1024,8 +1025,8 @@ export class GCFBootstrapper {
             url,
             body: Buffer.from(payload),
             oidcToken: {
-              serviceAccountEmail: this.taskCaller
-            }
+              serviceAccountEmail: this.taskCaller,
+            },
           },
         },
       });
@@ -1044,8 +1045,8 @@ export class GCFBootstrapper {
             },
             url,
             oidcToken: {
-              serviceAccountEmail: this.taskCaller
-            }
+              serviceAccountEmail: this.taskCaller,
+            },
           },
         },
       });
