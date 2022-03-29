@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script is for publishing owlbot backend to Cloud Run. It is
+# basically a copy of scripts/publish-cloud-run.sh with addition of
+# some env vars required for running owlbot.
+
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
@@ -70,8 +74,8 @@ if [ -z "${IMAGE_NAME}" ]; then
 fi
 
 pushd "${directoryName}"
-functionName=${botName//-/_}
-queueName=${botName//_/-}
+functionName=${botName//-/_}q
+ueueName=${botName//_/-}
 
 deployArgs=(
   "--image"
@@ -122,7 +126,7 @@ fi
 if [ -n "${MEMORY}" ]; then
   deployArgs+=( "--memory" "${MEMORY}" )
 fi
-echo "About to cloud run app ${SERVICE_NAME}"
+echo "About to deploy cloud run app ${SERVICE_NAME}"
 gcloud run deploy "${SERVICE_NAME}" "${deployArgs[@]}"
 
 echo "Adding ability for allUsers to execute the Function"
