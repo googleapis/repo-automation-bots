@@ -3,7 +3,7 @@ import {authenticateOctokit, parseSecretInfo} from './authenticate-github';
 import {SECRET_NAME_APP} from './authenticate-github';
 import {uuid} from 'uuidv4';
 import {logger} from 'gcf-utils';
-import { ORG } from './split-repo-utils';
+import {ORG} from './split-repo-utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 
@@ -12,9 +12,7 @@ export async function cloneRepo(
   repoToClone: string | undefined
 ) {
   if (!repoToClone) {
-    throw new Error(
-      'Missing address for repo to clone even though this is a monorepo'
-    );
+    throw new Error('Missing address for repo to clone');
   }
   execSync(`git clone https://x-access-token:${githubToken}@${repoToClone}`);
 }

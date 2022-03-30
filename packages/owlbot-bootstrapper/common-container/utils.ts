@@ -1,9 +1,11 @@
 import {execSync} from 'child_process';
 import {logger} from 'gcf-utils';
+import {ORG} from './split-repo-utils';
 
 export async function commitAndPushChanges(
   repoName: string,
-  branchName: string
+  branchName: string,
+  githubToken?: string
 ) {
   logger.info(
     `In branch ${execSync(
@@ -14,7 +16,7 @@ export async function commitAndPushChanges(
   console.log(branchName);
   try {
     execSync(
-      `cd ${repoName}; git add .; git status; git commit -m "feat: initial generation of library"`
+      `cd ${repoName}; git add .; git commit -m "feat: initial generation of library"`
     );
   } catch (err: any) {
     console.log(err);
@@ -23,7 +25,13 @@ export async function commitAndPushChanges(
   }
 
   try {
-    execSync(`cd ${repoName}; git push -u origin ${branchName}`);
+    if (branchName === 'main') {
+      execSync(
+        `cd ${repoName}; git branch -M main; git remote add origin https://x-access-token:${githubToken}@github.com/${ORG}/${repoName}; git push -u origin ${branchName}`
+      );
+    } else {
+      execSync(`cd ${repoName}; git push -u origin ${branchName}`);
+    }
   } catch (err: any) {
     console.log(err);
     console.log(err.output.toString());

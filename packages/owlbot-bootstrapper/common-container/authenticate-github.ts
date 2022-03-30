@@ -12,7 +12,7 @@ export const SECRET_NAME_INDIVIDUAL = 'owlbot-bootstrapper';
 export async function setConfig() {
   execSync('git config --global user.name "Googleapis Bootstrapper"');
   execSync(
-    'git config --global user.email "googleapis-bootsrapper[bot]@users.noreply.github.com"'
+    'git config --global user.email "googleapis-bootstrapper[bot]@users.noreply.github.com"'
   );
   execSync(
     "git config --global credential.helper 'store --file /workspace/.git-credentials'"
@@ -43,53 +43,10 @@ export async function parseSecretInfo(projectId: string, secretName: string) {
   return config;
 }
 
-export async function authenticateOctokit(
-  token: string,
-  secretValues?: any,
-  installationId?: string
-) {
-  if (installationId) {
-    return new Octokit({
-      authStrategy: createAppAuth,
-      auth: {
-        appId: secretValues.appId,
-        privateKey: secretValues.privateKey,
-        installationId: installationId,
-      },
-    });
-  } else {
-    return new Octokit({
-      auth: token,
-    });
-  }
-}
-
-export async function getAccessTokenFromInstallation(
-  authValues: any,
-  appInstallationId: string,
-  repoName: string
-) {
-  const appOctokit = await authenticateOctokit(authValues, appInstallationId);
-
-  const token = (
-    await appOctokit.request(
-      `POST /app/installations/${appInstallationId}/access_tokens`,
-      {
-        installation_id: appInstallationId,
-        repositories: [repoName],
-        permissions: {
-          contents: 'admin',
-          administration: 'write',
-          pull_requests: 'write',
-          organization_administration: 'write',
-          issues: 'write',
-          metadata: 'read',
-        },
-      }
-    )
-  ).data;
-
-  return token.token;
+export async function authenticateOctokit(token: string) {
+  return new Octokit({
+    auth: token,
+  });
 }
 
 export async function getGitHubShortLivedAccessToken(
@@ -119,21 +76,6 @@ export async function getGitHubShortLivedAccessToken(
   if (resp.status !== 201) {
     throw Error(`unexpected response http = ${resp.status}`);
   } else {
-    console.log((resp.data as any).token);
     return (resp.data as any).token;
   }
-}
-
-export async function saveCredentialsToGitWorkspace(githubToken: string) {
-  // console.log(`Entering save credentials to git workspace: ${githubToken}`);
-  // execSync(
-  //   `echo https://x-access-token:${githubToken}@github.com >> /workspace/.git-credentials`
-  // );
-  // execSync(
-  //   "git config --global credential.helper 'store --file /workspace/.git-credentials'"
-  // );
-  // console.log('read below for .git-credentials');
-  // logger.info(execSync('cat .git-credentials').toString());
-  // process.env.GITHUB_TOKEN = githubToken;
-  // console.log(`GITHUB TOKEN: ${process.env.GITHUB_TOKEN}`);
 }

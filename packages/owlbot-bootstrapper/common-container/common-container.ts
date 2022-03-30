@@ -15,7 +15,6 @@
 import {execSync} from 'child_process';
 import {
   authenticateOctokit,
-  getAccessTokenFromInstallation,
   getGitHubShortLivedAccessToken,
   parseSecretInfo,
   saveCredentialsToGitWorkspace,
@@ -43,8 +42,8 @@ const appInstallationId = process.env.APP_INSTALLATION_ID;
 
 const BRANCH_NAME_PATH = '/workspace/branchName.md';
 
-function validateEnvVariables() {
-  if (!repoToClone && isMonoRepo(language)) {
+function validateEnvVariables(isMonoRepository: boolean) {
+  if (!repoToClone && isMonoRepository) {
     throw new Error('No repo to clone specified for monorepo');
   }
 
@@ -71,26 +70,25 @@ function validateEnvVariables() {
 
 async function main() {
   // Will fail if any arguments are missing
-  validateEnvVariables();
-  console.log(isPreProcess);
-
   const isMonoRepository = isMonoRepo(language);
+
+  validateEnvVariables(isMonoRepository);
 
   const repoName = isMonoRepository
     ? repoToClone!.split('/')[2].split('.')[0]
     : createRepoName(language!, apiId!);
 
-  const secrets = isMonoRepository
-    ? await parseSecretInfo(projectId!, SECRET_NAME_APP)
-    : (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL)).privateToken;
+  // const secrets = isMonoRepository
+  // ? await parseSecretInfo(projectId!, SECRET_NAME_APP)
+  // : (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL)).privateToken;
 
-  const githubToken = isMonoRepository
-    ? await getGitHubShortLivedAccessToken(
-        secrets.privateKey,
-        parseInt(appInstallationId!),
-        secrets.appId
-      )
-    : secrets.privateKey;
+  const secrets = await parseSecretInfo(projectId!, SECRET_NAME_APP);
+
+  const githubToken = await getGitHubShortLivedAccessToken(
+    secrets.privateKey,
+    parseInt(appInstallationId!),
+    secrets.appId
+  );
   await setConfig();
   // logger.info(execSync('cat .git-credentials').toString());
 
@@ -110,14 +108,9 @@ async function main() {
       );
     } else {
       logger.info(`${language} is a split repo`);
-      await initializeEmptyGitRepo(repoName);
-      logger.info(
-        `Initialized empty git repo in directory ${execSync(
-          `cd ${repoName}; pwd`
-        )}`
-      );
       const octokit = await authenticateOctokit(githubToken);
       await createRepo(octokit, repoName);
+      await initializeEmptyGitRepo(repoName);
     }
   } else {
     logger.info(`Entering post-process for ${apiId}/${language}`);
@@ -126,15 +119,15 @@ async function main() {
       console.log(branchName);
       // const token = (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL))
       //   .privateToken;
-      process.env.GITHUB_TOKEN = githubToken;
-      execSync(
-        `echo https://${githubToken}@github.com >> /workspace/.git-credentials`
-      );
+      //process.env.GITHUB_TOKEN = githubToken;
+      // execSync(
+      //   `echo https://${githubToken}@github.com >> /workspace/.git-credentials`
+      // );
       await commitAndPushChanges(repoName, branchName);
       await openAPR(branchName, ORG, repoName, githubToken);
       // still have to open a PR
     } else {
-      await commitAndPushChanges(repoName, 'main');
+      await commitAndPushChanges(repoName, 'main', githubToken);
     }
   }
 }
