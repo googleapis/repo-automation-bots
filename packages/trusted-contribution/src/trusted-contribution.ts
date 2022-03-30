@@ -39,6 +39,7 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'google-cloud-policy-bot[bot]',
 ];
 const DEFAULT_LABELS = ['kokoro:force-run'];
+const KOKORO_RUN_LABELS = [...DEFAULT_LABELS, 'kokoro:run'];
 const OWLBOT_LABEL = 'owlbot:run';
 const OWLBOT_CONFIG_PATH = '.github/.OwlBot.lock.yaml';
 
@@ -56,6 +57,18 @@ export = (app: Probot) => {
     app.log(
       `repo = ${context.payload.repository.name} PR = ${context.payload.pull_request.number} action = ${context.payload.action}`
     );
+  });
+
+  // Track estimate of how often a kokoro:run or kokoro:force-run label is being added manually:
+  app.on(['pull_request.labeled'], async context => {
+    const hasKokoroLabel = context.payload.pull_request.labels.some(label => {
+      return KOKORO_RUN_LABELS.includes(label.name);
+    });
+    if (hasKokoroLabel) {
+      logger.metric('trusted_contribution.run_label_added', {
+        login: context.payload.sender.login,
+      });
+    }
   });
 
   app.on(
