@@ -64,9 +64,14 @@ export = (app: Probot) => {
     const hasKokoroLabel = context.payload.pull_request.labels.some(label => {
       return KOKORO_RUN_LABELS.includes(label.name);
     });
-    if (hasKokoroLabel) {
+    const head = context.payload.pull_request.head.repo.full_name;
+    const base = context.payload.pull_request.base.repo.full_name;
+    // If a label is added for external contributions, this is to be expected
+    // and not an issue with kokoro:
+    if (hasKokoroLabel && head === base) {
       logger.metric('trusted_contribution.run_label_added', {
         login: context.payload.sender.login,
+        pr: context.payload.pull_request.url,
       });
     }
   });
@@ -117,6 +122,15 @@ export = (app: Probot) => {
       }
 
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
+        // Synchronize event is interesting, because it can suggest that someone manually
+        // clicked the synchronize button, or had to push at an existing branch:
+        if (context.payload.action === 'synchronize') {
+          logger.metric('trusted_contribution.synchronize', {
+            login: context.payload.sender.login,
+            pr: context.payload.pull_request.url,
+          });
+        }
+
         // Only adds owlbot:run if repository appears to be configured for OwlBot:
         let hasOwlBotConfig = false;
         try {
