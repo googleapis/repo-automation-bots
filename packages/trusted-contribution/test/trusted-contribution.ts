@@ -585,6 +585,9 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            sender: {
+              login: 'bcoe',
+            },
           } as PullRequestSynchronizeEvent,
           id: 'abc123',
         });
