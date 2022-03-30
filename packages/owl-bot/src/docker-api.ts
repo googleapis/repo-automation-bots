@@ -38,8 +38,12 @@ export async function fetchConfig(
   digest: string
 ): Promise<Config> {
   const firstSlash = dockerUri.indexOf('/');
+  const lastColon = dockerUri.lastIndexOf(':');
   const host = dockerUri.slice(0, firstSlash);
-  const image = dockerUri.slice(firstSlash + 1);
+  const image = dockerUri.slice(
+    firstSlash + 1,
+    lastColon >= 0 ? lastColon : undefined
+  );
   const manifestUri = `https://${host}/v2/${image}/manifests/${digest}`;
   console.info(`fetching ${manifestUri}`);
   const manifest = (await (await fetch(manifestUri)).json()) as Manifest;
