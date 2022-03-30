@@ -94,7 +94,8 @@ async function main() {
 
   if (isPreProcess === 'true') {
     logger.info(`Entering pre-process for ${apiId}/${language}`);
-    if (isMonoRepo(language)) {
+    if (isMonoRepository) {
+      const monoRepo = new MonoRepo
       logger.info(`${language} is a monorepo`);
       // clone repo and open branch
       await cloneRepo(githubToken, repoToClone!);
@@ -103,7 +104,7 @@ async function main() {
       console.log(branchName);
       logger.info(
         `Repo ${repoToClone} cloned, in branch ${execSync(
-          'git branch; git rev-parse --abbrev-ref HEAD'
+          'git rev-parse --abbrev-ref HEAD'
         )} in directory ${execSync('pwd; ls -a')}`
       );
     } else {
