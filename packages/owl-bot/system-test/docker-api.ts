@@ -19,8 +19,17 @@ import * as assert from 'assert';
 describe('fetchConfig', () => {
   it('fetches a real docker image', async () => {
     const config = await docker.fetchConfig(
-      'gcr.io/cloud-devrel-public-resources/owlbot-nodejs',
-      'sha256:bbb8dd6576ac58830a07fc17e9511ae898be44f2219d3344449b125df9854441'
+      'gcr.io/cloud-devrel-public-resources/owlbot-python',
+      'sha256:7cffbc10910c3ab1b852c05114a08d374c195a81cdec1d4a67a1d129331d0bfe'
+    );
+    assert.strictEqual(typeof config.created, 'string');
+    assert.ok(config.created.length > 0);
+  });
+
+  it('fetches a real docker image and ignores tag', async () => {
+    const config = await docker.fetchConfig(
+      'gcr.io/cloud-devrel-public-resources/owlbot-python:latest',
+      'sha256:7cffbc10910c3ab1b852c05114a08d374c195a81cdec1d4a67a1d129331d0bfe'
     );
     assert.strictEqual(typeof config.created, 'string');
     assert.ok(config.created.length > 0);
