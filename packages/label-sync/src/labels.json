@@ -11,6 +11,11 @@
       "color": "#6950f6"
     },
     {
+      "name": "automation-team",
+      "description": "Label added to repositories owned by the automation team",
+      "color": "#6950f6"
+    },
+    {
       "name": "eol",
       "description": "End of life. Deprecating support for a previous version.",
       "color": "c9abb2"
