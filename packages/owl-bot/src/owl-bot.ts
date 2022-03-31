@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import admin from 'firebase-admin';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
@@ -49,11 +50,21 @@ interface PubSubContext {
   };
 }
 
-export function OwlBot(
-  privateKey: string | undefined,
-  app: Probot,
-  db?: Db
-): void {
+const LOCK_TIMEOUT = 25 * 1000;
+class LockError extends Error {}
+async function acquireLock(target: string): Promise<DatastoreLock> {
+  const lock = new DatastoreLock('owlbot', target, LOCK_TIMEOUT);
+  if (await lock.peek()) {
+    throw new LockError();
+  }
+  const result = await lock.acquire();
+  if (!result) {
+    throw new LockError();
+  }
+  return lock;
+}
+
+function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // Fail fast if the Cloud Function doesn't have its environment configured:
   if (!process.env.APP_ID) {
     throw Error('must set APP_ID');
@@ -89,7 +100,12 @@ export function OwlBot(
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
   app.on(['pull_request.labeled'], async context => {
-    await exports.handlePullRequestLabeled(
+    const head = context.payload.pull_request.head.repo.full_name;
+    const [owner, repo] = head.split('/');
+    logger.info(
+      `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
+    );
+    await owlbot.handlePullRequestLabeled(
       appId,
       privateKey,
       project,
@@ -156,7 +172,10 @@ export function OwlBot(
         return;
       }
 
-      await runPostProcessor(
+      logger.info(
+        `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
+      );
+      await runPostProcessorWithLock(
         appId,
         privateKey,
         project,
@@ -170,6 +189,7 @@ export function OwlBot(
           owner,
           repo,
           defaultBranch,
+          sha: context.payload.pull_request.head.sha,
         },
         context.octokit
       );
@@ -250,7 +270,7 @@ export function OwlBot(
   });
 }
 
-export async function handlePullRequestLabeled(
+async function handlePullRequestLabeled(
   appId: number,
   privateKey: string,
   project: string,
@@ -321,7 +341,7 @@ export async function handlePullRequestLabeled(
 
   // If label is explicitly added, run as if PR is made against default branch:
   const defaultBranch = payload?.repository?.default_branch;
-  await runPostProcessor(
+  await runPostProcessorWithLock(
     appId,
     privateKey,
     project,
@@ -335,6 +355,7 @@ export async function handlePullRequestLabeled(
       owner,
       repo,
       defaultBranch,
+      sha: payload.pull_request.head.sha,
     },
     octokit,
     isBotAccount(payload.sender.login)
@@ -385,6 +406,47 @@ function isBotAccount(sender: string): boolean {
   return /.*\[bot]$/.test(sender);
 }
 
+async function runPostProcessorWithLock(
+  appId: number,
+  privateKey: string,
+  project: string,
+  trigger: string,
+  opts: RunPostProcessorOpts,
+  octokit: Octokit,
+  breakLoop = true
+) {
+  // Short-circuit if post-processor already running for this SHA, preventing two post-processor images
+  // from both executing and pushing changes against the same PR.
+  const target = `${opts.owner}_${opts.repo}_${opts.sha}`;
+  let lock: DatastoreLock;
+  try {
+    lock = await owlbot.acquireLock(target);
+  } catch (err) {
+    if (err instanceof LockError) {
+      logger.info(
+        `acquireLock failed: target=${target} - post processor is likely already running from another trigger`
+      );
+      return;
+    } else {
+      throw err;
+    }
+  }
+
+  try {
+    return await runPostProcessor(
+      appId,
+      privateKey,
+      project,
+      trigger,
+      opts,
+      octokit,
+      breakLoop
+    );
+  } finally {
+    await lock.release();
+  }
+}
+
 interface RunPostProcessorOpts {
   head: string;
   base: string;
@@ -393,6 +455,7 @@ interface RunPostProcessorOpts {
   installation: number;
   owner: string;
   repo: string;
+  sha: string;
   defaultBranch?: string;
 }
 const runPostProcessor = async (
@@ -572,7 +635,7 @@ const runPostProcessor = async (
  * We're interested if they checked the box to "regenerate this pull request."
  * Returns null if the box was not checked.
  */
-export function userCheckedRegenerateBox(
+function userCheckedRegenerateBox(
   project: string,
   trigger: string,
   payload: PullRequestEditedEvent,
@@ -607,3 +670,11 @@ export function userCheckedRegenerateBox(
     branch: payload.pull_request.head.ref,
   };
 }
+
+export const owlbot = {
+  acquireLock,
+  handlePullRequestLabeled,
+  LockError,
+  OwlBot,
+  userCheckedRegenerateBox,
+};

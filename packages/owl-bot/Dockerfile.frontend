@@ -46,4 +46,4 @@ RUN npm ci --only=production
 ENV NODE_ENV "production"
 
 # Run the web service on container startup.
-CMD [ "npm", "--no-update-notifier", "run", "start" ]
+CMD [ "npm", "--no-update-notifier", "run", "start-frontend" ]

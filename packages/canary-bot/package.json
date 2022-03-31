@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "dayjs": "^1.10.7",
-    "gcf-utils": "^13.2.0"
+    "gcf-utils": "13.3.2-beta.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
@@ -41,7 +41,7 @@
     "nock": "^13.1.3",
     "sinon": "^13.0.0",
     "smee-client": "^1.2.2",
-    "typescript": "~4.5.0"
+    "typescript": "~4.6.0"
   },
   "engines": {
     "node": ">= 12.18.2"

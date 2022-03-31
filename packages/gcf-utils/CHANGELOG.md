@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.2.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.2.1...gcf-utils-v13.2.2) (2022-03-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @types/lru-cache to v7 ([#3215](https://github.com/googleapis/repo-automation-bots/issues/3215)) ([3c16afb](https://github.com/googleapis/repo-automation-bots/commit/3c16afb297db04457901d1b97d349b16aee7726b))
+
 ### [13.2.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.2.0...gcf-utils-v13.2.1) (2022-02-08)
 
 

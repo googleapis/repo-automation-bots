@@ -143,18 +143,18 @@ staleness:
 Bot runs on a pull request when it changes and labels them with T-shirt size indicator if feature is enabled. 
 
 Currently there are following labels available:
+  `size: u` for empty pull request.
 
-  `size: xs` for pull request with less than 50 changes.
+  `size: xs` for pull request with less than 10 changes.
   
-  `size: s` for pull request with less than 250 changes.
+  `size: s` for pull request with less than 50 changes.
   
-  `size: m` for pull request with less than 1000 changes.
+  `size: m` for pull request with less than 250 changes.
   
-  `size: l` for pull request with less than 1250 changes.
+  `size: l` for pull request with less than 1000 changes.
   
-  `size: xl` for pull request with less than 1500 changes.
-  
-  `size: xxl` for pull request with more than 1500 changes.
+  `size: xl` for pull request with 1000 or more changes.
+
   
 
 Size labeling is turned off by default. To turn on size labeling:

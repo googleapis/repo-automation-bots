@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {OwlBot} from './owl-bot';
+import {owlbot} from './owl-bot';
 import {readFileSync} from 'fs';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
@@ -23,5 +23,5 @@ module.exports = (app: Probot) => {
     throw Error('must provide path to GitHub app private key');
   }
   const privateKey = readFileSync(process.env.PRIVATE_KEY_PATH, 'utf8');
-  OwlBot(privateKey, app);
+  owlbot.OwlBot(privateKey, app);
 };
