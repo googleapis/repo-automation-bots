@@ -71,7 +71,7 @@ const argv = yargs(process.argv.slice(2))
     languageContainer: {type: 'string'},
   }).argv;
 
-async function main() {
+export async function main() {
   await runTrigger(argv);
 }
 main();

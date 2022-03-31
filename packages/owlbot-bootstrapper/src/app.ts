@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './owlbot-bootstrapper';
+//TODO: Uncomment this when it is wired up
+// import {GCFBootstrapper} from 'gcf-utils';
+// import appFn from './owlbot-bootstrapper';
 
-const bootstrap = new GCFBootstrapper();
-module.exports['owlbot_bootstrapper'] = bootstrap.gcf(appFn);
+// const bootstrap = new GCFBootstrapper();
+// module.exports['owlbot_bootstrapper'] = bootstrap.gcf(appFn);

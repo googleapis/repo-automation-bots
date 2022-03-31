@@ -3,12 +3,20 @@ import {Octokit} from '@octokit/rest';
 import {sign} from 'jsonwebtoken';
 import {Secret} from './interfaces';
 import {request} from 'gaxios';
+import {logger} from 'gcf-utils';
 
+/**
+ * Github authenticator class
+ *
+ * @param projectId project ID where owlbot-bootstrapper secret is stored
+ * @param appInstallationId installation ID for owlbot-bootstrapper on github org
+ * @param secretManagerClient a secret manager service client
+ */
 export class GithubAuthenticator {
   projectId: string;
   appInstallationId: string;
   secretManagerClient: SecretManagerServiceClient;
-  OWLBOT_SECRET_NAME = 'owlbot-bootstrapper';
+  OWLBOT_SECRET_NAME = 'owlbot-bootstrapper-app';
 
   constructor(
     projectId: string,
@@ -20,8 +28,11 @@ export class GithubAuthenticator {
     this.secretManagerClient = secretManagerClient;
   }
 
+  /**
+   * Gets a short lived access token from Github using a jwt
+   */
   public async getGitHubShortLivedAccessToken(): Promise<string> {
-    const secret = await this.parseSecretInfo(
+    const secret = await this._parseSecretInfo(
       this.secretManagerClient,
       this.projectId,
       this.OWLBOT_SECRET_NAME
@@ -52,14 +63,28 @@ export class GithubAuthenticator {
     }
   }
 
-  public async authenticateOctokit(): Promise<Octokit> {
-    const token = await this.getGitHubShortLivedAccessToken();
-    return new Octokit({
-      auth: token,
-    });
+  /**
+   * Authenticates an Octokit instance
+   */
+  public async authenticateOctokit(token: string): Promise<Octokit> {
+    try {
+      return new Octokit({
+        auth: token,
+      });
+    } catch (err) {
+      logger.error(err as any);
+      throw err;
+    }
   }
 
-  private getLatestSecretVersionName(
+  /**
+   * Gets the latest secret version name in GCP project
+   *
+   * @param projectId project ID where owlbot-bootstrapper secret is stored
+   * @param secretName the incomplete name for the secret (without the full path)
+   * @returns The full secret name
+   */
+  public _getLatestSecretVersionName(
     projectId: string,
     secretName: string
   ): string {
@@ -67,12 +92,20 @@ export class GithubAuthenticator {
     return `${fullSecretName}/versions/latest`;
   }
 
-  private async parseSecretInfo(
+  /**
+   * Parses JSON from secret payload into values.
+   *
+   * @param secretManagerClient a secret manager service client
+   * @param projectId project ID where owlbot-bootstrapper secret is stored
+   * @param secretName the incomplete name for the secret (without the full path)
+   * @returns The full secret name
+   */
+  public async _parseSecretInfo(
     secretManagerClient: SecretManagerServiceClient,
     projectId: string,
     secretName: string
   ): Promise<Secret> {
-    const name = this.getLatestSecretVersionName(projectId, secretName);
+    const name = this._getLatestSecretVersionName(projectId, secretName);
     const [version] = await secretManagerClient.accessSecretVersion({
       name: name,
     });
@@ -82,6 +115,7 @@ export class GithubAuthenticator {
     if (payload === '') {
       throw Error('did not retrieve a payload from SecretManager.');
     }
+
     const config = JSON.parse(payload);
     return config;
   }

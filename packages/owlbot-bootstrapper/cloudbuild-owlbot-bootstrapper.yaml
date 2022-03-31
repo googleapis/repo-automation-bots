@@ -1,6 +1,30 @@
+# Run by a CLI command manually (by a human), or when googleapis/googleapis API Index changes
 steps:
-  - name: ${_CONTAINER}
-  - name: ${_CONTAINER_2}
+  # Clones the target repository and opens a branch for mono-repos, for split-repos creates a repository
   - name: ${_CONTAINER}
     env:
-      - _IS_PRE_PROCESS=false
+    - 'LANGUAGE=$_LANGUAGE'
+    - 'PROJECT_ID=$PROJECT_ID'
+    - 'API_ID=$_API_ID'
+    - 'REPO_TO_CLONE=$_REPO_TO_CLONE'
+    - 'IS_PRE_PROCESS=$_IS_PRE_PROCESS'
+    - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
+  # Generates the basic files necessary for a minimal implementation of a library
+  # Current working directory contains the branch of the target repo
+  - name: ${_LANGUAGE_CONTAINER}
+    env:
+    - 'LANGUAGE=$_LANGUAGE'
+    - 'PROJECT_ID=$PROJECT_ID'
+    - 'API_ID=$_API_ID'
+    - 'REPO_TO_CLONE=$_REPO_TO_CLONE'
+    - 'IS_PRE_PROCESS=$_IS_PRE_PROCESS'
+    - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
+  # Commits and pushes changes to a branch; if the repo is nonempty, opens a PR
+  - name: ${_CONTAINER}
+    env:
+    - 'LANGUAGE=$_LANGUAGE'
+    - 'PROJECT_ID=$PROJECT_ID'
+    - 'API_ID=$_API_ID'
+    - 'REPO_TO_CLONE=$_REPO_TO_CLONE'
+    - 'IS_PRE_PROCESS=false'
+    - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'

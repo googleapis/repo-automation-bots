@@ -13,122 +13,134 @@
 // limitations under the License.
 
 import {execSync} from 'child_process';
-import {
-  authenticateOctokit,
-  getGitHubShortLivedAccessToken,
-  parseSecretInfo,
-  saveCredentialsToGitWorkspace,
-  SECRET_NAME_APP,
-  SECRET_NAME_INDIVIDUAL,
-  setConfig,
-} from './authenticate-github';
-import {isMonoRepo, cloneRepo, openBranch, openAPR} from './monorepo-utils';
-import {commitAndPushChanges} from './utils';
+import {setConfig} from './utils';
 import {logger} from 'gcf-utils';
-import {
-  createRepo,
-  createRepoName,
-  initializeEmptyGitRepo,
-  ORG,
-} from './split-repo-utils';
-import * as fs from 'fs';
+import {MonoRepo} from './mono-repo';
+import {GithubAuthenticator} from './github-authenticator';
+import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+import {Language} from './interfaces';
+import {SplitRepo} from './split-repo';
 
-const repoToClone = process.env.REPO_TO_CLONE;
-const isPreProcess = process.env.IS_PRE_PROCESS;
-const apiId = process.env.API_ID;
-const language = process.env.LANGUAGE;
-const projectId = process.env.PROJECT_ID;
-const appInstallationId = process.env.APP_INSTALLATION_ID;
+export const ORG = 'googleapis';
+export const DIRECTORY_PATH = '/workspace';
 
-const BRANCH_NAME_PATH = '/workspace/branchName.md';
-
-function validateEnvVariables(isMonoRepository: boolean) {
-  if (!repoToClone && isMonoRepository) {
+export function validateEnvVariables(isMonoRepository: boolean) {
+  if (!process.env.REPO_TO_CLONE && isMonoRepository) {
     throw new Error('No repo to clone specified for monorepo');
   }
 
-  if (!isPreProcess) {
+  if (!process.env.IS_PRE_PROCESS) {
     throw new Error('Pre or post process not specified');
   }
 
-  if (!language) {
-    throw new Error('Language not specified');
-  }
-
-  if (!apiId) {
+  if (!process.env.API_ID) {
     throw new Error('API ID not specified');
   }
 
-  if (!projectId) {
+  if (!process.env.LANGUAGE) {
+    throw new Error('Language not specified');
+  }
+
+  if (!process.env.PROJECT_ID) {
     throw new Error('Project for cloud build trigger not specified');
   }
 
-  if (!appInstallationId) {
+  if (!process.env.APP_INSTALLATION_ID) {
     throw new Error('Missing app installation Id');
   }
 }
 
-async function main() {
-  // Will fail if any arguments are missing
-  const isMonoRepository = isMonoRepo(language);
+export function isMonoRepo(language: Language): boolean {
+  const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java'];
+  if (monorepos.includes(language)) {
+    return true;
+  }
+  return false;
+}
 
+export async function main() {
+  // Will fail if any arguments are missing
+  const isMonoRepository = isMonoRepo(process.env.LANGUAGE as Language);
+
+  // Since we'll error if env variables are not present,
+  // we can assert they'll exist later on in the code.
   validateEnvVariables(isMonoRepository);
 
-  const repoName = isMonoRepository
-    ? repoToClone!.split('/')[2].split('.')[0]
-    : createRepoName(language!, apiId!);
-
-  // const secrets = isMonoRepository
-  // ? await parseSecretInfo(projectId!, SECRET_NAME_APP)
-  // : (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL)).privateToken;
-
-  const secrets = await parseSecretInfo(projectId!, SECRET_NAME_APP);
-
-  const githubToken = await getGitHubShortLivedAccessToken(
-    secrets.privateKey,
-    parseInt(appInstallationId!),
-    secrets.appId
+  const githubAuthenticator = new GithubAuthenticator(
+    process.env.PROJECT_ID!,
+    process.env.APP_INSTALLATION_ID!,
+    new SecretManagerServiceClient()
   );
-  await setConfig();
-  // logger.info(execSync('cat .git-credentials').toString());
 
-  if (isPreProcess === 'true') {
-    logger.info(`Entering pre-process for ${apiId}/${language}`);
+  const githubToken =
+    await githubAuthenticator.getGitHubShortLivedAccessToken();
+
+  const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
+
+  await setConfig(DIRECTORY_PATH);
+
+  if (process.env.IS_PRE_PROCESS === 'true') {
+    logger.info(
+      `Entering pre-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
+    );
     if (isMonoRepository) {
-      const monoRepo = new MonoRepo
-      logger.info(`${language} is a monorepo`);
-      // clone repo and open branch
-      await cloneRepo(githubToken, repoToClone!);
-      await openBranch(repoName);
-      const branchName = fs.readFileSync(BRANCH_NAME_PATH).toString();
-      console.log(branchName);
+      logger.info(`${process.env.LANGUAGE} is a mono repo`);
+      const monoRepo = new MonoRepo(
+        process.env.LANGUAGE as Language,
+        process.env.REPO_TO_CLONE!,
+        githubToken,
+        octokit
+      );
+
+      await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
+
       logger.info(
-        `Repo ${repoToClone} cloned, in branch ${execSync(
-          'git rev-parse --abbrev-ref HEAD'
-        )} in directory ${execSync('pwd; ls -a')}`
+        `Repo ${monoRepo.repoName} cloned, in branch ${
+          (execSync('git rev-parse --abbrev-ref HEAD'),
+          {cwd: `/workspaces/${monoRepo.repoName}`})
+        }`
       );
     } else {
-      logger.info(`${language} is a split repo`);
-      const octokit = await authenticateOctokit(githubToken);
-      await createRepo(octokit, repoName);
-      await initializeEmptyGitRepo(repoName);
+      logger.info(`${process.env.LANGUAGE} is a split repo`);
+
+      const splitRepo = new SplitRepo(
+        process.env.LANGUAGE as Language,
+        process.env.API_ID!,
+        githubToken,
+        octokit
+      );
+
+      await splitRepo.createAndInitializeEmptyGitRepo(DIRECTORY_PATH);
+
+      logger.info(`Initialized empty git repo ${splitRepo.repoName}`);
     }
   } else {
-    logger.info(`Entering post-process for ${apiId}/${language}`);
-    if (isMonoRepo(language)) {
-      const branchName = fs.readFileSync(BRANCH_NAME_PATH).toString();
-      console.log(branchName);
-      // const token = (await parseSecretInfo(projectId!, SECRET_NAME_INDIVIDUAL))
-      //   .privateToken;
-      //process.env.GITHUB_TOKEN = githubToken;
-      // execSync(
-      //   `echo https://${githubToken}@github.com >> /workspace/.git-credentials`
-      // );
-      await commitAndPushChanges(repoName, branchName);
-      await openAPR(branchName, ORG, repoName, githubToken);
-      // still have to open a PR
+    logger.info(
+      `Entering post-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
+    );
+    if (isMonoRepository) {
+      logger.info(`${process.env.LANGUAGE} is a mono repo`);
+      const monoRepo = new MonoRepo(
+        process.env.LANGUAGE as Language,
+        process.env.REPO_TO_CLONE!,
+        githubToken,
+        octokit
+      );
+
+      await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
+      logger.info(`Opened a new PR in ${monoRepo.repoName}`);
     } else {
-      await commitAndPushChanges(repoName, 'main', githubToken);
+      logger.info(`${process.env.LANGUAGE} is a split repo`);
+      const splitRepo = new SplitRepo(
+        process.env.LANGUAGE as Language,
+        process.env.API_ID!,
+        githubToken,
+        octokit
+      );
+      await splitRepo.pushToMainAndCreateEmptyPR(DIRECTORY_PATH);
+      logger.info(
+        `Pushed files to main in ${splitRepo.repoName}, and opened empty PR`
+      );
     }
   }
 }

@@ -13,36 +13,54 @@
 // limitations under the License.
 
 import {Probot} from 'probot';
-import {logger} from 'gcf-utils';
+import {execSync} from 'child_process';
 
-const CONFIGURATION_FILE_PATH = 'googleapis-bootstrapper.yml';
+// Trigger ID in gcp
+const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
+// Installation ID for owlbot-bootstrapper on googleapis/
+const INSTALLATION_ID = '123456';
+const PROJECT_ID = 'owlbot-bootstrapper-prod';
+const COMMON_CONTAINER_IMAGE = `gcr.io/${PROJECT_ID}/owlbot-bootstrapper:latest`;
 
-interface Configuration {
-  randomBoolean: boolean;
+interface LanguageConstants {
+  language: string;
+  repoToClone?: string;
+  containerImage: string;
 }
 
-export = (app: Probot) => {
+// TODO: This bot will respond when the api index in googleapis/googleapis regenerates, i.e.,
+// when a new commit is pushed to googleapis/googleapis. It will then trigger the cli tool (./cli)
+// to run the Build file (cloudbuild-owlbot-bootstrapper.yaml), that will run the common container
+// then the language-specific containers. For now, I will not wire this up until we have a good indicator
+// whether an API wants a library generated.
+(app: Probot) => {
   app.on(['pull_request.opened'], async context => {
-    const config = (await context.config(
-      CONFIGURATION_FILE_PATH,
-      {}
-    )) as Configuration;
+    // TODO: actually fill out API ID from regeneration of api index
+    const apiId = 'google.cloud.not-a-real-api-id.v1';
 
-    if (context.payload.pull_request && config.randomBoolean) {
-      logger.info('The bot is alive!');
-      return;
-    }
-  });
-
-  app.on(['issues.opened'], async context => {
-    const config = (await context.config(
-      CONFIGURATION_FILE_PATH,
-      {}
-    )) as Configuration;
-
-    if (context.payload.issue && config.randomBoolean) {
-      logger.info('The bot is alive!');
-      return;
-    }
+    await main(languageSpecificConsts, apiId);
   });
 };
+
+// Here is where languages will need to fill out constants regarding their repo settings, i.e.,
+// repo to clone if mono repo (without https://), and language-specific container image name
+const languageSpecificConsts = [
+  {
+    language: 'nodejs',
+    repoToClone: 'github.com/googleapis/google-cloud-node.git',
+    containerImage: 'gcr.io/myproject/myimage:latest',
+  },
+];
+
+// TODO: change export to Probot function when it's fully wired up
+// For now, we can call this function manually to create libraries when a new API is generated
+export async function main(
+  languageSpecificConsts: LanguageConstants[],
+  apiId: string
+) {
+  languageSpecificConsts.forEach(language =>
+    execSync(
+      `node ./build/cli/run-trigger --apiId ${apiId} --projectId ${PROJECT_ID} --isPreProcess true --language ${language.language} --triggerId ${TRIGGER_ID} --installationId ${INSTALLATION_ID} --repoToClone ${language.repoToClone} --languageContainer ${language.containerImage} --container ${COMMON_CONTAINER_IMAGE}`
+    )
+  );
+}
