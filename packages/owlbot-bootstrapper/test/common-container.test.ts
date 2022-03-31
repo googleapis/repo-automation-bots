@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,12 +13,8 @@
 // limitations under the License.
 
 import {GithubAuthenticator} from '../common-container/github-authenticator';
-import sinon, {SinonStubbedInstance} from 'sinon';
+import sinon from 'sinon';
 import {describe, it} from 'mocha';
-import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
-import nock from 'nock';
-import * as fs from 'fs';
-import path, {resolve} from 'path';
 import assert from 'assert';
 import {MonoRepo} from '../common-container/mono-repo';
 import {SplitRepo} from '../common-container/split-repo';
