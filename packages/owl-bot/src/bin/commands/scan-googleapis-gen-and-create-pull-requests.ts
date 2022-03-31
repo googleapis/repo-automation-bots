@@ -22,7 +22,7 @@ interface Args extends OctokitParams {
   'source-repo': string;
   'firestore-project': string;
   'clone-depth': number;
-  'combine-pulls': boolean;
+  'combine-pulls-threshold': number;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -66,15 +66,16 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
         type: 'number',
         default: 100,
       })
-      .option('combine-pulls', {
+      .option('combine-pulls-threshold', {
         describe:
           'Normally, if a single commit to googleapis-gen affects multiple ' +
           'apis in a mono repo like google-cloud-ruby, then Owl Bot will ' +
           'open one pull request for each API.\n\n' +
-          'With this flag set, Owl Bot will open one combined pull request ' +
+          'When the number of affected APIs excceeds this threshold, ' +
+          'Owl Bot will open one combined pull request ' +
           'with changes to all the APIs.',
-        type: 'boolean',
-        default: true,
+        type: 'number',
+        default: 3,
       });
   },
   async handler(argv) {
@@ -91,7 +92,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       configsStore,
       argv['clone-depth'],
       copyStateStore,
-      argv['combine-pulls']
+      argv['combine-pulls-threshold']
     );
   },
 };
