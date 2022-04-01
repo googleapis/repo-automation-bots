@@ -117,7 +117,7 @@ steps:
     env:
       - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-backend"
       - "SERVICE_NAME=owl-bot-backend"
-      - "MEMORY=1G"
+      - "MEMORY=4G"
       # we could go higher
       - "CONCURRENCY=20"
       # Substitutions
