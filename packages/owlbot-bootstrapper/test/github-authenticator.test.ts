@@ -31,7 +31,7 @@ secretManagerClientStub.accessSecretVersion.resolves([
     payload: {
       data: `{"privateKey":"${fs
         .readFileSync(
-          path.resolve(__dirname, '../../test/fixtures/fake-private-key.pem')
+          path.resolve(__dirname, '../../test/Fixtures/fake-private-key.pem')
         )
         .toString()}","appId":"12345","secret":"abc123"}`,
     },
