@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This file represents the _CONTAINER that is run in the 
+// This file represents the _CONTAINER that is run in the
 // cloudbuild-owlbot-bootstrapper.yaml build. Depending on its env variables,
 // it will execute a 'pre-' or 'post-' flow (around a language-specific container)
-// for a split or mono repo-type object. This will be invoked by the Cloud Build file, 
+// for a split or mono repo-type object. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
 import {setConfig} from './utils';
@@ -25,7 +25,7 @@ import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {Language} from './interfaces';
 import {SplitRepo} from './split-repo';
-import { execSync } from 'child_process';
+import {execSync} from 'child_process';
 
 export const ORG = 'googleapis';
 export const DIRECTORY_PATH = '/workspace';
