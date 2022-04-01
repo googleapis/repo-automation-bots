@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {execSync} from 'child_process';
+import {execSync, ExecSyncOptions} from 'child_process';
 import {logger} from 'gcf-utils';
 import {ORG} from './common-container';
 import {uuid} from 'uuidv4';
@@ -97,7 +97,9 @@ export async function openAPRUtils(
 /**
  * Gets the branch name with a UUID
  *
- * @returns the branch name with a UUID from a well-known file path
+ * @returns the branch name with a UUID from a well-known file path (/workspace/branchName.md)
+ * Since a separate container needs the UUID for the branch of the first container,
+ * we need to save it in a well-known location that language-specific containers can access later on.
  */
 export async function getBranchNameUtils(directoryPath: string) {
   try {

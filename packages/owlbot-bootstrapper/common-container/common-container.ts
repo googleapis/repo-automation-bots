@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {execSync} from 'child_process';
+// This file represents the _CONTAINER that is run in the 
+// cloudbuild-owlbot-bootstrapper.yaml build. Depending on its env variables,
+// it will execute a 'pre-' or 'post-' flow (around a language-specific container)
+// for a split or mono repo-type object. This will be invoked by the Cloud Build file, 
+// which will in turn be invoked manually until it is invoked by a github webhook event.
+
 import {setConfig} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
@@ -20,10 +25,12 @@ import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {Language} from './interfaces';
 import {SplitRepo} from './split-repo';
+import { execSync } from 'child_process';
 
 export const ORG = 'googleapis';
 export const DIRECTORY_PATH = '/workspace';
 
+// Validate env variables, execute early if they are not present
 export function validateEnvVariables(isMonoRepository: boolean) {
   if (!process.env.REPO_TO_CLONE && isMonoRepository) {
     throw new Error('No repo to clone specified for monorepo');
@@ -50,6 +57,7 @@ export function validateEnvVariables(isMonoRepository: boolean) {
   }
 }
 
+// Check if a given language is a monorepo
 export function isMonoRepo(language: Language): boolean {
   const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java'];
   if (monorepos.includes(language)) {
@@ -84,6 +92,7 @@ export async function main() {
       `Entering pre-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
     );
     if (isMonoRepository) {
+      // Mono-repo pre-process (before language specific-container)
       logger.info(`${process.env.LANGUAGE} is a mono repo`);
       const monoRepo = new MonoRepo(
         process.env.LANGUAGE as Language,
@@ -101,6 +110,7 @@ export async function main() {
         }`
       );
     } else {
+      // Split-repo pre-process (before language specific-container)
       logger.info(`${process.env.LANGUAGE} is a split repo`);
 
       const splitRepo = new SplitRepo(
@@ -119,6 +129,7 @@ export async function main() {
       `Entering post-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
     );
     if (isMonoRepository) {
+      // Mono-repo post-process (after language specific-container)
       logger.info(`${process.env.LANGUAGE} is a mono repo`);
       const monoRepo = new MonoRepo(
         process.env.LANGUAGE as Language,
@@ -130,6 +141,7 @@ export async function main() {
       await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
       logger.info(`Opened a new PR in ${monoRepo.repoName}`);
     } else {
+      // Split-repo post-process (after language specific-container)
       logger.info(`${process.env.LANGUAGE} is a split repo`);
       const splitRepo = new SplitRepo(
         process.env.LANGUAGE as Language,

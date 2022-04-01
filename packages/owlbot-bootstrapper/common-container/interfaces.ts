@@ -32,3 +32,5 @@ export interface Secret {
   appId: string;
   secret: string;
 }
+
+//TODO: add argv interface
