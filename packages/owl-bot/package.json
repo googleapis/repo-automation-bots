@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/googleapis/repo-automation-bots#readme",
   "devDependencies": {
-    "@types/adm-zip": "^0.4.34",
+    "@types/adm-zip": "^0.5.0",
     "@types/fs-extra": "^9.0.12",
     "@types/glob": "^7.1.4",
     "@types/js-yaml": "^4.0.2",
