@@ -115,11 +115,13 @@ fi
 echo "About to cloud run app ${SERVICE_NAME}"
 gcloud run deploy "${SERVICE_NAME}" "${deployArgs[@]}"
 
-echo "Adding ability for allUsers to execute the Function"
-gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
-  --member="allUsers" \
-  --region "${region}" \
-  --role="roles/run.invoker"
+if [ -z "${SECURE_ACCESS}" ]; then
+  echo "Adding ability for allUsers to execute the service"
+  gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+    --member="allUsers" \
+    --region "${region}" \
+    --role="roles/run.invoker"
+fi
 
 echo "Deploying Queue ${queueName}"
 
