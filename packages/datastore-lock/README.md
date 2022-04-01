@@ -27,6 +27,7 @@ const lockId = 'blunderbuss';
 const target = context.payload.pull_request.url;
 
 const lock = new DatastoreLock(lockId, target);
+// await lock.peek(); // was there already a lock perhaps?
 const result = await lock.acquire();
 if (!result) {
 	// failure

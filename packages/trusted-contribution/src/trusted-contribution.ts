@@ -39,6 +39,7 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'google-cloud-policy-bot[bot]',
 ];
 const DEFAULT_LABELS = ['kokoro:force-run'];
+const KOKORO_RUN_LABELS = [...DEFAULT_LABELS, 'kokoro:run'];
 const OWLBOT_LABEL = 'owlbot:run';
 const OWLBOT_CONFIG_PATH = '.github/.OwlBot.lock.yaml';
 
@@ -56,6 +57,23 @@ export = (app: Probot) => {
     app.log(
       `repo = ${context.payload.repository.name} PR = ${context.payload.pull_request.number} action = ${context.payload.action}`
     );
+  });
+
+  // Track estimate of how often a kokoro:run or kokoro:force-run label is being added manually:
+  app.on(['pull_request.labeled'], async context => {
+    const hasKokoroLabel = context.payload.pull_request.labels.some(label => {
+      return KOKORO_RUN_LABELS.includes(label.name);
+    });
+    const head = context.payload.pull_request.head.repo.full_name;
+    const base = context.payload.pull_request.base.repo.full_name;
+    // If a label is added for external contributions, this is to be expected
+    // and not an issue with kokoro:
+    if (hasKokoroLabel && head === base) {
+      logger.metric('trusted_contribution.run_label_added', {
+        login: context.payload.sender.login,
+        pr: context.payload.pull_request.url,
+      });
+    }
   });
 
   app.on(
@@ -104,6 +122,15 @@ export = (app: Probot) => {
       }
 
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
+        // Synchronize event is interesting, because it can suggest that someone manually
+        // clicked the synchronize button, or had to push at an existing branch:
+        if (context.payload.action === 'synchronize') {
+          logger.metric('trusted_contribution.synchronize', {
+            login: context.payload.sender.login,
+            pr: context.payload.pull_request.url,
+          });
+        }
+
         // Only adds owlbot:run if repository appears to be configured for OwlBot:
         let hasOwlBotConfig = false;
         try {

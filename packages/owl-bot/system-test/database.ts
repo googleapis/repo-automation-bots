@@ -110,6 +110,17 @@ describe('database', () => {
           },
           path: '/q/r/.OwlBot.yaml',
         },
+        {
+          yaml: {
+            'deep-copy-regex': [
+              {
+                source: '/alpha/.*',
+                dest: '/delta',
+              },
+            ],
+          },
+          path: '/s/t/.OwlBot.yaml',
+        },
       ],
       lock: {
         docker: {
@@ -170,10 +181,17 @@ describe('database', () => {
       const reposAffected = await store.findReposAffectedByFileChanges([
         '/alpha/source.js',
       ]);
-      const repoNamesAffected = reposAffected.map(
-        x => `${x.repo.owner}/${x.repo.repo}`
+      assert.strictEqual(reposAffected.length, 1);
+      const arepo = reposAffected[0];
+      assert.deepStrictEqual(
+        [arepo.repo.owner, arepo.repo.repo],
+        repoA.split('/')
       );
-      assert.deepStrictEqual(repoNamesAffected, [repoA]);
+      const yamlPaths = arepo.yamls.map(yaml => yaml.path);
+      assert.deepStrictEqual(yamlPaths, [
+        '/q/r/.OwlBot.yaml',
+        '/s/t/.OwlBot.yaml',
+      ]);
     } finally {
       await store.clearConfigs(repoA);
     }

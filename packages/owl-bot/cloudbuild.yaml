@@ -52,7 +52,7 @@ steps:
       - "$_DIRECTORY"
 
   - name: gcr.io/cloud-builders/docker
-    id: "build-docker"
+    id: "build-docker-frontend"
     waitFor: ["-"]
     dir: packages/owl-bot
     args:
@@ -60,18 +60,20 @@ steps:
       - "-f"
       - "Dockerfile.frontend"
       - "-t"
-      - "gcr.io/$PROJECT_ID/owl-bot"
+      - "gcr.io/$PROJECT_ID/owl-bot-frontend"
       - "."
 
   - name: gcr.io/cloud-builders/docker
-    id: "push-docker"
-    waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/owl-bot"]
+    id: "push-docker-frontend"
+    waitFor: ["build-docker-frontend"]
+    args: ["push", "gcr.io/$PROJECT_ID/owl-bot-frontend"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
-    waitFor: ["push-docker"]
+    id: "deploy-cloud-run-frontend"
+    waitFor: ["push-docker-frontend"]
     entrypoint: bash
+    env:
+      - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-frontend"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
@@ -90,3 +92,44 @@ steps:
       # concurrency: We saw some errors in gRPC stack (#2265) with the default
       # 80 concurrency.
       - "40"
+
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker-backend"
+    waitFor: ["-"]
+    dir: packages/owl-bot
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile.backend"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/owl-bot-backend"
+      - "."
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker-backend"
+    waitFor: ["build-docker-backend"]
+    args: ["push", "gcr.io/$PROJECT_ID/owl-bot-backend"]
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run-backend"
+    waitFor: ["push-docker-backend"]
+    entrypoint: bash
+    env:
+      - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-backend"
+      - "SERVICE_NAME=owl-bot-backend"
+      - "MEMORY=1G"
+      # we could go higher
+      - "CONCURRENCY=20"
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+      # botName
+      - "owl-bot"
+      # timeout
+      - "3600"

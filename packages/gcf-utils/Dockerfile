@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM node:12-stretch
+FROM node:16-stretch
 
 USER root
 
@@ -23,5 +23,6 @@ ENV GCF_LOCATION=us-central1
 
 COPY . /workspace
 RUN cd /workspace/packages/gcf-utils && \
+    npm --version && \
     npm i && \
     npm run system-test

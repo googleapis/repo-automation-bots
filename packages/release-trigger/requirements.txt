@@ -1,2 +1,2 @@
-gcp-releasetool==1.8.2
+gcp-releasetool==1.8.3
 keyrings.alt

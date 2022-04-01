@@ -19,6 +19,7 @@ import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {
   PullRequestOpenedEvent,
+  PullRequestLabeledEvent,
   PullRequestSynchronizeEvent,
 } from '@octokit/webhooks-types';
 // eslint-disable-next-line node/no-extraneous-import
@@ -584,6 +585,9 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            sender: {
+              login: 'bcoe',
+            },
           } as PullRequestSynchronizeEvent,
           id: 'abc123',
         });
@@ -860,6 +864,128 @@ describe('TrustedContributionTestRunner', () => {
         id: 'abc123',
       });
       requests.done();
+    });
+  });
+
+  describe('pull_request.labeled', () => {
+    it('logs metric for pull_request.labeled, if run label is present', async () => {
+      const metricStub = sandbox.stub(logger, 'metric');
+      await probot.receive({
+        name: 'pull_request',
+        payload: {
+          action: 'labeled',
+          pull_request: {
+            number: 3,
+            head: {
+              sha: 'testsha',
+              repo: {
+                full_name: 'googleapis/foo',
+              },
+            },
+            base: {
+              sha: 'testsha',
+              repo: {
+                full_name: 'googleapis/foo',
+              },
+            },
+            user: {
+              login: 'renovate-bot',
+            },
+            labels: [{name: 'kokoro:run'}],
+          },
+          repository: {
+            name: 'google-auth-library-java',
+            owner: {
+              login: 'chingor13',
+            },
+          },
+          sender: {
+            login: 'bcoe',
+          },
+        } as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+      assert.ok(metricStub.calledOnce);
+    });
+
+    it('does not log metric for pull_request.labeled, if no run label', async () => {
+      const metricStub = sandbox.stub(logger, 'metric');
+      await probot.receive({
+        name: 'pull_request',
+        payload: {
+          action: 'labeled',
+          pull_request: {
+            number: 3,
+            head: {
+              sha: 'testsha',
+              repo: {
+                full_name: 'googleapis/foo',
+              },
+            },
+            base: {
+              sha: 'testsha',
+              repo: {
+                full_name: 'googleapis/foo',
+              },
+            },
+            user: {
+              login: 'renovate-bot',
+            },
+            labels: [{name: 'cla: yes'}],
+          },
+          repository: {
+            name: 'google-auth-library-java',
+            owner: {
+              login: 'chingor13',
+            },
+          },
+          sender: {
+            login: 'bcoe',
+          },
+        } as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+      assert.ok(metricStub.notCalled);
+    });
+
+    it('does not log metric for pull_request.labeled, of label added to external PR', async () => {
+      const metricStub = sandbox.stub(logger, 'metric');
+      await probot.receive({
+        name: 'pull_request',
+        payload: {
+          action: 'labeled',
+          pull_request: {
+            number: 3,
+            head: {
+              sha: 'testsha',
+              repo: {
+                full_name: 'googleapis/foo',
+              },
+            },
+            base: {
+              sha: 'testsha',
+              repo: {
+                full_name: 'external/foo',
+              },
+            },
+            user: {
+              login: 'renovate-bot',
+            },
+            labels: [{name: 'kokoro:run'}],
+          },
+          repository: {
+            name: 'google-auth-library-java',
+            owner: {
+              login: 'chingor13',
+            },
+          },
+          sender: {
+            login: 'bcoe',
+          },
+        } as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+      assert.ok(metricStub.notCalled);
     });
   });
 });

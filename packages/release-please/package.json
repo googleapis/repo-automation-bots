@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/release-please.js",
+    "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
@@ -33,7 +33,7 @@
     "@octokit/webhooks": "^9.20.0",
     "@octokit/rest": "^18.12.0",
     "gcf-utils": "^13.1.0",
-    "release-please": "13.4.12"
+    "release-please": "^13.6.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
@@ -48,7 +48,7 @@
     "nock": "^13.2.1",
     "sinon": "^13.0.0",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.5.4"
+    "typescript": "~4.6.0"
   },
   "engines": {
     "node": ">= 12.18.2"
