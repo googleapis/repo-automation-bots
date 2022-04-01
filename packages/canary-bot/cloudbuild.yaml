@@ -63,7 +63,7 @@ steps:
     id: "push-docker"
     waitFor: ["build-docker"]
     args: ["push", "gcr.io/$PROJECT_ID/canary-bot-cloud-run"]
-  
+
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
     waitFor: ["push-docker"]
@@ -86,6 +86,7 @@ steps:
     entrypoint: bash
     env:
       - "SERVICE_NAME=canary-bot-cloud-run-backend"
+      - "SECURE_ACCESS=true"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
