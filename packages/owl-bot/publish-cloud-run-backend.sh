@@ -14,13 +14,15 @@
 # limitations under the License.
 
 # This script is for publishing owlbot backend to Cloud Run. It is
-# basically a copy of scripts/publish-cloud-run.sh with addition of
-# some env vars required for running owlbot.
+# basically a simplified copy of scripts/publish-cloud-run.sh with
+# addition of some env vars required for running owlbot. This script
+# is called from packages-owlbot Cloud Build trigger which is invoked
+# when changes in the owl-bot directory pushed to the main branch.
 
 set -eo pipefail
 
-if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName] [timeout] [min-instance] [concurrency]"
+if [ $# -lt 8 ]; then
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> <botName> <timeout>"
   exit 1
 fi
 
@@ -30,31 +32,9 @@ bucket=$3
 keyLocation=$4
 keyRing=$5
 region=$6
-
-botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
-if [ $# -ge 7 ]; then
-  botName=$7
-fi
-
-if [ $# -ge 8 ]; then
-  timeout=$8
-else
-  timeout="3600"
-fi
-
-if [ $# -ge 9 ]; then
-  minInstances=$9
-else
-  minInstances="0"
-fi
-
-if [ -z "${CONCURRENCY}" ]; then
-  if [ $# -ge 10 ]; then
-    CONCURRENCY=${10}
-  else
-    CONCURRENCY="80"
-  fi
-fi
+botName=$7
+timeout=$8
+minInstances="0"
 
 if [ "${project}" == "repo-automation-bots" ]; then
     webhookTmpBucket=tmp-webhook-payloads
@@ -128,9 +108,3 @@ if [ -n "${MEMORY}" ]; then
 fi
 echo "About to deploy cloud run app ${SERVICE_NAME}"
 gcloud run deploy "${SERVICE_NAME}" "${deployArgs[@]}"
-
-echo "Adding ability for allUsers to execute the Function"
-gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
-  --member="allUsers" \
-  --region "${region}" \
-  --role="roles/run.invoker"
