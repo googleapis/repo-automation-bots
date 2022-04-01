@@ -16,8 +16,8 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './canary-bot';
 
 const bootstrap = new GCFBootstrapper({
-  taskTargetEnvironment: 'functions',
-  taskTargetName: 'canary_bot',
+  taskTargetEnvironment: 'run',
+  taskTargetName: 'canary-bot-cloud-run-backend',
 });
 
 const server = bootstrap.server(appFn);

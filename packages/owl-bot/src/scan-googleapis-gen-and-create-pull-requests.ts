@@ -66,7 +66,9 @@ function isCommitHashTooOld(
  * Scans googleapis-gen and creates pull requests in target repos
  * (ex: nodejs-vision) when corresponding code has been updated.
  * @param sourceRepo normally 'googleapis/googlapis-gen'
- * @param copyExistsSearchDepth how far into past pull requests and issues to search
+ * @param combinePullsThreshold when the number of APIs (.OwlBot.yamls) affected
+ *    by a single commit to googleapis-gen exceeds this threshold, combine
+ *    the all the changes into a single pull request.
  */
 export async function scanGoogleapisGenAndCreatePullRequests(
   sourceRepo: string,
@@ -74,7 +76,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   configsStore: ConfigsStore,
   cloneDepth = 100,
   copyStateStore: CopyStateStore,
-  combinePulls = false,
+  combinePullsThreshold = Number.MAX_SAFE_INTEGER,
   logger = console
 ): Promise<number> {
   // Clone the source repo.
@@ -146,11 +148,12 @@ export async function scanGoogleapisGenAndCreatePullRequests(
       }
 
       if (todoYamls.length > 0) {
-        const todos = combinePulls
-          ? [{repo: repo.repo, yamlPaths: todoYamls, commitHash}]
-          : todoYamls.map(yaml => {
-              return {repo: repo.repo, yamlPaths: [yaml], commitHash};
-            });
+        const todos =
+          todoYamls.length > combinePullsThreshold
+            ? [{repo: repo.repo, yamlPaths: todoYamls, commitHash}]
+            : todoYamls.map(yaml => {
+                return {repo: repo.repo, yamlPaths: [yaml], commitHash};
+              });
         for (const todo of todos) {
           logger.info(
             `Pushing todo onto stack: ${JSON.stringify(todo, undefined, 2)}`
