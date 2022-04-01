@@ -87,6 +87,18 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.3.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.2.2...gcf-utils-v13.3.0) (2022-03-31)
+
+
+### Features
+
+* **gcf-utils:** add an oicd token of the task caller service account ([#3346](https://github.com/googleapis/repo-automation-bots/issues/3346)) ([a9577ba](https://github.com/googleapis/repo-automation-bots/commit/a9577ba63ef1abe4bbb4ad5147c0e1ce9d261324))
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/run to v8 ([#3295](https://github.com/googleapis/repo-automation-bots/issues/3295)) ([00c11c3](https://github.com/googleapis/repo-automation-bots/commit/00c11c33b784f6a2bba4197cff8cef1bd7168094))
+
 ### [13.2.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.2.1...gcf-utils-v13.2.2) (2022-03-03)
 
 
