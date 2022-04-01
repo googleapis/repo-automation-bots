@@ -262,7 +262,7 @@ Copy-Tag: ${copyTag}`
       configsStore,
       undefined,
       copyStateStore,
-      false
+      Number.MAX_SAFE_INTEGER
     );
 
     // Confirm it created two pull requests.
@@ -301,7 +301,7 @@ Copy-Tag: ${copyTag}`
       configsStore,
       undefined,
       copyStateStore,
-      true
+      1
     );
 
     // Confirm it created one combined pull request.
