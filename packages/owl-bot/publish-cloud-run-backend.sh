@@ -54,7 +54,7 @@ if [ -z "${IMAGE_NAME}" ]; then
 fi
 
 pushd "${directoryName}"
-functionName=${botName//-/_}q
+functionName=${botName//-/_}
 ueueName=${botName//_/-}
 
 deployArgs=(
