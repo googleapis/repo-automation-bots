@@ -32,7 +32,8 @@ const server = bootstrap.server(
     const config = await bootstrap.getProbotConfig(false);
     owlbot.OwlBot(config.privateKey, app);
   },
-  {maxRetries: 10, maxPubSubRetries: 3}
+  // Temporary skip the signature verification for debugging.
+  {maxRetries: 10, maxPubSubRetries: 3, skipVerification: true}
 );
 
 const port = process.env.PORT ?? 8080;
