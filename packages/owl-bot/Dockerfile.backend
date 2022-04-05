@@ -36,6 +36,11 @@ RUN npm run compile
 
 FROM node:14-slim
 
+# Install git binary
+RUN apt update \
+    && apt install -y git-core \
+    && rm -rf /var/cache/apt/*
+
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
