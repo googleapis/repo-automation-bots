@@ -122,6 +122,7 @@ steps:
       - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-backend"
       - "SERVICE_NAME=owl-bot-backend"
       - "MEMORY=4G"
+      - "SERVICE_ACCOUNT=owl-bot-web-backend@repo-automation-bots.iam.gserviceaccount.com"
       # we could go higher
       - "CONCURRENCY=20"
       # Substitutions
