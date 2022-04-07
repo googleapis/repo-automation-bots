@@ -4,8 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.100.2
-	cloud.google.com/go/iam v0.1.0 // indirect
-	cloud.google.com/go/secretmanager v1.3.0
+	cloud.google.com/go/secretmanager v1.4.0
 	github.com/google/uuid v1.3.0
-	google.golang.org/genproto v0.0.0-20220322021311-435b647f9ef2
+	google.golang.org/genproto v0.0.0-20220405205423-9d709892a2bf
 )
