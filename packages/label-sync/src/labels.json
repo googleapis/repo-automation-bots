@@ -8,12 +8,12 @@
     {
       "name": "api: N/A",
       "description": "Tells auto-label to not auto-detect the API for this issue",
-      "color": "#6950f5"
+      "color": "6950f5"
     },
     {
       "name": "automation-team",
       "description": "Label added to repositories owned by the automation team",
-      "color": "#505050"
+      "color": "505050"
     },
     {
       "name": "eol",
