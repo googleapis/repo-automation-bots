@@ -16,7 +16,7 @@
 // is wired up to respond to github webhook events that indicate
 // changes to the googleapis/googleapis/apiindex.json file. This file
 // is the CLI entrypoint to run googleapis-bootstrapper when kicking off
-// the process manually.
+// the process manually. It then calls run-trigger, which kicks off the build.
 
 import {runTrigger} from '../src/run-trigger';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';

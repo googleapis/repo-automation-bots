@@ -21,6 +21,8 @@ import * as fs from 'fs';
 import path from 'path';
 import assert from 'assert';
 
+nock.disableNetConnect();
+
 const secretManagerClientStub = sinon.createStubInstance(
   SecretManagerServiceClient
 ) as SinonStubbedInstance<SecretManagerServiceClient> &
@@ -78,7 +80,7 @@ describe('behavior of Github Authenticator Class', async () => {
       secretManagerClientStub
     );
 
-    nock('https://api.github.com')
+    const scope = nock('https://api.github.com')
       .post('/app/installations/2345567/access_tokens')
       .reply(201, {token: 'ghs_12345'});
 
@@ -86,6 +88,8 @@ describe('behavior of Github Authenticator Class', async () => {
       await githubAuthenticator.getGitHubShortLivedAccessToken(),
       'ghs_12345'
     );
+
+    scope.done();
   });
 
   it('should throw an error if getting token does not respond with 201', async () => {
@@ -95,7 +99,7 @@ describe('behavior of Github Authenticator Class', async () => {
       secretManagerClientStub
     );
 
-    nock('https://api.github.com')
+    const scope = nock('https://api.github.com')
       .post('/app/installations/2345567/access_tokens')
       .reply(202);
 
@@ -103,6 +107,7 @@ describe('behavior of Github Authenticator Class', async () => {
       githubAuthenticator.getGitHubShortLivedAccessToken(),
       /unexpected response/
     );
+    scope.done();
   });
 
   it('should return an authenticated Octokit instance', async () => {

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import * as cp from 'child_process';
 
 /**
  * Language enum representing all languages that use owlbot-bootstrapper
@@ -33,4 +34,17 @@ export interface Secret {
   secret: string;
 }
 
-//TODO: add argv interface
+/**
+ * CLI arguments
+ */
+export interface cliArgs {
+  projectId: string;
+  triggerId: string;
+  apiId: string;
+  repoToClone?: string;
+  isPreProcess: boolean;
+  language: string;
+  installationId: string;
+  container: string;
+  languageContainer?: string;
+}

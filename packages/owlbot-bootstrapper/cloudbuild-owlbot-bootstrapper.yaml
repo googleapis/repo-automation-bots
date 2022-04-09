@@ -13,6 +13,11 @@
 # limitations under the License.
 
 # Run by a CLI command manually (by a human), or when googleapis/googleapis API Index changes
+# In order to run containers, so that languages can have their own isolated workflow to generate
+# their language-specific repositories, we need to run these containers in Cloud Build. This file
+# will trigger the pre- and post- processing steps of a language-specific container, as well as running
+# the language-specific container itself.
+
 steps:
   # Clones the target repository and opens a branch for mono-repos, for split-repos creates a repository
   - name: ${_CONTAINER}
@@ -23,6 +28,7 @@ steps:
     - 'REPO_TO_CLONE=$_REPO_TO_CLONE'
     - 'IS_PRE_PROCESS=$_IS_PRE_PROCESS'
     - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
+    - 'BUILD_ID=$BUILD_ID'
   # Generates the basic files necessary for a minimal implementation of a library
   # Current working directory contains the branch of the target repo
   - name: ${_LANGUAGE_CONTAINER}
@@ -33,6 +39,7 @@ steps:
     - 'REPO_TO_CLONE=$_REPO_TO_CLONE'
     - 'IS_PRE_PROCESS=$_IS_PRE_PROCESS'
     - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
+    - 'BUILD_ID=$BUILD_ID'
   # Commits and pushes changes to a branch; if the repo is nonempty, opens a PR
   - name: ${_CONTAINER}
     env:
@@ -42,3 +49,4 @@ steps:
     - 'REPO_TO_CLONE=$_REPO_TO_CLONE'
     - 'IS_PRE_PROCESS=false'
     - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
+    - 'BUILD_ID=$BUILD_ID'

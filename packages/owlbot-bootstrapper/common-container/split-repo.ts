@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {execSync} from 'child_process';
 import {logger} from 'gcf-utils';
 import {ORG} from './common-container';
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
-import {getBranchNameUtils, openABranchUtils, openAPRUtils} from './utils';
+import {getBranchName, openABranch, openAPR, cmd} from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 
@@ -35,13 +34,13 @@ export class SplitRepo {
   repoName: string;
   apiId: string;
   octokit: Octokit;
-  githubToken: string;
+  githubToken?: string;
 
   constructor(
     language: Language,
     apiId: string,
-    githubToken: string,
-    octokit: Octokit
+    octokit: Octokit,
+    githubToken?: string
   ) {
     this.language = language;
     this.apiId = apiId;
@@ -92,41 +91,44 @@ export class SplitRepo {
    * Initializes an empty git repo locally
    *
    * @param repoName the name of the git repo to initialize
+   * @param directoryPath the path where the empty repo should be initialized
    */
   public async _initializeEmptyGitRepo(
     repoName: string,
     directoryPath: string
   ) {
-    try {
-      execSync(`mkdir ${repoName}`, {cwd: directoryPath});
-      execSync('git init', {cwd: `${directoryPath}/${repoName}`});
-    } catch (err) {
-      logger.error(err as any);
-      throw err;
-    }
+    cmd(`mkdir ${repoName}`, {cwd: directoryPath});
+    cmd('git init', {cwd: `${directoryPath}/${repoName}`});
   }
 
   /**
    * Commits any changes made to main and pushes them
    *
+   * @param repoName the name of the repo on github to push the changes to
+   * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    * @param githubToken a short-lived access Github access token
-   * @param repoName the name of the repo on githu to push the changes to
+   * @param repoUrl the url of the repo to push to; mostly for testing purposes.
    */
   public async _commitAndPushToMain(
-    githubToken: string,
     repoName: string,
-    directoryPath: string
+    directoryPath: string,
+    githubToken?: string,
+    repoUrl?: string
   ) {
-    try {
-      execSync(
+    if (githubToken) {
+      cmd(
         `git add .; git commit -m "feat: adding initial files"; git branch -M main; git remote add origin https://x-access-token:${githubToken}@github.com/${ORG}/${repoName}; git push -u origin main`,
         {
           cwd: `${directoryPath}/${repoName}`,
         }
       );
-    } catch (err) {
-      logger.error(err as any);
-      throw err;
+    } else {
+      cmd(
+        `git add .; git commit -m "feat: adding initial files"; git branch -M main; git remote add origin ${repoUrl}; git push -u origin main`,
+        {
+          cwd: `${directoryPath}/${repoName}`,
+        }
+      );
     }
   }
 
@@ -135,15 +137,16 @@ export class SplitRepo {
    *
    * @param repoName the repo on which to create a brancn
    * @param octokit an authenticated Octokit instance
+   * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    */
   public async _createEmptyBranchAndOpenPR(
     repoName: string,
     octokit: Octokit,
     directoryPath: string
   ) {
-    await openABranchUtils(repoName, directoryPath);
-    const branchName = await getBranchNameUtils(directoryPath);
-    await openAPRUtils(octokit, branchName, repoName);
+    await openABranch(repoName, directoryPath);
+    const branchName = await getBranchName(directoryPath);
+    await openAPR(octokit, branchName, repoName);
   }
 
   /**
@@ -156,12 +159,18 @@ export class SplitRepo {
 
   /**
    * Pushes any changes made locally to main and creates an empty PR
+   * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
+   * @param repoUrl the url of the repo to push to; mostly for testing purposes.
    */
-  public async pushToMainAndCreateEmptyPR(directoryPath: string) {
+  public async pushToMainAndCreateEmptyPR(
+    directoryPath: string,
+    repoUrl?: string
+  ) {
     await this._commitAndPushToMain(
-      this.githubToken,
       this.repoName,
-      directoryPath
+      directoryPath,
+      this.githubToken,
+      repoUrl
     );
     await this._createEmptyBranchAndOpenPR(
       this.repoName,

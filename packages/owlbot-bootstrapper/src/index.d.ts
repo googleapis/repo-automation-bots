@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This file will become necessary when we wire this to be a Github app.
 declare module 'promise-events' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   class EventEmitter {}

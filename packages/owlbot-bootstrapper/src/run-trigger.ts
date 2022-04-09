@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This file is kicked off by a manual CLI invocation, either by an event or by a human.
+// It kicks off a trigger in cloud build.
+
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 
 export async function runTrigger(argv: any, cb: CloudBuildClient) {
@@ -36,6 +39,9 @@ export async function runTrigger(argv: any, cb: CloudBuildClient) {
   //   const buildId: string = (resp as any).metadata.build.id;
   await resp.promise();
 }
+
+// I'd like to keep the following commented code in case we need
+// to wait for a Build
 //   try {
 //     await waitForBuild(argv.projectId, buildId, cb);
 //     return;

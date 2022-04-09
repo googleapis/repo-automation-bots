@@ -38,6 +38,7 @@
     "jsonwebtoken": "^8.5.1",
     "node-fetch": "^2.6.1",
     "nodejs-fetch": "^1.0.0",
+    "snap-shot-it": "^7.9.6",
     "uuidv4": "^6.2.12",
     "yargs": "^17.3.1"
   },

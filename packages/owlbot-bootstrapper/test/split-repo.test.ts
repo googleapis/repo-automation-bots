@@ -23,31 +23,40 @@ import path from 'path';
 import assert from 'assert';
 
 let directoryPath: string;
+let repoToClonePath: string;
+const FAKE_REPO_NAME = 'fakeRepo';
+const FAKE_WORKSPACE = 'workspace';
 
-beforeEach(async () => {
-  directoryPath = path.join(__dirname, 'workspace');
-  console.log(directoryPath);
-  try {
-    await execSync(`mkdir ${directoryPath}`);
-  } catch (err) {
-    if (!(err as any).toString().match(/File exists/)) {
-      throw err;
-    }
-  }
-});
-
-afterEach(async () => {
-  await execSync(`rm -rf ${directoryPath}`);
-});
+nock.disableNetConnect();
 
 describe('SplitRepo class', async () => {
+  beforeEach(async () => {
+    directoryPath = path.join(__dirname, FAKE_WORKSPACE);
+    repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
+    console.log(directoryPath);
+    try {
+      await execSync(`mkdir ${directoryPath}`);
+      await execSync(
+        `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init --bare`
+      );
+    } catch (err) {
+      if (!(err as any).toString().match(/File exists/)) {
+        throw err;
+      }
+    }
+  });
+
+  afterEach(async () => {
+    await execSync(`rm -rf ${directoryPath}`);
+    await execSync(`rm -rf ${repoToClonePath}`);
+  });
   const octokit = new Octokit({auth: 'abc1234'});
 
-  const splitRepo = new SplitRepo(
+  let splitRepo = new SplitRepo(
     'python' as Language,
     'google.cloud.kms.v1',
-    'ghs_1234',
-    octokit
+    octokit,
+    'ghs_1234'
   );
   it('should create the right type of object', async () => {
     const expectation = {
@@ -81,17 +90,21 @@ describe('SplitRepo class', async () => {
   });
 
   it('should create a repo', async () => {
-    nock('https://api.github.com').post('/orgs/googleapis/repos').reply(201);
+    const scope = nock('https://api.github.com')
+      .post('/orgs/googleapis/repos')
+      .reply(201);
 
     await SplitRepo.prototype._createRepo(octokit, 'python-kms');
+    scope.done();
   });
 
   it('should catch a createRepo error if there is a duplicate', async () => {
-    nock('https://api.github.com')
+    const scope = nock('https://api.github.com')
       .post('/orgs/googleapis/repos')
       .reply(400, {message: 'name already exists on this account'});
 
     await SplitRepo.prototype._createRepo(octokit, 'python-kms');
+    scope.done();
   });
 
   it('should create an empty git repo on disk', async () => {
@@ -100,40 +113,98 @@ describe('SplitRepo class', async () => {
     assert.ok(fs.statSync(`${directoryPath}/${splitRepo.repoName}-1/.git`));
   });
 
-  // This test expects an error when pushing to github, since we're:
-  // 1. pushing to a repo that we don't have permissions to and doesn't exist
-  // However, the error allows us to ensure we're pushing to the right repo
-  it('should push those changes to github', async () => {
-    assert.rejects(
-      async () =>
-        await splitRepo._commitAndPushToMain(
-          'ghs_1234',
-          'python-kms',
-          directoryPath
-        ),
-      /failed to push some refs to 'https:\/\/github.com\/googleapis\/python-kms'/
+  it('should push changes in an empty repo to github', async () => {
+    await splitRepo._initializeEmptyGitRepo(FAKE_REPO_NAME, directoryPath);
+    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    await splitRepo._commitAndPushToMain(
+      FAKE_REPO_NAME,
+      directoryPath,
+      undefined,
+      repoToClonePath
     );
+
+    const stdoutBranch = execSync('git branch', {
+      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+    });
+
+    const stdoutCommit = execSync('git log', {
+      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+    });
+
+    const stdoutReadmeExists = execSync(
+      'git cat-file -e origin/main:README.md && echo README exists',
+      {cwd: `${directoryPath}/${FAKE_REPO_NAME}`}
+    );
+
+    assert.ok(stdoutBranch.includes('main'));
+    assert.ok(stdoutCommit.includes('feat: adding initial files'));
+    assert.ok(stdoutReadmeExists.includes('README exists'));
   });
 
-  // This test should expects an error as well because we cannot properly set up the branch and push to main
   it('should create an empty PR', async () => {
-    nock('https://api.github.com')
-      .post('/repos/googleapis/repos/pulls')
+    const scope = nock('https://api.github.com')
+      .post('/repos/googleapis/fakeRepo/pulls')
       .reply(201);
 
-    await splitRepo._initializeEmptyGitRepo(
-      'python-analytics-admin',
+    await splitRepo._initializeEmptyGitRepo(FAKE_REPO_NAME, directoryPath);
+    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    await splitRepo._commitAndPushToMain(
+      FAKE_REPO_NAME,
+      directoryPath,
+      undefined,
+      repoToClonePath
+    );
+
+    await splitRepo._createEmptyBranchAndOpenPR(
+      FAKE_REPO_NAME,
+      octokit,
       directoryPath
     );
 
-    assert.rejects(
-      async () =>
-        await splitRepo._createEmptyBranchAndOpenPR(
-          'python-analytics-admin',
-          octokit,
-          directoryPath
-        ),
-      /fatal: 'origin' does not appear to be a git repository/
+    const stdoutBranch = execSync('git branch', {
+      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+    });
+
+    assert.ok(stdoutBranch.includes('owlbot-bootstrapper-initial-PR'));
+    scope.done();
+  });
+
+  it('should create and initialize an empty repo on github, then push to main and create an empty PR', async () => {
+    const scopes = [
+      nock('https://api.github.com').post('/orgs/googleapis/repos').reply(201),
+      nock('https://api.github.com')
+        .post('/repos/googleapis/fakeRepo/pulls')
+        .reply(201),
+    ];
+
+    splitRepo = new SplitRepo(
+      'python' as Language,
+      'google.cloud.kms.v1',
+      octokit
     );
+
+    splitRepo.repoName = FAKE_REPO_NAME;
+
+    await splitRepo.createAndInitializeEmptyGitRepo(directoryPath);
+    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    await splitRepo.pushToMainAndCreateEmptyPR(directoryPath, repoToClonePath);
+
+    const stdoutBranch = execSync('git branch', {
+      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+    });
+
+    const stdoutCommit = execSync('git log', {
+      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+    });
+
+    const stdoutReadmeExists = execSync(
+      'git cat-file -e origin/main:README.md && echo README exists',
+      {cwd: `${directoryPath}/${FAKE_REPO_NAME}`}
+    );
+
+    assert.ok(stdoutBranch.includes('main'));
+    assert.ok(stdoutCommit.includes('feat: adding initial files'));
+    assert.ok(stdoutReadmeExists.includes('README exists'));
+    scopes.forEach(scope => scope.done());
   });
 });

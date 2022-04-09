@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {execSync} from 'child_process';
-import {logger} from 'gcf-utils';
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
-import {getBranchNameUtils, openABranchUtils, openAPRUtils} from './utils';
+import {getBranchName, openABranch, openAPR, cmd} from './utils';
 
 /**
  * Monorepo class
@@ -52,53 +50,21 @@ export class MonoRepo {
    * Clones a repo from github
    *
    * @param githubToken a short-lived access Github access token
-   * @param octokit the url for the repo to clone without the preceeding https://, e.g., just github.com/googleapis/nodejs-kms.git
+   * @param repoToCloneUrl from where to clone the repo
+   * @param directoryPath where to clone the repo to
    */
   public async _cloneRepo(
     githubToken: string,
     repoToCloneUrl: string,
     directoryPath: string
   ) {
-    try {
-      execSync(
-        `git clone https://x-access-token:${githubToken}@${repoToCloneUrl}`,
-        {cwd: directoryPath}
-      );
-    } catch (err) {
-      logger.error(err as any);
-      throw err;
+    if (repoToCloneUrl.includes('github')) {
+      cmd(`git clone https://x-access-token:${githubToken}@${repoToCloneUrl}`, {
+        cwd: directoryPath,
+      });
+    } else {
+      cmd(`git clone ${repoToCloneUrl}`, {cwd: directoryPath});
     }
-  }
-
-  /**
-   * Opens a new branch with a UUID in github in the given repo.
-   *
-   * @param repoName the name of the repository, i.e., nodejs-kms
-   */
-  public async _openABranch(repoName: string, directoryPath: string) {
-    await openABranchUtils(repoName, directoryPath);
-  }
-
-  /**
-   * Gets the name of the branch with a UUID from a well-known file path
-   */
-  public async _getBranchNameFromFile(directoryPath: string): Promise<string> {
-    return await getBranchNameUtils(directoryPath);
-  }
-
-  /**
-   * Opens a PR in github
-   *
-   * @param octokit an instantiated Octokit instance
-   * @param branchName the name of the branch with a UUID
-   * @param repoName the name of the repo to open the branch in
-   */
-  public async _openAPR(
-    octokit: Octokit,
-    branchName: string,
-    repoName: string
-  ) {
-    await openAPRUtils(octokit, branchName, repoName);
   }
 
   /**
@@ -106,32 +72,29 @@ export class MonoRepo {
    *
    * @param branchName the name of the branch with a UUID
    * @param repoName the name of the repo containing the branch
+   * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    */
   public async _commitAndPushToBranch(
     branchName: string,
     repoName: string,
     directoryPath: string
   ) {
-    try {
-      execSync(
-        `git add .; git commit -m "feat: initial generation of library"; git push -u origin ${branchName}`,
-        {
-          cwd: `${directoryPath}/${repoName}`,
-        }
-      );
-    } catch (err) {
-      logger.error(err as any);
-      throw err;
-    }
+    cmd(
+      `git add .; git commit -m "feat: initial generation of library"; git push -u origin ${branchName}`,
+      {
+        cwd: `${directoryPath}/${repoName}`,
+      }
+    );
   }
 
   /**
    * Commits changes to a branch, then opens a PR with those changes
+   * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    */
   public async pushToBranchAndOpenPR(directoryPath: string) {
-    const branchName = await this._getBranchNameFromFile(directoryPath);
+    const branchName = await getBranchName(directoryPath);
     await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
-    await this._openAPR(this.octokit, branchName, this.repoName);
+    await openAPR(this.octokit, branchName, this.repoName);
   }
 
   /**
@@ -139,6 +102,6 @@ export class MonoRepo {
    */
   public async cloneRepoAndOpenBranch(directoryPath: string) {
     await this._cloneRepo(this.githubToken, this.repoToCloneUrl, directoryPath);
-    await this._openABranch(this.repoName, directoryPath);
+    await openABranch(this.repoName, directoryPath);
   }
 }
