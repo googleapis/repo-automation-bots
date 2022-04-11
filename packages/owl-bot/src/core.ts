@@ -163,7 +163,9 @@ export async function triggerPostProcessBuild(
     return {detailsURL, ...summarizeBuild(build)};
   } catch (e) {
     const err = e as Error;
-    logger.error(err);
+    logger.error(`triggerPostProcessBuild: ${err.message}`, {
+      stack: err.stack,
+    });
     return buildFailureFrom(detailsURL);
   }
 }
