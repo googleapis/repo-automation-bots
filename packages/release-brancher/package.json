@@ -29,7 +29,7 @@
     "@octokit/rest": "^18.12.0",
     "code-suggester": "^2.2.0",
     "js-yaml": "^4.1.0",
-    "yargs": "^17.4.0"
+    "yargs": "^17.4.1"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
