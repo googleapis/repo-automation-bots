@@ -17,7 +17,8 @@ import {Probot} from 'probot';
 import {GCFBootstrapper} from 'gcf-utils';
 
 const bootstrap = new GCFBootstrapper({
-  taskTargetEnvironment: 'functions',
+  taskTargetEnvironment: 'run',
+  taskTargetName: 'owl-bot-backend',
 });
 
 // We only need to deploy gcf-utils in the frontend server because only thing
