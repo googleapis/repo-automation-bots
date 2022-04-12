@@ -27,9 +27,9 @@
   },
   "dependencies": {
     "@google-cloud/debug-agent": "^5.2.8",
-    "@google-cloud/storage": "^5.18.2",
+    "@google-cloud/storage": "^5.19.0",
     "gaxios": "^4.3.2",
-    "gcf-utils": "^13.2.2"
+    "gcf-utils": "^13.3.0"
   },
   "devDependencies": {
     "@probot/octokit-plugin-config": "^1.1.5",

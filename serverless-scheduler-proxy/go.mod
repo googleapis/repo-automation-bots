@@ -6,5 +6,5 @@ require (
 	cloud.google.com/go v0.100.2
 	cloud.google.com/go/secretmanager v1.4.0
 	github.com/google/uuid v1.3.0
-	google.golang.org/genproto v0.0.0-20220405205423-9d709892a2bf
+	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac
 )
