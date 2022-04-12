@@ -36,6 +36,13 @@ RUN npm run compile
 
 FROM node:14-slim
 
+# Install git binary and remove unnecessary cache files to keep the
+# image size small.
+
+RUN apt update \
+    && apt install -y git-core \
+    && rm -rf /var/cache/apt/*
+
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
