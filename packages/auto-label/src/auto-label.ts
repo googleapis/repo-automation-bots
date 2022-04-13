@@ -417,23 +417,35 @@ async function updatePullRequestSizeLabel(
       logger.info(
         `Deleting ${size_label.name} in ${owner}/${repo}/${pull_number}...`
       );
-      context.octokit.issues.removeLabel({
-        owner,
-        repo,
-        issue_number: pull_number,
-        name: size_label.name,
-      });
+      context.octokit.issues
+        .removeLabel({
+          owner,
+          repo,
+          issue_number: pull_number,
+          name: size_label.name,
+        })
+        .catch(e => {
+          logger.warn(
+            `removeLabel failed for size label ${size_label.name} in ${owner}/${repo}/${pull_number}: ${e}`
+          );
+        });
     }
     // Update the PR size label
     logger.info(
       `Request size label added to PR #${pull_number} in ${owner}/${repo}, label is "${pr_size}"`
     );
-    await context.octokit.issues.addLabels({
-      owner,
-      repo,
-      issue_number: pull_number,
-      labels: [pr_size],
-    });
+    await context.octokit.issues
+      .addLabels({
+        owner,
+        repo,
+        issue_number: pull_number,
+        labels: [pr_size],
+      })
+      .catch(e => {
+        logger.warn(
+          `addLabels failed for size label ${pr_size} in ${owner}/${repo}/${pull_number}: ${e}`
+        );
+      });
   }
 }
 
