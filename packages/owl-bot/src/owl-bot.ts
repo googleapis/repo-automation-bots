@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import admin from 'firebase-admin';
-import {DatastoreLock} from '@google-automations/datastore-lock';
+import {DatastoreLock, DatastoreLockError} from '@google-automations/datastore-lock';
 import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
@@ -67,9 +67,8 @@ async function acquireLock(target: string): Promise<DatastoreLock> {
 async function releaseLock(lock: DatastoreLock): Promise<void> {
   try {
     await lock.release();
-  } catch (_err: unknown) {
-    const err = _err as Error;
-    if (err.message.includes('DatastoreLockError')) {
+  } catch (err) {
+    if (err instanceof DatastoreLockError) {
       console.warn(err);
     } else {
       throw err;
