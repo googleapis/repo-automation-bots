@@ -29,7 +29,7 @@ import {SplitRepo} from './split-repo';
 export const ORG = 'googleapis';
 export const DIRECTORY_PATH = '/workspace';
 
-// Validate env variables, execute early if they are not present
+// Validate env variables, exit early if they are not present
 export function validateEnvVariables(isMonoRepository: boolean) {
   if (!process.env.REPO_TO_CLONE && isMonoRepository) {
     throw new Error('No repo to clone specified for monorepo');

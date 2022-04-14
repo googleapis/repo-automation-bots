@@ -49,7 +49,6 @@ describe('MonoRepo class', async () => {
     try {
       execSync('git config user.name');
     } catch (err) {
-      console.log('HELLOO');
       utils.setConfig(directoryPath);
     }
   });
