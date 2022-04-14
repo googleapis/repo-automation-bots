@@ -29,7 +29,7 @@ import {
   ORG,
 } from '../common-container/common-container';
 
-sinon.stub(utils, 'setConfig');
+// sinon.stub(utils, 'setConfig');
 nock.disableNetConnect();
 
 let getGitHubShortLivedAccessTokenStub: sinon.SinonStub;
@@ -38,6 +38,7 @@ let cloneRepoAndOpenBranchStub: sinon.SinonStub;
 let pushToBranchAndOpenPRStub: sinon.SinonStub;
 let createAndInitializeEmptyGitRepoStub: sinon.SinonStub;
 let pushToMainAndCreateEmptyPR: sinon.SinonStub;
+let setConfigStub: sinon.SinonStub;
 
 describe('common container flow', async () => {
   beforeEach(() => {
@@ -70,6 +71,8 @@ describe('common container flow', async () => {
       SplitRepo.prototype,
       'pushToMainAndCreateEmptyPR'
     );
+
+    setConfigStub = sinon.stub(utils, 'setConfig');
   });
 
   afterEach(() => {
@@ -79,6 +82,7 @@ describe('common container flow', async () => {
     pushToBranchAndOpenPRStub.restore();
     createAndInitializeEmptyGitRepoStub.restore();
     pushToMainAndCreateEmptyPR.restore();
+    setConfigStub.restore();
   });
 
   it('correctly determines if language is a monorepo or not', () => {
