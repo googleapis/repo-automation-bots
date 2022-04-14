@@ -46,7 +46,9 @@ describe('SplitRepo class', async () => {
       }
     }
 
-    if (!execSync('git config user.name')) {
+    try {
+      execSync('git config user.name');
+    } catch (err) {
       utils.setConfig(directoryPath);
     }
   });

@@ -50,7 +50,9 @@ describe('common utils tests', async () => {
         throw err;
       }
     }
-    if (!execSync('git config user.name')) {
+    try {
+      execSync('git config user.name');
+    } catch (err) {
       setConfig(directoryPath);
     }
   });
