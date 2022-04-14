@@ -114,5 +114,6 @@ describe('common utils tests', async () => {
       'python',
       'We are missing this piece of critical info'
     );
+    scope.done();
   });
 });
