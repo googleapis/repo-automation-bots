@@ -23,7 +23,6 @@ const MAX_LOCK_EXPIRY = 60 * 1000; // 60 seconds
 const DEFAULT_LOCK_ACQUIRE_TIMEOUT = 120 * 1000; // 120 seconds
 const BACKOFF_INITIAL_DELAY = 2 * 1000; // 1 seconds
 const BACKOFF_MAX_DELAY = 10 * 1000; // 10 seconds
-const DATASTORE_LOCK_ERROR_NAME = 'DatastoreLockError';
 
 let cachedClient: Datastore;
 
@@ -44,6 +43,14 @@ interface LockEntity {
 
 function isExpired(entity: LockEntity) {
   return Date.now() > entity.expiry;
+}
+
+const DATASTORE_LOCK_ERROR_NAME = 'DatastoreLockError';
+export class DatastoreLockError extends Error {
+  constructor(msg: string) {
+    super(msg);
+    this.name = DATASTORE_LOCK_ERROR_NAME;
+  }
 }
 
 /**
@@ -168,10 +175,9 @@ export class DatastoreLock {
         return true;
       }
       if (entity.uuid !== this.uniqueId) {
-        const err = new Error(
+        const err = new DatastoreLockError(
           `The lock for ${this.target} was acquired by another process.`
         );
-        err.name = DATASTORE_LOCK_ERROR_NAME;
         throw err;
       }
       // The lock is created by myself.
