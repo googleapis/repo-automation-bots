@@ -164,6 +164,8 @@ export class DatastoreLock {
 
   /**
    * Release the lock.
+   *
+   * @throws {DATASTORE_LOCK_ERROR_NAME}
    */
   public async release(): Promise<boolean> {
     const transaction = this.datastore.transaction();
@@ -185,10 +187,10 @@ export class DatastoreLock {
       await transaction.commit();
       return true;
     } catch (e) {
-      const err = e as Error;
-      if (err.name === DATASTORE_LOCK_ERROR_NAME) {
-        throw err;
+      if (e instanceof DatastoreLockError) {
+        throw e;
       }
+      const err = e as Error;
       err.message = `Error releasing a lock for ${this.target}: ${err.message}`;
       logger.error(err);
       await transaction.rollback();
