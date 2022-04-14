@@ -30,6 +30,8 @@ steps:
     id: "publish-function"
     waitFor: ["build"]
     entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=owl-bot-web-backend@repo-automation-bots.iam.gserviceaccount.com"
     args:
       - "-e"
       - "./scripts/publish-function.sh"
@@ -78,6 +80,7 @@ steps:
     entrypoint: bash
     env:
       - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-frontend"
+      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
