@@ -64,6 +64,19 @@ async function acquireLock(target: string): Promise<DatastoreLock> {
   return lock;
 }
 
+async function releaseLock(lock: DatastoreLock): Promise<void> {
+  try {
+    await lock.release();
+  } catch (_err: unknown) {
+    const err = _err as Error;
+    if (err.message.includes('DatastoreLockError')) {
+      console.warn(err);
+    } else {
+      throw err;
+    }
+  }
+}
+
 function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // Fail fast if the Cloud Function doesn't have its environment configured:
   if (!process.env.APP_ID) {
@@ -443,7 +456,7 @@ async function runPostProcessorWithLock(
       breakLoop
     );
   } finally {
-    await lock.release();
+    await releaseLock(lock);
   }
 }
 
