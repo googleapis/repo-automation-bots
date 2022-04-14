@@ -14,7 +14,10 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import admin from 'firebase-admin';
-import {DatastoreLock, DatastoreLockError} from '@google-automations/datastore-lock';
+import {
+  DatastoreLock,
+  DatastoreLockError,
+} from '@google-automations/datastore-lock';
 import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
