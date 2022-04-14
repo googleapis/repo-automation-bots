@@ -150,6 +150,8 @@ export async function main() {
       }
     }
   } catch (err) {
+    // If any error occurs in this script, we'll try to open an issue in googleapis or
+    // in the monorepo if it exists with the error message.
     await openAnIssue(
       octokit,
       process.env.REPO_TO_CLONE?.split('/')[2]?.split('.')[0] ?? 'googleapis',
