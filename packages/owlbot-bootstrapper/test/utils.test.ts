@@ -17,7 +17,7 @@ import {
   getBranchName,
   openABranch,
   openAnIssue,
-  setConfig
+  setConfig,
 } from '../common-container/utils';
 import {MonoRepo} from '../common-container/mono-repo';
 import {execSync} from 'child_process';

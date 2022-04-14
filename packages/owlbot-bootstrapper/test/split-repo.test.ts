@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {SplitRepo} from '../common-container/split-repo';
+import * as utils from '../common-container/utils';
 import {describe, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import {Language} from '../common-container/interfaces';
