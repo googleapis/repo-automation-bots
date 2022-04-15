@@ -16,7 +16,13 @@ import {logger} from 'gcf-utils';
 import {ORG} from './common-container';
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
-import {getBranchName, openABranch, openAPR, cmd, checkIfGitIsInstalled} from './utils';
+import {
+  getBranchName,
+  openABranch,
+  openAPR,
+  cmd,
+  checkIfGitIsInstalled,
+} from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 
