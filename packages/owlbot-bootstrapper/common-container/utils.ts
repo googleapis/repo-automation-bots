@@ -156,3 +156,12 @@ export function cmd(command: string, options?: ExecSyncOptions | undefined) {
     throw err;
   }
 }
+
+export function checkIfGitIsInstalled() {
+  try {
+    cmd(`git --version`);
+  } catch (err) {
+    logger.error(`Error: git not installed: ${err}`);
+    throw err;
+  }
+}

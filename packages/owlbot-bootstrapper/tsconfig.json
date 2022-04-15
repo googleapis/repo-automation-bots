@@ -9,5 +9,5 @@
     "src/*.ts",
     "test/*.ts",
     "cli/*.ts",
-    "common-container/*.ts" ]
+    "common-container/*.ts", "test/common-container/utils.test.ts", "test/common-container/split-repo.test.ts", "test/app/run-trigger.test.ts", "test/common-container/mono-repo.test.ts", "test/common-container/github-authenticator.test.ts", "test/common-container/common-container.test.ts" ]
 }

@@ -36,7 +36,7 @@ export interface Secret {
 /**
  * CLI arguments
  */
-export interface cliArgs {
+export interface CliArgs {
   projectId: string;
   triggerId: string;
   apiId: string;

@@ -18,7 +18,7 @@
 // is the CLI entrypoint to run googleapis-bootstrapper when kicking off
 // the process manually. It then calls run-trigger, which kicks off the build.
 
-import {runTrigger} from '../src/run-trigger';
+import {runTrigger} from '../app/run-trigger';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import yargs from 'yargs';
 

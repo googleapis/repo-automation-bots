@@ -16,7 +16,7 @@ import {logger} from 'gcf-utils';
 import {ORG} from './common-container';
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
-import {getBranchName, openABranch, openAPR, cmd} from './utils';
+import {getBranchName, openABranch, openAPR, cmd, checkIfGitIsInstalled} from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 
@@ -153,6 +153,7 @@ export class SplitRepo {
    * Initializes an empty git repo locally, and creates an empty repo on github
    */
   public async createAndInitializeEmptyGitRepo(directoryPath: string) {
+    checkIfGitIsInstalled();
     await this._createRepo(this.octokit, this.repoName);
     await this._initializeEmptyGitRepo(this.repoName, directoryPath);
   }
@@ -166,6 +167,7 @@ export class SplitRepo {
     directoryPath: string,
     repoUrl?: string
   ) {
+    checkIfGitIsInstalled();
     await this._commitAndPushToMain(
       this.repoName,
       directoryPath,

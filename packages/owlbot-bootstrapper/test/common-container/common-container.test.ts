@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GithubAuthenticator} from '../common-container/github-authenticator';
+import {GithubAuthenticator} from '../../common-container/github-authenticator';
 import sinon from 'sinon';
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {MonoRepo} from '../common-container/mono-repo';
-import {SplitRepo} from '../common-container/split-repo';
-import {Language} from '../common-container/interfaces';
-import * as utils from '../common-container/utils';
+import {MonoRepo} from '../../common-container/mono-repo';
+import {SplitRepo} from '../../common-container/split-repo';
+import {Language} from '../../common-container/interfaces';
+import * as utils from '../../common-container/utils';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import {
@@ -27,7 +27,7 @@ import {
   validateEnvVariables,
   main,
   ORG,
-} from '../common-container/common-container';
+} from '../../common-container/common-container';
 
 // sinon.stub(utils, 'setConfig');
 nock.disableNetConnect();

@@ -14,7 +14,13 @@
 
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
-import {getBranchName, openABranch, openAPR, cmd} from './utils';
+import {
+  getBranchName,
+  openABranch,
+  openAPR,
+  cmd,
+  checkIfGitIsInstalled,
+} from './utils';
 
 /**
  * Monorepo class
@@ -92,6 +98,7 @@ export class MonoRepo {
    * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    */
   public async pushToBranchAndOpenPR(directoryPath: string) {
+    checkIfGitIsInstalled();
     const branchName = await getBranchName(directoryPath);
     await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
     await openAPR(this.octokit, branchName, this.repoName);
@@ -101,6 +108,7 @@ export class MonoRepo {
    * Clones a repository and opens an empty branch in it
    */
   public async cloneRepoAndOpenBranch(directoryPath: string) {
+    checkIfGitIsInstalled();
     await this._cloneRepo(this.githubToken, this.repoToCloneUrl, directoryPath);
     await openABranch(this.repoName, directoryPath);
   }

@@ -15,7 +15,7 @@
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import sinon, {SinonStubbedInstance} from 'sinon';
 import {assert} from 'console';
-import {runTrigger} from '../src/run-trigger';
+import {runTrigger} from '../../app/run-trigger';
 
 // Trigger ID in gcp
 const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
