@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {SplitRepo} from '../../common-container/split-repo';
-import * as utils from '../../common-container/utils';
+import {SplitRepo} from '../common-container/split-repo';
+import * as utils from '../common-container/utils';
 import {describe, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
-import {Language} from '../../common-container/interfaces';
+import {Language} from '../common-container/interfaces';
 import nock from 'nock';
 import {execSync} from 'child_process';
 import * as fs from 'fs';

@@ -18,14 +18,14 @@ import {
   openABranch,
   openAnIssue,
   setConfig,
-} from '../../common-container/utils';
-import {MonoRepo} from '../../common-container/mono-repo';
+} from '../common-container/utils';
+import {MonoRepo} from '../common-container/mono-repo';
 import {execSync} from 'child_process';
 import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../../common-container/common-container';
+import {ORG} from '../common-container/common-container';
 import snapshot from 'snap-shot-it';
 
 let directoryPath: string;
