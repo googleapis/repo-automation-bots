@@ -14,7 +14,10 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import admin from 'firebase-admin';
-import {DatastoreLock} from '@google-automations/datastore-lock';
+import {
+  DatastoreLock,
+  DatastoreLockError,
+} from '@google-automations/datastore-lock';
 import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
@@ -62,6 +65,18 @@ async function acquireLock(target: string): Promise<DatastoreLock> {
     throw new LockError();
   }
   return lock;
+}
+
+async function releaseLock(lock: DatastoreLock): Promise<void> {
+  try {
+    await lock.release();
+  } catch (err) {
+    if (err instanceof DatastoreLockError) {
+      console.warn(err);
+    } else {
+      throw err;
+    }
+  }
 }
 
 function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
@@ -443,7 +458,7 @@ async function runPostProcessorWithLock(
       breakLoop
     );
   } finally {
-    await lock.release();
+    await releaseLock(lock);
   }
 }
 
