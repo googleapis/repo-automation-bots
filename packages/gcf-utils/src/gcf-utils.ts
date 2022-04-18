@@ -337,6 +337,7 @@ export class GCFBootstrapper {
       });
       return {
         ...config,
+        log: logger,
         Octokit: DefaultOctokit,
       } as Options;
     }
@@ -462,10 +463,7 @@ export class GCFBootstrapper {
       const {name, id, signature, taskId, taskRetries} =
         GCFBootstrapper.parseRequestHeaders(request);
 
-      const triggerType: TriggerType = GCFBootstrapper.parseTriggerType(
-        name,
-        taskId
-      );
+      const triggerType = GCFBootstrapper.parseTriggerType(name, taskId);
 
       // validate the signature
       if (
@@ -482,12 +480,9 @@ export class GCFBootstrapper {
         return;
       }
 
-      /**
-       * Note: any logs written before resetting bindings may contain
-       * bindings from previous executions
-       */
-      logger.resetBindings();
-      logger.addBindings(buildTriggerInfo(triggerType, id, name, request.body));
+      const requestLogger = logger.child(
+        buildTriggerInfo(triggerType, id, name, request.body)
+      );
       try {
         if (triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
@@ -507,8 +502,10 @@ export class GCFBootstrapper {
           // Abort task retries if we've hit the max number by
           // returning "success"
           if (taskRetries > maxRetries) {
-            logger.metric('too-many-retries');
-            logger.info(`Too many retries: ${taskRetries} > ${maxRetries}`);
+            requestLogger.metric('too-many-retries');
+            requestLogger.info(
+              `Too many retries: ${taskRetries} > ${maxRetries}`
+            );
             // return 200 so we don't retry the task again
             response.send({
               statusCode: 200,
@@ -524,7 +521,7 @@ export class GCFBootstrapper {
           // The payload does not exist, stop retrying on this task by letting
           // this request "succeed".
           if (!payload) {
-            logger.metric('payload-expired');
+            requestLogger.metric('payload-expired');
             response.send({
               statusCode: 200,
               body: JSON.stringify({message: 'Payload expired'}),
@@ -539,8 +536,11 @@ export class GCFBootstrapper {
             name: name as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             id: id as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            payload: payload as any,
+            payload: {
+              ...payload,
+              logger: requestLogger,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any,
           });
         } else if (triggerType === TriggerType.GITHUB) {
           await this.enqueueTask({
@@ -555,7 +555,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
-        logger.error(err);
+        requestLogger.error(err);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -563,6 +563,7 @@ export class GCFBootstrapper {
         return;
       }
 
+      requestLogger.flushSync();
       logger.flushSync();
     };
   }
@@ -1115,4 +1116,11 @@ export class GCFBootstrapper {
       return payload;
     }
   }
+}
+
+// Helper to extract the request logger from the request payload.
+// If gcf-utils wrapper did not provide a logger, fall back to the
+// default logger.
+export function getContextLogger(context): GCFLogger {
+  return context?.payload?.logger || logger;
 }
