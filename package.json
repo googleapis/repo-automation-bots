@@ -3,6 +3,9 @@
   "private": true,
   "license": "Apache-2.0",
   "repository": "googleapis/repo-automation-bots",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "scripts": {
     "run": "./scripts/scripts.js",
     "fix": "npm run run -- npm run fix",
