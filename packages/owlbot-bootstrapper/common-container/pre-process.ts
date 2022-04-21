@@ -28,7 +28,7 @@ import {SplitRepo} from './split-repo';
 
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
-  
+
   const githubAuthenticator = new GithubAuthenticator(
     argv.projectId,
     argv.installationId,
