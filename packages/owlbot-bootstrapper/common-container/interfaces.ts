@@ -38,12 +38,12 @@ export interface Secret {
  */
 export interface CliArgs {
   projectId: string;
-  triggerId: string;
+  triggerId?: string;
   apiId: string;
   repoToClone?: string;
-  isPreProcess: boolean;
   language: string;
   installationId: string;
   container: string;
   languageContainer?: string;
+  buildId?: string;
 }

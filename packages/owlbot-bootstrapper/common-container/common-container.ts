@@ -18,151 +18,123 @@
 // for a split or mono repo-type object. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig} from './utils';
-import {logger} from 'gcf-utils';
-import {MonoRepo} from './mono-repo';
-import {GithubAuthenticator} from './github-authenticator';
-import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
-import {Language} from './interfaces';
-import {SplitRepo} from './split-repo';
+// import {openAnIssue, setConfig} from './utils';
+// import {logger} from 'gcf-utils';
+// import {MonoRepo} from './mono-repo';
+// import {GithubAuthenticator} from './github-authenticator';
+// import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+// import {CliArgs, Language} from './interfaces';
+// import {SplitRepo} from './split-repo';
+// import {argv} from '../cli/commands/pre-process';
 
-export const ORG = 'googleapis';
-export const DIRECTORY_PATH = '/workspace';
+// // export const ORG = 'googleapis';
+// // export const DIRECTORY_PATH = '/workspace';
 
-// Validate env variables, exit early if they are not present
-export function validateEnvVariables(isMonoRepository: boolean) {
-  if (!process.env.REPO_TO_CLONE && isMonoRepository) {
-    throw new Error('No repo to clone specified for monorepo');
-  }
+// // Check if a given language is a monorepo
+// export function isMonoRepo(language: Language): boolean {
+//   const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java'];
+//   if (monorepos.includes(language)) {
+//     return true;
+//   }
+//   return false;
+// }
 
-  if (!process.env.IS_PRE_PROCESS) {
-    throw new Error('Pre or post process not specified');
-  }
+// export async function main(argv: CliArgs) {
+//   const githubAuthenticator = new GithubAuthenticator(
+//     argv.projectId,
+//     argv.installationId,
+//     new SecretManagerServiceClient()
+//   );
+//   const githubToken =
+//     await githubAuthenticator.getGitHubShortLivedAccessToken();
 
-  if (!process.env.API_ID) {
-    throw new Error('API ID not specified');
-  }
+//   const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
 
-  if (!process.env.LANGUAGE) {
-    throw new Error('Language not specified');
-  }
+//   try {
+//     // Will fail if any arguments are missing
+//     const isMonoRepository = isMonoRepo(process.env.LANGUAGE as Language);
 
-  if (!process.env.PROJECT_ID) {
-    throw new Error('Project for cloud build trigger not specified');
-  }
+//     await setConfig(DIRECTORY_PATH);
 
-  if (!process.env.APP_INSTALLATION_ID) {
-    throw new Error('Missing app installation Id');
-  }
-}
+//     if (argv === true) {
+//       logger.info(
+//         `Entering pre-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
+//       );
+//       if (isMonoRepository) {
+//         // Mono-repo pre-process (before language specific-container)
+//         logger.info(`${process.env.LANGUAGE} is a mono repo`);
+//         const monoRepo = new MonoRepo(
+//           process.env.LANGUAGE as Language,
+//           process.env.REPO_TO_CLONE!,
+//           githubToken,
+//           octokit
+//         );
 
-// Check if a given language is a monorepo
-export function isMonoRepo(language: Language): boolean {
-  const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java'];
-  if (monorepos.includes(language)) {
-    return true;
-  }
-  return false;
-}
+//         await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
 
-export async function main() {
-  const githubAuthenticator = new GithubAuthenticator(
-    process.env.PROJECT_ID!,
-    process.env.APP_INSTALLATION_ID!,
-    new SecretManagerServiceClient()
-  );
-  const githubToken =
-    await githubAuthenticator.getGitHubShortLivedAccessToken();
+//         logger.info(`Repo ${monoRepo.repoName} cloned`);
+//       } else {
+//         // Split-repo pre-process (before language specific-container)
+//         logger.info(`${process.env.LANGUAGE} is a split repo`);
 
-  const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
+//         const splitRepo = new SplitRepo(
+//           process.env.LANGUAGE as Language,
+//           process.env.API_ID!,
+//           octokit,
+//           githubToken
+//         );
 
-  try {
-    // Will fail if any arguments are missing
-    const isMonoRepository = isMonoRepo(process.env.LANGUAGE as Language);
+//         await splitRepo.createAndInitializeEmptyGitRepo(DIRECTORY_PATH);
 
-    // Since we'll error if env variables are not present,
-    // we can assert they'll exist later on in the code.
-    validateEnvVariables(isMonoRepository);
+//         logger.info(`Initialized empty git repo ${splitRepo.repoName}`);
+//       }
+//     } else if (argv.isPreProcess === false) {
+//       logger.info(
+//         `Entering post-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
+//       );
+//       if (isMonoRepository) {
+//         // Mono-repo post-process (after language specific-container)
+//         logger.info(`${process.env.LANGUAGE} is a mono repo`);
+//         const monoRepo = new MonoRepo(
+//           process.env.LANGUAGE as Language,
+//           process.env.REPO_TO_CLONE!,
+//           githubToken,
+//           octokit
+//         );
 
-    await setConfig(DIRECTORY_PATH);
+//         await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
+//         logger.info(`Opened a new PR in ${monoRepo.repoName}`);
+//       } else {
+//         // Split-repo post-process (after language specific-container)
+//         logger.info(`${process.env.LANGUAGE} is a split repo`);
+//         const splitRepo = new SplitRepo(
+//           process.env.LANGUAGE as Language,
+//           process.env.API_ID!,
+//           octokit,
+//           githubToken
+//         );
+//         await splitRepo.pushToMainAndCreateEmptyPR(DIRECTORY_PATH);
+//         logger.info(
+//           `Pushed files to main in ${splitRepo.repoName}, and opened empty PR`
+//         );
+//       }
+//     } else {
+//       throw new Error('Expected an argument for "pre" or "post"');
+//     }
+//   } catch (err) {
+//     // If any error occurs in this script, we'll try to open an issue in googleapis or
+//     // in the monorepo if it exists with the error message.
+//     await openAnIssue(
+//       octokit,
+//       process.env.REPO_TO_CLONE?.split('/')[2]?.split('.')[0] ?? 'googleapis',
+//       process.env.API_ID,
+//       process.env.BUILD_ID,
+//       process.env.PROJECT_ID,
+//       process.env.LANGUAGE,
+//       (err as any).toString()
+//     );
+//     throw err;
+//   }
+// }
 
-    if (process.env.IS_PRE_PROCESS === 'true') {
-      logger.info(
-        `Entering pre-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
-      );
-      if (isMonoRepository) {
-        // Mono-repo pre-process (before language specific-container)
-        logger.info(`${process.env.LANGUAGE} is a mono repo`);
-        const monoRepo = new MonoRepo(
-          process.env.LANGUAGE as Language,
-          process.env.REPO_TO_CLONE!,
-          githubToken,
-          octokit
-        );
-
-        await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
-
-        logger.info(`Repo ${monoRepo.repoName} cloned`);
-      } else {
-        // Split-repo pre-process (before language specific-container)
-        logger.info(`${process.env.LANGUAGE} is a split repo`);
-
-        const splitRepo = new SplitRepo(
-          process.env.LANGUAGE as Language,
-          process.env.API_ID!,
-          octokit,
-          githubToken
-        );
-
-        await splitRepo.createAndInitializeEmptyGitRepo(DIRECTORY_PATH);
-
-        logger.info(`Initialized empty git repo ${splitRepo.repoName}`);
-      }
-    } else {
-      logger.info(
-        `Entering post-process for ${process.env.API_ID}/${process.env.LANGUAGE}`
-      );
-      if (isMonoRepository) {
-        // Mono-repo post-process (after language specific-container)
-        logger.info(`${process.env.LANGUAGE} is a mono repo`);
-        const monoRepo = new MonoRepo(
-          process.env.LANGUAGE as Language,
-          process.env.REPO_TO_CLONE!,
-          githubToken,
-          octokit
-        );
-
-        await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
-        logger.info(`Opened a new PR in ${monoRepo.repoName}`);
-      } else {
-        // Split-repo post-process (after language specific-container)
-        logger.info(`${process.env.LANGUAGE} is a split repo`);
-        const splitRepo = new SplitRepo(
-          process.env.LANGUAGE as Language,
-          process.env.API_ID!,
-          octokit,
-          githubToken
-        );
-        await splitRepo.pushToMainAndCreateEmptyPR(DIRECTORY_PATH);
-        logger.info(
-          `Pushed files to main in ${splitRepo.repoName}, and opened empty PR`
-        );
-      }
-    }
-  } catch (err) {
-    // If any error occurs in this script, we'll try to open an issue in googleapis or
-    // in the monorepo if it exists with the error message.
-    await openAnIssue(
-      octokit,
-      process.env.REPO_TO_CLONE?.split('/')[2]?.split('.')[0] ?? 'googleapis',
-      process.env.API_ID,
-      process.env.BUILD_ID,
-      process.env.PROJECT_ID,
-      process.env.LANGUAGE,
-      (err as any).toString()
-    );
-    throw err;
-  }
-}
-
-main();
+// main(argv as CliArgs);

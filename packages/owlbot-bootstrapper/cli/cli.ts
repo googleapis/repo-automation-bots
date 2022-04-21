@@ -18,26 +18,14 @@
 // is the CLI entrypoint to run googleapis-bootstrapper when kicking off
 // the process manually. It then calls run-trigger, which kicks off the build.
 
-import {runTrigger} from '../app/run-trigger';
-import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import yargs from 'yargs';
+import yargs = require('yargs');
+import {preProcessCommand} from './commands/pre-process';
+import {postProcessCommand} from './commands/post-process';
+import {runTriggerCommand} from './commands/run-trigger';
 
-const argv = yargs(process.argv.slice(2))
-  .command('run-trigger', 'Runs the trigger')
-  .options({
-    projectId: {type: 'string', demandOption: true},
-    triggerId: {type: 'string', demandOption: true},
-    apiId: {type: 'string', demandOption: true},
-    repoToClone: {type: 'string'},
-    isPreProcess: {type: 'boolean', demandOption: true},
-    language: {type: 'string', demandOption: true},
-    installationId: {type: 'string', demandOption: true},
-    container: {type: 'string', demandOption: true},
-    languageContainer: {type: 'string'},
-  }).argv;
-
-export async function main() {
-  const cb = new CloudBuildClient();
-  await runTrigger(argv, cb);
-}
-main();
+yargs(process.argv.slice(2))
+  .command(postProcessCommand)
+  .command(preProcessCommand)
+  .command(runTriggerCommand)
+  .demandCommand(1)
+  .parse();

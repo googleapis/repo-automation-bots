@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {execSync, ExecSyncOptions} from 'child_process';
+import {ChildProcess, execSync, ExecSyncOptions} from 'child_process';
 import {logger} from 'gcf-utils';
-import {ORG} from './common-container';
 import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
+import {Language} from './interfaces';
 
 const BRANCH_NAME_FILE = 'branchName.md';
 export const REGENERATE_CHECKBOX_TEXT =
   '- [x] Regenerate this pull request now.';
 const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
+export const ORG = 'googleapis';
+export const DIRECTORY_PATH = '/workspace';
 
 /**
  * Saves the user name and email for owlbot-bootstrapper in git-credentials so as to not need to enter them when pushing using https protocol
@@ -146,6 +148,12 @@ export async function getBranchName(directoryPath: string) {
   }
 }
 
+/**
+ * Runs a child process with logging.
+ *
+ * @param command the command for the child process
+ * @param options the options for executing the command (i.e., dir path to execute the cp in)
+ */
 export function cmd(command: string, options?: ExecSyncOptions | undefined) {
   logger.info(command);
   try {
@@ -157,11 +165,27 @@ export function cmd(command: string, options?: ExecSyncOptions | undefined) {
   }
 }
 
-export function checkIfGitIsInstalled() {
+/**
+ * Checks if git is installed before making git-related commands
+ */
+export function checkIfGitIsInstalled(cmd: Function) {
   try {
     cmd('git --version');
   } catch (err) {
     logger.error(`Error: git not installed: ${err}`);
-    throw err;
+    throw new Error(`Error: git not installed: ${err}`);
   }
+}
+
+/**
+ * Returns true if a given language is a mono repo
+ *
+ * @param language a Language enum (see interfaces)
+ */
+export function isMonoRepo(language: Language): boolean {
+  const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java'];
+  if (monorepos.includes(language)) {
+    return true;
+  }
+  return false;
 }

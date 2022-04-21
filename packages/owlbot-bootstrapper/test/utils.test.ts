@@ -12,21 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  openAPR,
-  getBranchName,
-  openABranch,
-  openAnIssue,
-  setConfig,
-} from '../common-container/utils';
+import * as utils from '../common-container/utils';
 import {MonoRepo} from '../common-container/mono-repo';
 import {execSync} from 'child_process';
 import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../common-container/common-container';
+import {ORG} from '../common-container/utils';
 import snapshot from 'snap-shot-it';
+import {Language} from '../common-container/interfaces';
+import sinon from 'sinon';
 
 let directoryPath: string;
 let repoToClonePath: string;
@@ -39,7 +35,7 @@ describe('common utils tests', async () => {
   beforeEach(async () => {
     directoryPath = path.join(__dirname, FAKE_WORKSPACE);
     repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
-    console.log(directoryPath);
+
     try {
       await execSync(`mkdir ${directoryPath}`);
       await execSync(
@@ -53,7 +49,7 @@ describe('common utils tests', async () => {
     try {
       execSync('git config user.name');
     } catch (err) {
-      setConfig(directoryPath);
+      utils.setConfig(directoryPath);
     }
   });
 
@@ -67,7 +63,7 @@ describe('common utils tests', async () => {
   it('get branch name from a well-known path', async () => {
     await execSync('echo specialName > branchName.md', {cwd: directoryPath});
 
-    const branchName = await getBranchName(directoryPath);
+    const branchName = await utils.getBranchName(directoryPath);
 
     assert.deepStrictEqual(branchName, 'specialName');
   });
@@ -77,7 +73,7 @@ describe('common utils tests', async () => {
       .post('/repos/googleapis/nodejs-kms/pulls')
       .reply(201);
 
-    await openAPR(octokit, 'specialName', 'nodejs-kms');
+    await utils.openAPR(octokit, 'specialName', 'nodejs-kms');
     scope.done();
   });
 
@@ -87,8 +83,8 @@ describe('common utils tests', async () => {
       repoToClonePath,
       directoryPath
     );
-    await openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = await getBranchName(directoryPath);
+    await utils.openABranch(FAKE_REPO_NAME, directoryPath);
+    const branchName = await utils.getBranchName(directoryPath);
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
@@ -105,7 +101,7 @@ describe('common utils tests', async () => {
       })
       .reply(201);
 
-    await openAnIssue(
+    await utils.openAnIssue(
       octokit,
       'googleapis',
       'google.cloud.kms.v1',
@@ -115,5 +111,35 @@ describe('common utils tests', async () => {
       'We are missing this piece of critical info'
     );
     scope.done();
+  });
+
+  it('correctly determines if language is a monorepo or not', () => {
+    const isPythonMono = utils.isMonoRepo(Language.Python);
+
+    const isNodeMono = utils.isMonoRepo(Language.Nodejs);
+
+    assert.deepStrictEqual(isPythonMono, false);
+    assert.deepStrictEqual(isNodeMono, true);
+  });
+
+  it('checks if git is installed', () => {
+    const checkIfGitIsInstalledStub = sinon.stub(
+      utils,
+      'checkIfGitIsInstalled'
+    );
+
+    assert.doesNotThrow(() => {
+      utils.checkIfGitIsInstalled(utils.cmd);
+    });
+    checkIfGitIsInstalledStub.restore();
+  });
+
+  it('throws if git is not installed', async () => {
+    const cmdStub = sinon.stub(utils, 'cmd').throws();
+    assert.throws(() => {
+      utils.checkIfGitIsInstalled(utils.cmd);
+    }, /Error: git not installed/);
+
+    cmdStub.restore();
   });
 });

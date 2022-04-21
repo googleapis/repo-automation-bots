@@ -36,39 +36,5 @@ export async function runTrigger(argv: any, cb: CloudBuildClient) {
     },
   });
 
-  //   const buildId: string = (resp as any).metadata.build.id;
   await resp.promise();
 }
-
-// I'd like to keep the following commented code in case we need
-// to wait for a Build
-//   try {
-//     await waitForBuild(argv.projectId, buildId, cb);
-//     return;
-//   } catch (e) {
-//     const err = e as Error;
-//     logger.error(err);
-//     return;
-//   }
-// }
-
-// // Repurposed from owl-bot/src/core.ts
-// async function waitForBuild(
-//   projectId: string,
-//   id: string,
-//   client: CloudBuildClient
-// ) {
-//   for (let i = 0; i < 60; i++) {
-//     const [build] = await client.getBuild({projectId, id});
-//     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
-//       return build;
-//     }
-//     // Wait a few seconds before checking the build status again:
-//     await new Promise(resolve => {
-//       setTimeout(() => {
-//         return resolve(undefined);
-//       }, 10000);
-//     });
-//   }
-//   throw Error(`timed out waiting for build ${id}`);
-// }

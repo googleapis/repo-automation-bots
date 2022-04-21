@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {logger} from 'gcf-utils';
-import {ORG} from './common-container';
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
 import {
@@ -22,6 +21,7 @@ import {
   openAPR,
   cmd,
   checkIfGitIsInstalled,
+  ORG,
 } from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
@@ -159,7 +159,7 @@ export class SplitRepo {
    * Initializes an empty git repo locally, and creates an empty repo on github
    */
   public async createAndInitializeEmptyGitRepo(directoryPath: string) {
-    checkIfGitIsInstalled();
+    checkIfGitIsInstalled(cmd);
     await this._createRepo(this.octokit, this.repoName);
     await this._initializeEmptyGitRepo(this.repoName, directoryPath);
   }
@@ -173,7 +173,7 @@ export class SplitRepo {
     directoryPath: string,
     repoUrl?: string
   ) {
-    checkIfGitIsInstalled();
+    checkIfGitIsInstalled(cmd);
     await this._commitAndPushToMain(
       this.repoName,
       directoryPath,

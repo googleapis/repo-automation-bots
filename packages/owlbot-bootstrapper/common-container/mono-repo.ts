@@ -98,7 +98,7 @@ export class MonoRepo {
    * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    */
   public async pushToBranchAndOpenPR(directoryPath: string) {
-    checkIfGitIsInstalled();
+    checkIfGitIsInstalled(cmd);
     const branchName = await getBranchName(directoryPath);
     await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
     await openAPR(this.octokit, branchName, this.repoName);
@@ -108,7 +108,7 @@ export class MonoRepo {
    * Clones a repository and opens an empty branch in it
    */
   public async cloneRepoAndOpenBranch(directoryPath: string) {
-    checkIfGitIsInstalled();
+    checkIfGitIsInstalled(cmd);
     await this._cloneRepo(this.githubToken, this.repoToCloneUrl, directoryPath);
     await openABranch(this.repoName, directoryPath);
   }
