@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.3.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.3.0...gcf-utils-v13.3.1) (2022-04-21)
+
+
+### Bug Fixes
+
+* **owl-bot:** allow 30 minutes of execution before retry ([#3472](https://github.com/googleapis/repo-automation-bots/issues/3472)) ([a879b43](https://github.com/googleapis/repo-automation-bots/commit/a879b43becec5b9ce2b94f4b35b255ec6d48f08b)), closes [#3303](https://github.com/googleapis/repo-automation-bots/issues/3303)
+
 ## [13.3.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.2.2...gcf-utils-v13.3.0) (2022-03-31)
 
 
