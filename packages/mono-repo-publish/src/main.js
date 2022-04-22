@@ -16,7 +16,7 @@ const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 const fs = require('fs');
 const { readFileSync } = fs;
-const { dirname, join } = require('path');
+const { dirname, join, resolve } = require('path');
 const childProcess = require('child_process');
 
 // TODO: this is a URL; split into owner, repo, and PR
@@ -75,8 +75,9 @@ function publishSubmodules (directories, dryRun, execSyncOverride, rmdirSyncOver
   const rmdirSync = rmdirSyncOverride || fs.rmdirSync;
   const errors = [];
   for (const directory of directories) {
+    const installCommand = stat(resolve(directory, 'package-lock.json')) ? 'ci' : 'i';
     try {
-      execSync('npm i', { cwd: directory, stdio: 'inherit' });
+      execSync(`npm ${installCommand} --registry=https://registry.npmjs.org`, { cwd: directory, stdio: 'inherit' });
       execSync(`npm publish --access=public${dryRun ? ' --dry-run' : ''}`, { cwd: directory, stdio: 'inherit' });
       rmdirSync(join(directory, 'node_modules'), { recursive: true, force: true });
     } catch (err) {
@@ -85,6 +86,14 @@ function publishSubmodules (directories, dryRun, execSyncOverride, rmdirSyncOver
     }
   }
   return errors;
+}
+
+function stat (path) {
+  try {
+    return fs.statSync(path);
+  } catch (e) {
+    return undefined;
+  }
 }
 
 module.exports = { parseURL, getOctokitInstance, getsPRFiles, listChangedSubmodules, publishSubmodules };

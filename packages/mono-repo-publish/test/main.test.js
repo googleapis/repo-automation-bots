@@ -65,14 +65,14 @@ describe('mono-repo publish', () => {
   it('passes in the right arguments for npm publish', () => {
     const execSync = sandbox.spy();
     core.publishSubmodules(['foo'], false, execSync);
-    sandbox.assert.calledWith(execSync.firstCall, 'npm i');
+    sandbox.assert.calledWith(execSync.firstCall, 'npm i --registry=https://registry.npmjs.org');
     sandbox.assert.calledWith(execSync.secondCall, 'npm publish --access=public');
   });
 
   it('passes in --dry-run option', () => {
     const execSync = sandbox.spy();
     core.publishSubmodules(['foo'], true, execSync);
-    sandbox.assert.calledWith(execSync.firstCall, 'npm i');
+    sandbox.assert.calledWith(execSync.firstCall, 'npm i --registry=https://registry.npmjs.org');
     sandbox.assert.calledWith(execSync.secondCall, 'npm publish --access=public --dry-run');
   });
 
@@ -82,7 +82,7 @@ describe('mono-repo publish', () => {
     const execSync = sandbox.spy();
     const rmdirSync = sandbox.spy();
     const errors = core.publishSubmodules(['foo'], true, execSync, rmdirSync);
-    sandbox.assert.calledWith(execSync.firstCall, 'npm i');
+    sandbox.assert.calledWith(execSync.firstCall, 'npm i --registry=https://registry.npmjs.org');
     sandbox.assert.calledWith(execSync.secondCall, 'npm publish --access=public --dry-run');
     sandbox.assert.calledWith(rmdirSync, 'foo/node_modules', { force: true, recursive: true });
     assert.strictEqual(errors.length, 0);
@@ -91,7 +91,14 @@ describe('mono-repo publish', () => {
   it('returns array of errors after attempting all publications', () => {
     const execSync = sandbox.mock().throws(Error('publish fail'));
     const errors = core.publishSubmodules(['foo'], true, execSync);
-    sandbox.assert.calledWith(execSync.firstCall, 'npm i');
+    sandbox.assert.calledWith(execSync.firstCall, 'npm i --registry=https://registry.npmjs.org');
     assert.strictEqual(errors.length, 1);
+  });
+
+  it('uses npm ci, if package-lock.json exists', () => {
+    const execSync = sandbox.spy();
+    core.publishSubmodules(['test/fixtures'], false, execSync);
+    sandbox.assert.calledWith(execSync.firstCall, 'npm ci --registry=https://registry.npmjs.org');
+    sandbox.assert.calledWith(execSync.secondCall, 'npm publish --access=public');
   });
 });
