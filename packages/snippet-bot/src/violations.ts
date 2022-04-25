@@ -22,14 +22,15 @@ import {
 import {getSnippets} from './snippets';
 
 type violationTypes =
+  | 'NO_MATCHING_START_TAG'
+  | 'NO_MATCHING_END_TAG'
   | 'PRODUCT_PREFIX'
   | 'REMOVE_USED_TAG'
   | 'REMOVE_CONFLICTING_TAG'
   | 'REMOVE_SAMPLE_BROWSER_PAGE'
   | 'REMOVE_FROZEN_REGION_TAG'
   | 'TAG_ALREADY_STARTED'
-  | 'NO_MATCHING_START_TAG'
-  | 'NO_MATCHING_END_TAG';
+  | 'TAG_FORMAT_ERROR';
 
 export interface Violation {
   location: RegionTagLocation;
@@ -38,6 +39,31 @@ export interface Violation {
 }
 
 const dataBucket = process.env.DEVREL_SETTINGS_BUCKET || 'devrel-prod-settings';
+
+const TAG_FORMAT_REGEX = /^([a-z0-9_])+$/;
+
+export const checkTagFormat = async (
+  changes: ChangesInPullRequest,
+  config: Configuration
+): Promise<Array<Violation>> => {
+  const ret: Violation[] = [];
+  for (const change of changes.changes) {
+    if (change.type !== 'add') {
+      continue;
+    }
+    if (config.ignoredFile(change.file as string)) {
+      continue;
+    }
+    if (!change.regionTag.match(TAG_FORMAT_REGEX)) {
+      ret.push({
+        location: change,
+        violationType: 'TAG_FORMAT_ERROR',
+        devsite_urls: [],
+      });
+    }
+  }
+  return ret;
+};
 
 export const checkRemovingUsedTagViolations = async (
   changes: ChangesInPullRequest,
