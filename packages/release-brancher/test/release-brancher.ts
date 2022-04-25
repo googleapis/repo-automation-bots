@@ -17,7 +17,7 @@ import nock from 'nock';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
 import * as suggester from 'code-suggester';
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
 import {Runner} from '../src/release-brancher';
