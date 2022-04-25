@@ -52,7 +52,7 @@ function fetchConfig(configFile: string) {
 
 function fetchFilesInPR(configFile: string) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls/12/files?per_page=100')
+    .get('/repos/testOwner/testRepo/pulls/12/files?per_page=50')
     .reply(200, [
       {
         filename: `.github/${helper.CONFIG_FILE_NAME}`,

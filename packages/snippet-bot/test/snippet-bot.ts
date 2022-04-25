@@ -190,7 +190,7 @@ describe('snippet-bot config validation', () => {
 
     const configBlob = createConfigResponse('broken_config.yaml');
     const requests = nock('https://api.github.com')
-      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
       .reply(200, files_payload)
       .get(
         '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
@@ -225,7 +225,7 @@ describe('snippet-bot config validation', () => {
 
     const configBlob = createConfigResponse('correct_config.yaml');
     const requests = nock('https://api.github.com')
-      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
       .reply(200, files_payload)
       .get(
         '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
