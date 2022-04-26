@@ -172,6 +172,8 @@ export async function copyCodeIntoCommit(
 
   // Copy code according to each yaml.
   const result = [];
+  const allSourcePaths = globGitRepo(params.sourceRepo);
+  const allDestPaths = globGitRepo(params.destDir);
   for (const yamlPath of yamlPaths) {
     const copyTag = copyTagFrom(yamlPath, params.sourceRepoCommitHash);
     const localYamlPath = path.join(params.destDir, yamlPath);
@@ -182,7 +184,14 @@ export async function copyCodeIntoCommit(
       await reportError(e, yamlPath);
       continue;
     }
-    copyDirs(params.sourceRepo, params.destDir, yaml, logger);
+    copyFiles(
+      params.sourceRepo,
+      allSourcePaths,
+      params.destDir,
+      allDestPaths,
+      yaml,
+      logger
+    );
     result.push({yamlPath, yaml, copyTag});
   }
 
@@ -641,6 +650,8 @@ export async function regeneratePullRequest(
   cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
 
   const apiNames: string[] = [];
+  const allSourcePaths = globGitRepo(sourceDir);
+  const allDestPaths = globGitRepo(destDir);
   for (const tag of copyTags) {
     if (sourceRepoCommitHash !== tag.h) {
       logger.info(
@@ -666,7 +677,7 @@ export async function regeneratePullRequest(
     // Copy the files specified in the yaml.
     const yamlText = JSON.stringify(yaml, undefined, 2);
     console.info(`copyDirs(${sourceDir}, ${destDir}, ${yamlText}}`);
-    copyDirs(sourceDir, destDir, yaml, logger);
+    copyFiles(sourceDir, allSourcePaths, destDir, allDestPaths, yaml, logger);
 
     if (yaml['api-name']) {
       apiNames.push(yaml['api-name']);
@@ -809,6 +820,15 @@ export function stat(path: string): fs.Stats | undefined {
   }
 }
 
+// glob all the files and dirs in a git repo directory,
+function globGitRepo(repoDir: string): string[] {
+  return glob.sync('**', {
+    cwd: repoDir,
+    dot: true,
+    ignore: ['.git', '.git/**'],
+  });
+}
+
 /**
  * Copies directories and files specified by yaml.
  * @param sourceDir the path to the source repository directory
@@ -818,6 +838,32 @@ export function stat(path: string): fs.Stats | undefined {
 export function copyDirs(
   sourceDir: string,
   destDir: string,
+  yaml: OwlBotYaml,
+  logger: Logger = console
+): void {
+  return copyFiles(
+    sourceDir,
+    globGitRepo(sourceDir),
+    destDir,
+    globGitRepo(destDir),
+    yaml,
+    logger
+  );
+}
+
+/**
+ * Copies directories and files specified by yaml.
+ * @param sourceDir the path to the source repository directory
+ * @param allSourcePaths the list of all the files and directories in the source directory.
+ * @param destDir the path to the dest repository directory.
+ * @param allDestPaths the list of all the files and directories in the dest directory.
+ * @param yaml the OwlBot.yaml file from the dest repository.
+ */
+function copyFiles(
+  sourceDir: string,
+  allSourcePaths: string[],
+  destDir: string,
+  allDestPaths: string[],
   yaml: OwlBotYaml,
   logger: Logger = console
 ): void {
@@ -836,11 +882,6 @@ export function copyDirs(
 
   // Wipe out the existing contents of the dest directory.
   const deadPaths: string[] = [];
-  const allDestPaths = glob.sync('**', {
-    cwd: destDir,
-    dot: true,
-    ignore: ['.git', '.git/**'],
-  });
   for (const rmDest of yaml['deep-remove-regex'] ?? []) {
     if (rmDest && stat(destDir)) {
       const rmRegExp = toFrontMatchRegExp(rmDest);
@@ -878,11 +919,6 @@ export function copyDirs(
   }
 
   // Copy the files from source to dest.
-  const allSourcePaths = glob.sync('**', {
-    cwd: sourceDir,
-    dot: true,
-    ignore: ['.git', '.git/**'],
-  });
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
     const regExp = toFrontMatchRegExp(deepCopy.source);
     const sourcePathsToCopy = allSourcePaths.filter(path =>
