@@ -39,6 +39,7 @@ import {
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {CopyStateStore} from './copy-state-store';
 import * as crypto from 'crypto';
+import {Logger} from './logger';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -164,7 +165,7 @@ export async function copyCodeIntoCommit(
   yamlPaths: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   reportError: (error: any, yamlPath: string) => Promise<void>,
-  logger = console
+  logger: Logger = console
 ): Promise<{yamlPath: string; yaml: OwlBotYaml; copyTag: string}[]> {
   const cmd = newCmd(logger);
 
@@ -267,7 +268,7 @@ export function branchNameForCopies(yamlPaths: string[]): string {
 async function findAndAppendPullRequest(
   params: WorkingCopyParams,
   yamlPaths: string[],
-  logger = console
+  logger: Logger = console
 ): Promise<boolean> {
   const cmd = newCmd(logger);
   const octokit = await params.octokitFactory.getShortLivedOctokit();
@@ -390,7 +391,7 @@ interface WorkingCopyParams extends CopyParams {
 export async function copyCodeAndAppendOrCreatePullRequest(
   params: CopyParams,
   yamlPaths: string[],
-  logger = console
+  logger: Logger = console
 ): Promise<void> {
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
@@ -717,7 +718,7 @@ export async function loadOwlBotYaml(yamlPath: string): Promise<OwlBotYaml> {
 export function toLocalRepo(
   repo: string,
   workDir: string,
-  logger = console,
+  logger: Logger = console,
   depth = 100,
   accessToken = ''
 ): string {
@@ -813,7 +814,7 @@ export function copyDirs(
   sourceDir: string,
   destDir: string,
   yaml: OwlBotYaml,
-  logger = console
+  logger: Logger = console
 ): void {
   // Prepare to exclude paths.
   const excludes: RegExp[] = (yaml['deep-preserve-regex'] ?? []).map(x =>
