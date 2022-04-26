@@ -40,6 +40,7 @@ import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {CopyStateStore} from './copy-state-store';
 import * as crypto from 'crypto';
 import {Logger} from './logger';
+import {ExecSyncOptions} from 'child_process';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -207,8 +208,10 @@ export async function copyCodeIntoCommit(
 
   // Commit the changes.
   cwd = params.destDir;
-  cmd('git add -A', {cwd});
-  cmd(`git commit -F ${commitMsgFile.name} --allow-empty`, {cwd});
+  // Don't capture stdout because it may be too big to fit into a buffer.
+  const cmdOpts: ExecSyncOptions = {cwd, stdio: 'inherit'};
+  cmd('git add -A', cmdOpts);
+  cmd(`git commit -F ${commitMsgFile.name} --allow-empty`, cmdOpts);
   return result;
 }
 
@@ -671,8 +674,10 @@ export async function regeneratePullRequest(
   }
 
   // Commit the newly copied code.
-  cmd('git add -A', {cwd: destDir});
-  cmd(`git commit -F "${commitMsgFilePath}" --allow-empty`, {cwd: destDir});
+  // Don't capture stdout because it may be too big to fit into a buffer.
+  const cmdOpts: ExecSyncOptions = {cwd: destDir, stdio: 'inherit'};
+  cmd('git add -A', cmdOpts);
+  cmd(`git commit -F "${commitMsgFilePath}" --allow-empty`, cmdOpts);
 
   // Refresh the token because copyCode() may have taken a while.
   token = await octokitFactory.getGitHubShortLivedAccessToken();
