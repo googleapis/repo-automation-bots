@@ -650,6 +650,8 @@ export async function regeneratePullRequest(
   cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
 
   const apiNames: string[] = [];
+  const allSourcePaths = globGitRepo(sourceDir);
+  const allDestPaths = globGitRepo(destDir);
   for (const tag of copyTags) {
     if (sourceRepoCommitHash !== tag.h) {
       logger.info(
@@ -675,7 +677,7 @@ export async function regeneratePullRequest(
     // Copy the files specified in the yaml.
     const yamlText = JSON.stringify(yaml, undefined, 2);
     console.info(`copyDirs(${sourceDir}, ${destDir}, ${yamlText}}`);
-    copyDirs(sourceDir, destDir, yaml, logger);
+    copyFiles(sourceDir, allSourcePaths, destDir, allDestPaths, yaml, logger);
 
     if (yaml['api-name']) {
       apiNames.push(yaml['api-name']);
