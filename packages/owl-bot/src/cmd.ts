@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import * as proc from 'child_process';
+import {Logger} from './logger';
 
 // Creates a function that first prints, then executes a shell command.
 export type Cmd = (
@@ -19,7 +20,7 @@ export type Cmd = (
   options?: proc.ExecSyncOptions | undefined
 ) => Buffer;
 
-export function newCmd(logger = console): Cmd {
+export function newCmd(logger: Logger = console): Cmd {
   const cmd = (
     command: string,
     options?: proc.ExecSyncOptions | undefined
