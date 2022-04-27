@@ -18,10 +18,11 @@ import {
   logger,
   HandlerFunction,
   RequestWithRawBody,
+  getContextLogger,
 } from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
-import {Options} from 'probot';
+import {Options, ApplicationFunction} from 'probot';
 import * as express from 'express';
 import fs from 'fs';
 import sinon from 'sinon';
@@ -32,6 +33,7 @@ import mockedEnv from 'mocked-env';
 
 import {v1} from '@google-cloud/secret-manager';
 import {GoogleAuth} from 'google-auth-library';
+import {GCFLogger} from '../src/logging/gcf-logger';
 
 nock.disableNetConnect();
 
@@ -173,7 +175,10 @@ describe('GCFBootstrapper', () => {
       pubsubSpy = sandbox.stub();
     });
 
-    async function mockBootstrapper(wrapOpts?: WrapOptions) {
+    async function mockBootstrapper(
+      wrapOpts?: WrapOptions,
+      appFn?: ApplicationFunction
+    ) {
       bootstrapper = new GCFBootstrapper();
       configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
@@ -198,19 +203,23 @@ describe('GCFBootstrapper', () => {
       sandbox
         .stub(bootstrapper, 'getAuthenticatedOctokit')
         .resolves(new Octokit());
-      handler = bootstrapper.gcf(async app => {
-        app.on('issues', issueSpy);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.on('schedule.repository' as any, repositoryCronSpy);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.on('schedule.installation' as any, installationCronSpy);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.on('schedule.global' as any, globalCronSpy);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.on('pubsub.message' as any, pubsubSpy);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.on('err' as any, sandbox.stub().throws());
-      }, wrapOpts);
+
+      if (!appFn) {
+        appFn = async app => {
+          app.on('issues', issueSpy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          app.on('schedule.repository' as any, repositoryCronSpy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          app.on('schedule.installation' as any, installationCronSpy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          app.on('schedule.global' as any, globalCronSpy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          app.on('pubsub.message' as any, pubsubSpy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          app.on('err' as any, sandbox.stub().throws());
+        };
+      }
+      handler = bootstrapper.gcf(appFn, wrapOpts);
     }
 
     it('calls the event handler', async () => {
@@ -901,44 +910,71 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(enqueueTask);
     });
 
-    it('binds the trigger information to the logger', async () => {
-      await mockBootstrapper();
-      req.body = {
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'issues';
-      req.headers['x-github-delivery'] = '123';
-      req.headers['x-cloudtasks-taskname'] = 'my-task';
+    describe('logger', () => {
+      it('binds the trigger information to the logger', async () => {
+        await mockBootstrapper();
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
 
-      await handler(req, response);
+        await handler(req, response);
 
-      const expectedBindings = {
-        trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
-      };
-      assert.deepEqual(logger.getBindings(), expectedBindings);
-    });
+        const expectedBindings = {
+          trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+        };
+        assert.deepEqual(logger.getBindings(), expectedBindings);
+      });
 
-    it('resets the logger on each call', async () => {
-      req.body = {
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'issues';
-      req.headers['x-github-delivery'] = '123';
-      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      it('resets the logger on each call', async () => {
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
 
-      const expectedBindings = {
-        trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
-      };
+        const expectedBindings = {
+          trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+        };
 
-      await mockBootstrapper();
+        await mockBootstrapper();
 
-      await handler(req, response);
-      assert.deepEqual(logger.getBindings(), expectedBindings);
+        await handler(req, response);
+        assert.deepEqual(logger.getBindings(), expectedBindings);
 
-      await handler(req, response);
-      assert.deepEqual(logger.getBindings(), expectedBindings);
+        await handler(req, response);
+        assert.deepEqual(logger.getBindings(), expectedBindings);
+      });
+
+      it('injects a request logger on each call', async () => {
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+        const expectedBindings = {
+          trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+        };
+
+        let requestLogger: GCFLogger | undefined;
+        await mockBootstrapper(undefined, async app => {
+          app.on('issues', context => {
+            requestLogger = getContextLogger(context);
+          });
+        });
+
+        await handler(req, response);
+        assert.ok(requestLogger);
+        assert.deepEqual(requestLogger.getBindings(), expectedBindings);
+      });
     });
 
     describe('verification', () => {

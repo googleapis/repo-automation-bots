@@ -337,6 +337,7 @@ export class GCFBootstrapper {
       });
       return {
         ...config,
+        log: logger,
         Octokit: DefaultOctokit,
       } as Options;
     }
@@ -462,10 +463,7 @@ export class GCFBootstrapper {
       const {name, id, signature, taskId, taskRetries} =
         GCFBootstrapper.parseRequestHeaders(request);
 
-      const triggerType: TriggerType = GCFBootstrapper.parseTriggerType(
-        name,
-        taskId
-      );
+      const triggerType = GCFBootstrapper.parseTriggerType(name, taskId);
 
       // validate the signature
       if (
@@ -486,8 +484,10 @@ export class GCFBootstrapper {
        * Note: any logs written before resetting bindings may contain
        * bindings from previous executions
        */
+      const triggerInfo = buildTriggerInfo(triggerType, id, name, request.body);
       logger.resetBindings();
-      logger.addBindings(buildTriggerInfo(triggerType, id, name, request.body));
+      logger.addBindings(triggerInfo);
+      const requestLogger = logger.child(triggerInfo);
       try {
         if (triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
@@ -507,8 +507,10 @@ export class GCFBootstrapper {
           // Abort task retries if we've hit the max number by
           // returning "success"
           if (taskRetries > maxRetries) {
-            logger.metric('too-many-retries');
-            logger.info(`Too many retries: ${taskRetries} > ${maxRetries}`);
+            requestLogger.metric('too-many-retries');
+            requestLogger.info(
+              `Too many retries: ${taskRetries} > ${maxRetries}`
+            );
             // return 200 so we don't retry the task again
             response.send({
               statusCode: 200,
@@ -524,7 +526,7 @@ export class GCFBootstrapper {
           // The payload does not exist, stop retrying on this task by letting
           // this request "succeed".
           if (!payload) {
-            logger.metric('payload-expired');
+            requestLogger.metric('payload-expired');
             response.send({
               statusCode: 200,
               body: JSON.stringify({message: 'Payload expired'}),
@@ -532,6 +534,7 @@ export class GCFBootstrapper {
             return;
           }
 
+          setContextLogger(payload, requestLogger);
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
@@ -555,7 +558,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
-        logger.error(err);
+        requestLogger.error(err);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -563,6 +566,7 @@ export class GCFBootstrapper {
         return;
       }
 
+      requestLogger.flushSync();
       logger.flushSync();
     };
   }
@@ -1116,4 +1120,23 @@ export class GCFBootstrapper {
       return payload;
     }
   }
+}
+
+const loggerCache = new WeakMap<object, GCFLogger>();
+
+// Helper to inject the request logger
+function setContextLogger(payload, logger: GCFLogger) {
+  loggerCache.set(payload, logger);
+}
+
+// Helper to extract the request logger from the request payload.
+// If gcf-utils wrapper did not provide a logger, fall back to the
+// default logger.
+export function getContextLogger(context): GCFLogger {
+  const requestLogger = loggerCache.get(context?.payload);
+  if (!requestLogger) {
+    logger.warn('Failed to find a context logger');
+    return logger;
+  }
+  return requestLogger;
 }
