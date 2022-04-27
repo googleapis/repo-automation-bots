@@ -73,7 +73,10 @@ export function buildTriggerInfo(
       trigger_source_repo: getRepositoryDetails(requestBody),
       trigger_sender: requestBody.sender?.login || UNKNOWN,
       payload_hash: getPayloadHash(requestBody),
-      github_event_type: getEventTypeDetails(githubEventName, requestBody.action),
+      github_event_type: getEventTypeDetails(
+        githubEventName,
+        requestBody.action
+      ),
     };
     triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
   }

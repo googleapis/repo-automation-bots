@@ -480,9 +480,14 @@ export class GCFBootstrapper {
         return;
       }
 
-      const requestLogger = logger.child(
-        buildTriggerInfo(triggerType, id, name, request.body)
-      );
+      /**
+       * Note: any logs written before resetting bindings may contain
+       * bindings from previous executions
+       */
+      const triggerInfo = buildTriggerInfo(triggerType, id, name, request.body);
+      logger.resetBindings();
+      logger.addBindings(triggerInfo);
+      const requestLogger = logger.child(triggerInfo);
       try {
         if (triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
