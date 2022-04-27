@@ -26,6 +26,9 @@ steps:
     id: "publish-function"
     waitFor: ["build"]
     entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+      - "SECURE_ACCESS=true"
     args:
       - "-e"
       - "./scripts/publish-function.sh"
@@ -58,6 +61,8 @@ steps:
     id: "deploy-cloud-run"
     waitFor: ["push-docker"]
     entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"

@@ -25,6 +25,7 @@ import {getFilesModifiedBySha} from '.';
 import {newCmd} from './cmd';
 import {CopyStateStore} from './copy-state-store';
 import {GithubRepo} from './github-repo';
+import {Logger, LoggerWithTimestamp} from './logger';
 
 interface Todo {
   repo: GithubRepo;
@@ -77,8 +78,9 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   cloneDepth = 100,
   copyStateStore: CopyStateStore,
   combinePullsThreshold = Number.MAX_SAFE_INTEGER,
-  logger = console
+  logger: Logger = console
 ): Promise<number> {
+  logger = new LoggerWithTimestamp(logger);
   // Clone the source repo.
   const workDir = tmp.dirSync().name;
   // cloneDepth + 1 because the final commit in a shallow clone is grafted: it contains

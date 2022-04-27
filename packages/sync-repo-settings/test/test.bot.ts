@@ -254,7 +254,7 @@ describe('Sync repo settings', () => {
     );
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=50`)
         .reply(200, [
           {
             sha: fileSha,
@@ -302,7 +302,7 @@ describe('Sync repo settings', () => {
     );
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=50`)
         .reply(200, [
           {
             sha: fileSha,
@@ -357,7 +357,7 @@ describe('Sync repo settings', () => {
     );
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=50`)
         .reply(200, [
           {
             sha: fileSha,
@@ -456,7 +456,6 @@ describe('Sync repo settings', () => {
       nockLanguagesList(org, repo, {kotlin: 1}),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-      nockDefaultBranch('Codertocat/Hello-World', 'main'),
     ];
     await probot.receive({
       name: 'push',
@@ -492,7 +491,6 @@ describe('Sync repo settings', () => {
       nockLanguagesList(org, repo, {kotlin: 1}),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-      nockDefaultBranch('Codertocat/Hello-World', 'main'),
     ];
     const payload = require(resolve(fixturesPath, 'repository_transferred'));
     await probot.receive({

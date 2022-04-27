@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.3.2](https://github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.1...release-brancher-v1.3.2) (2022-04-25)
+
+
+### Bug Fixes
+
+* use yargs default instead of coerce ([#3499](https://github.com/googleapis/repo-automation-bots/issues/3499)) ([281aded](https://github.com/googleapis/repo-automation-bots/commit/281adeda91356014dac70fec579123d86768cd21)), closes [#3498](https://github.com/googleapis/repo-automation-bots/issues/3498)
+
 ### [1.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.0...release-brancher-v1.3.1) (2021-09-30)
 
 

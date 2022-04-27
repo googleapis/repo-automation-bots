@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {newCmd} from './cmd';
+import {Logger} from './logger';
 import {OctokitType} from './octokit-util';
 
 // Limits imposed by Github.
@@ -119,7 +120,7 @@ export async function createPullRequestFromLastCommit(
   withRegenerateCheckbox = WithRegenerateCheckbox.No,
   apiName = '',
   forceFlag: Force = Force.No,
-  logger = console,
+  logger: Logger = console,
   commitMessage?: string
 ): Promise<string> {
   const cmd = newCmd(logger);

@@ -1018,6 +1018,7 @@ export class GCFBootstrapper {
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
+          dispatchDeadline: {seconds: 60 * 30}, // 30 minutes.
           httpRequest: {
             httpMethod: 'POST',
             headers: {
