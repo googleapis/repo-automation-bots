@@ -50,7 +50,7 @@ describe('behavior of OwlBotTemplateChanges process', () => {
       },
       classRule: {
         author: 'gcf-owl-bot[bot]',
-        titleRegex: /(fix|feat|!)/,
+        titleRegex: [/(fix|feat|!)/, /\[autoapprove\]/],
         bodyRegex: /PiperOrigin-RevId/,
       },
       octokit,
@@ -92,7 +92,7 @@ describe('behavior of OwlBotTemplateChanges process', () => {
     fileRequest.done();
   });
 
-  it('should return false in checkPR if incoming PR includes feat', async () => {
+  it('should return false in checkPR if incoming PR includes feat and does not include [autoapprove]', async () => {
     const owlBotTemplateChanges = new OwlBotTemplateChanges(
       'gcf-owl-bot[bot]',
       'feat: a new PR',
@@ -175,7 +175,7 @@ describe('behavior of OwlBotTemplateChanges process', () => {
   it('should return true in checkPR if incoming PR does match classRules', async () => {
     const owlBotTemplateChanges = new OwlBotTemplateChanges(
       'gcf-owl-bot[bot]',
-      'a fine title',
+      'a fine title [autoapprove]',
       2,
       [
         {
