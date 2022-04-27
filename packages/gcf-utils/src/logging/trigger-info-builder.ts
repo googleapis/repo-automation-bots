@@ -67,6 +67,7 @@ export function buildTriggerInfo(
     triggerInfo.trigger.github_delivery_guid = githubDeliveryGUID;
   }
 
+  // TODO: include these properties in more event types
   if (triggerType === TriggerType.GITHUB) {
     const webhookProperties = {
       trigger_source_repo: getRepositoryDetails(requestBody),
