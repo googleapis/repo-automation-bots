@@ -15,7 +15,6 @@
 import {TriggerType} from '../src/gcf-utils';
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {expect} from 'chai';
 import {buildTriggerInfo} from '../src/logging/trigger-info-builder';
 
 describe('buildTriggerInfo', () => {

@@ -33,7 +33,7 @@ import {v4} from 'uuid';
 import {getServer} from './server/server';
 import {run} from '@googleapis/run';
 import {GoogleAuth} from 'google-auth-library';
-import {TriggerType, parseBotRequest} from './bot-request';
+import {TriggerType, parseBotRequest, BotRequest} from './bot-request';
 import {
   SCHEDULER_GLOBAL_EVENT_NAME,
   SCHEDULER_INSTALLATION_EVENT_NAME,
@@ -405,10 +405,10 @@ export class GCFBootstrapper {
        * Note: any logs written before resetting bindings may contain
        * bindings from previous executions
        */
-      const triggerInfo = buildTriggerInfo(botRequest, request.body);
+      const loggerBindings = this.buildLoggerBindings(botRequest, request.body);
       logger.resetBindings();
-      logger.addBindings(triggerInfo);
-      const requestLogger = logger.child(triggerInfo);
+      logger.addBindings(loggerBindings);
+      const requestLogger = logger.child(loggerBindings);
       try {
         if (botRequest.triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
@@ -496,6 +496,24 @@ export class GCFBootstrapper {
 
       requestLogger.flushSync();
       logger.flushSync();
+    };
+  }
+
+  private buildLoggerBindings(
+    botRequest: BotRequest,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    requestBody: {[key: string]: any}
+  ) {
+    const extras: Record<string, string> = {};
+    const triggerInfo = buildTriggerInfo(botRequest, requestBody);
+    if (botRequest.traceId) {
+      extras[
+        'logging.googleapis.com/trace'
+      ] = `projects/${this.projectId}/traces/${botRequest.traceId}`;
+    }
+    return {
+      ...triggerInfo,
+      ...extras,
     };
   }
 

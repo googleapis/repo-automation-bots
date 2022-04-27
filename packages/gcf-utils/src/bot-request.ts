@@ -51,9 +51,7 @@ export function parseBotRequest(request: express.Request): BotRequest {
       '0'
   );
   const triggerType = parseTriggerType(eventName, taskName);
-  const traceId =
-    request.get('X-Cloud-Trace-Context') ||
-    request.get('x-cloud-trace-context');
+  const traceId = parseTraceId(request);
   return {
     eventName,
     githubDeliveryId,
@@ -98,4 +96,25 @@ function parseSignatureHeader(request: express.Request): string {
     return sha1Signature;
   }
   return 'unset';
+}
+
+/**
+ * Parse the trace id from the trace context header. The format of the header
+ * looks something like `<trace-id>/<span-id>;o=<options-flags>`.
+ * @param request incoming trigger request
+ */
+function parseTraceId(request: express.Request): string | undefined {
+  const traceContext =
+    request.get('X-Cloud-Trace-Context') ||
+    request.get('x-cloud-trace-context');
+  if (!traceContext) {
+    return undefined;
+  }
+
+  const parts = traceContext.split('/');
+  if (parts.length === 0 || !parts[0]) {
+    return undefined;
+  }
+
+  return parts[0];
 }

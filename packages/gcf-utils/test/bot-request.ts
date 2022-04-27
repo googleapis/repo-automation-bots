@@ -25,7 +25,7 @@ describe('parseBotRequest', () => {
       'x-cloudtasks-taskname': 'some-task',
       'x-cloudtasks-taskretrycount': '3',
       'x-hub-signature': 'some-signature',
-      'x-cloud-trace-context': 'some-trace-id',
+      'x-cloud-trace-context': 'abc123/def234;o=1',
     };
     const body = {
       installation: {id: 1},
@@ -49,7 +49,7 @@ describe('parseBotRequest', () => {
       assert.strictEqual(botRequest.taskRetryCount, 3);
     });
     it('should parse the trace id', () => {
-      assert.strictEqual(botRequest.traceId, 'some-trace-id');
+      assert.strictEqual(botRequest.traceId, 'abc123');
     });
     it('should parse trigger type', () => {
       assert.strictEqual(botRequest.triggerType, TriggerType.TASK);

@@ -1011,6 +1011,45 @@ describe('GCFBootstrapper', () => {
         assert.ok(requestLogger);
         assert.deepEqual(requestLogger.getBindings(), expectedBindings);
       });
+
+      it('injects the cloud trace id each call', async () => {
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        req.headers['x-cloud-trace-context'] = 'abc123/def234;o=1';
+
+        const expectedBindings = {
+          trigger: {
+            trigger_type: 'Cloud Task',
+            github_delivery_guid: '123',
+            github_event_type: 'issues',
+            payload_hash: '99914b932bd37a50b983c5e7c90ae93b',
+            trigger_sender: 'UNKNOWN',
+            trigger_source_repo: {
+              owner: 'UNKNOWN',
+              owner_type: 'UNKNOWN',
+              repo_name: 'UNKNOWN',
+              url: 'UNKNOWN',
+            },
+          },
+          'logging.googleapis.com/trace': 'projects/fake-project/traces/abc123',
+        };
+
+        let requestLogger: GCFLogger | undefined;
+        await mockBootstrapper(undefined, async app => {
+          app.on('issues', context => {
+            requestLogger = getContextLogger(context);
+          });
+        });
+
+        await handler(req, response);
+        assert.ok(requestLogger);
+        assert.deepEqual(requestLogger.getBindings(), expectedBindings);
+      });
     });
 
     describe('verification', () => {
