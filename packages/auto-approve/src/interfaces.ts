@@ -84,7 +84,7 @@ export interface LanguageRule {
   };
   classRule: {
     author: string;
-    titleRegex?: RegExp;
+    titleRegex?: RegExp | RegExp[];
     fileNameRegex?: RegExp[];
     maxFiles?: number;
     fileRules?: FileRule[];
