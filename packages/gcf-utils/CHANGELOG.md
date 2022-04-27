@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.4.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.3.1...gcf-utils-v13.4.0) (2022-04-27)
+
+
+### Features
+
+* instantiate new child logger for each request via weakmap cache ([#3516](https://github.com/googleapis/repo-automation-bots/issues/3516)) ([27b07f9](https://github.com/googleapis/repo-automation-bots/commit/27b07f9c6f6e422c055e809c50b27a930d369b68))
+
 ### [13.3.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.3.0...gcf-utils-v13.3.1) (2022-04-21)
 
 
