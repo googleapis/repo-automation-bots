@@ -21,7 +21,14 @@ describe('buildTriggerInfo', () => {
   it('returns correct pub/sub trigger info', () => {
     const requestBody = {};
     const triggerType = TriggerType.PUBSUB;
-    const triggerInfo = buildTriggerInfo(triggerType, '', '', requestBody);
+    const triggerInfo = buildTriggerInfo(
+      {
+        eventName: '',
+        githubDeliveryId: '',
+        triggerType,
+      },
+      requestBody
+    );
     const expectedInfo = {
       trigger: {
         trigger_type: 'Pub/Sub',
@@ -33,7 +40,14 @@ describe('buildTriggerInfo', () => {
   it('returns correct scheduler trigger info', () => {
     const requestBody = {};
     const triggerType = TriggerType.SCHEDULER;
-    const triggerInfo = buildTriggerInfo(triggerType, '', '', requestBody);
+    const triggerInfo = buildTriggerInfo(
+      {
+        eventName: '',
+        githubDeliveryId: '',
+        triggerType,
+      },
+      requestBody
+    );
     const expectedInfo = {
       trigger: {
         trigger_type: 'Cloud Scheduler',
@@ -45,7 +59,14 @@ describe('buildTriggerInfo', () => {
   it('returns correct task trigger info', () => {
     const requestBody = {};
     const triggerType = TriggerType.TASK;
-    const triggerInfo = buildTriggerInfo(triggerType, '1234', '', requestBody);
+    const triggerInfo = buildTriggerInfo(
+      {
+        eventName: '',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
+      requestBody
+    );
     const expectedInfo = {
       trigger: {
         trigger_type: 'Cloud Task',
@@ -60,9 +81,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/issue-opened.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      'issue',
+      {
+        eventName: 'issue',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {
@@ -88,9 +111,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/issue-labeled.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      'issue',
+      {
+        eventName: 'issue',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {
@@ -116,9 +141,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/label-deleted.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      'label',
+      {
+        eventName: 'label',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {
@@ -144,9 +171,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/pull-request-labeled.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      'pull_request',
+      {
+        eventName: 'pull_request',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {
@@ -172,9 +201,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/pull-request-opened.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      'pull_request',
+      {
+        eventName: 'pull_request',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {
@@ -200,9 +231,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/pull-request-sync.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      'pull_request',
+      {
+        eventName: 'pull_request',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {
@@ -228,9 +261,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/release-released.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      'release',
+      {
+        eventName: 'release',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {
@@ -256,9 +291,11 @@ describe('buildTriggerInfo', () => {
     const requestBody = require('../../test/fixtures/github-webhook-payloads/issue-opened-missing-info.json');
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '',
-      'issues',
+      {
+        eventName: 'issues',
+        githubDeliveryId: '',
+        triggerType,
+      },
       requestBody
     );
     const expectedInfo = {

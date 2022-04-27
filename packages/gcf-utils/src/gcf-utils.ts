@@ -33,6 +33,13 @@ import {v4} from 'uuid';
 import {getServer} from './server/server';
 import {run} from '@googleapis/run';
 import {GoogleAuth} from 'google-auth-library';
+import {TriggerType, parseBotRequest} from './bot-request';
+import {
+  SCHEDULER_GLOBAL_EVENT_NAME,
+  SCHEDULER_INSTALLATION_EVENT_NAME,
+  SCHEDULER_REPOSITORY_EVENT_NAME,
+} from './custom-events';
+export {TriggerType} from './bot-request';
 
 // On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
@@ -50,14 +57,6 @@ export type HandlerFunction = (
 
 type CronType = 'repository' | 'installation' | 'global';
 const DEFAULT_CRON_TYPE: CronType = 'repository';
-const SCHEDULER_GLOBAL_EVENT_NAME = 'schedule.global';
-const SCHEDULER_INSTALLATION_EVENT_NAME = 'schedule.installation';
-const SCHEDULER_REPOSITORY_EVENT_NAME = 'schedule.repository';
-const SCHEDULER_EVENT_NAMES = [
-  SCHEDULER_GLOBAL_EVENT_NAME,
-  SCHEDULER_INSTALLATION_EVENT_NAME,
-  SCHEDULER_REPOSITORY_EVENT_NAME,
-];
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 const DEFAULT_TASK_CALLER =
   'task-caller@repo-automation-bots.iam.gserviceaccount.com';
@@ -136,17 +135,6 @@ export interface CronPayload {
     login: string;
   };
   cron_org: string;
-}
-
-/**
- * Type of function execution trigger
- */
-export enum TriggerType {
-  GITHUB = 'GitHub Webhook',
-  SCHEDULER = 'Cloud Scheduler',
-  TASK = 'Cloud Task',
-  PUBSUB = 'Pub/Sub',
-  UNKNOWN = 'Unknown',
 }
 
 /**
@@ -343,71 +331,6 @@ export class GCFBootstrapper {
     }
   }
 
-  /**
-   * Parse the signature from the request headers.
-   *
-   * If the expected header is not set, returns `unset` because the verification
-   * function throws an exception on empty string when we would rather
-   * treat the error as an invalid signature.
-   * @param request incoming trigger request
-   */
-  private static parseSignatureHeader(request: express.Request): string {
-    const sha1Signature =
-      request.get('x-hub-signature') || request.get('X-Hub-Signature');
-    if (sha1Signature) {
-      return sha1Signature;
-    }
-    return 'unset';
-  }
-
-  /**
-   * Parse the event name, delivery id, signature and task id from the request headers
-   * @param request incoming trigger request
-   */
-  private static parseRequestHeaders(request: express.Request): {
-    name: string;
-    id: string;
-    signature: string;
-    taskId: string;
-    taskRetries: number;
-  } {
-    const name =
-      request.get('x-github-event') || request.get('X-GitHub-Event') || '';
-    const id =
-      request.get('x-github-delivery') ||
-      request.get('X-GitHub-Delivery') ||
-      '';
-    const signature = this.parseSignatureHeader(request);
-    const taskId =
-      request.get('X-CloudTasks-TaskName') ||
-      request.get('x-cloudtasks-taskname') ||
-      '';
-    const taskRetries = parseInt(
-      request.get('X-CloudTasks-TaskRetryCount') ||
-        request.get('x-cloudtasks-taskretrycount') ||
-        '0'
-    );
-    return {name, id, signature, taskId, taskRetries};
-  }
-
-  /**
-   * Determine the type of trigger that started this execution
-   * @param name event name from header
-   * @param taskId task id from header
-   */
-  private static parseTriggerType(name: string, taskId: string): TriggerType {
-    if (!taskId && SCHEDULER_EVENT_NAMES.includes(name)) {
-      return TriggerType.SCHEDULER;
-    } else if (!taskId && name === 'pubsub.message') {
-      return TriggerType.PUBSUB;
-    } else if (!taskId && name) {
-      return TriggerType.GITHUB;
-    } else if (name) {
-      return TriggerType.TASK;
-    }
-    return TriggerType.UNKNOWN;
-  }
-
   private parseWrapConfig(wrapOptions: WrapOptions | undefined): WrapConfig {
     const wrapConfig: WrapConfig = {
       ...DEFAULT_WRAP_CONFIG,
@@ -460,17 +383,15 @@ export class GCFBootstrapper {
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapConfig.logging));
 
-      const {name, id, signature, taskId, taskRetries} =
-        GCFBootstrapper.parseRequestHeaders(request);
-
-      const triggerType = GCFBootstrapper.parseTriggerType(name, taskId);
+      // parse all common fields from a bot request
+      const botRequest = parseBotRequest(request);
 
       // validate the signature
       if (
         !wrapConfig.skipVerification &&
         !(await this.probot.webhooks.verify(
           request.rawBody ? request.rawBody.toString() : request.body,
-          signature
+          botRequest.signature
         ))
       ) {
         response.status(400).send({
@@ -484,32 +405,39 @@ export class GCFBootstrapper {
        * Note: any logs written before resetting bindings may contain
        * bindings from previous executions
        */
-      const triggerInfo = buildTriggerInfo(triggerType, id, name, request.body);
+      const triggerInfo = buildTriggerInfo(botRequest, request.body);
       logger.resetBindings();
       logger.addBindings(triggerInfo);
       const requestLogger = logger.child(triggerInfo);
       try {
-        if (triggerType === TriggerType.UNKNOWN) {
+        if (botRequest.triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
           return;
-        } else if (triggerType === TriggerType.SCHEDULER) {
+        } else if (botRequest.triggerType === TriggerType.SCHEDULER) {
           // Cloud scheduler tasks (cron)
-          await this.handleScheduled(id, request, wrapConfig);
-        } else if (triggerType === TriggerType.PUBSUB) {
+          await this.handleScheduled(
+            botRequest.githubDeliveryId,
+            request,
+            wrapConfig
+          );
+        } else if (botRequest.triggerType === TriggerType.PUBSUB) {
           const payload = this.parsePubSubPayload(request);
           await this.enqueueTask({
-            id,
-            name,
+            id: botRequest.githubDeliveryId,
+            name: botRequest.eventName,
             body: JSON.stringify(payload),
           });
-        } else if (triggerType === TriggerType.TASK) {
-          const maxRetries = this.getRetryLimit(wrapConfig, name);
+        } else if (botRequest.triggerType === TriggerType.TASK) {
+          const maxRetries = this.getRetryLimit(
+            wrapConfig,
+            botRequest.eventName
+          );
           // Abort task retries if we've hit the max number by
           // returning "success"
-          if (taskRetries > maxRetries) {
+          if (botRequest.taskRetryCount > maxRetries) {
             requestLogger.metric('too-many-retries');
             requestLogger.info(
-              `Too many retries: ${taskRetries} > ${maxRetries}`
+              `Too many retries: ${botRequest.taskRetryCount} > ${maxRetries}`
             );
             // return 200 so we don't retry the task again
             response.send({
@@ -539,16 +467,16 @@ export class GCFBootstrapper {
           // keep using a custom event name.
           await this.probot.receive({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            name: name as any,
+            name: botRequest.eventName as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            id: id as any,
+            id: botRequest.githubDeliveryId as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             payload: payload as any,
           });
-        } else if (triggerType === TriggerType.GITHUB) {
+        } else if (botRequest.triggerType === TriggerType.GITHUB) {
           await this.enqueueTask({
-            id,
-            name,
+            id: botRequest.githubDeliveryId,
+            name: botRequest.eventName,
             body: JSON.stringify(request.body),
           });
         }
