@@ -534,6 +534,7 @@ export class GCFBootstrapper {
             return;
           }
 
+          setContextLogger(payload, requestLogger);
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
@@ -541,11 +542,8 @@ export class GCFBootstrapper {
             name: name as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             id: id as any,
-            payload: {
-              ...payload,
-              logger: requestLogger,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            payload: payload as any,
           });
         } else if (triggerType === TriggerType.GITHUB) {
           await this.enqueueTask({
@@ -1121,6 +1119,11 @@ export class GCFBootstrapper {
       return payload;
     }
   }
+}
+
+// Helper to inject the request logger
+function setContextLogger(payload, logger: GCFLogger) {
+  payload.logger = logger;
 }
 
 // Helper to extract the request logger from the request payload.
