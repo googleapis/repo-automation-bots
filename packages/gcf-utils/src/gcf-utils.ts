@@ -1121,14 +1121,21 @@ export class GCFBootstrapper {
   }
 }
 
+const loggerCache = new WeakMap<object, GCFLogger>();
+
 // Helper to inject the request logger
 function setContextLogger(payload, logger: GCFLogger) {
-  payload.logger = logger;
+  loggerCache.set(payload, logger);
 }
 
 // Helper to extract the request logger from the request payload.
 // If gcf-utils wrapper did not provide a logger, fall back to the
 // default logger.
 export function getContextLogger(context): GCFLogger {
-  return context?.payload?.logger || logger;
+  const requestLogger = loggerCache.get(context?.payload);
+  if (!requestLogger) {
+    logger.warn('Failed to find a context logger');
+    return logger;
+  }
+  return requestLogger;
 }
