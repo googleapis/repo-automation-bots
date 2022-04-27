@@ -9,6 +9,10 @@ when code is pushed to `$BRANCH_NAME` within that subdirectory. That trigger wil
 provide substitution values provided in the root `cloudbuild.yaml` as well as an
 additional `$_DIRECTORY` substitution which is the path to that `cloudbuild.yaml`.
 
+Additionally, it looks for `cloudbuild-test.yaml` configurations. For each one found,
+create a Cloud Build trigger that will execute as GitHub pull request check when code
+is changed in that directory.
+
 ## Usage
 
 Create a `cloudbuild.yaml` at the root of your repository:
