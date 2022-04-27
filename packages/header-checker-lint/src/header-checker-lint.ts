@@ -19,7 +19,7 @@ import {ConfigurationOptions, WELL_KNOWN_CONFIGURATION_FILE} from './config';
 import * as minimatch from 'minimatch';
 import {getConfig, ConfigChecker} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
-import { getContextLogger } from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 
 type Conclusion =
   | 'success'
