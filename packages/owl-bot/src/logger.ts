@@ -24,7 +24,7 @@ export interface Logger {
 }
 
 /** Insert a timestamp into a log function's arguments. */
-export function insertTimestamp(msg: any, ...params: any[]): [any, any[]] {
+export function insertTimestamp(msg: any, params: any[]): [any, any[]] {
   const dateString = new Date().toISOString();
   if (typeof msg === 'string') {
     return [`${dateString} ${msg}`, params];
