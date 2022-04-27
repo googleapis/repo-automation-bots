@@ -15,6 +15,7 @@
 import {TriggerType} from '../src/gcf-utils';
 import {describe, it} from 'mocha';
 import assert from 'assert';
+import {expect} from 'chai';
 import {buildTriggerInfo} from '../src/logging/trigger-info-builder';
 
 describe('buildTriggerInfo', () => {
@@ -61,7 +62,7 @@ describe('buildTriggerInfo', () => {
     const triggerType = TriggerType.TASK;
     const triggerInfo = buildTriggerInfo(
       {
-        eventName: '',
+        eventName: 'issue',
         githubDeliveryId: '1234',
         triggerType,
       },
@@ -70,7 +71,46 @@ describe('buildTriggerInfo', () => {
     const expectedInfo = {
       trigger: {
         trigger_type: 'Cloud Task',
+        trigger_sender: 'UNKNOWN',
         github_delivery_guid: '1234',
+        github_event_type: 'issue',
+        trigger_source_repo: {
+          owner: 'UNKNOWN',
+          owner_type: 'UNKNOWN',
+          repo_name: 'UNKNOWN',
+          url: 'UNKNOWN',
+        },
+        payload_hash: '99914b932bd37a50b983c5e7c90ae93b',
+      },
+    };
+    assert.deepEqual(triggerInfo, expectedInfo);
+  });
+
+  it('returns correct task trigger info with trigger source', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const requestBody = require('../../test/fixtures/github-webhook-payloads/issue-opened.json');
+    const triggerType = TriggerType.TASK;
+    const triggerInfo = buildTriggerInfo(
+      {
+        eventName: 'issue',
+        githubDeliveryId: '1234',
+        triggerType,
+      },
+      requestBody
+    );
+    const expectedInfo = {
+      trigger: {
+        trigger_type: 'Cloud Task',
+        trigger_sender: 'testUser',
+        github_delivery_guid: '1234',
+        github_event_type: 'issue.opened',
+        trigger_source_repo: {
+          owner: 'testOwner',
+          owner_type: 'User',
+          repo_name: 'testRepo',
+          url: 'https://github.com/testOwner/testRepo',
+        },
+        payload_hash: '669f4417a11633569ed8b28ad41547fc',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);

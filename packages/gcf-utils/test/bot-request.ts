@@ -15,7 +15,7 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as express from 'express';
-import { parseBotRequest, TriggerType } from '../src/bot-request';
+import {parseBotRequest, TriggerType} from '../src/bot-request';
 
 describe('parseBotRequest', () => {
   describe('with all headers', () => {
@@ -25,10 +25,10 @@ describe('parseBotRequest', () => {
       'x-cloudtasks-taskname': 'some-task',
       'x-cloudtasks-taskretrycount': '3',
       'x-hub-signature': 'some-signature',
-      'x-cloud-trace-context': 'some-trace-id'
+      'x-cloud-trace-context': 'some-trace-id',
     };
     const body = {
-      installation: {id: 1}
+      installation: {id: 1},
     };
     const request = buildRequest(headers, body);
     const botRequest = parseBotRequest(request);
@@ -58,7 +58,7 @@ describe('parseBotRequest', () => {
   describe('without headers', () => {
     const headers = {};
     const body = {
-      installation: {id: 1}
+      installation: {id: 1},
     };
     const request = buildRequest(headers, body);
     const botRequest = parseBotRequest(request);
@@ -86,13 +86,17 @@ describe('parseBotRequest', () => {
     });
   });
   describe('trigger types', () => {
-    for (const scheduledTaskType of ['schedule.global', 'schedule.installation', 'schedule.repository']) {
+    for (const scheduledTaskType of [
+      'schedule.global',
+      'schedule.installation',
+      'schedule.repository',
+    ]) {
       it(`should parse a scheduled task for ${scheduledTaskType}`, () => {
         const headers = {
           'x-github-event': scheduledTaskType,
         };
         const body = {
-          installation: {id: 1}
+          installation: {id: 1},
         };
         const request = buildRequest(headers, body);
         const botRequest = parseBotRequest(request);
@@ -104,7 +108,7 @@ describe('parseBotRequest', () => {
         'x-github-event': 'pubsub.message',
       };
       const body = {
-        installation: {id: 1}
+        installation: {id: 1},
       };
       const request = buildRequest(headers, body);
       const botRequest = parseBotRequest(request);
@@ -115,7 +119,7 @@ describe('parseBotRequest', () => {
         'x-github-event': 'issues.message',
       };
       const body = {
-        installation: {id: 1}
+        installation: {id: 1},
       };
       const request = buildRequest(headers, body);
       const botRequest = parseBotRequest(request);
@@ -127,7 +131,7 @@ describe('parseBotRequest', () => {
         'x-cloudtasks-taskname': 'some-task',
       };
       const body = {
-        installation: {id: 1}
+        installation: {id: 1},
       };
       const request = buildRequest(headers, body);
       const botRequest = parseBotRequest(request);
@@ -136,7 +140,10 @@ describe('parseBotRequest', () => {
   });
 });
 
-function buildRequest(headers: Record<string, string>, body: object): express.Request {
+function buildRequest(
+  headers: Record<string, string>,
+  body: object
+): express.Request {
   const request = Object.create(
     Object.getPrototypeOf(express.request),
     Object.getOwnPropertyDescriptors(express.request)

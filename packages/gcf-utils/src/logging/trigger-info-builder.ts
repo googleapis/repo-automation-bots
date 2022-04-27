@@ -67,9 +67,7 @@ export function buildTriggerInfo(
     botRequest.triggerType === TriggerType.TASK
   ) {
     triggerInfo.trigger.github_delivery_guid = botRequest.githubDeliveryId;
-  }
 
-  if (botRequest.triggerType === TriggerType.GITHUB) {
     const webhookProperties = {
       trigger_source_repo: getRepositoryDetails(requestBody),
       trigger_sender: requestBody.sender?.login || UNKNOWN,
