@@ -19,8 +19,8 @@
   ],
   "scripts": {
     "test": "cd cli; npm t; cd ../app; npm t; cd ../common-container; npm t",
-    "fix": "cd cli; gts fix; cd ../app; gts fix; cd ../common-container; gts fix",
-    "lint": "cd cli; gts check; cd ../app; gts check; cd ../common-container; gts check"
+    "fix": "cd cli; npm run fix; cd ../app; npm run fix; cd ../common-container; npm run fix",
+    "lint": "cd cli; npm run lint; cd ../app; npm run lint; cd ../common-container; npm run lint"
   },
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.6.0",
