@@ -13,9 +13,19 @@
 // limitations under the License.
 
 import yargs from 'yargs';
-import {CliArgs} from '../../common-container/interfaces';
-import {runTrigger} from '../../app/run-trigger';
+import {runTrigger} from './run-trigger';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
+
+interface CliArgs {
+  projectId: string;
+  triggerId: string;
+  apiId: string;
+  repoToClone?: string;
+  language: string;
+  installationId: string;
+  container: string;
+  languageContainer: string;
+}
 
 export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
   command: 'run-trigger',

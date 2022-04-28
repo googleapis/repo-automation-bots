@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as utils from '../common-container/utils';
-import {MonoRepo} from '../common-container/mono-repo';
+import * as utils from '../utils';
+import {MonoRepo} from '../mono-repo';
 import {execSync} from 'child_process';
 import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../common-container/utils';
+import {ORG} from '../utils';
 import snapshot from 'snap-shot-it';
-import {Language} from '../common-container/interfaces';
+import {Language} from '../interfaces';
 import sinon from 'sinon';
 
 let directoryPath: string;

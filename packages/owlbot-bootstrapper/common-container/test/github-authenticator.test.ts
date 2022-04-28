@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GithubAuthenticator} from '../common-container/github-authenticator';
+import {GithubAuthenticator} from '../github-authenticator';
 import sinon, {SinonStubbedInstance} from 'sinon';
 import {describe, it} from 'mocha';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';

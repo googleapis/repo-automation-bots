@@ -21,7 +21,20 @@
 steps:
   # Clones the target repository and opens a branch for mono-repos, for split-repos creates a repository
   - name: ${_CONTAINER}
-    args: ["pre-process", "--language", "$_LANGUAGE", "--projectId", "$_PROJECT_ID", "--apiId", "$_API_ID", "--repoToClone", "$_REPO_TO_CLONE", "--installationId", "$_INSTALLATION_ID'", "--buildId", "$BUILD_ID"]
+    args:
+    - "pre-process"
+    - "--language"
+    - "$_LANGUAGE"
+    - "--projectId"
+    - "$_PROJECT_ID"
+    - "--apiId"
+    - "$_API_ID"
+    - "--repoToClone"
+    - "$_REPO_TO_CLONE"
+    - "--installationId"
+    - "$_INSTALLATION_ID'"
+    - "--buildId"
+    - "$BUILD_ID"
   # Generates the basic files necessary for a minimal implementation of a library
   # Current working directory contains the branch of the target repo in branchName.md
   # Keeping this as env variables so as to not force parsing on language-specific containers;
@@ -35,4 +48,17 @@ steps:
     - 'BUILD_ID=$BUILD_ID'
   # Commits and pushes changes to a branch; if the repo is nonempty, opens a PR
   - name: ${_CONTAINER}
-    args: ["post-process", "--language", "$_LANGUAGE", "--projectId", "$_PROJECT_ID", "--apiId", "$_API_ID", "--repoToClone", "$_REPO_TO_CLONE", "--installationId", "$_INSTALLATION_ID'", "--buildId", "$BUILD_ID"]
+    args:
+    - "post-process"
+    - "--language"
+    - "$_LANGUAGE"
+    - "--projectId"
+    - "$_PROJECT_ID"
+    - "--apiId"
+    - "$_API_ID"
+    - "--repoToClone"
+    - "$_REPO_TO_CLONE"
+    - "--installationId"
+    - "$_INSTALLATION_ID'"
+    - "--buildId"
+    - "$BUILD_ID"

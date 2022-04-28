@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GithubAuthenticator} from '../common-container/github-authenticator';
+import {GithubAuthenticator} from '../github-authenticator';
 import nock from 'nock';
 import sinon from 'sinon';
-import {MonoRepo} from '../common-container/mono-repo';
-import {SplitRepo} from '../common-container/split-repo';
-import * as utils from '../common-container/utils';
-import {CliArgs} from '../common-container/interfaces';
+import {MonoRepo} from '../mono-repo';
+import {SplitRepo} from '../split-repo';
+import * as utils from '../utils';
+import {CliArgs} from '../interfaces';
 import assert from 'assert';
-import {postProcess} from '../common-container/post-process';
+import {postProcess} from '../post-process';
 import {Octokit} from '@octokit/rest';
-import {ORG} from '../common-container/utils';
+import {ORG} from '../utils';
 
 nock.disableNetConnect();
 

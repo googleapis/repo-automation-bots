@@ -17,7 +17,18 @@
 
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 
-export async function runTrigger(argv: any, cb: CloudBuildClient) {
+interface CliArgs {
+  projectId: string;
+  triggerId?: string;
+  apiId: string;
+  repoToClone?: string;
+  language: string;
+  installationId: string;
+  container: string;
+  languageContainer: string;
+}
+
+export async function runTrigger(argv: CliArgs, cb: CloudBuildClient) {
   const [resp] = await cb.runBuildTrigger({
     projectId: argv.projectId,
     triggerId: argv.triggerId,
@@ -26,8 +37,7 @@ export async function runTrigger(argv: any, cb: CloudBuildClient) {
       branchName: 'main',
       substitutions: {
         _API_ID: argv.apiId,
-        _REPO_TO_CLONE: argv.repoToClone,
-        _IS_PRE_PROCESS: argv.isPreProcess,
+        _REPO_TO_CLONE: argv.repoToClone ?? '',
         _LANGUAGE: argv.language,
         _INSTALLATION_ID: argv.installationId,
         _CONTAINER: argv.container,

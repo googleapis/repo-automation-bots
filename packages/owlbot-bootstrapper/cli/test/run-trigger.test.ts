@@ -15,7 +15,8 @@
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import sinon, {SinonStubbedInstance} from 'sinon';
 import {assert} from 'console';
-import {runTrigger} from '../app/run-trigger';
+import {runTrigger} from '../run-trigger';
+import {describe, it} from 'mocha';
 
 // Trigger ID in gcp
 const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
@@ -47,7 +48,6 @@ describe('tests running build trigger', () => {
         container: COMMON_CONTAINER_IMAGE,
         apiId: API_ID,
         repoToClone: REPO_TO_CLONE,
-        isPreProcess: 'true',
         language: 'nodejs',
         languageContainer: LANGUAGE_CONTAINER,
       },
@@ -64,7 +64,6 @@ describe('tests running build trigger', () => {
           substitutions: {
             _API_ID: API_ID,
             _REPO_TO_CLONE: REPO_TO_CLONE,
-            _IS_PRE_PROCESS: 'true',
             _LANGUAGE: LANGUAGE,
             _INSTALLATION_ID: INSTALLATION_ID,
             _CONTAINER: COMMON_CONTAINER_IMAGE,

@@ -2,6 +2,8 @@
 
 Googleapis-bootstrapper is a Github bot that generates minimal files required to initialize googleapis libraries.
 
+The bot is divided into 3 parts: a Docker container (in common-container) that runs the actual processing logic; an app that responds to github webhook events; and a CLI tool that runs a Build file that runs the container.
+
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.
 
 This bot uses nock for mocking requests to GitHub. 

@@ -13,16 +13,32 @@
 // limitations under the License.
 
 import yargs from 'yargs';
-import {CliArgs} from '../../common-container/interfaces';
-import {preProcess} from '../../common-container/pre-process';
+import {postProcess} from '../post-process';
 
-export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
-  command: 'pre-process',
-  describe: 'Run pre-process steps for owlbot-bootstrapper',
+interface CliArgs {
+  projectId: string;
+  triggerId?: string;
+  apiId: string;
+  repoToClone?: string;
+  language: string;
+  installationId: string;
+  container: string;
+  languageContainer?: string;
+  buildId?: string;
+}
+
+export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
+  command: 'post-process',
+  describe: 'Run post-process steps for owlbot-bootstrapper',
   builder(yargs) {
     return yargs
       .option('projectId', {
         describe: 'project ID which contains the build file',
+        type: 'string',
+        demand: true,
+      })
+      .option('triggerId', {
+        describe: 'trigger of build to run',
         type: 'string',
         demand: true,
       })
@@ -59,10 +75,9 @@ export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('buildId', {
         describe: 'build id of given build',
         type: 'string',
-        demand: false,
       });
   },
   async handler(argv: CliArgs) {
-    preProcess(argv);
+    postProcess(argv);
   },
 };

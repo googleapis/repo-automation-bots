@@ -21,7 +21,7 @@ steps:
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["-"]
-    dir: packages/owlbot-bootstrapper
+    dir: packages/owlbot-bootstrapper/common-container
     args:
       - "build"
       - "-f"

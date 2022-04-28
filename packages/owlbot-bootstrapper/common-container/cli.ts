@@ -19,9 +19,11 @@
 // the process manually. It then calls run-trigger, which kicks off the build.
 
 import yargs = require('yargs');
-import {runTriggerCommand} from './run-trigger-command';
+import {preProcessCommand} from './commands/pre-process';
+import {postProcessCommand} from './commands/post-process';
 
 yargs(process.argv.slice(2))
-  .command(runTriggerCommand)
+  .command(postProcessCommand)
+  .command(preProcessCommand)
   .demandCommand(1)
   .parse();

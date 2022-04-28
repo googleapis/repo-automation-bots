@@ -42,6 +42,10 @@ export async function postProcess(argv: CliArgs) {
   // Decides whether we should go instantiate a mono or split repo.
   const isMonoRepository = isMonoRepo(argv.language as Language);
 
+  if (argv.repoToClone === '' && isMonoRepository) {
+    throw new Error('No repo to clone specified for mono repo');
+  }
+
   // Sets git config options for owlbot-bootstrapper
   await setConfig(DIRECTORY_PATH);
   try {

@@ -29,6 +29,7 @@ import {SplitRepo} from './split-repo';
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
 
+  // Create github authenticator instance to get short lived token
   const githubAuthenticator = new GithubAuthenticator(
     argv.projectId,
     argv.installationId,
@@ -40,6 +41,10 @@ export async function preProcess(argv: CliArgs) {
   const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
 
   const isMonoRepository = isMonoRepo(argv.language as Language);
+
+  if (argv.repoToClone === '' && isMonoRepository) {
+    throw new Error('No repo to clone specified for mono repo');
+  }
 
   await setConfig(DIRECTORY_PATH);
 
