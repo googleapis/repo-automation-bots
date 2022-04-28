@@ -37,18 +37,12 @@ export interface BotRequest {
 }
 
 export function parseBotRequest(request: express.Request): BotRequest {
-  const eventName =
-    request.get('x-github-event') || request.get('X-GitHub-Event') || '';
-  const githubDeliveryId =
-    request.get('x-github-delivery') || request.get('X-GitHub-Delivery') || '';
+  const eventName = request.get('X-GitHub-Event') || '';
+  const githubDeliveryId = request.get('X-GitHub-Delivery') || '';
   const signature = parseSignatureHeader(request);
-  const taskName =
-    request.get('X-CloudTasks-TaskName') ||
-    request.get('x-cloudtasks-taskname');
+  const taskName = request.get('X-CloudTasks-TaskName');
   const taskRetryCount = parseInt(
-    request.get('X-CloudTasks-TaskRetryCount') ||
-      request.get('x-cloudtasks-taskretrycount') ||
-      '0'
+    request.get('X-CloudTasks-TaskRetryCount') || '0'
   );
   const triggerType = parseTriggerType(eventName, taskName);
   const traceId = parseTraceId(request);
@@ -90,8 +84,7 @@ function parseTriggerType(eventName: string, taskName: string): TriggerType {
  * @param request incoming trigger request
  */
 function parseSignatureHeader(request: express.Request): string {
-  const sha1Signature =
-    request.get('x-hub-signature') || request.get('X-Hub-Signature');
+  const sha1Signature = request.get('X-Hub-Signature');
   if (sha1Signature) {
     return sha1Signature;
   }
@@ -104,9 +97,7 @@ function parseSignatureHeader(request: express.Request): string {
  * @param request incoming trigger request
  */
 function parseTraceId(request: express.Request): string | undefined {
-  const traceContext =
-    request.get('X-Cloud-Trace-Context') ||
-    request.get('x-cloud-trace-context');
+  const traceContext = request.get('X-Cloud-Trace-Context');
   if (!traceContext) {
     return undefined;
   }
