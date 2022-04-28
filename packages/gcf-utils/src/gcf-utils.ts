@@ -40,6 +40,7 @@ import {
   SCHEDULER_REPOSITORY_EVENT_NAME,
 } from './custom-events';
 export {TriggerType} from './bot-request';
+export {GCFLogger} from './logging/gcf-logger';
 
 // On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
