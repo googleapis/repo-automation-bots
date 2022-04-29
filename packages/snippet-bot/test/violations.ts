@@ -36,6 +36,7 @@ import {resolve} from 'path';
 import assert from 'assert';
 import {describe, it} from 'mocha';
 import * as sinon from 'sinon';
+import {GCFLogger} from 'gcf-utils';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -75,7 +76,10 @@ describe('checkTagFormat', () => {
   };
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<ApiLabels>>;
+  let getApiLabelsStub: sinon.SinonStub<
+    [string, GCFLogger],
+    Promise<ApiLabels>
+  >;
 
   const sandbox = sinon.createSandbox();
 
@@ -145,7 +149,10 @@ describe('checkProductPrefixViolations', () => {
   };
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<ApiLabels>>;
+  let getApiLabelsStub: sinon.SinonStub<
+    [string, GCFLogger],
+    Promise<ApiLabels>
+  >;
 
   const sandbox = sinon.createSandbox();
 
@@ -203,7 +210,7 @@ describe('checkRemovingUsedTagViolations', () => {
 
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
 
   const sandbox = sinon.createSandbox();
 
