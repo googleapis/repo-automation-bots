@@ -14,7 +14,12 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Context, Probot, ProbotOctokit} from 'probot';
-import {logger, addOrUpdateIssueComment} from 'gcf-utils';
+import {
+  addOrUpdateIssueComment,
+  getContextLogger,
+  GCFLogger,
+  logger,
+} from 'gcf-utils';
 import {load} from 'js-yaml';
 import jp from 'jsonpath';
 import {match} from 'minimatch';
@@ -83,7 +88,8 @@ async function readExternalManifest(
   github: OctokitType,
   manifest: ExternalManifest,
   owner: string,
-  repo: string
+  repo: string,
+  logger: GCFLogger
 ): Promise<GeneratedFile[]> {
   return github.repos
     .getContent({
@@ -130,7 +136,8 @@ export async function getFileList(
         github,
         externalManifest,
         owner,
-        repo
+        repo,
+        logger
       )) {
         fileList.push(file);
       }
@@ -184,6 +191,7 @@ async function mainLogic(
   owner: string,
   repo: string
 ) {
+  const logger = getContextLogger(context);
   const pullNumber = context.payload.pull_request.number;
   const prAuthor = context.payload.pull_request.user.login;
   const sender = context.payload.sender.login;
@@ -260,6 +268,7 @@ async function mainLogic(
 
 export function handler(app: Probot) {
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
+    const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
     // First check the config schema for the PR.
     const configChecker = new ConfigChecker<Configuration>(
