@@ -50,7 +50,8 @@ describe('behavior of OwlBotTemplateChanges process', () => {
       },
       classRule: {
         author: 'gcf-owl-bot[bot]',
-        titleRegex: [/(fix|feat|!)/, /\[autoapprove\]/],
+        titleRegex: /\[autoapprove\]/,
+        titleRegexExclude: /(fix|feat|!)/,
         bodyRegex: /PiperOrigin-RevId/,
       },
       octokit,

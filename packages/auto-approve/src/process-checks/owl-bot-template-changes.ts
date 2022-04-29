@@ -24,7 +24,8 @@ import {Octokit} from '@octokit/rest';
 export class OwlBotTemplateChanges extends Process implements LanguageRule {
   classRule: {
     author: string;
-    titleRegex: RegExp[];
+    titleRegex: RegExp;
+    titleRegexExclude: RegExp;
     bodyRegex?: RegExp;
   };
 
@@ -55,7 +56,8 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
         // For this particular rule, we want to check a pattern and an antipattern;
         // we want fix/feat/! to not be in the title, and we do want [autoapprove] to
         // be in the title
-        titleRegex: [/(fix|feat|!)/, /\[autoapprove\]/],
+        titleRegex: /\[autoapprove\]/,
+        titleRegexExclude: /(fix|feat|!)/,
         bodyRegex: /PiperOrigin-RevId/,
       });
   }
@@ -68,9 +70,12 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
 
     const titleMatches =
       // We don't want it to include fix, feat, or !
-      !checkTitleOrBody(this.incomingPR.title, this.classRule.titleRegex[0]) &&
+      !checkTitleOrBody(
+        this.incomingPR.title,
+        this.classRule.titleRegexExclude
+      ) &&
       // We do want it to include [autoapprove] in title
-      checkTitleOrBody(this.incomingPR.title, this.classRule.titleRegex[1]);
+      checkTitleOrBody(this.incomingPR.title, this.classRule.titleRegex);
 
     let bodyMatches = true;
     if (this.incomingPR.body) {
