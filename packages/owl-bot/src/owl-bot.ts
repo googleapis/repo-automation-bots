@@ -37,6 +37,7 @@ import {OwlBotLock} from './config-files';
 import {octokitFactoryFrom} from './octokit-util';
 import {githubRepo} from './github-repo';
 import {REGENERATE_CHECKBOX_TEXT} from './create-pr';
+import {shouldIgnoreRepo} from './should-ignore-repo';
 
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
@@ -245,6 +246,13 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
 
     if (!installationId || !org) {
       logger.error(`Missing install id (${installationId}) or org (${org})`);
+      return;
+    }
+
+    if (shouldIgnoreRepo(context.payload.repository.full_name)) {
+      logger.info(
+        `Ignoring pull_request.closed for ${context.payload.repository.full_name}`
+      );
       return;
     }
 
