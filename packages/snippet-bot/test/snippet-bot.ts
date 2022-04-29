@@ -34,6 +34,7 @@ import nock from 'nock';
 import * as fs from 'fs';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
+import {GCFLogger} from 'gcf-utils';
 
 nock.disableNetConnect();
 
@@ -149,8 +150,8 @@ describe('snippet-bot config validation', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
   let getConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
@@ -252,8 +253,8 @@ describe('snippet-bot bot-config-utils integration', () => {
 
   const sandbox = sinon.createSandbox();
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
   let validateConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
@@ -336,8 +337,8 @@ describe('snippet-bot', () => {
 
   const sandbox = sinon.createSandbox();
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
   let invalidateCacheStub: sinon.SinonStub;
   let getConfigStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
