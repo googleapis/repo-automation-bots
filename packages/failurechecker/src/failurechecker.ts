@@ -18,7 +18,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, getContextLogger, GCFLogger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
 
@@ -54,6 +54,7 @@ export const TimeMethods = {
 export function failureChecker(app: Probot) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     const utcHour = TimeMethods.Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
@@ -122,7 +123,7 @@ export function failureChecker(app: Probot) {
       }
     }
 
-    await manageWarningIssue(owner, repo, failed, context.octokit);
+    await manageWarningIssue(owner, repo, failed, context.octokit, logger);
     logger.info(`it's alive! event for ${repo}`);
   });
 
@@ -137,7 +138,8 @@ export function failureChecker(app: Probot) {
     owner: string,
     repo: string,
     prNumbers: number[],
-    github: OctokitType
+    github: OctokitType,
+    logger: GCFLogger = defaultLogger
   ) {
     const {data: issues} = await github.issues.listForRepo({
       owner,
@@ -184,7 +186,7 @@ export function failureChecker(app: Probot) {
       });
       return;
     }
-    app.log(`opening warning issue on ${repo} for PR #${prNumbers}`);
+    logger.info(`opening warning issue on ${repo} for PR #${prNumbers}`);
     await github.issues.create({
       owner,
       repo,
