@@ -21,7 +21,7 @@ import {
 import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, getContextLogger, GCFLogger} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {core, RegenerateArgs, parseOwlBotLock} from './core';
 import {Octokit} from '@octokit/rest';
@@ -116,6 +116,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
   app.on(['pull_request.labeled'], async context => {
+    const logger = getContextLogger(context);
     const head = context.payload.pull_request.head.repo.full_name;
     const [owner, repo] = head.split('/');
     logger.info(
@@ -127,7 +128,8 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       project,
       trigger,
       context.payload,
-      context.octokit
+      context.octokit,
+      logger
     );
   });
 
@@ -159,6 +161,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       'pull_request.reopened',
     ],
     async context => {
+      const logger = getContextLogger(context);
       const head = context.payload.pull_request.head.repo.full_name;
       const base = context.payload.pull_request.base.repo.full_name;
       const baseOwner = base.split('/')[0];
@@ -207,7 +210,8 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
           defaultBranch,
           sha: context.payload.pull_request.head.sha,
         },
-        context.octokit
+        context.octokit,
+        logger
       );
     }
   );
@@ -218,6 +222,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // any to circumvent this issue:
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async context => {
+    const logger = getContextLogger(context);
     const typedContext = context as unknown as PubSubContext;
     // TODO: flesh out tests for pubsub.message handler:
     logger.info(JSON.stringify(typedContext.payload));
@@ -238,6 +243,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
 
   // Ensure up-to-date configuration is stored on merge
   app.on('pull_request.closed', async context => {
+    const logger = getContextLogger(context);
     const configStore = new FirestoreConfigsStore(db!);
     const installationId = context.payload.installation?.id;
     const org = context.payload.organization?.login;
@@ -276,6 +282,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // See cron.yaml
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     if (context.payload.syncLabels === true) {
       // owl-bot-sync-label cron entry
       // syncing labels
@@ -299,7 +306,8 @@ async function handlePullRequestLabeled(
   project: string,
   trigger: string,
   payload: PullRequestLabeledEvent,
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger = defaultLogger
 ) {
   const head = payload.pull_request.head.repo.full_name;
   const base = payload.pull_request.base.repo.full_name;
@@ -334,7 +342,7 @@ async function handlePullRequestLabeled(
   }
 
   // Remove run label before continuing
-  await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
+  await removeOwlBotRunLabel(owner, repo, prNumber, octokit, logger);
 
   // If the last commit made to the PR was already from OwlBot, and the label
   // has been added by a bot account (most likely trusted contributor bot)
@@ -381,6 +389,7 @@ async function handlePullRequestLabeled(
       sha: payload.pull_request.head.sha,
     },
     octokit,
+    logger,
     isBotAccount(payload.sender.login)
   );
   logger.metric('owlbot.run_post_processor');
@@ -397,7 +406,8 @@ async function removeOwlBotRunLabel(
   owner: string,
   repo: string,
   prNumber: number,
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger
 ) {
   try {
     await octokit.issues.removeLabel({
@@ -436,6 +446,7 @@ async function runPostProcessorWithLock(
   trigger: string,
   opts: RunPostProcessorOpts,
   octokit: Octokit,
+  logger: GCFLogger,
   breakLoop = true
 ) {
   // Short-circuit if post-processor already running for this SHA, preventing two post-processor images
@@ -463,6 +474,7 @@ async function runPostProcessorWithLock(
       trigger,
       opts,
       octokit,
+      logger,
       breakLoop
     );
   } finally {
@@ -488,6 +500,7 @@ const runPostProcessor = async (
   trigger: string,
   opts: RunPostProcessorOpts,
   octokit: Octokit,
+  logger: GCFLogger,
   breakLoop = true
 ) => {
   // Fetch the .Owlbot.lock.yaml from head of PR:
