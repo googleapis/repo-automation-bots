@@ -16,7 +16,7 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 import {getConfig} from '@google-automations/bot-config-utils';
 import {parseCherryPickComment, cherryPickAsPullRequest} from './cherry-pick';
 import {branchRequiresReviews} from './branch-protection';
@@ -36,6 +36,7 @@ interface Configuration {
 
 export = (app: Probot) => {
   app.on(['issue_comment.created', 'issue_comment.edited'], async context => {
+    const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
     const remoteConfig = await getConfig<Configuration>(
       context.octokit,
@@ -105,13 +106,25 @@ export = (app: Probot) => {
     // If target branch requires review, ensure that the merged PR's branch also
     // required review
     if (
-      await branchRequiresReviews(context.octokit, owner, repo, targetBranch)
+      await branchRequiresReviews(
+        context.octokit,
+        owner,
+        repo,
+        targetBranch,
+        logger
+      )
     ) {
       logger.info(
         `${targetBranch} branch requires review, checking ${baseBranch}`
       );
       if (
-        !(await branchRequiresReviews(context.octokit, owner, repo, baseBranch))
+        !(await branchRequiresReviews(
+          context.octokit,
+          owner,
+          repo,
+          baseBranch,
+          logger
+        ))
       ) {
         logger.warn(`${baseBranch} does not require review, skipping.`);
         return;
@@ -123,11 +136,13 @@ export = (app: Probot) => {
       owner,
       repo,
       [pullRequest.sha],
-      targetBranch
+      targetBranch,
+      logger
     );
   });
 
   app.on('pull_request.closed', async context => {
+    const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
     const remoteConfig = await getConfig<Configuration>(
       context.octokit,
@@ -185,7 +200,13 @@ export = (app: Probot) => {
       // If target branch requires review, ensure that the merged PR's branch also
       // required review
       if (
-        await branchRequiresReviews(context.octokit, owner, repo, targetBranch)
+        await branchRequiresReviews(
+          context.octokit,
+          owner,
+          repo,
+          targetBranch,
+          logger
+        )
       ) {
         const baseBranch = context.payload.pull_request.base.ref;
         logger.info(
@@ -196,7 +217,8 @@ export = (app: Probot) => {
             context.octokit,
             owner,
             repo,
-            baseBranch
+            baseBranch,
+            logger
           ))
         ) {
           logger.warn(`${baseBranch} does not require review, skipping.`);
@@ -209,7 +231,8 @@ export = (app: Probot) => {
         owner,
         repo,
         [context.payload.pull_request.merge_commit_sha],
-        targetBranch
+        targetBranch,
+        logger
       );
     }
   });
