@@ -223,9 +223,10 @@ async function waitForBuild(
     }
     // Wait a few seconds before checking the build status again:
     await new Promise(resolve => {
+      const delay = 20000;
       setTimeout(() => {
         return resolve(undefined);
-      }, 10000);
+      }, delay);
     });
   }
   throw Error(`timed out waiting for build ${id}`);

@@ -85,11 +85,13 @@ echo "About to publish function ${functionName}"
 echo gcloud functions deploy "${functionName}" "${deployArgs[@]}"
 gcloud functions deploy "${functionName}" "${deployArgs[@]}"
 
-echo "Adding ability for allUsers to execute the Function"
-gcloud functions add-iam-policy-binding "${functionName}" \
-  --region="${functionRegion}" \
-  --member=allUsers \
-  --role=roles/cloudfunctions.invoker
+if [ -z "${SECURE_ACCESS}" ]; then
+  echo "Adding ability for allUsers to execute the Function"
+  gcloud functions add-iam-policy-binding "${functionName}" \
+    --region="${functionRegion}" \
+    --member=allUsers \
+    --role=roles/cloudfunctions.invoker
+fi
 
 echo "Deploying Queue ${queueName}"
 

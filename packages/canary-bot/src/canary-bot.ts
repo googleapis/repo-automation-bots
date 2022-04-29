@@ -20,7 +20,7 @@ import {components} from '@octokit/openapi-types';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {resolve} from 'path';
-import {logger, addOrUpdateIssueComment} from 'gcf-utils';
+import {addOrUpdateIssueComment, getContextLogger} from 'gcf-utils';
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -103,17 +103,20 @@ export = (app: Probot) => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.installation' as any, async context => {
+    const logger = getContextLogger(context);
     logger.info(
       `executed scheduled task for installation: ${context.payload.installation.id}`
     );
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.on('schedule.global' as any, async () => {
+  app.on('schedule.global' as any, async context => {
+    const logger = getContextLogger(context);
     logger.info('executed global scheduled task');
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
+    const logger = getContextLogger(context);
     if (context.payload.issue.title.includes('canary-bot test')) {
       const {owner, repo} = context.repo();
       await addOrUpdateIssueComment(
@@ -133,6 +136,7 @@ export = (app: Probot) => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async context => {
+    const logger = getContextLogger(context);
     const pubsubContext = context as unknown as PubSubContext;
     logger.info(
       'executed pubsub handler with the payload: ' +

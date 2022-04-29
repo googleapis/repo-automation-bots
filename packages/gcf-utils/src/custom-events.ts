@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from 'gcf-utils';
-import {handler} from './label-sync';
-
-const bootstrap = new GCFBootstrapper();
-module.exports.label_sync = bootstrap.gcf(handler, {
-  background: true,
-  logging: true,
-});
+export const SCHEDULER_GLOBAL_EVENT_NAME = 'schedule.global';
+export const SCHEDULER_INSTALLATION_EVENT_NAME = 'schedule.installation';
+export const SCHEDULER_REPOSITORY_EVENT_NAME = 'schedule.repository';
+export const SCHEDULER_EVENT_NAMES = [
+  SCHEDULER_GLOBAL_EVENT_NAME,
+  SCHEDULER_INSTALLATION_EVENT_NAME,
+  SCHEDULER_REPOSITORY_EVENT_NAME,
+];

@@ -34,7 +34,7 @@ steps:
     - "SOURCE_BRANCH=$_SOURCE_BRANCH"
     - "TARGET_BRANCH=$_TARGET_BRANCH"
 
-timeout: '7200s'
+timeout: '10800s'
 
 options:
   machineType: 'N1_HIGHCPU_8'

@@ -41,6 +41,7 @@ import {
   Violation,
   checkProductPrefixViolations,
   checkRemovingUsedTagViolations,
+  checkTagFormat,
 } from './violations';
 import schema from './config-schema.json';
 
@@ -360,6 +361,11 @@ async function scanPullRequest(
       configuration
     );
   }
+
+  // Check tag format.
+  let tagFormatViolations: Array<Violation> = [];
+  tagFormatViolations = await checkTagFormat(result, configuration);
+
   const removingUsedTagsViolations = await checkRemovingUsedTagViolations(
     result,
     configuration,
@@ -404,9 +410,22 @@ async function scanPullRequest(
     },
   });
 
+  // status check for tagFormatViolations
+  const tagFormatCheckParams = context.repo({
+    name: 'Region tag format',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'No violations',
+      summary: 'No violations found',
+      text: 'All the region tags have the correct format',
+    },
+  });
+
   if (
     productPrefixViolations.length > 0 ||
-    removeUsedTagViolations.length > 0
+    removeUsedTagViolations.length > 0 ||
+    tagFormatViolations.length > 0
   ) {
     commentBody += 'Here is the summary of possible violations 😱';
 
@@ -452,6 +471,27 @@ async function scanPullRequest(
         title: 'Removal of region tags in use',
         summary: '',
         text: removeUsedTagViolationsDetail,
+      };
+    }
+
+    // Rendering tag format violations.
+    if (tagFormatViolations.length > 0) {
+      let summary = '';
+      if (tagFormatViolations.length === 1) {
+        summary = 'There is a format violation for a region tag.';
+      } else {
+        summary = `There are format violations for ${tagFormatViolations.length} region tags.`;
+      }
+      const tagFormatViolationsDetail = formatViolations(
+        tagFormatViolations,
+        summary
+      );
+      commentBody += tagFormatViolationsDetail;
+      tagFormatCheckParams.conclusion = 'failure';
+      tagFormatCheckParams.output = {
+        title: '',
+        summary: 'Some region tags have the wrong format',
+        text: tagFormatViolationsDetail,
       };
     }
 
@@ -557,6 +597,16 @@ ${REFRESH_UI}
   ) {
     await aggregator.add(removeUsedTagCheckParams);
   }
+
+  // Status checks for tag format errors
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    configuration.aggregateChecks() ||
+    tagFormatViolations.length > 0
+  ) {
+    await aggregator.add(tagFormatCheckParams);
+  }
+
   await aggregator.submit();
   // emit metrics
   logger.metric('snippet-bot-violations', {
@@ -573,6 +623,11 @@ ${REFRESH_UI}
     target: pull_request.url,
     violation_type: 'REMOVING_USED_TAG',
     count: removeUsedTagViolations.length,
+  });
+  logger.metric('snippet-bot-violations', {
+    target: pull_request.url,
+    violation_type: 'TAG_FORMAT_ERROR',
+    count: tagFormatViolations.length,
   });
 }
 

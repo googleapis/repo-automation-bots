@@ -14,6 +14,7 @@
 //
 import {TriggerType} from '../gcf-utils';
 import crypto from 'crypto';
+import {BotRequest} from '../bot-request';
 
 /**
  * Information on GCF execution trigger
@@ -49,9 +50,7 @@ interface TriggerInfo {
  * @param requestBody body of the incoming trigger request
  */
 export function buildTriggerInfo(
-  triggerType: TriggerType,
-  githubDeliveryGUID: string,
-  githubEventName: string,
+  botRequest: BotRequest,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   requestBody: {[key: string]: any}
 ): TriggerInfo {
@@ -59,21 +58,22 @@ export function buildTriggerInfo(
 
   const triggerInfo: TriggerInfo = {
     trigger: {
-      trigger_type: triggerType,
+      trigger_type: botRequest.triggerType,
     },
   };
 
-  if (triggerType === TriggerType.GITHUB || triggerType === TriggerType.TASK) {
-    triggerInfo.trigger.github_delivery_guid = githubDeliveryGUID;
-  }
+  if (
+    botRequest.triggerType === TriggerType.GITHUB ||
+    botRequest.triggerType === TriggerType.TASK
+  ) {
+    triggerInfo.trigger.github_delivery_guid = botRequest.githubDeliveryId;
 
-  if (triggerType === TriggerType.GITHUB) {
     const webhookProperties = {
       trigger_source_repo: getRepositoryDetails(requestBody),
       trigger_sender: requestBody.sender?.login || UNKNOWN,
       payload_hash: getPayloadHash(requestBody),
       github_event_type: getEventTypeDetails(
-        githubEventName,
+        botRequest.eventName,
         requestBody.action
       ),
     };

@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v3.1.1...datastore-lock-v3.2.0) (2022-04-14)
+
+
+### Features
+
+* throw typed error ([#3438](https://github.com/googleapis/repo-automation-bots/issues/3438)) ([8b1ae15](https://github.com/googleapis/repo-automation-bots/commit/8b1ae155a8e09e7c3073591057eee514728982dd))
+
 ### [3.1.1](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v3.1.0...datastore-lock-v3.1.1) (2022-03-04)
 
 
