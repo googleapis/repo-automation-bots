@@ -364,11 +364,13 @@ async function findAndAppendPullRequest(
         .trim() ?? '',
     WithRegenerateCheckbox.Yes
   );
+  const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
+  const apiList = abbreviateApiListForTitle(apiNames as string[]);
   await octokit.pulls.update({
     owner: params.destRepo.owner,
     repo: params.destRepo.repo,
     pull_number: pull.number,
-    title,
+    title: insertApiName(title, apiList),
     body,
   });
   return true;
@@ -498,7 +500,7 @@ command in a local clone of this repo:
 
   // Create a pull request.
   const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
-  const apiList = apiNames.length > 3 ? 'Many APIs' : apiNames.join(',');
+  const apiList = abbreviateApiListForTitle(apiNames as string[]);
   const token = await params.octokitFactory.getGitHubShortLivedAccessToken();
   const pushUrl = params.destRepo.getCloneUrl(token);
   const pull = await createPullRequestFromLastCommit(
@@ -702,7 +704,7 @@ export async function regeneratePullRequest(
   // Update the PR body with the full commit history.
   const {title, body} = resplit(commitMsg, WithRegenerateCheckbox.Yes);
 
-  const apiList = apiNames.length > 3 ? 'Many APIs' : apiNames.join(',');
+  const apiList = abbreviateApiListForTitle(apiNames);
   await octokit.pulls.update({
     owner: destRepo.owner,
     repo: destRepo.repo,
@@ -710,6 +712,19 @@ export async function regeneratePullRequest(
     title: insertApiName(title, apiList),
     body,
   });
+}
+
+/**
+ * Affected API names appears in the title of pull requests generated for
+ * mono repos.  Example:
+ *    chore: [Speech] remove unused imports
+ *            ^^^^^^
+ * This function returns a comma-separated string when there are a small
+ * number of APIs, and 'Many APIs' when there's many.  It returns an empty
+ * string if the list is empty.
+ */
+function abbreviateApiListForTitle(apiNames: string[]): string {
+  return apiNames.length > 3 ? 'Many APIs' : apiNames.join(',');
 }
 
 /**
