@@ -1,0 +1,50 @@
+{
+  "name": "googleapis-bootstrapper",
+  "version": "1.0.0",
+  "description": "Bootstraps the initial files on new APIs to generate libraries",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "fix": "npm i; gts fix",
+    "lint": "npm i; gts check"
+  },
+  "dependencies": {
+    "@google-cloud/cloudbuild": "^2.6.0",
+    "yargs": "^17.3.1"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.9",
+    "@types/jwt-encode": "^1.0.0",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^14.0.0",
+    "@types/node-fetch": "^2.6.1",
+    "@types/sinon": "^10.0.11",
+    "c8": "^7.3.5",
+    "cross-env": "^7.0.0",
+    "gts": "^3.0.0",
+    "mocha": "^8.0.0",
+    "nock": "^13.0.0",
+    "sinon": "^13.0.1",
+    "smee-client": "^1.1.0",
+    "typescript": "~4.4.3"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  }
+}
