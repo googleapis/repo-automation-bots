@@ -167,7 +167,8 @@ describe('merge-on-green wrapper logic', () => {
           'testRepo',
           1,
           'main',
-          testingOctokitInstance
+          testingOctokitInstance,
+          logger
         );
       });
       const scopes = [getBranchProtection('main', 200, ['Special Check'])];
