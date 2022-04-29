@@ -30,6 +30,7 @@ import {
   githubRepoFromOwnerSlashName,
 } from './github-repo';
 import {fetchConfigs} from './fetch-configs';
+import {shouldIgnoreRepo} from './should-ignore-repo';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
@@ -187,8 +188,7 @@ export async function scanGithubForConfigs(
   configsStore: ConfigsStore,
   octokitFactory: OctokitFactory,
   githubOrg: string,
-  orgInstallationId: number,
-  ignoreRepos: string[]
+  orgInstallationId: number
 ): Promise<void> {
   logger.info(`scan ${githubOrg} installation = ${orgInstallationId}`);
   logger.metric('owlbot.scan_github_for_configs', {
@@ -202,15 +202,18 @@ export async function scanGithubForConfigs(
   for (const repo of repos) {
     // Load the current configs from the db.
     const repoFull = `${githubOrg}/${repo.name}`;
-    if (ignoreRepos.includes(repo.name)) {
-      console.info(`Ignoring ${repoFull}`);
+    if (shouldIgnoreRepo(repoFull)) {
+      console.info(
+        `Ignoring ${repoFull} and removing its configs from the database.`
+      );
+      configsStore.clearConfigs(repoFull);
       continue;
     }
     if (repo.archived) {
-      configsStore.clearConfigs(repoFull);
       console.info(
         `Removing ${repoFull}'s configs from the database because the repo is archived.`
       );
+      configsStore.clearConfigs(repoFull);
       continue;
     }
     const configs = await configsStore.getConfigs(repoFull);
