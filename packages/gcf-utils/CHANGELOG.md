@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.5.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.0...gcf-utils-v13.5.1) (2022-04-29)
+
+
+### Bug Fixes
+
+* export GCFLogger class ([#3533](https://github.com/googleapis/repo-automation-bots/issues/3533)) ([24b3b00](https://github.com/googleapis/repo-automation-bots/commit/24b3b009e2731c8bb46ab5eddcb9cf160194df54))
+
 ## [13.5.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.4.0...gcf-utils-v13.5.0) (2022-04-28)
 
 
