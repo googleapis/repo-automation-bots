@@ -19,7 +19,7 @@ import {execSync} from 'child_process';
 // Trigger ID in gcp
 const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
 // Installation ID for owlbot-bootstrapper on googleapis/
-const INSTALLATION_ID = '123456';
+const INSTALLATION_ID = '25330619';
 const PROJECT_ID = 'owlbot-bootstrapper-prod';
 const COMMON_CONTAINER_IMAGE = `gcr.io/${PROJECT_ID}/owlbot-bootstrapper:latest`;
 
