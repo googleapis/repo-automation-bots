@@ -5,9 +5,9 @@
     "description": "Schema for flakybot configuration",
     "additionalProperties": false,
     "properties": {
-	"issuePriority": {
-	    "description": "The default priority for flakybot issues",
-	    "type": "string",
-	}
+        "issuePriority": {
+            "description": "The default priority for flakybot issues",
+            "type": "string"
+        }
     }
 }

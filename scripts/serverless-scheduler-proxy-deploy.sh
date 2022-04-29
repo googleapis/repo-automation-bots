@@ -32,4 +32,6 @@ gcloud beta run deploy \
             --platform managed \
             --region $REGION \
             --quiet \
+	    --service-account \
+	    scheduler-proxy@repo-automation-bots.iam.gserviceaccount.com \
             serverless-scheduler-proxy

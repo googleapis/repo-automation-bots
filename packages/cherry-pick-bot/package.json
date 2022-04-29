@@ -30,7 +30,7 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.0.0",
     "@octokit/rest": "^18.12.0",
-    "gcf-utils": "^13.1.0",
+    "gcf-utils": "^13.5.1",
     "yargs": "^17.3.1"
   },
   "devDependencies": {

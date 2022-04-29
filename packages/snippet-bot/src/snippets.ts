@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {Storage} from '@google-cloud/storage';
-import {logger} from 'gcf-utils';
+import {GCFLogger} from 'gcf-utils';
 
 /**
  * A simple library for parsing snippets.json file.
@@ -77,7 +77,10 @@ export const invalidateCache = () => {
   cacheTimestamp = 0;
 };
 
-export const getSnippets = async (dataBucket: string): Promise<Snippets> => {
+export const getSnippets = async (
+  dataBucket: string,
+  logger: GCFLogger
+): Promise<Snippets> => {
   const cacheExpiration = Math.floor(Date.now() / 1000) - 3600; // 1 hour;
   if (cacheTimestamp < cacheExpiration) {
     logger.info(`Fetching snippets json from ${dataBucket}.`);

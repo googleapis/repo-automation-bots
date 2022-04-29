@@ -47,9 +47,10 @@ export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
       .option('github-token', {
         describe: 'GitHub access token',
         type: 'string',
-        coerce: arg => {
-          return arg || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
-        },
+        // yargs types do not correctly handle a default option function
+        default: function fromEnvironment() {
+          return process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+        } as unknown as string,
         demand: true,
       })
       .option('repo', {

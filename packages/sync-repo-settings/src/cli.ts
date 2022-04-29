@@ -51,9 +51,10 @@ const sync: yargs.CommandModule<{}, Args> = {
         describe:
           'GitHub access token. Can also be set via the `GITHUB_TOKEN` environment variable.',
         type: 'string',
-        coerce: arg => {
-          return arg || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
-        },
+        // yargs types don't handle default being a function
+        default: function fromEnvironment() {
+          return process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+        } as unknown as string,
         demand: true,
       })
       .option('repo', {
