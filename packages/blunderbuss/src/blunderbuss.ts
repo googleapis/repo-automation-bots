@@ -14,7 +14,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {logger} from 'gcf-utils';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {
   ConfigChecker,
@@ -24,6 +23,7 @@ import {syncLabels} from '@google-automations/label-utils';
 import schema from './config-schema.json';
 import {CONFIGURATION_FILE_PATH, Configuration} from './config';
 import {BLUNDERBUSS_LABELS, assign, isIssue} from './utils';
+import {getContextLogger} from 'gcf-utils';
 
 export = (app: Probot) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +44,7 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async (context: Context<'issues'> | Context<'pull_request'>) => {
+      const logger = getContextLogger(context);
       const {owner, repo} = context.repo();
       // First check the config schema for pull requests.
       if (!isIssue(context.payload)) {
@@ -105,7 +106,7 @@ export = (app: Probot) => {
       }
 
       try {
-        await assign(context, config);
+        await assign(context, config, logger);
       } finally {
         lock.release();
       }

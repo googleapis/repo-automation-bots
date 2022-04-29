@@ -96,7 +96,7 @@ export function handler(app: Probot) {
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
-      defaultBranch: repo.default_branch,
+      defaultBranch,
     });
   });
 
@@ -126,6 +126,7 @@ export function handler(app: Probot) {
 
   app.on('repository.transferred', async context => {
     const {owner, repo} = context.repo();
+    const defaultBranch = context.payload.repository.default_branch;
     const config = await getConfig<RepoConfig>(
       context.octokit,
       owner,
@@ -137,7 +138,7 @@ export function handler(app: Probot) {
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
-      defaultBranch: repo.default_branch,
+      defaultBranch,
     });
   });
 }

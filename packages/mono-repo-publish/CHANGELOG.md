@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.2...mono-repo-publish-v1.3.0) (2022-04-22)
+
+
+### Features
+
+* **monororepo-publish:** use npm ci/install from registry ([#3480](https://github.com/googleapis/repo-automation-bots/issues/3480)) ([ab2a266](https://github.com/googleapis/repo-automation-bots/commit/ab2a26697620dded7c58cc2fcfbbfc3c220c2c15))
+
 ### [1.2.2](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.1...mono-repo-publish-v1.2.2) (2021-09-15)
 
 

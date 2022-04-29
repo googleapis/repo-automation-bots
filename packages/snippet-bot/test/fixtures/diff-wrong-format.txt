@@ -1,0 +1,38 @@
+diff --git a/test.py b/test.py
+index 198d0257595..6048151ca9f 100644
+--- a/test.py
++++ b/test.py
+@@ -21,28 +21,28 @@
+
+
+ def incomplete_key(client):
+-    # [START datastore_incomplete_key]
++    # [START datastore_incomplete_key2-wrong-format]
+     key = client.key('Task')
+-    # [END datastore_incomplete_key]
++    # [END datastore_incomplete_key2-wrong-format]
+
+     return key
+
+
+ def named_key(client):
+-    # [START datastore_named_key]
++    # [START datastore_named_key2_WRONG_FORMAT]
+     key = client.key('Task', 'sample_task')
+-    # [END datastore_named_key]
++    # [END datastore_named_key2_WRONG_FORMAT]
+
+     return key
+
+
+ def key_with_parent(client):
+-    # [START untracked_region_tag]
++    # [START key_with_parent]
+     key = client.key('TaskList', 'default', 'Task', 'sample_task')
+     # Alternatively
+     parent_key = client.key('TaskList', 'default')
+     key = client.key('Task', 'sample_task', parent=parent_key)
+-    # [END untracked_region_tag]
++    # [END key_with_parent]
+
+     return key

@@ -17,6 +17,7 @@
 
 import {Configuration, DEFAULT_CONFIGURATION} from '../src//configuration';
 import {
+  checkTagFormat,
   checkProductPrefixViolations,
   checkRemovingUsedTagViolations,
   Violation,
@@ -35,8 +36,70 @@ import {resolve} from 'path';
 import assert from 'assert';
 import {describe, it} from 'mocha';
 import * as sinon from 'sinon';
+import {GCFLogger} from 'gcf-utils';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+describe('checkTagFormat', () => {
+  const loc1: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'run_HELLO',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 42,
+  };
+  const loc2: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'run_hello-world',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 43,
+  };
+  const loc3: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'run_hello',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 43,
+  };
+  const changes: ChangesInPullRequest = {
+    changes: [loc1, loc2, loc3],
+    added: 3,
+    deleted: 0,
+    files: ['file'],
+  };
+  const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
+
+  let getApiLabelsStub: sinon.SinonStub<
+    [string, GCFLogger],
+    Promise<ApiLabels>
+  >;
+
+  const sandbox = sinon.createSandbox();
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  beforeEach(() => {
+    const apiLabels = require(resolve(
+      fixturesPath,
+      './violations-test-apiLabels'
+    ));
+    getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+    getApiLabelsStub.resolves(apiLabels);
+  });
+  it('should warn wrong tag format', async () => {
+    const result = await checkTagFormat(changes, config);
+    assert(result.length === 2);
+  });
+});
 
 describe('checkProductPrefixViolations', () => {
   const loc: RegionTagLocation = {
@@ -86,7 +149,10 @@ describe('checkProductPrefixViolations', () => {
   };
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<ApiLabels>>;
+  let getApiLabelsStub: sinon.SinonStub<
+    [string, GCFLogger],
+    Promise<ApiLabels>
+  >;
 
   const sandbox = sinon.createSandbox();
 
@@ -144,7 +210,7 @@ describe('checkRemovingUsedTagViolations', () => {
 
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
 
   const sandbox = sinon.createSandbox();
 

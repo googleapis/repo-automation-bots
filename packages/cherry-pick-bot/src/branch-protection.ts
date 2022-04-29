@@ -16,7 +16,7 @@
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof Octokit>;
 
@@ -33,7 +33,8 @@ export async function branchRequiresReviews(
   octokit: OctokitType,
   owner: string,
   repo: string,
-  branchName: string
+  branchName: string,
+  logger: GCFLogger = defaultLogger
 ): Promise<boolean> {
   try {
     const {

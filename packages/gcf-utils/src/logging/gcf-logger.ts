@@ -33,6 +33,7 @@ export class GCFLogger {
     this.warn = this.warn.bind(this);
     this.metric = this.metric.bind(this);
     this.error = this.error.bind(this);
+    this.child = this.child.bind(this);
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -160,6 +161,16 @@ export class GCFLogger {
    */
   public addBindings(properties: object) {
     this.pino = this.pino.child(properties);
+  }
+
+  /**
+   * Return a new child logger with attached static properties to all logs
+   * @param properties static properties to bind
+   */
+  public child(properties: object): GCFLogger {
+    const child = new GCFLogger(this.destination);
+    child.addBindings(properties);
+    return child;
   }
 
   /**

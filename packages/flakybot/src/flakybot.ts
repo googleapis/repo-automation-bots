@@ -29,7 +29,7 @@ import {DatastoreLock} from '@google-automations/datastore-lock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
-import {logger} from 'gcf-utils';
+import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {
   getConfigWithDefault,
   ConfigChecker,
@@ -175,6 +175,7 @@ export function flakybot(app: Probot) {
   // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async context => {
+    const logger = getContextLogger(context);
     const typedContext = context as unknown as PubSubContext;
     const owner = typedContext.payload.organization?.login;
     const repo = typedContext.payload.repository?.name;
@@ -190,7 +191,7 @@ export function flakybot(app: Probot) {
       {schema: schema}
     );
     logger.debug(`config: ${config}`);
-    typedContext.log.info(`[${owner}/${repo}] processing ${buildURL}`);
+    logger.info(`[${owner}/${repo}] processing ${buildURL}`);
 
     let results: TestResults;
     if (typedContext.payload.xunitXML) {
@@ -201,7 +202,7 @@ export function flakybot(app: Probot) {
       results = flakybot.findTestResults(xml);
     } else {
       if (typedContext.payload.testsFailed === undefined) {
-        typedContext.log.info(
+        logger.info(
           `[${owner}/${repo}] No xunitXML and no testsFailed! Skipping.`
         );
         return;
@@ -213,16 +214,16 @@ export function flakybot(app: Probot) {
       }
     }
 
-    typedContext.log.info(
+    logger.info(
       `[${owner}/${repo}] Found ${results.passes.length} passed tests and ${results.failures.length} failed tests in this result of ${buildURL}`
     );
     if (results.passes.length > 0) {
-      typedContext.log.info(
+      logger.info(
         `[${owner}/${repo}] example pass: ${results.passes[0].package}: ${results.passes[0].testCase}`
       );
     }
     if (results.failures.length > 0) {
-      typedContext.log.info(
+      logger.info(
         `[${owner}/${repo}] example failure: ${results.failures[0].package}: ${results.failures[0].testCase}`
       );
     }
@@ -246,7 +247,8 @@ export function flakybot(app: Probot) {
         issues,
         typedContext,
         owner,
-        repo
+        repo,
+        logger
       )
     ) {
       issues = await context.octokit.paginate(options);
@@ -261,7 +263,8 @@ export function flakybot(app: Probot) {
       owner,
       repo,
       commit,
-      buildURL
+      buildURL,
+      logger
     );
     // Close issues for passing tests (unless they're flaky).
     await flakybot.closeIssues(
@@ -272,7 +275,8 @@ export function flakybot(app: Probot) {
       owner,
       repo,
       commit,
-      buildURL
+      buildURL,
+      logger
     );
   });
 }
@@ -288,7 +292,8 @@ flakybot.deduplicateIssues = async (
   issues: IssuesListForRepoResponseData,
   context: PubSubContext,
   owner: string,
-  repo: string
+  repo: string,
+  logger: GCFLogger
 ) => {
   const tests = results.passes.concat(results.failures);
   issues = issues.filter(
@@ -315,7 +320,7 @@ flakybot.deduplicateIssues = async (
     // Keep the first issue, close the others.
     const issue = issues.shift();
     for (const dup of issues) {
-      context.log.info(
+      logger.info(
         `[${owner}/${repo}] closing issue #${dup.number} as duplicate of #${issue?.number}`
       );
       await context.octokit.issues.createComment({
@@ -345,7 +350,8 @@ flakybot.openIssues = async (
   owner: string,
   repo: string,
   commit: string,
-  buildURL: string
+  buildURL: string,
+  logger: GCFLogger
 ) => {
   // Group by package to see if there are any packages with 10+ failures.
   const byPackage = new Map<string, TestCase[]>();
@@ -421,7 +427,7 @@ flakybot.openIssues = async (
     if (pkgFailures.length >= 10) {
       // Open a new issue listing the failing tests.
       const testCase = flakybot.groupedTestCase(pkg);
-      context.log.info(
+      logger.info(
         `[${owner}/${repo}]: creating issue "${flakybot.formatTestCase(
           testCase
         )}"...`
@@ -453,7 +459,7 @@ flakybot.openIssues = async (
           labels: getLabelsForNewIssue(config),
         })
       ).data;
-      context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
+      logger.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
       continue;
     }
     // There is no grouped failure and there are <10 failing tests in this
@@ -468,11 +474,12 @@ flakybot.openIssues = async (
           repo,
           commit,
           buildURL,
-          failure
+          failure,
+          logger
         );
         continue;
       }
-      context.log.info(
+      logger.info(
         `[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`
       );
       // Acquire the lock, then fetch the issue and update, release the lock.
@@ -503,6 +510,7 @@ flakybot.openIssues = async (
               commit,
               buildURL,
               failure,
+              logger,
               `Note: #${existingIssueToModify.number} was also for this test, but it is locked`
             );
             continue;
@@ -526,6 +534,7 @@ flakybot.openIssues = async (
                 commit,
                 buildURL,
                 failure,
+                logger,
                 `Note: #${existingIssueToModify.number} was also for this test, but it was closed more than ${daysAgo} days ago. So, I didn't mark it flaky.`
               );
               continue;
@@ -538,7 +547,8 @@ flakybot.openIssues = async (
             config,
             owner,
             repo,
-            reason
+            reason,
+            logger
           );
         } else {
           // Don't comment if it's asked to be quiet.
@@ -621,9 +631,10 @@ flakybot.openNewIssue = async (
   commit: string,
   buildURL: string,
   failure: TestCase,
+  logger: GCFLogger,
   extraText?: string
 ) => {
-  context.log.info(
+  logger.info(
     `[${owner}/${repo}]: creating issue "${flakybot.formatTestCase(
       failure
     )}"...`
@@ -659,7 +670,8 @@ flakybot.closeIssues = async (
   owner: string,
   repo: string,
   commit: string,
-  buildURL: string
+  buildURL: string,
+  logger: GCFLogger
 ) => {
   for (const issue of issues) {
     if (issue.state === 'closed') {
@@ -702,7 +714,7 @@ flakybot.closeIssues = async (
 
     // Don't close flaky issues.
     if (flakybot.isFlaky(issue)) {
-      context.log.info(
+      logger.info(
         `[${owner}/${repo}] #${issue.number} passed, but it's flaky, so I'm not closing it`
       );
       continue;
@@ -725,7 +737,8 @@ flakybot.closeIssues = async (
         config,
         owner,
         repo,
-        reason
+        reason,
+        logger
       );
       break;
     }
@@ -733,7 +746,7 @@ flakybot.closeIssues = async (
     // The test passed and there is no previous failure in the same build.
     // If another job in the same build fails in the future, it will reopen
     // the issue.
-    context.log.info(
+    logger.info(
       `[${owner}/${repo}] closing issue #${issue.number}: ${issue.title}`
     );
     await context.octokit.issues.createComment({
@@ -830,9 +843,10 @@ flakybot.markIssueFlaky = async (
   config: Config,
   owner: string,
   repo: string,
-  reason: string
+  reason: string,
+  logger: GCFLogger
 ) => {
-  context.log.info(
+  logger.info(
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
   );
   let existingLabels;
