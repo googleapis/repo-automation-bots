@@ -23,6 +23,7 @@ import * as sinon from 'sinon';
 import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
 import {config} from '@probot/octokit-plugin-config';
+import {GCFLogger} from 'gcf-utils';
 const TestingOctokit = ProbotOctokit.plugin(config).defaults({
   retry: {enabled: false},
   throttle: {enabled: false},
@@ -75,7 +76,7 @@ function nockLabelUpdate(name: string) {
 describe('Label Sync', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
+  let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
   let loadConfigStub: sinon.SinonStub<
     [Context],
     Promise<null | labelSync.ConfigurationOptions>

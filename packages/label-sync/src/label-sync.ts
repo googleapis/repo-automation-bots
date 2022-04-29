@@ -17,7 +17,7 @@ import {Probot, Context} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
-import {logger} from 'gcf-utils';
+import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {request} from 'gaxios';
 
 const storage = new Storage();
@@ -46,14 +46,14 @@ interface Repo {
 // from the local copy.  We are using the `PushEvent` to detect the change,
 // meaning the file running in cloud will be older than the one on master.
 let labelsCache: Labels;
-async function getLabels(repoPath: string): Promise<Labels> {
+async function getLabels(repoPath: string, logger: GCFLogger): Promise<Labels> {
   if (!labelsCache) {
     await refreshLabels();
   }
   const labels = {
     labels: labelsCache.labels.slice(0),
   } as Labels;
-  const apiLabelsRes = await getApiLabels(repoPath);
+  const apiLabelsRes = await getApiLabels(repoPath, logger);
   apiLabelsRes.apis.forEach(api => {
     if (!api.github_label || !api.api_shortname) {
       logger.error(`
@@ -97,6 +97,7 @@ export function handler(app: Probot) {
       'label.deleted',
     ],
     async c => {
+      const logger = getContextLogger(c);
       const [owner, repo] = c.payload.repository.full_name.split('/');
 
       // Allow the label sync logic to be ignored for a repository.
@@ -118,12 +119,13 @@ export function handler(app: Probot) {
         return;
       }
 
-      await reconcileLabels(c.octokit, owner, repo);
+      await reconcileLabels(c.octokit, owner, repo, logger);
     }
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async c => {
+    const logger = getContextLogger(c);
     const owner = c.payload.organization.login;
     const repo = c.payload.repository.name;
 
@@ -153,14 +155,15 @@ export function handler(app: Probot) {
       return;
     }
 
-    await reconcileLabels(c.octokit, owner, repo);
+    await reconcileLabels(c.octokit, owner, repo, logger);
   });
 
   app.on('installation_repositories.added', async c => {
+    const logger = getContextLogger(c);
     await Promise.all(
       c.payload.repositories_added.map((r: Repo) => {
         const [owner, repo] = r.full_name.split('/');
-        return reconcileLabels(c.octokit, owner, repo);
+        return reconcileLabels(c.octokit, owner, repo, logger);
       })
     );
   });
@@ -200,7 +203,8 @@ interface PublicReposResponse {
  * @param repoPath
  */
 export const getApiLabels = async (
-  repoPath: string
+  repoPath: string,
+  logger: GCFLogger
 ): Promise<GetApiLabelsResponse> => {
   const publicRepos = await storage
     .bucket('devrel-prod-settings')
@@ -242,9 +246,10 @@ export const getApiLabels = async (
 async function reconcileLabels(
   github: Context['octokit'],
   owner: string,
-  repo: string
+  repo: string,
+  logger: GCFLogger
 ) {
-  const newLabels = await getLabels(`${owner}/${repo}`);
+  const newLabels = await getLabels(`${owner}/${repo}`, logger);
   const oldLabels = await github.paginate(github.issues.listLabelsForRepo, {
     owner,
     repo,
