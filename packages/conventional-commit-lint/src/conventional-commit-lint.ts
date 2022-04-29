@@ -18,7 +18,7 @@ import lint from '@commitlint/lint';
 import {components} from '@octokit/openapi-types';
 
 import {rules} from '@commitlint/config-conventional';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 
 type PullsListCommitsResponseData = components['schemas']['commit'][];
 
@@ -47,6 +47,7 @@ const AUTOMERGE_LABEL = 'automerge';
 
 export = (app: Probot) => {
   app.on('pull_request', async context => {
+    const logger = getContextLogger(context);
     // Fetch last 100 commits stored on a specific PR.
     const commitParams = context.repo({
       pull_number: context.payload.pull_request.number,
