@@ -37,7 +37,9 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY --from=BUILD /usr/src/app/build build
 
-RUN npm ci --only=production
+RUN npm install -g npm
+
+RUN npm install
 
 ENV NODE_ENV "production"
 

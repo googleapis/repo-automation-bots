@@ -76,7 +76,7 @@
     "firebase-admin": "^10.0.0",
     "fs-extra": "^10.0.0",
     "gaxios": "^5.0.0",
-    "gcf-utils": "^13.3.1",
+    "gcf-utils": "^13.5.2",
     "glob": "^8.0.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
