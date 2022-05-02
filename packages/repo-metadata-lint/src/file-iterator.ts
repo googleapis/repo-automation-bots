@@ -14,7 +14,7 @@
 
 import {OctokitType} from './utils/octokit-util';
 import {Storage} from '@google-cloud/storage';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 
 /**
  * This interface is used for comforting typescript's type system to
@@ -42,18 +42,27 @@ export class FileIterator {
   owner: string;
   repo: string;
   storage: Storage;
+  logger: GCFLogger;
   lastSha?: string;
-  constructor(owner: string, repo: string, octokit: OctokitType) {
+  constructor(
+    owner: string,
+    repo: string,
+    octokit: OctokitType,
+    logger: GCFLogger = defaultLogger
+  ) {
     this.octokit = octokit;
     this.owner = owner;
     this.repo = repo;
     this.storage = new Storage();
+    this.logger = logger;
   }
   // Emit any .repo-metadata.json files found in file listing.
   async *repoMetadata() {
     const files = await this.getFileListing();
     if (!files) {
-      logger.warn(`unable to find file listing for ${this.owner}/${this.repo}`);
+      this.logger.warn(
+        `unable to find file listing for ${this.owner}/${this.repo}`
+      );
       return;
     }
     for (const path of files.trim().split(/\r?\n/)) {
@@ -90,7 +99,7 @@ export class FileIterator {
       if (commit) {
         // https://storage.cloud.google.com/github_commit_cache/owners/googleapis/repos/common-protos-ruby/commits/05c465a67533c9b0f71b1ff49903743a657c4208/file_manifest.txt
         const manifestFile = `owners/${this.owner}/repos/${this.repo}/commits/${commit.sha}/file_manifest.txt`;
-        logger.info(`get ${manifestFile} from ${COMMIT_CACHE_BUCKET}`);
+        this.logger.info(`get ${manifestFile} from ${COMMIT_CACHE_BUCKET}`);
         try {
           const [result] = await this.storage
             .bucket(COMMIT_CACHE_BUCKET)
@@ -104,7 +113,7 @@ export class FileIterator {
           if (err.code === 404) {
             continue;
           } else {
-            logger.error(
+            this.logger.error(
               `received error code = ${err.code} msg = ${err.message}`,
               err
             );
