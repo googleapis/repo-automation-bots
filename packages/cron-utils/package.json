@@ -19,7 +19,7 @@
   "dependencies": {
     "@google-cloud/scheduler": "^2.3.0",
     "@googleapis/run": "^8.0.2",
-    "google-auth-library": "^7.14.1",
+    "google-auth-library": "^8.0.0",
     "js-yaml": "^4.1.0",
     "yargs": "^17.4.1"
   },

@@ -46,6 +46,6 @@
     "@googleapis/iam": "^2.3.0",
     "express": "^4.17.3",
     "gcf-utils": "^13.3.0",
-    "google-auth-library": "^7.14.1"
+    "google-auth-library": "^8.0.0"
   }
 }
