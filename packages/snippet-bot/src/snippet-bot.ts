@@ -47,7 +47,7 @@ import schema from './config-schema.json';
 
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {logger, addOrUpdateIssueComment} from 'gcf-utils';
+import {addOrUpdateIssueComment, getContextLogger, GCFLogger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
 import tar from 'tar';
@@ -96,7 +96,8 @@ async function getFiles(dir: string, allFiles: string[]) {
 
 async function fullScan(
   context: Context<'issues'>,
-  configuration: Configuration
+  configuration: Configuration,
+  logger: GCFLogger
 ) {
   const installationId = context.payload.installation?.id;
   const commentMark = `<!-- probot comment [${installationId}]-->`;
@@ -217,6 +218,7 @@ async function scanPullRequest(
   context: Context<'pull_request'> | Context<'issue_comment'>,
   pull_request: PullRequest,
   configuration: Configuration,
+  logger: GCFLogger,
   refreshing = false
 ) {
   const installationId = context.payload.installation?.id;
@@ -238,7 +240,8 @@ async function scanPullRequest(
     pull_request.base.sha,
     pull_request.head.repo.owner.login,
     pull_request.head.repo.name,
-    pull_request.head.sha
+    pull_request.head.sha,
+    logger
   );
 
   let mismatchedTags = false;
@@ -358,7 +361,8 @@ async function scanPullRequest(
   if (!noPrefixReq) {
     productPrefixViolations = await checkProductPrefixViolations(
       result,
-      configuration
+      configuration,
+      logger
     );
   }
 
@@ -371,7 +375,8 @@ async function scanPullRequest(
     configuration,
     parseResults,
     pull_request.base.repo.full_name,
-    pull_request.base.ref
+    pull_request.base.ref,
+    logger
   );
   const removeUsedTagViolations = [
     ...(removingUsedTagsViolations.get('REMOVE_USED_TAG') as Violation[]),
@@ -642,6 +647,7 @@ function getCommentMark(installationId: number | undefined): string {
 export = (app: Probot) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const configOptions = await getConfig<ConfigurationOptions>(
@@ -658,6 +664,7 @@ export = (app: Probot) => {
     await syncLabels(context.octokit, owner, repo, SNIPPET_BOT_LABELS);
   });
   app.on('issue_comment.edited', async context => {
+    const logger = getContextLogger(context);
     const commentMark = getCommentMark(context.payload.installation?.id);
 
     // If the comment is made by bots, and the comment has the refresh
@@ -702,11 +709,13 @@ export = (app: Probot) => {
       context,
       prResponse.data as PullRequest,
       configuration,
+      logger,
       true
     );
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const configOptions = await getConfig<ConfigurationOptions>(
@@ -726,10 +735,11 @@ export = (app: Probot) => {
       ...configOptions,
     });
     logger.info({config: configuration});
-    await fullScan(context, configuration);
+    await fullScan(context, configuration, logger);
   });
 
   app.on('pull_request.labeled', async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const configOptions = await getConfig<ConfigurationOptions>(
@@ -782,6 +792,7 @@ export = (app: Probot) => {
       context,
       context.payload.pull_request as PullRequest,
       configuration,
+      logger,
       true
     );
   });
@@ -794,6 +805,7 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
+      const logger = getContextLogger(context);
       // Exit if the PR is closed.
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
@@ -848,7 +860,8 @@ export = (app: Probot) => {
       await scanPullRequest(
         context,
         context.payload.pull_request as PullRequest,
-        configuration
+        configuration,
+        logger
       );
     }
   );

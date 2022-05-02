@@ -16,7 +16,7 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {logger} from 'gcf-utils';
+import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
@@ -55,7 +55,8 @@ const TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
 async function doTriggerWithLock(
   octokit: Octokit,
   pullRequest: PullRequest,
-  token: string
+  token: string,
+  logger: GCFLogger
 ) {
   const lock = new DatastoreLock(
     TRIGGER_LOCK_ID,
@@ -82,7 +83,7 @@ async function doTriggerWithLock(
   try {
     // double-check that the pull request is triggerable
     if (isReleasePullRequest(pullRequest)) {
-      await doTrigger(octokit, pullRequest, token);
+      await doTrigger(octokit, pullRequest, token, logger);
     } else {
       logger.warn(`Skipping triggering release PR: ${pullRequest.html_url}`);
     }
@@ -101,7 +102,8 @@ async function doTriggerWithLock(
 async function doTrigger(
   octokit: Octokit,
   pullRequest: PullRequest,
-  token: string
+  token: string,
+  logger: GCFLogger
 ) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
@@ -128,6 +130,7 @@ async function doTrigger(
 export = (app: Probot) => {
   // When a release is published, try to trigger the release
   app.on('release.published', async context => {
+    const logger = getContextLogger(context);
     const repository = context.payload.repository;
     const repoUrl = repository.full_name;
     const owner = repository.owner.login;
@@ -175,13 +178,14 @@ export = (app: Probot) => {
         continue;
       }
 
-      await doTriggerWithLock(context.octokit, pullRequest, token);
+      await doTriggerWithLock(context.octokit, pullRequest, token, logger);
     }
   });
 
   // When a release PR is labeled with `autorelease: published`, remove
   // the `autorelease: tagged` and `autorelease: triggered` labels
   app.on('pull_request.labeled', async context => {
+    const logger = getContextLogger(context);
     const repository = context.payload.repository;
     const repoUrl = repository.full_name;
     const owner = repository.owner.login;
@@ -227,6 +231,7 @@ export = (app: Probot) => {
   // Try to trigger the job on removing the `autorelease: triggered` label.
   // This functionality is to retry a failed release.
   app.on('pull_request.unlabeled', async context => {
+    const logger = getContextLogger(context);
     const repository = context.payload.repository;
     const repoUrl = repository.full_name;
     const owner = repository.owner.login;
@@ -278,12 +283,14 @@ export = (app: Probot) => {
     await doTriggerWithLock(
       context.octokit,
       context.payload.pull_request,
-      token
+      token,
+      logger
     );
   });
 
   // Check the config schema on PRs.
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
+    const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
 
     if (!ALLOWED_ORGANIZATIONS.includes(owner)) {

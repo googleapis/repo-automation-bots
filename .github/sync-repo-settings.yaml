@@ -8,6 +8,13 @@ branchProtectionRules:
     - 'changeFinder'
     - 'finale'
     - 'cla/google'
+    - 'packages-bazel-bot-docker-image-test (repo-automation-bots)'
+    - 'packages-canary-bot-test (repo-automation-bots)'
+    - 'packages-cherry-pick-bot-test (repo-automation-bots)'
+    - 'packages-gcf-utils-test (repo-automation-bots)'
+    - 'packages-owl-bot-test (repo-automation-bots)'
+    - 'packages-release-trigger-test (repo-automation-bots)'
+    - 'serverless-scheduler-proxy-test (repo-automation-bots)'
   requiredApprovingReviewCount: 1
   requiresCodeOwnerReviews: true
   requiresStrictStatusChecks: true
