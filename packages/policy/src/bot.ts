@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 import {getPolicy} from './policy';
 import {exportToBigQuery} from './export';
 import {getChanger} from './changer';
@@ -25,6 +25,7 @@ export const allowedOrgs = ['googleapis', 'googlecloudplatform'];
 export function policyBot(app: Probot) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on(['schedule.repository' as any], async context => {
+    const logger = getContextLogger(context);
     const owner: string = context.payload.organization.login;
     const name: string = context.payload.repository.name;
     const repo = `${owner}/${name}`;
