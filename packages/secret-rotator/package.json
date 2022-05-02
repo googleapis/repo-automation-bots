@@ -34,6 +34,7 @@
     "@types/mocha": "^9.1.0",
     "@types/sinon": "^10.0.11",
     "c8": "^7.11.0",
+    "chokidar": "^3.5.3",
     "gaxios": "^5.0.0",
     "gts": "^3.1.0",
     "mocha": "^9.2.2",
@@ -47,8 +48,5 @@
     "express": "^4.17.3",
     "gcf-utils": "^13.3.0",
     "google-auth-library": "^7.14.1"
-  },
-  "optionalDependencies": {
-    "fsevents": "~2.3.2"
   }
 }
