@@ -16,7 +16,7 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {
   Annotation,
@@ -54,13 +54,15 @@ function isTrustedContribution(
 
 export = (app: Probot) => {
   app.on(['pull_request'], async context => {
-    app.log(
+    const logger = getContextLogger(context);
+    logger.info(
       `repo = ${context.payload.repository.name} PR = ${context.payload.pull_request.number} action = ${context.payload.action}`
     );
   });
 
   // Track estimate of how often a kokoro:run or kokoro:force-run label is being added manually:
   app.on(['pull_request.labeled'], async context => {
+    const logger = getContextLogger(context);
     const hasKokoroLabel = context.payload.pull_request.labels.some(label => {
       return KOKORO_RUN_LABELS.includes(label.name);
     });
@@ -70,7 +72,7 @@ export = (app: Probot) => {
         context.payload.pull_request.base.repo
       )
     ) {
-      console.info('head or base null', context.payload.pull_request.url);
+      logger.info('head or base null', context.payload.pull_request.url);
       return;
     }
     const head = context.payload.pull_request.head.repo.full_name;
@@ -93,6 +95,7 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
+      const logger = getContextLogger(context);
       const {owner, repo} = context.repo();
       const configChecker = new ConfigChecker<ConfigurationOptions>(
         schema,
