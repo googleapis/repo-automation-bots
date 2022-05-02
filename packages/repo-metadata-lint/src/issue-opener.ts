@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {ErrorMessageText} from './error-message-text';
 import {OctokitType} from './utils/octokit-util';
 import {ValidationResult} from './validate';
@@ -26,10 +26,17 @@ export class IssueOpener {
   octokit: OctokitType;
   owner: string;
   repo: string;
-  constructor(owner: string, repo: string, octokit: OctokitType) {
+  logger: GCFLogger;
+  constructor(
+    owner: string,
+    repo: string,
+    octokit: OctokitType,
+    logger: GCFLogger = defaultLogger
+  ) {
     this.octokit = octokit;
     this.owner = owner;
     this.repo = repo;
+    this.logger = logger;
   }
   async open(results: ValidationResult[]) {
     let update = false;
@@ -46,14 +53,14 @@ export class IssueOpener {
       update = true;
       updateIssueNumber = issue.number;
       if (ErrorMessageText.eql(issue.body || '', results)) {
-        logger.info(
+        this.logger.info(
           `${this.owner}/${this.repo} has identical issue ${issue.number}`
         );
         return;
       }
     }
     if (results.length === 0) {
-      logger.info(`${this.owner}/${this.repo} has no validation errors`);
+      this.logger.info(`${this.owner}/${this.repo} has no validation errors`);
       if (update) {
         await this.octokit.issues.update({
           owner: this.owner,

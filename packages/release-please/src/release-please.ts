@@ -21,7 +21,7 @@ import {Octokit} from '@octokit/rest';
 // GitHubAPI interface:
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
-import {logger} from 'gcf-utils';
+import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {
@@ -176,7 +176,8 @@ async function buildGitHub(
 async function buildManifest(
   github: GitHub,
   repoLanguage: string | null,
-  configuration: BranchConfiguration
+  configuration: BranchConfiguration,
+  logger: GCFLogger
 ): Promise<Manifest> {
   if (configuration.manifest) {
     logger.info('building from manifest file');
@@ -226,6 +227,7 @@ async function buildManifest(
 
 const handler = (app: Probot) => {
   app.on('push', async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoLanguage = context.payload.repository.language;
@@ -273,7 +275,8 @@ const handler = (app: Probot) => {
       let manifest = await buildManifest(
         github,
         repoLanguage,
-        branchConfiguration
+        branchConfiguration,
+        logger
       );
 
       // release-please can handle creating a release on GitHub, we opt not to do
@@ -289,7 +292,8 @@ const handler = (app: Probot) => {
             manifest = await buildManifest(
               github,
               repoLanguage,
-              branchConfiguration
+              branchConfiguration,
+              logger
             );
           }
         } catch (e) {
@@ -323,6 +327,7 @@ const handler = (app: Probot) => {
   // See: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
@@ -352,6 +357,7 @@ const handler = (app: Probot) => {
   });
 
   app.on('pull_request.labeled', async context => {
+    const logger = getContextLogger(context);
     // if missing the label, skip
     if (
       // See: https://github.com/probot/probot/issues/1366
@@ -422,13 +428,15 @@ const handler = (app: Probot) => {
       const manifest = await buildManifest(
         github,
         repoLanguage,
-        branchConfiguration
+        branchConfiguration,
+        logger
       );
       await Runner.createPullRequests(manifest);
     }
   });
 
   app.on('release.created', async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
@@ -469,6 +477,7 @@ const handler = (app: Probot) => {
 
   // If a release PR is closed unmerged, label with autorelease: closed
   app.on('pull_request.closed', async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
@@ -514,6 +523,7 @@ const handler = (app: Probot) => {
 
   // If a closed release PR is reopened, re-label with autorelease: pending
   app.on('pull_request.reopened', async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const remoteConfiguration = await getConfig<ConfigurationOptions>(

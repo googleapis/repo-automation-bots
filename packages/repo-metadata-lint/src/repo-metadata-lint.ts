@@ -14,7 +14,7 @@
 
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 import * as fileIterator from './file-iterator';
 import {Validate, ValidationResult} from './validate';
 import {IssueOpener} from './issue-opener';
@@ -26,12 +26,14 @@ export function handler(app: Probot) {
   // Nightly cron opens tracking issues for fixing errors in .repo-metadata.json.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const iterator = new fileIterator.FileIterator(
       owner,
       repo,
-      context.octokit
+      context.octokit,
+      logger
     );
     const results: Array<ValidationResult> = [];
     const validate = new Validate(context.octokit);
@@ -48,12 +50,13 @@ export function handler(app: Probot) {
         `${results.length} validation errors found for ${owner}/${repo}`
       );
     }
-    const opener = new IssueOpener(owner, repo, context.octokit);
+    const opener = new IssueOpener(owner, repo, context.octokit, logger);
     await opener.open(results);
   });
 
   // Adds failing check to pull requests if .repo-metadata.json is invalid.
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
+    const logger = getContextLogger(context);
     const owner = context.payload.repository.owner.login;
     // const repo = context.payload.repository.name;
     logger.info('pr opened endpoint', owner);
