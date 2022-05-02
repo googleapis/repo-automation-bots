@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.5.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.1...gcf-utils-v13.5.2) (2022-05-02)
+
+
+### Bug Fixes
+
+* recalculate request bindings for downloaded payloads ([#3582](https://github.com/googleapis/repo-automation-bots/issues/3582)) ([ae3d35c](https://github.com/googleapis/repo-automation-bots/commit/ae3d35c8b9b875ba7a3b73ac10fbabbabd5adbe2))
+
 ### [13.5.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.0...gcf-utils-v13.5.1) (2022-04-29)
 
 
