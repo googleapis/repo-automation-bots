@@ -27,6 +27,7 @@ import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
 import {ConfigurationV2, Configuration, Reviews} from '../src/interfaces';
 import * as fs from 'fs';
+import {logger} from 'gcf-utils';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -568,7 +569,7 @@ describe('auto-approve', () => {
       it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
         sandbox.stub(process, 'env').value({});
         process.env.RELEASE_FREEZE = 'true';
-        const consoleStub = sandbox.stub(console, 'info');
+        const consoleStub = sandbox.stub(logger, 'info');
 
         const payload = require(resolve(
           fixturesPath,

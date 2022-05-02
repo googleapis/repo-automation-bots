@@ -16,7 +16,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 import {checkPRAgainstConfig} from './check-pr';
 import {checkPRAgainstConfigV2} from './check-pr-v2';
 import {
@@ -163,6 +163,7 @@ export function handler(app: Probot) {
       'pull_request.synchronize',
     ],
     async (context: Context<'pull_request'>) => {
+      const logger = getContextLogger(context);
       const pr = context.payload;
       const owner = pr.repository.owner.login;
       const repoHead = pr.pull_request.head.repo.name;
@@ -176,7 +177,7 @@ export function handler(app: Probot) {
         process.env.RELEASE_FREEZE === 'true' &&
         pr.pull_request.user.login.includes('release-please')
       ) {
-        console.info(
+        logger.info(
           'releases are currently frozen, unset the environment variable RELEASE_FREEZE to re-enable.'
         );
         return;
@@ -186,7 +187,8 @@ export function handler(app: Probot) {
         context.octokit,
         owner,
         repo,
-        prNumber
+        prNumber,
+        logger
       );
 
       // Check to see if the config is being modified in the PR, before we check
@@ -275,13 +277,15 @@ export function handler(app: Probot) {
             isPRValid = await checkPRAgainstConfigV2(
               config,
               context.payload,
-              context.octokit
+              context.octokit,
+              logger
             );
           } else {
             isPRValid = await checkPRAgainstConfig(
               config,
               context.payload,
-              context.octokit
+              context.octokit,
+              logger
             );
           }
 
