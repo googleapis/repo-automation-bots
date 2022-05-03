@@ -152,18 +152,10 @@ function getPR(
 describe('merge-logic', () => {
   let probot: Probot;
   let loggerStub: SinonStub;
-  // TODO(sofisl): Remove once metrics have been collected (06/15/21)
-  let mathRandomStub: SinonStub;
-
-  before(() => {
-    loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
-  });
-
-  after(() => {
-    loggerStub.restore();
-  });
 
   beforeEach(() => {
+    loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
+    sandbox.stub(handler, 'removePR').resolves(undefined);
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -176,23 +168,17 @@ describe('merge-logic', () => {
 
     probot.load(handler);
     // TODO(sofisl): Remove once metrics have been collected (06/15/21)
-    mathRandomStub = sinon.stub(Math, 'random').returns(0.1);
+    sandbox.stub(Math, 'random').returns(0.1);
   });
 
   afterEach(() => {
-    //loggerStub.restore();
     nock.cleanAll();
-    // TODO(sofisl): Remove once metrics have been collected (06/15/21)
-    mathRandomStub.restore();
+    sandbox.restore();
   });
 
-  handler.removePR = async () => {
-    return Promise.resolve(undefined);
-  };
-
   describe('with default/normal get Datastore payload', () => {
-    handler.getDatastore = async () => {
-      const pr = [
+    beforeEach(() => {
+      sandbox.stub(handler, 'getDatastore').resolves([
         [
           {
             repo: 'testRepo',
@@ -207,9 +193,8 @@ describe('merge-logic', () => {
             installationId: 123456,
           },
         ],
-      ];
-      return pr;
-    };
+      ]);
+    });
 
     it('merges a PR on green', async () => {
       const scopes = [
@@ -646,23 +631,20 @@ describe('merge-logic', () => {
 
   describe('with different Datastore payloads', () => {
     it('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: -14254782000,
-              branchProtection: ['Special Check'],
-              label: 'automerge',
-              author: 'testOwner',
-              reactionId: 1,
-            },
-          ],
-        ];
-        return pr;
-      };
+      sandbox.stub(handler, 'getDatastore').resolves([
+        [
+          {
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            created: -14254782000,
+            branchProtection: ['Special Check'],
+            label: 'automerge',
+            author: 'testOwner',
+            reactionId: 1,
+          },
+        ],
+      ]);
 
       const scopes = [
         getRateLimit(5000),
@@ -701,23 +683,20 @@ describe('merge-logic', () => {
     });
 
     it('rejects status checks that do not match the required check', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: Date.now(),
-              branchProtection: ["this is what we're looking for"],
-              label: 'automerge',
-              author: 'testOwner',
-              reactionId: 1,
-            },
-          ],
-        ];
-        return pr;
-      };
+      sandbox.stub(handler, 'getDatastore').resolves([
+        [
+          {
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            created: Date.now(),
+            branchProtection: ["this is what we're looking for"],
+            label: 'automerge',
+            author: 'testOwner',
+            reactionId: 1,
+          },
+        ],
+      ]);
 
       const scopes = [
         getRateLimit(5000),
@@ -760,23 +739,20 @@ describe('merge-logic', () => {
     });
 
     it('accepts status checks that match the beginning of the required status check', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: Date.now(),
-              branchProtection: ["this is what we're looking for"],
-              label: 'automerge',
-              author: 'testOwner',
-              reactionId: 1,
-            },
-          ],
-        ];
-        return pr;
-      };
+      sandbox.stub(handler, 'getDatastore').resolves([
+        [
+          {
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            created: Date.now(),
+            branchProtection: ["this is what we're looking for"],
+            label: 'automerge',
+            author: 'testOwner',
+            reactionId: 1,
+          },
+        ],
+      ]);
 
       const scopes = [
         getRateLimit(5000),
@@ -819,23 +795,20 @@ describe('merge-logic', () => {
     });
 
     it('merges a PR on green with exact label', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: Date.now(),
-              branchProtection: ['Special Check'],
-              label: 'automerge: exact',
-              author: 'testOwner',
-              reactionId: 1,
-            },
-          ],
-        ];
-        return pr;
-      };
+      sandbox.stub(handler, 'getDatastore').resolves([
+        [
+          {
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            created: Date.now(),
+            branchProtection: ['Special Check'],
+            label: 'automerge: exact',
+            author: 'testOwner',
+            reactionId: 1,
+          },
+        ],
+      ]);
 
       const scopes = [
         getRateLimit(5000),
@@ -875,23 +848,20 @@ describe('merge-logic', () => {
     });
 
     it('dismisses reviews if automerge label is set to exact', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: Date.now(),
-              branchProtection: ['Special Check'],
-              label: 'automerge: exact',
-              author: 'testOwner',
-              reactionId: 1,
-            },
-          ],
-        ];
-        return pr;
-      };
+      sandbox.stub(handler, 'getDatastore').resolves([
+        [
+          {
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            created: Date.now(),
+            branchProtection: ['Special Check'],
+            label: 'automerge: exact',
+            author: 'testOwner',
+            reactionId: 1,
+          },
+        ],
+      ]);
 
       const scopes = [
         getRateLimit(5000),
