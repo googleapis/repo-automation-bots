@@ -38,6 +38,7 @@ interface HeadSha {
 interface CheckRuns {
   name: string;
   conclusion: string;
+  status: string;
 }
 
 nock.disableNetConnect();
@@ -324,6 +325,7 @@ describe('merge-logic', () => {
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: '',
           conclusion: '',
+          status: '',
         }),
         getCommentsOnPr([]),
       ];
@@ -394,6 +396,48 @@ describe('merge-logic', () => {
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: 'Special Check',
           conclusion: 'success',
+          status: 'completed',
+        }),
+        getCommentsOnPr([]),
+        getPR(true, 'clean', 'open'),
+        merge(),
+        removeMogLabel('automerge'),
+        removeReaction(),
+      ];
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('passes if checks are marked neutral check runs', async () => {
+      const scopes = [
+        getRateLimit(5000),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+          name: 'Special Check',
+          conclusion: 'neutral',
+          status: 'completed',
         }),
         getCommentsOnPr([]),
         getPR(true, 'clean', 'open'),
@@ -434,6 +478,7 @@ describe('merge-logic', () => {
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: 'Special Check',
           conclusion: 'success',
+          status: 'completed',
         }),
         getCommentsOnPr([]),
         getPR(true, 'clean', 'open', [{name: 'do not merge'}]),
@@ -464,6 +509,44 @@ describe('merge-logic', () => {
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: 'Special Check',
           conclusion: 'success',
+          status: 'completed',
+        }),
+        getCommentsOnPr([]),
+      ];
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('fails if the check is incomplete', async () => {
+      const scopes = [
+        getRateLimit(5000),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+          name: 'Special Check',
+          conclusion: 'success',
+          status: 'in_progress',
         }),
         getCommentsOnPr([]),
       ];
@@ -718,6 +801,7 @@ describe('merge-logic', () => {
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: "this is what we're looking fo",
           conclusion: 'success',
+          status: 'completed',
         }),
         getCommentsOnPr([]),
       ];
