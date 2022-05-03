@@ -120,6 +120,7 @@ handler.listPRs = async function listPRs(
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
     let state = 'continue';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const url = (pr as any)[datastore.KEY]?.name;
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
