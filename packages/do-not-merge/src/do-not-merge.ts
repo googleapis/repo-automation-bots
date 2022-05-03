@@ -15,7 +15,7 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Probot, Context} from 'probot';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 import {
   ConfigChecker,
   getConfigWithDefault,
@@ -49,6 +49,7 @@ export = (app: Probot) => {
       'pull_request.synchronize', // To run the check on every commit.
     ],
     async (context: Context<'pull_request'>) => {
+      const logger = getContextLogger(context);
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
           `The pull request ${context.payload.pull_request.url} is closed, exiting.`
@@ -152,6 +153,7 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
+      const logger = getContextLogger(context);
       // Exit if the PR is closed.
       if (context.payload.pull_request.state === 'closed') {
         logger.info(

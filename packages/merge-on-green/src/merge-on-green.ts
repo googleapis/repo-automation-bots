@@ -21,7 +21,7 @@ import {Octokit} from '@octokit/rest';
 import {Datastore} from '@google-cloud/datastore';
 import {syncLabels} from '@google-automations/label-utils';
 import {mergeOnGreen} from './merge-logic';
-import {logger} from 'gcf-utils';
+import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {
   MERGE_ON_GREEN_LABEL,
   MERGE_ON_GREEN_LABEL_SECURE,
@@ -120,6 +120,7 @@ handler.listPRs = async function listPRs(
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
     let state = 'continue';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const url = (pr as any)[datastore.KEY]?.name;
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
@@ -160,7 +161,7 @@ handler.getPR = async function getPR(url: string) {
  * @param url type string
  * @returns void
  */
-handler.removePR = async function removePR(url: string) {
+handler.removePR = async function removePR(url: string, logger: GCFLogger) {
   const key = datastore.key([TABLE, url]);
   await datastore.delete(key);
   logger.info(`PR ${url} was removed`);
@@ -221,7 +222,8 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   label: string,
   reactionId: number,
   url: string,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ) {
   let pr;
   let labels;
@@ -257,7 +259,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   );
 
   if (pr?.merged || pr?.state === 'closed' || !foundLabel) {
-    await handler.removePR(url);
+    await handler.removePR(url, logger);
     await handler.cleanUpPullRequest(
       owner,
       repo,
@@ -281,7 +283,8 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
   repo: string,
   prNumber: number,
   baseBranch: string | undefined,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
   // Check to see if branch protection exists
@@ -324,7 +327,8 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
 handler.addPR = async function addPR(
   incomingPR: IncomingPR,
   url: string,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ) {
   let branchProtection: string[] | undefined;
   try {
@@ -333,7 +337,8 @@ handler.addPR = async function addPR(
       incomingPR.repo,
       incomingPR.number,
       incomingPR.branch,
-      github
+      github,
+      logger
     );
   } catch (e) {
     const err = e as Error;
@@ -387,7 +392,8 @@ handler.addPR = async function addPR(
 handler.cleanDatastoreTable = async function cleanDatastoreTable(
   watchedPRs: DatastorePR[],
   app: Probot,
-  context: Context
+  context: Context,
+  logger: GCFLogger
 ) {
   while (watchedPRs.length) {
     const work = watchedPRs.splice(0, WORKER_SIZE);
@@ -404,7 +410,8 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
           wp.label,
           wp.reactionId,
           wp.url,
-          github
+          github,
+          logger
         );
       })
     );
@@ -420,7 +427,8 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
  */
 handler.checkPRMergeability = async function checkPRMergeability(
   watchedPRs: DatastorePR[],
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger
 ) {
   while (watchedPRs.length) {
     const work = watchedPRs.splice(0, WORKER_SIZE);
@@ -437,10 +445,11 @@ handler.checkPRMergeability = async function checkPRMergeability(
             wp.branchProtection!,
             wp.label,
             wp.author,
-            octokit
+            octokit,
+            logger
           );
           if (remove || wp.state === 'stop') {
-            await handler.removePR(wp.url);
+            await handler.removePR(wp.url, logger);
             try {
               await handler.cleanUpPullRequest(
                 wp.owner,
@@ -473,7 +482,8 @@ handler.checkPRMergeability = async function checkPRMergeability(
  */
 handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
   github: Octokit,
-  org: string
+  org: string,
+  logger: GCFLogger
 ) {
   // Github does not support searching the labels with 'OR'.
   // The searching for issues is considered to be an "AND" instead of an "OR" .
@@ -510,7 +520,8 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           installationId,
         },
         issue.html_url,
-        github
+        github,
+        logger
       );
     }
   }
@@ -539,7 +550,8 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           installationId,
         },
         issue.html_url,
-        github
+        github,
+        logger
       );
     }
   }
@@ -559,19 +571,21 @@ export function handler(app: Probot) {
   // That are closed or do not have an applicable label anymore.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.global' as any, async context => {
+    const logger = getContextLogger(context);
     if (context.payload.cleanUp !== true) {
       return;
     }
 
     logger.info('Starting clean up job');
     const watchedPRs = await handler.listPRs();
-    await handler.cleanDatastoreTable(watchedPRs, app, context);
+    await handler.cleanDatastoreTable(watchedPRs, app, context, logger);
   });
 
   // This scheduled job looks for PRs that have an applicable label
   // but are not in the database for whatever reason (missed webhook).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.installation' as any, async context => {
+    const logger = getContextLogger(context);
     if (context.payload.findHangingPRs !== true) {
       return;
     }
@@ -594,7 +608,8 @@ export function handler(app: Probot) {
     // to divide up the cron jobs based on org
     await handler.scanForMissingPullRequests(
       context.octokit,
-      context.payload.cron_org
+      context.payload.cron_org,
+      logger
     );
     return;
   });
@@ -603,6 +618,7 @@ export function handler(app: Probot) {
   // mergeable PRs.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.installation' as any, async context => {
+    const logger = getContextLogger(context);
     if (context.payload.performMerge !== true) {
       return;
     }
@@ -616,7 +632,7 @@ export function handler(app: Probot) {
     logger.info(`Starting merge checks for installation: ${installationId}`);
     const watchedPRs = await handler.listPRs(installationId);
     const start = Date.now();
-    await handler.checkPRMergeability(watchedPRs, context.octokit);
+    await handler.checkPRMergeability(watchedPRs, context.octokit, logger);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
 
@@ -624,6 +640,7 @@ export function handler(app: Probot) {
   // merge-on-green labels created and available.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     if (context.payload.syncLabels !== true) {
       return;
     }
@@ -634,6 +651,7 @@ export function handler(app: Probot) {
   });
 
   app.on('pull_request.labeled', async context => {
+    const logger = getContextLogger(context);
     const prNumber = context.payload.pull_request.number;
     const author = context.payload.pull_request.user.login;
     const owner = context.payload.repository.owner.login;
@@ -678,11 +696,13 @@ export function handler(app: Probot) {
         installationId,
       },
       context.payload.pull_request.html_url,
-      context.octokit
+      context.octokit,
+      logger
     );
   });
 
   app.on(['pull_request.unlabeled'], async context => {
+    const logger = getContextLogger(context);
     const prNumber = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
@@ -710,7 +730,7 @@ export function handler(app: Probot) {
     );
     logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
     if (watchedPullRequest) {
-      await handler.removePR(context.payload.pull_request.html_url);
+      await handler.removePR(context.payload.pull_request.html_url, logger);
       await handler.cleanUpPullRequest(
         owner,
         repo,
@@ -723,6 +743,7 @@ export function handler(app: Probot) {
   });
 
   app.on(['pull_request.closed'], async (context: Context<'pull_request'>) => {
+    const logger = getContextLogger(context);
     const prNumber = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
@@ -734,7 +755,7 @@ export function handler(app: Probot) {
     );
 
     if (watchedPullRequest) {
-      await handler.removePR(context.payload.pull_request.html_url);
+      await handler.removePR(context.payload.pull_request.html_url, logger);
       await handler.cleanUpPullRequest(
         owner,
         repo,

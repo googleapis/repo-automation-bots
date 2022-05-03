@@ -87,6 +87,27 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.5.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.1...gcf-utils-v13.5.2) (2022-05-02)
+
+
+### Bug Fixes
+
+* recalculate request bindings for downloaded payloads ([#3582](https://github.com/googleapis/repo-automation-bots/issues/3582)) ([ae3d35c](https://github.com/googleapis/repo-automation-bots/commit/ae3d35c8b9b875ba7a3b73ac10fbabbabd5adbe2))
+
+### [13.5.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.0...gcf-utils-v13.5.1) (2022-04-29)
+
+
+### Bug Fixes
+
+* export GCFLogger class ([#3533](https://github.com/googleapis/repo-automation-bots/issues/3533)) ([24b3b00](https://github.com/googleapis/repo-automation-bots/commit/24b3b009e2731c8bb46ab5eddcb9cf160194df54))
+
+## [13.5.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.4.0...gcf-utils-v13.5.0) (2022-04-28)
+
+
+### Features
+
+* inject trace logging attribute for request correlation ([#3526](https://github.com/googleapis/repo-automation-bots/issues/3526)) ([6083e2e](https://github.com/googleapis/repo-automation-bots/commit/6083e2e1aa88cd1e501c3632c93a08ee2fda71d2))
+
 ## [13.4.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.3.1...gcf-utils-v13.4.0) (2022-04-27)
 
 

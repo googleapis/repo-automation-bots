@@ -31,8 +31,8 @@
     "@google-cloud/storage": "^5.19.2",
     "@octokit/rest": "^18.12.0",
     "ajv": "^8.11.0",
-    "gaxios": "^4.3.3",
-    "gcf-utils": "^13.3.0",
+    "gaxios": "^5.0.0",
+    "gcf-utils": "^13.5.2",
     "jsonwebtoken": "^8.5.1",
     "yargs": "^17.4.1"
   },

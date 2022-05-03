@@ -28,6 +28,7 @@ import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
 import {OwlBotAPIChanges} from './process-checks/owl-bot-api-changes';
 import {JavaApiaryCodegen} from './process-checks/java/apiary-codegen';
 import {PHPApiaryCodegen} from './process-checks/php/apiary-codegen';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 // This file manages the logic to check whether a given PR matches the config in the repository
 
 // We need this typeMap to convert the JSON input (string) into a corresponding type.
@@ -89,7 +90,8 @@ const typeMap = [
 export async function checkPRAgainstConfigV2(
   config: ConfigurationV2,
   pr: PullRequestEvent,
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger = defaultLogger
 ): Promise<Boolean> {
   const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
@@ -104,7 +106,8 @@ export async function checkPRAgainstConfigV2(
     octokit,
     repoOwner,
     repo,
-    prNumber
+    prNumber,
+    logger
   );
 
   for (const rule of config.processes) {

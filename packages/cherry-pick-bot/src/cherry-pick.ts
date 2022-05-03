@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
@@ -66,7 +66,8 @@ export async function cherryPickAsPullRequest(
   owner: string,
   repo: string,
   commits: string[],
-  targetBranch: string
+  targetBranch: string,
+  logger: GCFLogger = defaultLogger
 ): Promise<PullRequest> {
   logger.info(`cherry-pick ${commits} to ${targetBranch} via pull request`);
   const hash = crypto.createHash('md5').update(commits.join(',')).digest('hex');
@@ -85,7 +86,8 @@ export async function cherryPickAsPullRequest(
     owner,
     repo,
     newBranchName,
-    targetBranchHead
+    targetBranchHead,
+    logger
   );
 
   const newCommits = (await exports.cherryPickCommits(
@@ -93,7 +95,8 @@ export async function cherryPickAsPullRequest(
     owner,
     repo,
     commits,
-    newBranchName
+    newBranchName,
+    logger
   )) as Commit[];
   logger.debug(
     `cherry-picked ${newCommits.length} commits as ${
@@ -136,7 +139,8 @@ export async function cherryPickCommits(
   owner: string,
   repo: string,
   commits: string[],
-  targetBranch: string
+  targetBranch: string,
+  logger: GCFLogger = defaultLogger
 ): Promise<Commit[]> {
   const newCommits: Commit[] = [];
   logger.info(`cherry-pick ${commits} to branch ${targetBranch}`);
@@ -159,7 +163,8 @@ export async function cherryPickCommits(
     owner,
     repo,
     temporaryRefName,
-    initialHeadSha
+    initialHeadSha,
+    logger
   );
 
   logger.debug(`fetching ${targetBranch} tree SHA`);
@@ -284,7 +289,8 @@ async function createOrUpdateRef(
   owner: string,
   repo: string,
   ref: string,
-  sha: string
+  sha: string,
+  logger: GCFLogger = defaultLogger
 ) {
   try {
     await octokit.git.createRef({

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {logger} from 'gcf-utils';
+import {GCFLogger} from 'gcf-utils';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -24,6 +24,7 @@ export interface Label {
 interface CheckRun {
   name: string | null;
   conclusion: string | null;
+  status: string | null;
 }
 
 export interface CheckStatus {
@@ -163,7 +164,8 @@ async function getStatuses(
   owner: string,
   repo: string,
   github: Octokit,
-  headSha: string
+  headSha: string,
+  logger: GCFLogger
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
@@ -200,7 +202,8 @@ async function getCheckRuns(
   owner: string,
   repo: string,
   github: Octokit,
-  headSha: string
+  headSha: string,
+  logger: GCFLogger
 ): Promise<CheckRun[]> {
   const start = Date.now();
   try {
@@ -218,6 +221,8 @@ async function getCheckRuns(
   }
 }
 
+const SUCCESSFUL_CHECK_STATUSES = ['neutral', 'success'];
+
 /**
  * Function checks whether a required check is in a check run array
  * @param checkRuns array of check runs (from function getCheckRuns)
@@ -230,8 +235,9 @@ function checkForRequiredSC(checkRuns: CheckRun[], check: string) {
       element.name?.startsWith(check)
     );
     if (
-      checkRunCompleted !== undefined &&
-      checkRunCompleted.conclusion === 'success'
+      checkRunCompleted?.status === 'completed' &&
+      checkRunCompleted?.conclusion &&
+      SUCCESSFUL_CHECK_STATUSES.includes(checkRunCompleted.conclusion)
     ) {
       return true;
     }
@@ -256,10 +262,11 @@ async function statusesForRef(
   pr: number,
   requiredChecks: string[],
   headSha: string,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ): Promise<boolean> {
   const start = Date.now();
-  const checkStatus = await getStatuses(owner, repo, github, headSha);
+  const checkStatus = await getStatuses(owner, repo, github, headSha, logger);
   logger.info(
     `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
   );
@@ -282,7 +289,7 @@ async function statusesForRef(
         );
         //if we can't find it in the statuses, let's check under check runs
         if (!checkRuns) {
-          checkRuns = await getCheckRuns(owner, repo, github, headSha);
+          checkRuns = await getCheckRuns(owner, repo, github, headSha, logger);
         }
         mergeable = checkForRequiredSC(checkRuns, check);
         if (!mergeable) {
@@ -319,7 +326,8 @@ async function getReviewsCompleted(
   owner: string,
   repo: string,
   pr: number,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ): Promise<Reviews[]> {
   try {
     const reviewsCompleted = await github.pulls.listReviews({
@@ -373,7 +381,8 @@ async function checkReviews(
   label: string,
   secureLabel: string,
   headSha: string,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ): Promise<boolean> {
   const start = Date.now();
   logger.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
@@ -381,7 +390,8 @@ async function checkReviews(
     owner,
     repo,
     pr,
-    github
+    github,
+    logger
   );
   let reviewsPassed = true;
   const reviewsCompleted = cleanReviews(reviewsCompletedDirty);
@@ -471,7 +481,8 @@ async function updateBranch(
   owner: string,
   repo: string,
   pr: number,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ) {
   try {
     await github.pulls.updateBranch({
@@ -500,7 +511,8 @@ async function commentOnPR(
   repo: string,
   pr: number,
   body: string,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ): Promise<{} | null> {
   try {
     const data = await github.issues.createComment({
@@ -528,7 +540,8 @@ async function maybeLogMergeability(
   pr: number,
   github: Octokit,
   checkReviews: boolean,
-  checkStatus: boolean
+  checkStatus: boolean,
+  logger: GCFLogger
 ) {
   if (Math.random() > 0.8) {
     const prInfo = await getPR(owner, repo, pr, github);
@@ -563,7 +576,8 @@ export async function mergeOnGreen(
   requiredChecks: string[],
   mogLabel: string,
   author: string,
-  github: Octokit
+  github: Octokit,
+  logger: GCFLogger
 ): Promise<boolean | undefined> {
   const rateLimit = (await github.rateLimit.get()).data.resources.core
     .remaining;
@@ -590,9 +604,10 @@ export async function mergeOnGreen(
       mogLabel,
       labelNames[1],
       headSha,
-      github
+      github,
+      logger
     ),
-    statusesForRef(owner, repo, pr, requiredChecks, headSha, github),
+    statusesForRef(owner, repo, pr, requiredChecks, headSha, github, logger),
     getCommentsOnPR(owner, repo, pr, github),
   ]);
   const failedMesssage =
@@ -607,7 +622,15 @@ export async function mergeOnGreen(
   );
 
   // TODO(sofisl): Remove once metrics have been collected (06/15/21)
-  maybeLogMergeability(owner, repo, pr, github, checkStatus, checkReview);
+  maybeLogMergeability(
+    owner,
+    repo,
+    pr,
+    github,
+    checkStatus,
+    checkReview,
+    logger
+  );
   //if the reviews and statuses are green, let's try to merge
   if (checkReview === true && checkStatus === true) {
     const prInfo = await getPR(owner, repo, pr, github);
@@ -648,7 +671,14 @@ export async function mergeOnGreen(
           element.body.includes(notAuthorizedMessage)
         );
         if (!isCommented) {
-          await commentOnPR(owner, repo, pr, notAuthorizedMessage, github);
+          await commentOnPR(
+            owner,
+            repo,
+            pr,
+            notAuthorizedMessage,
+            github,
+            logger
+          );
         }
       }
       logger.info(
@@ -659,7 +689,7 @@ export async function mergeOnGreen(
       if (prInfo.mergeable_state === 'behind') {
         logger.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
         try {
-          await updateBranch(owner, repo, pr, github);
+          await updateBranch(owner, repo, pr, github, logger);
         } catch (e) {
           const err = e as Error;
           err.message = `failed to update branch ${owner}/${repo}/${pr}\n\n${err.message}`;
@@ -673,7 +703,7 @@ export async function mergeOnGreen(
           element.body.includes(conflictMessage)
         );
         if (!isCommented) {
-          await commentOnPR(owner, repo, pr, conflictMessage, github);
+          await commentOnPR(owner, repo, pr, conflictMessage, github, logger);
         }
       }
     }
@@ -683,7 +713,7 @@ export async function mergeOnGreen(
     logger.info(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
-    await commentOnPR(owner, repo, pr, failedMesssage, github);
+    await commentOnPR(owner, repo, pr, failedMesssage, github, logger);
     return true;
     // if the PR is halfway through the time it is checking, comment on the PR.
   } else {

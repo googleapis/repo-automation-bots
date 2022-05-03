@@ -924,7 +924,19 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
 
         const expectedBindings = {
-          trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+          trigger: {
+            trigger_type: 'Cloud Task',
+            github_delivery_guid: '123',
+            github_event_type: 'issues',
+            payload_hash: '99914b932bd37a50b983c5e7c90ae93b',
+            trigger_sender: 'UNKNOWN',
+            trigger_source_repo: {
+              owner: 'UNKNOWN',
+              owner_type: 'UNKNOWN',
+              repo_name: 'UNKNOWN',
+              url: 'UNKNOWN',
+            },
+          },
         };
         assert.deepEqual(logger.getBindings(), expectedBindings);
       });
@@ -939,7 +951,19 @@ describe('GCFBootstrapper', () => {
         req.headers['x-cloudtasks-taskname'] = 'my-task';
 
         const expectedBindings = {
-          trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+          trigger: {
+            trigger_type: 'Cloud Task',
+            github_delivery_guid: '123',
+            github_event_type: 'issues',
+            payload_hash: '99914b932bd37a50b983c5e7c90ae93b',
+            trigger_sender: 'UNKNOWN',
+            trigger_source_repo: {
+              owner: 'UNKNOWN',
+              owner_type: 'UNKNOWN',
+              repo_name: 'UNKNOWN',
+              url: 'UNKNOWN',
+            },
+          },
         };
 
         await mockBootstrapper();
@@ -961,7 +985,19 @@ describe('GCFBootstrapper', () => {
         req.headers['x-cloudtasks-taskname'] = 'my-task';
 
         const expectedBindings = {
-          trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+          trigger: {
+            trigger_type: 'Cloud Task',
+            github_delivery_guid: '123',
+            github_event_type: 'issues',
+            payload_hash: '99914b932bd37a50b983c5e7c90ae93b',
+            trigger_sender: 'UNKNOWN',
+            trigger_source_repo: {
+              owner: 'UNKNOWN',
+              owner_type: 'UNKNOWN',
+              repo_name: 'UNKNOWN',
+              url: 'UNKNOWN',
+            },
+          },
         };
 
         let requestLogger: GCFLogger | undefined;
@@ -974,6 +1010,116 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
         assert.ok(requestLogger);
         assert.deepEqual(requestLogger.getBindings(), expectedBindings);
+      });
+
+      it('injects the cloud trace id each call', async () => {
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        req.headers['x-cloud-trace-context'] = 'abc123/def234;o=1';
+
+        const expectedBindings = {
+          trigger: {
+            trigger_type: 'Cloud Task',
+            github_delivery_guid: '123',
+            github_event_type: 'issues',
+            payload_hash: '99914b932bd37a50b983c5e7c90ae93b',
+            trigger_sender: 'UNKNOWN',
+            trigger_source_repo: {
+              owner: 'UNKNOWN',
+              owner_type: 'UNKNOWN',
+              repo_name: 'UNKNOWN',
+              url: 'UNKNOWN',
+            },
+          },
+          'logging.googleapis.com/trace': 'projects/fake-project/traces/abc123',
+        };
+
+        let requestLogger: GCFLogger | undefined;
+        await mockBootstrapper(undefined, async app => {
+          app.on('issues', context => {
+            requestLogger = getContextLogger(context);
+          });
+        });
+
+        await handler(req, response);
+        assert.ok(requestLogger);
+        assert.deepEqual(requestLogger.getBindings(), expectedBindings);
+      });
+
+      it('pulls trigger information from the payload', async () => {
+        // set WEBHOOK_TMP, reset in root afterEach
+        restoreEnv = mockedEnv({
+          GCF_SHORT_FUNCTION_NAME: 'fake-function',
+          GCF_LOCATION: 'canada1-fake',
+          PROJECT_ID: 'fake-project',
+          WEBHOOK_TMP: '/tmp/foo',
+        });
+        req.body = {
+          installation: {id: 1},
+          tmpUrl: '/bucket/foo',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+        // Fake download from Cloud Storage, again with the goal of ensuring
+        // we're using the streams API appropriately:
+        const downloaded = nock('https://storage.googleapis.com')
+          .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+          .reply(
+            200,
+            JSON.stringify({
+              installation: {
+                id: 1,
+              },
+              action: 'opened',
+              repository: {
+                name: 'repo-automation-bots',
+                owner: {
+                  login: 'googleapis',
+                  type: 'Organization',
+                },
+              },
+              sender: {
+                login: 'some-user',
+              },
+            })
+          );
+
+        const expectedBindings = {
+          trigger: {
+            trigger_type: 'Cloud Task',
+            github_delivery_guid: '123',
+            github_event_type: 'issues.opened',
+            payload_hash: '6708eafce0a59031b1fcd4f568a2e0cc',
+            trigger_sender: 'some-user',
+            trigger_source_repo: {
+              owner: 'googleapis',
+              owner_type: 'Organization',
+              repo_name: 'repo-automation-bots',
+              url: 'https://github.com/googleapis/repo-automation-bots',
+            },
+          },
+        };
+
+        let requestLogger: GCFLogger;
+        await mockBootstrapper(undefined, async app => {
+          app.on('issues', context => {
+            requestLogger = getContextLogger(context);
+          });
+        });
+
+        await handler(req, response);
+        assert.ok(requestLogger);
+        assert.deepEqual(requestLogger.getBindings(), expectedBindings);
+
+        downloaded.done();
       });
     });
 
