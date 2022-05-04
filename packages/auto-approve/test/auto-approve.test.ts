@@ -453,7 +453,7 @@ describe('auto-approve', () => {
         assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
 
-      it.only('attempts to create a failing status check if PR contains wrong config, and error messages check out', async () => {
+      it('attempts to create a failing status check if PR contains wrong config, and error messages check out', async () => {
         const payload = require(resolve(
           fixturesPath,
           'events',
