@@ -25,11 +25,7 @@ import {
   getReviewsCompleted,
   cleanReviews,
 } from './get-pr-info';
-import {
-  checkAutoApproveConfig,
-  checkCodeOwners,
-  isConfigV2,
-} from './check-config.js';
+import {checkAutoApproveConfig, isConfigV2} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
 import {
@@ -61,22 +57,20 @@ export async function authenticateWithSecret(
 }
 
 /**
- * Takes in the auto-approve.yml file and (if it exists) the CODEOWNERS file
- * and checks both files to ensure they match schema, format, and appropriate CODEOWNERS; then,
+ * Takes in the auto-approve.yml file
+ * and checks it matches schema, format; then,
  * submits a passing or failing status check on Github
  *
  * @param owner owner of the repo of the incoming PR
  * @param repo string, the name of the repo of the incoming PR
- * @param codeOwnersFile string, the CODEOWNERS file in .github/CODEOWNERS for the repo of the incoming PR
  * @param octokit the octokit instance
- * @param headSha the sha upon which to check whether the config and the CODEOWNERS file are configured correctly
+ * @param headSha the sha upon which to check whether the config is correct
  * @returns true if the status check passed, false otherwise
  */
 async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
   config: string | Configuration | ConfigurationV2 | undefined,
-  codeOwnersFile: string | undefined,
   octokit: Octokit,
   headSha: string
 ): Promise<Boolean | undefined> {
@@ -103,16 +97,8 @@ async function evaluateAndSubmitCheckForConfig(
     }
   }
 
-  // Check if codeowners includes @github-automation for auto-approve.yml file
-  const isCodeOwnersCorrect = await checkCodeOwners(
-    octokit,
-    owner,
-    repo,
-    codeOwnersFile
-  );
-
   // If all files are correct, then submit a passing check for the config
-  if (isAutoApproveCorrect === '' && isCodeOwnersCorrect === '') {
+  if (isAutoApproveCorrect === '') {
     await octokit.checks.create({
       owner,
       repo,
@@ -132,8 +118,7 @@ async function evaluateAndSubmitCheckForConfig(
     // logging the appropriate error messages
     const errorMessage =
       'See the following errors in your auto-approve.yml config:\n' +
-      `${isCodeOwnersCorrect ? isCodeOwnersCorrect : ''}\n` +
-      `${isAutoApproveCorrect ? isAutoApproveCorrect : ''}\n`;
+      `${isAutoApproveCorrect ? JSON.stringify(isAutoApproveCorrect) : ''}\n`;
 
     await octokit.checks.create({
       owner,
@@ -205,16 +190,7 @@ export function handler(app: Probot) {
         `.github/${CONFIGURATION_FILE_PATH}`
       );
 
-      const codeOwnersFile = await getBlobFromPRFiles(
-        context.octokit,
-        repoHeadOwner,
-        repoHead,
-        PRFiles,
-        '.github/CODEOWNERS'
-      );
-      const isConfigGettingModified = prConfig || codeOwnersFile;
-
-      if (isConfigGettingModified) {
+      if (prConfig) {
         // Decide whether to add a passing or failing status checks
         // We do not need to save the return value for this function,
         // since we are not going to do anything else with the PR if
@@ -226,7 +202,6 @@ export function handler(app: Probot) {
           owner,
           repo,
           prConfig,
-          codeOwnersFile,
           context.octokit,
           context.payload.pull_request.head.sha
         );
@@ -260,7 +235,6 @@ export function handler(app: Probot) {
             owner,
             repo,
             config,
-            undefined,
             context.octokit,
             context.payload.pull_request.head.sha
           );
