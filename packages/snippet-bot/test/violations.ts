@@ -43,7 +43,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 describe('checkTagFormat', () => {
   const loc1: RegionTagLocation = {
     type: 'add',
-    regionTag: 'run_HELLO',
+    regionTag: 'run_hello@',
     owner: 'owner',
     repo: 'repo',
     file: 'file',
@@ -68,8 +68,17 @@ describe('checkTagFormat', () => {
     sha: 'sha',
     line: 43,
   };
+  const loc4: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'run_HELLO',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 43,
+  };
   const changes: ChangesInPullRequest = {
-    changes: [loc1, loc2, loc3],
+    changes: [loc1, loc2, loc3, loc4],
     added: 3,
     deleted: 0,
     files: ['file'],
