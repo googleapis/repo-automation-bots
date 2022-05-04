@@ -41,7 +41,7 @@ export interface Violation {
 
 const dataBucket = process.env.DEVREL_SETTINGS_BUCKET || 'devrel-prod-settings';
 
-const TAG_FORMAT_REGEX = /^([a-zA-Z0-9_])+$/;
+const TAG_FORMAT_REGEX = /^(\w)+$/;
 
 export const checkTagFormat = async (
   changes: ChangesInPullRequest,
