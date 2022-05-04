@@ -24,6 +24,7 @@ export interface Label {
 interface CheckRun {
   name: string | null;
   conclusion: string | null;
+  status: string | null;
 }
 
 export interface CheckStatus {
@@ -220,6 +221,8 @@ async function getCheckRuns(
   }
 }
 
+const SUCCESSFUL_CHECK_STATUSES = ['neutral', 'success'];
+
 /**
  * Function checks whether a required check is in a check run array
  * @param checkRuns array of check runs (from function getCheckRuns)
@@ -232,8 +235,9 @@ function checkForRequiredSC(checkRuns: CheckRun[], check: string) {
       element.name?.startsWith(check)
     );
     if (
-      checkRunCompleted !== undefined &&
-      checkRunCompleted.conclusion === 'success'
+      checkRunCompleted?.status === 'completed' &&
+      checkRunCompleted?.conclusion &&
+      SUCCESSFUL_CHECK_STATUSES.includes(checkRunCompleted.conclusion)
     ) {
       return true;
     }
