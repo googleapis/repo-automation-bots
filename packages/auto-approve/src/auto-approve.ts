@@ -121,7 +121,7 @@ async function evaluateAndSubmitCheckForConfig(
     // logging the appropriate error messages
     const errorMessage =
       'See the following errors in your auto-approve.yml config:\n' +
-      `${isAutoApproveCorrect ? isAutoApproveCorrect : ''}\n`;
+      `${isAutoApproveCorrect ? JSON.stringify(isAutoApproveCorrect) : ''}\n`;
 
     await octokit.checks.create({
       owner,
