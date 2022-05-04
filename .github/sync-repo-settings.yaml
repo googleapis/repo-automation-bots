@@ -14,6 +14,7 @@ branchProtectionRules:
     - 'packages-gcf-utils-test (repo-automation-bots)'
     - 'packages-owl-bot-test (repo-automation-bots)'
     - 'packages-release-trigger-test (repo-automation-bots)'
+    - 'packages-secret-rotator-test (repo-automation-bots)'
     - 'serverless-scheduler-proxy-test (repo-automation-bots)'
   requiredApprovingReviewCount: 1
   requiresCodeOwnerReviews: true
