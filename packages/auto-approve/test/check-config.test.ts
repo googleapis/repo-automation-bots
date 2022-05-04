@@ -15,7 +15,6 @@
 import {
   validateYaml,
   validateSchema,
-  checkCodeOwners,
   checkAutoApproveConfig,
 } from '../src/check-config.js';
 import {describe, it} from 'mocha';
@@ -31,15 +30,6 @@ const octokit = new Octokit({
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
 nock.disableNetConnect();
-
-function getCodeOwnersFile(response: string | undefined, status: number) {
-  return nock('https://api.github.com')
-    .get('/repos/owner/repo/contents/.github%2FCODEOWNERS')
-    .reply(
-      status,
-      response ? {content: Buffer.from(response).toString('base64')} : undefined
-    );
-}
 
 function getAutoApproveFile(response: string | undefined, status: number) {
   return nock('https://api.github.com')
@@ -186,103 +176,6 @@ describe('check for config', () => {
     it('should return empty string if YAML has some of the possible valid options', async () => {
       const isSchemaValid = await checkForValidSchema(3, 'V2', '');
       assert.strictEqual(isSchemaValid, '');
-    });
-  });
-
-  describe('codeowner file behavior', async () => {
-    it('should ask to change CODEOWNERS, if CODEOWNERS file is not configured properly (and the CODEOWNERS is not in the PR)', async () => {
-      const codeownersFileResponse = fs.readFileSync(
-        './test/fixtures/config/invalid-codeowners/invalid-codeowners1',
-        'utf8'
-      );
-      const scopes = getCodeOwnersFile(codeownersFileResponse, 200);
-      const response = await checkCodeOwners(
-        octokit,
-        'owner',
-        'repo',
-        undefined
-      );
-      scopes.done();
-      assert.strictEqual(
-        response,
-        `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
-      );
-    });
-
-    it('should ask to change codeowners, if codeowners file does not contain proper owners for config path (and the CODEOWNERS is not in the PR)', async () => {
-      const codeownersFileResponse = fs.readFileSync(
-        './test/fixtures/config/invalid-codeowners/invalid-codeowners2',
-        'utf8'
-      );
-      const scopes = getCodeOwnersFile(codeownersFileResponse, 200);
-      const response = await checkCodeOwners(
-        octokit,
-        'owner',
-        'repo',
-        undefined
-      );
-      scopes.done();
-      assert.strictEqual(
-        response,
-        `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
-      );
-    });
-
-    it('should accept a well-configured CODEOWNERS file', async () => {
-      const codeownersFileResponse = fs.readFileSync(
-        './test/fixtures/config/valid-codeowners',
-        'utf8'
-      );
-      const scopes = getCodeOwnersFile(codeownersFileResponse, 200);
-      const response = await checkCodeOwners(
-        octokit,
-        'owner',
-        'repo',
-        undefined
-      );
-      scopes.done();
-      assert.strictEqual(response, '');
-    });
-
-    it('should accept a well-configured CODEOWNERS file in PR', async () => {
-      const response = await checkCodeOwners(
-        octokit,
-        'owner',
-        'repo',
-        fs.readFileSync('./test/fixtures/config/valid-codeowners', 'utf8')
-      );
-      assert.strictEqual(response, '');
-    });
-
-    it('should ask to create a codeowners file if it does not exist', async () => {
-      const scopes = getCodeOwnersFile(undefined, 403);
-      const response = await checkCodeOwners(
-        octokit,
-        'owner',
-        'repo',
-        undefined
-      );
-      scopes.done();
-      assert.strictEqual(
-        response,
-        `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`
-      );
-    });
-
-    it('should ask to change CODEOWNERS file in PR if it is not correctly formatted', async () => {
-      const response = await checkCodeOwners(
-        octokit,
-        'owner',
-        'repo',
-        fs.readFileSync(
-          './test/fixtures/config/invalid-codeowners/invalid-codeowners1',
-          'utf8'
-        )
-      );
-      assert.deepStrictEqual(
-        response,
-        `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
-      );
     });
   });
 

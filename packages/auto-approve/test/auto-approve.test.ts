@@ -34,7 +34,6 @@ const {Octokit} = require('@octokit/rest');
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
 const TestingOctokit = ProbotOctokit.defaults({
   retry: {enabled: false},
@@ -99,7 +98,6 @@ describe('auto-approve', () => {
   let getChangedFilesStub: SinonStub;
   let getBlobFromPRFilesStub: SinonStub;
   let checkAutoApproveStub: SinonStub;
-  let checkCodeOwnersStub: SinonStub;
   let getSecretStub: SinonStub;
   let checkPRAgainstConfigV2Stub: SinonStub;
 
@@ -118,7 +116,6 @@ describe('auto-approve', () => {
     getChangedFilesStub = sandbox.stub(getPRInfo, 'getChangedFiles');
     getBlobFromPRFilesStub = sandbox.stub(getPRInfo, 'getBlobFromPRFiles');
     checkAutoApproveStub = sandbox.stub(checkConfig, 'checkAutoApproveConfig');
-    checkCodeOwnersStub = sandbox.stub(checkConfig, 'checkCodeOwners');
     getSecretStub = sandbox.stub(autoApprove, 'authenticateWithSecret');
     checkPRAgainstConfigV2Stub = sandbox.stub(
       checkPRV2,
@@ -135,7 +132,6 @@ describe('auto-approve', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
         const payload = require(resolve(
@@ -170,7 +166,6 @@ describe('auto-approve', () => {
       it('does nothing if there is already an approval', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
         const payload = require(resolve(
@@ -210,7 +205,6 @@ describe('auto-approve', () => {
       it('approves and tags a PR if everything is valid, and it is coming from a fork', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
         const payload = require(resolve(
@@ -250,7 +244,6 @@ describe('auto-approve', () => {
             message: 'message',
           },
         ]);
-        checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
           fixturesPath,
@@ -281,7 +274,6 @@ describe('auto-approve', () => {
       it('logs to the console if config is valid but PR is not', async () => {
         checkPRAgainstConfigStub.returns(false);
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
           fixturesPath,
@@ -344,7 +336,6 @@ describe('auto-approve', () => {
 
         checkPRAgainstConfigV2Stub.returns(true);
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
         const payload = require(resolve(
@@ -385,7 +376,6 @@ describe('auto-approve', () => {
 
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
         const payload = require(resolve(
@@ -439,10 +429,10 @@ describe('auto-approve', () => {
         });
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
-        assert.ok(getBlobFromPRFilesStub.calledTwice);
+        assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
 
-      it('attempts to get codeowners file and create a passing status check if PR contains correct config', async () => {
+      it('attempts to create a passing status check if PR contains correct config', async () => {
         const payload = require(resolve(
           fixturesPath,
           'events',
@@ -450,10 +440,7 @@ describe('auto-approve', () => {
         ));
 
         getBlobFromPRFilesStub.returns('fake-file');
-        getBlobFromPRFilesStub.returns('fake-codeowners');
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
-
         const scopes = [createCheck('testOwner', 'testRepo', 200)];
 
         await probot.receive({
@@ -463,10 +450,10 @@ describe('auto-approve', () => {
         });
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
-        assert.ok(getBlobFromPRFilesStub.calledTwice);
+        assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
 
-      it('attempts to get codeowners file and create a failing status check if PR contains wrong config, and error messages check out', async () => {
+      it('attempts to create a failing status check if PR contains wrong config, and error messages check out', async () => {
         const payload = require(resolve(
           fixturesPath,
           'events',
@@ -474,16 +461,12 @@ describe('auto-approve', () => {
         ));
 
         getBlobFromPRFilesStub.returns('fake-file');
-        getBlobFromPRFilesStub.returns('fake-codeowners');
         checkAutoApproveStub.returns([
           {
             wrongProperty: 'wrongProperty',
             message: 'message',
           },
         ]);
-        checkCodeOwnersStub.returns(
-          `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
-        );
 
         const scopes = [createCheck('testOwner', 'testRepo', 200)];
 
@@ -494,7 +477,7 @@ describe('auto-approve', () => {
         });
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
-        assert.ok(getBlobFromPRFilesStub.calledTwice);
+        assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
 
       it('passes PR if auto-approve is on main, not PR', async () => {
@@ -504,12 +487,23 @@ describe('auto-approve', () => {
           'pull_request_opened'
         ));
 
+        getSecretStub.returns(new Octokit({auth: '123'}));
+        checkPRAgainstConfigStub.returns(true);
         getBlobFromPRFilesStub.returns(undefined);
-        getBlobFromPRFilesStub.returns('fake-codeowners');
         checkAutoApproveStub.returns('');
-        checkCodeOwnersStub.returns('');
 
-        const scopes = [createCheck('testOwner', 'testRepo', 200)];
+        const scopes = [
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
+            200
+          ),
+          getReviewsCompleted('testOwner', 'testRepo', []),
+          submitReview('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
 
         await probot.receive({
           name: 'pull_request',
@@ -518,7 +512,7 @@ describe('auto-approve', () => {
         });
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
-        assert.ok(getBlobFromPRFilesStub.calledTwice);
+        assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
     });
   });
@@ -527,7 +521,6 @@ describe('auto-approve', () => {
     it('creates a separate octokit instance and authenticates with secret in secret manager', async () => {
       checkPRAgainstConfigStub.returns(true);
       checkAutoApproveStub.returns('');
-      checkCodeOwnersStub.returns('');
 
       const secretOctokit = new Octokit({auth: '123'});
       sandbox.spy(secretOctokit.pulls, 'createReview');
