@@ -27,7 +27,6 @@ const {Octokit} = require('@octokit/rest');
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
 });
-const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
 nock.disableNetConnect();
 

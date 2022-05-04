@@ -25,10 +25,7 @@ import {
   getReviewsCompleted,
   cleanReviews,
 } from './get-pr-info';
-import {
-  checkAutoApproveConfig,
-  isConfigV2,
-} from './check-config.js';
+import {checkAutoApproveConfig, isConfigV2} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
 import {
