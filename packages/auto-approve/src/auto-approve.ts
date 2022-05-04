@@ -61,7 +61,7 @@ export async function authenticateWithSecret(
 
 /**
  * Takes in the auto-approve.yml file
- * and checks both files to ensure they match schema, format; then,
+ * and checks it matches schema, format; then,
  * submits a passing or failing status check on Github
  *
  * @param owner owner of the repo of the incoming PR
