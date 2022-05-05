@@ -41,8 +41,8 @@ import {GCFLogger} from 'gcf-utils';
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 interface testValue {
-  loc: RegionTagLocation,
-  expected: number
+  loc: RegionTagLocation;
+  expected: number;
 }
 
 function makeRegionTagLocation(v: string) {
@@ -54,7 +54,7 @@ function makeRegionTagLocation(v: string) {
     file: 'file',
     sha: 'sha',
     line: 42,
-  }
+  };
   return ret;
 }
 
@@ -68,7 +68,7 @@ const testValues: testValue[] = [
   {loc: makeRegionTagLocation('run_hello'), expected: 0},
   // make sure captal letters are allowed
   {loc: makeRegionTagLocation('run_HELLO'), expected: 0},
-]
+];
 
 for (const testValue of testValues) {
   describe(`checkTagFormat with "${testValue.loc.regionTag}"`, () => {
@@ -80,7 +80,10 @@ for (const testValue of testValues) {
     };
     const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-    let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<ApiLabels>>;
+    let getApiLabelsStub: sinon.SinonStub<
+      [string, GCFLogger],
+      Promise<ApiLabels>
+    >;
 
     const sandbox = sinon.createSandbox();
 
