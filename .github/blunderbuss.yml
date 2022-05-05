@@ -2,49 +2,16 @@
 
 assign_issues_by:
   - labels:
-    - 'bot: auto-label'
-    to:
-    - sofisl
-  - labels:
-    - 'bot: generated-files-bot'
-    - 'bot: header-checker-lint'
-    - 'bot: monitoring-system'
-    to:
-    - chingor13
-  - labels:
-    - 'bot: merge-on-green'
-    to:
-    - sofisl
-  - labels:
     - 'bot: release-please'
     to:
-    - bcoe
     - chingor13
   - labels:
     - 'bot: snippet-bot'
     to:
     - tmatsuo
-  - labels:
-    - 'bot: owl-bot'
-    to:
-    - SurferJeffAtGoogle
 
 assign_prs_by:
   - labels:
-    - 'bot: auto-label'
-    to:
-    - sofisl
-  - labels:
-    - 'bot: generated-files-bot'
-    - 'bot: header-checker-lint'
-    - 'bot: monitoring-system'
-    to:
-    - chingor13
-  - labels:
-    - 'bot: merge-on-green'
-    to:
-    - sofisl
-  - labels:
     - 'bot: release-please'
     to:
     - bcoe
@@ -56,7 +23,15 @@ assign_prs_by:
   - labels:
     - 'bot: owl-bot'
     to:
-    - SurferJeffAtGoogle
+    - bcoe
+    - chingor13
+    - tmatsuo
 
+assign_issues:
+  - chingor13
+  - tmatsuo
 assign_prs:
-  - googleapis/github-automation
+  - bcoe
+  - chingor13
+  - sofisl
+  - tmatsuo
