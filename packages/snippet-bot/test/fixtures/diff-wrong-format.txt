@@ -17,10 +17,10 @@ index 198d0257595..6048151ca9f 100644
 
  def named_key(client):
 -    # [START datastore_named_key]
-+    # [START datastore_named_key2_WRONG_FORMAT]
++    # [START datastore_named_key2_UPPERCASE_ALLOWED]
      key = client.key('Task', 'sample_task')
 -    # [END datastore_named_key]
-+    # [END datastore_named_key2_WRONG_FORMAT]
++    # [END datastore_named_key2_UPPERCASE_ALLOWED]
 
      return key
 
