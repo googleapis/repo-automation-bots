@@ -33,3 +33,15 @@ steps:
       - "-v"
       - "debug"
     waitFor: ["build-docker"]
+
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker-frontend"
+    waitFor: ["-"]
+    dir: packages/release-trigger
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile.frontend"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/release-trigger"
+      - "."
