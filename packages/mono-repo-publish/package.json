@@ -24,7 +24,7 @@
     "mocha": "^10.0.0",
     "nock": "^13.2.4",
     "semistandard": "^16.0.1",
-    "sinon": "^13.0.2"
+    "sinon": "^14.0.0"
   },
   "dependencies": {
     "@octokit/auth-app": "^3.6.1",
