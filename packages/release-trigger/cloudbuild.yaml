@@ -29,12 +29,14 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/release-trigger"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-frontend"
+    id: "deploy-backend"
     waitFor: ["push-docker"]
     entrypoint: bash
     env:
       - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
       - "MEMORY=1G"
+      - "SERVICE_NAME=release-trigger-backend"
+      - "CONCURRENCY=4"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
@@ -45,15 +47,31 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
 
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker-frontend"
+    waitFor: ["-"]
+    dir: packages/release-trigger
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile.frontend"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/release-trigger-frontend"
+      - "."
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker-frontend"
+    waitFor: ["build-docker-frontend"]
+    args: ["push", "gcr.io/$PROJECT_ID/release-trigger"]
+
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-backend"
-    waitFor: ["push-docker"]
+    id: "deploy-frontend"
+    waitFor: ["push-docker-frontend"]
     entrypoint: bash
     env:
-      - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
+      - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-frontend"
+      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
       - "MEMORY=1G"
-      - "SERVICE_NAME=release-trigger-backend"
-      - "CONCURRENCY=4"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
