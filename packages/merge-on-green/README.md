@@ -18,6 +18,8 @@ install for your repository by following this
 [link](https://github.com/apps/gcf-merge-on-green) and giving it access to your
 repository.
 
+It may be necessary to add the GitHub organization to the [allow list](https://github.com/googleapis/repo-automation-bots/blob/main/packages/merge-on-green/src/merge-on-green.ts).
+
 ## Usage
 
 To use merge-on-green, simply add the `automerge` or `automerge: exact` label.
