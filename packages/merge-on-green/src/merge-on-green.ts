@@ -40,6 +40,7 @@ handler.allowlist = [
   'googlecloudplatform',
   'google',
   'google-github-actions',
+  'googlemaps',
   'bcoe',
   'sofisl',
   'firebase',
