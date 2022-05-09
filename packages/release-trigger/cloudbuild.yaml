@@ -62,14 +62,14 @@ steps:
   - name: gcr.io/cloud-builders/docker
     id: "push-docker-frontend"
     waitFor: ["build-docker-frontend"]
-    args: ["push", "gcr.io/$PROJECT_ID/release-trigger"]
+    args: ["push", "gcr.io/$PROJECT_ID/release-trigger-frontend"]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-frontend"
     waitFor: ["push-docker-frontend"]
     entrypoint: bash
     env:
-      - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-frontend"
+      - "IMAGE_NAME=gcr.io/$PROJECT_ID/release-trigger-frontend"
       - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
       - "MEMORY=1G"
     args:
