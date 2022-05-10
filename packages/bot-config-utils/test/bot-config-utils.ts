@@ -27,6 +27,7 @@ import {
   getConfig,
   getConfigWithDefault,
   ConfigChecker,
+  InvalidConfigurationFormat,
 } from '../src/bot-config-utils';
 import schema from './test-config-schema.json';
 import listSchema from './test-config-use-external-id.json';
@@ -522,7 +523,7 @@ describe('config', () => {
         getConfig<TestConfig>(octokit, owner, repo, filename, {
           schema: schema,
         }),
-        Error
+        InvalidConfigurationFormat
       );
 
       for (const scope of scopes) {
@@ -758,7 +759,7 @@ describe('config', () => {
           defaultConfig,
           {schema: schema}
         ),
-        Error
+        InvalidConfigurationFormat
       );
 
       for (const scope of scopes) {
@@ -847,7 +848,7 @@ describe('config', () => {
           defaultConfig,
           {schema: schema}
         ),
-        Error
+        InvalidConfigurationFormat
       );
 
       for (const scope of scopes) {
