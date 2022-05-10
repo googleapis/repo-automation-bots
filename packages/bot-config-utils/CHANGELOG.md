@@ -1,5 +1,12 @@
 # Changelog
 
+### [4.0.2](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.0.1...bot-config-utils-v4.0.2) (2022-05-10)
+
+
+### Bug Fixes
+
+* throw InvalidConfigurationFormat error on validation error ([#3657](https://github.com/googleapis/repo-automation-bots/issues/3657)) ([8e06d2c](https://github.com/googleapis/repo-automation-bots/commit/8e06d2c6167abc771a2a2ef9e4dbad2bb7a14a36))
+
 ### [4.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.0.0...bot-config-utils-v4.0.1) (2021-12-02)
 
 
