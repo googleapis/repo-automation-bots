@@ -275,6 +275,16 @@ const DEFAULT_GET_CONFIG_OPTIONS = {
   fallbackToOrgConfig: true,
 };
 
+export class InvalidConfigurationFormat extends Error {
+  readonly path: string;
+  constructor(path: string, validationMessage?: string) {
+    super(
+      `Failed to validate the config schema at '${path}': ${validationMessage}`
+    );
+    this.path = path;
+  }
+}
+
 /**
  * A function for fetching config file from the repo. It falls back to
  * `.github` repository by default.
@@ -327,10 +337,7 @@ export async function getConfig<ConfigType>(
       if (validateResult.config) {
         return validateResult.config;
       } else {
-        throw new Error(
-          `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
-        );
+        throw new InvalidConfigurationFormat(path, validateResult.errorText);
       }
     } else {
       // This should not happen.
@@ -368,10 +375,7 @@ export async function getConfig<ConfigType>(
         if (validateResult.config) {
           return validateResult.config;
         } else {
-          throw new Error(
-            `Failed to validate the config schema at '${path}' ` +
-              `:${validateResult.errorText}`
-          );
+          throw new InvalidConfigurationFormat(path, validateResult.errorText);
         }
       } else {
         // This should not happen.
@@ -442,10 +446,7 @@ export async function getConfigWithDefault<ConfigType>(
       if (validateResult.config) {
         return {...defaultConfig, ...validateResult.config};
       } else {
-        throw new Error(
-          `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
-        );
+        throw new InvalidConfigurationFormat(path, validateResult.errorText);
       }
     } else {
       // This should not happen.
@@ -482,10 +483,7 @@ export async function getConfigWithDefault<ConfigType>(
         if (validateResult.config) {
           return {...defaultConfig, ...validateResult.config};
         } else {
-          throw new Error(
-            `Failed to validate the config schema at '${path}' ` +
-              `:${validateResult.errorText}`
-          );
+          throw new InvalidConfigurationFormat(path, validateResult.errorText);
         }
       } else {
         // This should not happen.

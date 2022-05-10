@@ -20,7 +20,7 @@ node.owlbot_main(templates_excludes=[
   '.github/release-please.yml',
   '.github/workflows/',
   '.github/publish.yml',
-  '.github/sync-repo-settings.yml',
+  '.github/sync-repo-settings.yaml',
   '.kokoro/publish.sh',
   '.kokoro/release/publish.cfg',
   '.kokoro/**',

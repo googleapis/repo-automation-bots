@@ -153,6 +153,37 @@ describe('Blunderbuss', () => {
       sinon.assert.notCalled(validateConfigStub);
     });
 
+    it('assigns opened issues to reporter', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_no_assignees'
+      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
+      getConfigWithDefaultStub.resolves(loadConfig('valid_only_reporter.yml'));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues/5')
+        .reply(200, issue)
+        .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
+      requests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'testOwner',
+        'testRepo',
+        CONFIGURATION_FILE_PATH,
+        {},
+        {schema: schema}
+      );
+      sinon.assert.notCalled(validateConfigStub);
+    });
+
     it('ignores opened issues when with assignee(s)', async () => {
       const payload = require(resolve(
         fixturesPath,
