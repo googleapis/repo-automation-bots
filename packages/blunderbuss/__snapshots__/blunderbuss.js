@@ -74,3 +74,9 @@ exports['Blunderbuss validateConfigChanges creates a failing status check for a 
     "text": "[\n    {\n        \"instancePath\": \"/assign_issues_by/0/to\",\n        \"schemaPath\": \"#/definitions/ByConfig/properties/to/type\",\n        \"keyword\": \"type\",\n        \"params\": {\n            \"type\": \"array\"\n        },\n        \"message\": \"must be array\"\n    }\n]"
   }
 }
+
+exports['Blunderbuss issue tests assigns opened issues to reporter 1'] = {
+  "assignees": [
+    "testuser2"
+  ]
+}

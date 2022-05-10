@@ -210,7 +210,8 @@ export async function assign(
     ? preferredAssignees
     : assignConfig || [];
   possibleAssignees = await expandTeams(possibleAssignees, context);
-  const assignee = randomFrom(possibleAssignees, user);
+  const exclude = issue ? '' : user;
+  const assignee = randomFrom(possibleAssignees, exclude);
   if (!assignee) {
     context.log.info(
       util.format(
