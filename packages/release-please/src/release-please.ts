@@ -206,6 +206,7 @@ async function buildManifest(
     includeComponentInTag: !!configuration.monorepoTags,
     pullRequestTitlePattern: configuration.pullRequestTitlePattern,
     // changelogSections: configuration.changelogSections,
+    changelogHost: configuration.changelogHost,
     changelogPath: configuration.changelogPath,
     changelogType: configuration.changelogType,
     versionFile: configuration.versionFile,
