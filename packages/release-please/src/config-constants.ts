@@ -27,6 +27,7 @@ export interface BranchOptions {
   bumpMinorPreMajor?: boolean;
   bumpPatchForMinorPreMajor?: boolean;
   path?: string;
+  changelogHost?: string;
   changelogPath?: string;
   manifest?: boolean;
   manifestFile?: string;
