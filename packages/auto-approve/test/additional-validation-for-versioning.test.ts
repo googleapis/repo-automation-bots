@@ -269,7 +269,7 @@ describe('run additional versioning checks', () => {
       assert.deepStrictEqual(versions, getVersionsExpectation);
     });
 
-    it('should throw an error if it cannot find any changed versions', () => {
+    it('should return undefined if it cannot find any changed versions', () => {
       const PRFile = {
         sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
         filename: 'package.json',
@@ -290,15 +290,13 @@ describe('run additional versioning checks', () => {
       };
 
       const fileRule = languageVersioningRules[0];
-
-      assert.throws(() => {
-        getVersions(
-          PRFile,
-          fileRule.oldVersion,
-          fileRule.newVersion,
-          fileRule.process
-        );
-      }, /Could not find versions in package.json\/c9fadc5c8972d1c034a050eb6b1a6b79fcd67785/);
+      const versions = getVersions(
+        PRFile,
+        fileRule.oldVersion,
+        fileRule.newVersion,
+        fileRule.process
+      );
+      assert.strictEqual(versions, undefined);
     });
 
     it('should return undefined if the target file does not exist', () => {
@@ -491,7 +489,7 @@ describe('run additional versioning checks', () => {
       assert.deepStrictEqual(versions, getVersionsExpectation);
     });
 
-    it('should throw an error if it cannot find any changed versions', () => {
+    it('should return undefined if it cannot find any changed versions', () => {
       const PRFile = {
         sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
         filename: 'package.json',
@@ -523,13 +521,12 @@ describe('run additional versioning checks', () => {
         'body'
       );
 
-      assert.throws(() => {
-        getVersionsV2(
-          PRFile,
-          fileRule.classRule.fileRules![1].oldVersion,
-          fileRule.classRule.fileRules![1].newVersion
-        );
-      }, /Could not find versions in package.json\/c9fadc5c8972d1c034a050eb6b1a6b79fcd67785/);
+      const versions = getVersionsV2(
+        PRFile,
+        fileRule.classRule.fileRules![1].oldVersion,
+        fileRule.classRule.fileRules![1].newVersion
+      );
+      assert.strictEqual(versions, undefined);
     });
 
     it('should return undefined if the target file does not exist', () => {
