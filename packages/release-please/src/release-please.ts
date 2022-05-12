@@ -145,8 +145,7 @@ async function getConfigWithDefaultBranch(
     octokit,
     owner,
     repo,
-    WELL_KNOWN_CONFIGURATION_FILE,
-    {schema: schema}
+    WELL_KNOWN_CONFIGURATION_FILE
   );
   if (config && !config.primaryBranch) {
     config.primaryBranch =
@@ -483,8 +482,7 @@ const handler = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
+      WELL_KNOWN_CONFIGURATION_FILE
     );
 
     // If no configuration is specified,
@@ -524,8 +522,7 @@ const handler = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
+      WELL_KNOWN_CONFIGURATION_FILE
     );
 
     // If no configuration is specified,
@@ -570,8 +567,7 @@ const handler = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
+      WELL_KNOWN_CONFIGURATION_FILE
     );
 
     // If no configuration is specified,
