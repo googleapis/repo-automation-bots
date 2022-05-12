@@ -768,7 +768,7 @@ describe('ReleasePleaseBot', () => {
         .resolves(fakeManifest);
     });
 
-    it('should try to create a release', async () => {
+    it('should try to create a release pull request', async () => {
       const payload = require(resolve(fixturesPath, './pull_request_labeled'));
       getConfigStub.resolves(loadConfig('valid.yml'));
       const requests = nock('https://api.github.com')
@@ -786,6 +786,34 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       sinon.assert.calledOnce(createPullRequestsStub);
       sinon.assert.notCalled(createReleasesStub);
+      sinon.assert.calledOnceWithExactly(
+        fromConfigStub,
+        sinon.match.instanceOf(GitHub),
+        'master',
+        sinon.match.has('releaseType', 'java-yoshi'),
+        sinon.match.any,
+        undefined
+      );
+    });
+
+    it('should try to tag a GitHub release', async () => {
+      const payload = require(resolve(fixturesPath, './pull_request_labeled'));
+      getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+      sinon.assert.calledOnce(createPullRequestsStub);
+      sinon.assert.calledOnce(createReleasesStub);
       sinon.assert.calledOnceWithExactly(
         fromConfigStub,
         sinon.match.instanceOf(GitHub),
