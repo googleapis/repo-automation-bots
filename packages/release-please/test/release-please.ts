@@ -638,6 +638,27 @@ describe('ReleasePleaseBot', () => {
         );
       });
     });
+
+    it('should handle a misconfigured repository', async () => {
+      const fromManifestStub = sandbox
+        .stub(Manifest, 'fromManifest')
+        .rejects(
+          new Errors.ConfigurationError(
+            'some error message',
+            'releaser-name',
+            'repo-name'
+          )
+        );
+      getConfigStub.resolves(loadConfig('manifest_handle_gh_release.yml'));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+      sinon.assert.calledOnce(fromManifestStub);
+    });
   });
 
   describe('push to non-master branch', () => {
