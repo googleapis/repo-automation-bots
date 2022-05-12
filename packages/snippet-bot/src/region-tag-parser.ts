@@ -163,7 +163,7 @@ export async function parseRegionTagsInPullRequest(
       } catch (e) {
         const err = e as Error;
         // See: https://github.com/googleapis/repo-automation-bots/issues/2246
-        // TODO: Migrate to Git Data API.
+        // TODO(#2703): Migrate to Git Data API.
         err.message =
           'Skipping the diff entry because it failed to read the' +
           ` file: ${err.message}`;
