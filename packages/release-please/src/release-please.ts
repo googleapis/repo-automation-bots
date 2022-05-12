@@ -146,7 +146,6 @@ async function getConfigWithDefaultBranch(
     owner,
     repo,
     WELL_KNOWN_CONFIGURATION_FILE,
-    {schema: schema}
   );
   if (config && !config.primaryBranch) {
     config.primaryBranch =
@@ -445,7 +444,6 @@ const handler = (app: Probot) => {
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
     );
 
     // If no configuration is specified,
@@ -486,7 +484,6 @@ const handler = (app: Probot) => {
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
     );
 
     // If no configuration is specified,
@@ -532,7 +529,6 @@ const handler = (app: Probot) => {
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
     );
 
     // If no configuration is specified,
