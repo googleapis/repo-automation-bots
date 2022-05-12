@@ -270,9 +270,9 @@ const handler = (app: Probot) => {
       context.payload.repository.default_branch
     );
 
-    for (const branchConfiguration of branchConfigurations) {
-      logger.debug(branchConfiguration);
-
+    async function runBranchConfiguration(
+      branchConfiguration: BranchConfiguration
+    ) {
       let manifest = await buildManifest(
         github,
         repoLanguage,
@@ -319,6 +319,23 @@ const handler = (app: Probot) => {
           return;
         } else {
           // re-raise
+          throw e;
+        }
+      }
+    }
+
+    for (const branchConfiguration of branchConfigurations) {
+      logger.debug(branchConfiguration);
+      try {
+        await runBranchConfiguration(branchConfiguration);
+      } catch (e) {
+        if (e instanceof Errors.ConfigurationError) {
+          // Consider opening an issue on the repository in the future
+          logger.warn(
+            `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
+          );
+          logger.warn(e);
+        } else {
           throw e;
         }
       }
