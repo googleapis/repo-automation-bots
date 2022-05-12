@@ -33,6 +33,7 @@ options:
 | `bumpPatchForMinorPreMajor` | Bump patch for feature changes before GA | `boolean` | default from underlying release strategy |
 | `packageName` | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name |
 | `path` | Create a release from a path other than the repository's root | `string` | the repository root |
+| `changelogHost` | Override the host for the git source | `string` | `https://github.com` |
 | `changelogPath` | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md` |
 | `changelogType` | Strategy for generating the changelog entries. One of `default` or `github` | `string` | `default` |
 | `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
@@ -60,6 +61,7 @@ options:
 | `bumpPatchForMinorPreMajor` | Bump patch for feature changes before GA | `boolean` | default from underlying release strategy |
 | `packageName` | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name |
 | `path` | Create a release from a path other than the repository's root | `string` | the repository root |
+| `changelogHost` | Override the host for the git source | `string` | `https://github.com` |
 | `changelogPath` | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md` |
 | `changelogType` | Strategy for generating the changelog entries. One of `default` or `github` | `string` | `default` |
 | `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
