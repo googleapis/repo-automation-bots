@@ -25,8 +25,8 @@ const defaultCmd = newCmd();
 export function hasGitChanges(cwd: string, cmd: Cmd = defaultCmd): boolean {
   // `git status` --porcelain returns empty stdout when no changes are pending.
   // We don't need the entire list, so only check to see if there's a single line
-  const status = cmd('git status . --porcelain | head -n 1', {cwd})
+  const output = cmd('git status . --porcelain | head -n 1', {cwd})
     .toString('utf-8')
     .trim();
-  return !!status;
+  return !!output;
 }
