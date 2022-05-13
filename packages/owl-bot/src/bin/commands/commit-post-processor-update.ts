@@ -22,7 +22,7 @@
 
 import {cwd} from 'process';
 import yargs = require('yargs');
-import {newCmd, Cmd} from '../../cmd';
+import {newCmd} from '../../cmd';
 import {findCopyTags, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
 import {OWL_BOT_IGNORE} from '../../labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from '../../constants';
@@ -30,6 +30,7 @@ import {octokitFactoryFromToken} from '../../octokit-util';
 import * as proc from 'child_process';
 import path = require('path');
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
+import {hasGitChanges} from '../../git-utils';
 
 interface Args {
   'dest-repo': string;
@@ -84,7 +85,10 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   }
   // Add all pending changes to the commit.
   cmd('git add -A .', {cwd: repoDir});
-  if (!hasGitChanges(cmd, repoDir)) {
+  if (!hasGitChanges(repoDir, cmd)) {
+    console.log(
+      "The post processor made no changes; I won't commit any changes."
+    );
     return; // No changes made.  Nothing to do.
   }
 
@@ -142,13 +146,4 @@ export function commitOwlbotUpdate(repoDir: string) {
   const commitMessage = OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE;
   console.log(`git commit -m "${commitMessage}"`);
   proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
-}
-
-function hasGitChanges(cmd: Cmd, cwd: string): boolean {
-  // `git status` --porcelain returns empty stdout when no changes are pending.
-  // We don't need the entire list, so only check to see if there's a single line
-  const status = cmd('git status --porcelain | head -n 1', {cwd}).toString(
-    'utf-8'
-  );
-  return !status;
 }
