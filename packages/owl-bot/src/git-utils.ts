@@ -28,5 +28,5 @@ export function hasGitChanges(cwd: string, cmd: Cmd = defaultCmd): boolean {
   const status = cmd('git status . --porcelain | head -n 1', {cwd})
     .toString('utf-8')
     .trim();
-  return !status;
+  return !!status;
 }
