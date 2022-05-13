@@ -22,7 +22,7 @@
 
 import {cwd} from 'process';
 import yargs = require('yargs');
-import {newCmd} from '../../cmd';
+import {newCmd, Cmd} from '../../cmd';
 import {findCopyTags, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
 import {OWL_BOT_IGNORE} from '../../labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from '../../constants';
@@ -84,11 +84,7 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   }
   // Add all pending changes to the commit.
   cmd('git add -A .', {cwd: repoDir});
-  const status = cmd('git status --porcelain', {cwd: repoDir}).toString(
-    'utf-8'
-  );
-  // `git status` --porcelain returns empty stdout when no changes are pending.
-  if (!status) {
+  if (!hasGitChanges(cmd, repoDir)) {
     return; // No changes made.  Nothing to do.
   }
 
@@ -146,4 +142,13 @@ export function commitOwlbotUpdate(repoDir: string) {
   const commitMessage = OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE;
   console.log(`git commit -m "${commitMessage}"`);
   proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
+}
+
+function hasGitChanges(cmd: Cmd, cwd: string): boolean {
+  // `git status` --porcelain returns empty stdout when no changes are pending.
+  // We don't need the entire list, so only check to see if there's a single line
+  const status = cmd('git status --porcelain | head -n 1', {cwd}).toString(
+    'utf-8'
+  );
+  return !status;
 }
