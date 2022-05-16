@@ -16,6 +16,7 @@ import {core} from './core';
 import * as createPr from './create-pr';
 import {GithubRepo, githubRepoFromUri} from './github-repo';
 import {OctokitFactory} from './octokit-util';
+import {hasGitChanges} from './git-utils';
 
 /** Returns true if there are pending changes, and logs when there isn't. */
 export function shouldCreatePullRequestForLockUpdate(
@@ -23,10 +24,7 @@ export function shouldCreatePullRequestForLockUpdate(
   logger = console
 ): boolean {
   const cmd = newCmd(logger);
-  const cwd = localRepoDir;
-  // 'git status' returns the empty string when no changes are pending.
-  const status = cmd('git status --porcelain', {cwd}).toString('utf8').trim();
-  if (status) {
+  if (hasGitChanges(localRepoDir, cmd)) {
     return true;
   } else {
     logger.log(
