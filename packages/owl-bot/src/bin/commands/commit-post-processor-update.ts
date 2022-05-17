@@ -30,6 +30,7 @@ import {octokitFactoryFromToken} from '../../octokit-util';
 import * as proc from 'child_process';
 import path = require('path');
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
+import {hasGitChanges} from '../../git-utils';
 
 interface Args {
   'dest-repo': string;
@@ -84,11 +85,10 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   }
   // Add all pending changes to the commit.
   cmd('git add -A .', {cwd: repoDir});
-  const status = cmd('git status --porcelain', {cwd: repoDir}).toString(
-    'utf-8'
-  );
-  // `git status` --porcelain returns empty stdout when no changes are pending.
-  if (!status) {
+  if (!hasGitChanges(repoDir, cmd)) {
+    console.log(
+      "The post processor made no changes; I won't commit any changes."
+    );
     return; // No changes made.  Nothing to do.
   }
 
