@@ -36,6 +36,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@types/lru-cache": "^7.10.10",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.3.3",
     "@types/sinon": "^10.0.2",

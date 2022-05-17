@@ -39,6 +39,8 @@
     "tmp-promise": "^3.0.2"
   },
   "devDependencies": {
+    "@octokit/webhooks-definitions": "^3.67.3",
+    "@types/lru-cache": "^7.10.10",
     "@types/minimatch": "^3.0.5",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.3.3",
@@ -46,7 +48,6 @@
     "@types/sinon": "^10.0.2",
     "@types/tar": "^6.0.0",
     "@types/tmp": "^0.2.1",
-    "@octokit/webhooks-definitions": "^3.67.3",
     "c8": "^7.7.3",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
