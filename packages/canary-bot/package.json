@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "dayjs": "^1.11.2",
+    "lru-cache": "^7.10.1",
     "gcf-utils": "^13.5.2"
   },
   "devDependencies": {
@@ -44,6 +45,6 @@
     "typescript": "~4.6.4"
   },
   "engines": {
-    "node": ">= 12.18.2"
+    "node": ">= 14.0.0"
   }
 }
