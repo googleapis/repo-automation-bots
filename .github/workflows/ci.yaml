@@ -37,7 +37,7 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: echo ./packages/${{ matrix.package }}
       - run: cd ./packages/${{ matrix.package }}
-      - run: npm install
+      - run: npm ci
         working-directory: ./packages/${{ matrix.package }}
       - run: pwd
       - run: npm test
