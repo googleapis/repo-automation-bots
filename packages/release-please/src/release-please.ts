@@ -225,6 +225,64 @@ async function buildManifest(
   );
 }
 
+async function runBranchConfiguration(
+  github: GitHub,
+  repoLanguage: string | null,
+  repoUrl: string,
+  branchConfiguration: BranchConfiguration,
+  logger: GCFLogger
+) {
+  let manifest = await buildManifest(
+    github,
+    repoLanguage,
+    branchConfiguration,
+    logger
+  );
+
+  // release-please can handle creating a release on GitHub, we opt not to do
+  // this for our repos that have autorelease enabled.
+  if (branchConfiguration.handleGHRelease) {
+    logger.info(`handling GitHub release for (${repoUrl})`);
+    try {
+      const numReleases = await Runner.createReleases(manifest);
+      logger.info(`Created ${numReleases} releases`);
+      if (numReleases > 0) {
+        // we created a release, reload config which may include the latest
+        // version
+        manifest = await buildManifest(
+          github,
+          repoLanguage,
+          branchConfiguration,
+          logger
+        );
+      }
+    } catch (e) {
+      if (e instanceof Errors.DuplicateReleaseError) {
+        // In the future, this could raise an issue against the
+        // installed repository
+        logger.warn('Release tag already exists, skipping...', e);
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  try {
+    logger.info(`creating pull request for (${repoUrl})`);
+    await Runner.createPullRequests(manifest);
+  } catch (e) {
+    if (e instanceof Errors.ConfigurationError) {
+      // In the future, this could raise an issue against the
+      // installed repository
+      logger.warn(e);
+      return;
+    } else {
+      // re-raise
+      throw e;
+    }
+  }
+}
+
 const handler = (app: Probot) => {
   app.on('push', async context => {
     const logger = getContextLogger(context);
@@ -269,64 +327,16 @@ const handler = (app: Probot) => {
       context.payload.repository.default_branch
     );
 
-    async function runBranchConfiguration(
-      branchConfiguration: BranchConfiguration
-    ) {
-      let manifest = await buildManifest(
-        github,
-        repoLanguage,
-        branchConfiguration,
-        logger
-      );
-
-      // release-please can handle creating a release on GitHub, we opt not to do
-      // this for our repos that have autorelease enabled.
-      if (branchConfiguration.handleGHRelease) {
-        logger.info(`handling GitHub release for (${repoUrl})`);
-        try {
-          const numReleases = await Runner.createReleases(manifest);
-          logger.info(`Created ${numReleases} releases`);
-          if (numReleases > 0) {
-            // we created a release, reload config which may include the latest
-            // version
-            manifest = await buildManifest(
-              github,
-              repoLanguage,
-              branchConfiguration,
-              logger
-            );
-          }
-        } catch (e) {
-          if (e instanceof Errors.DuplicateReleaseError) {
-            // In the future, this could raise an issue against the
-            // installed repository
-            logger.warn('Release tag already exists, skipping...', e);
-          } else {
-            throw e;
-          }
-        }
-      }
-
-      try {
-        logger.info(`creating pull request for (${repoUrl})`);
-        await Runner.createPullRequests(manifest);
-      } catch (e) {
-        if (e instanceof Errors.ConfigurationError) {
-          // In the future, this could raise an issue against the
-          // installed repository
-          logger.warn(e);
-          return;
-        } else {
-          // re-raise
-          throw e;
-        }
-      }
-    }
-
     for (const branchConfiguration of branchConfigurations) {
       logger.debug(branchConfiguration);
       try {
-        await runBranchConfiguration(branchConfiguration);
+        await runBranchConfiguration(
+          github,
+          repoLanguage,
+          repoUrl,
+          branchConfiguration,
+          logger
+        );
       } catch (e) {
         if (e instanceof Errors.ConfigurationError) {
           // Consider opening an issue on the repository in the future
@@ -442,13 +452,25 @@ const handler = (app: Probot) => {
 
     for (const branchConfiguration of branchConfigurations) {
       logger.debug(branchConfiguration);
-      const manifest = await buildManifest(
-        github,
-        repoLanguage,
-        branchConfiguration,
-        logger
-      );
-      await Runner.createPullRequests(manifest);
+      try {
+        await runBranchConfiguration(
+          github,
+          repoLanguage,
+          repoUrl,
+          branchConfiguration,
+          logger
+        );
+      } catch (e) {
+        if (e instanceof Errors.ConfigurationError) {
+          // Consider opening an issue on the repository in the future
+          logger.warn(
+            `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
+          );
+          logger.warn(e);
+        } else {
+          throw e;
+        }
+      }
     }
   });
 
