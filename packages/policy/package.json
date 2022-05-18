@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@google-cloud/bigquery": "^5.6.0",
-    "code-suggester": "^2.1.0",
+    "code-suggester": "^3.0.0",
     "gaxios": "^5.0.0",
     "gcf-utils": "^13.5.2",
     "lru-cache": "^7.10.1",
