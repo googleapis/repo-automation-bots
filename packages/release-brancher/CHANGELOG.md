@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.3.3](https://github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.2...release-brancher-v1.3.3) (2022-05-18)
+
+
+### Bug Fixes
+
+* **deps:** update dependency code-suggester to v3 ([#3727](https://github.com/googleapis/repo-automation-bots/issues/3727)) ([d39e6c0](https://github.com/googleapis/repo-automation-bots/commit/d39e6c0802aa69c83dda617d96d2232a3bcbb388))
+
 ### [1.3.2](https://github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.1...release-brancher-v1.3.2) (2022-04-25)
 
 
