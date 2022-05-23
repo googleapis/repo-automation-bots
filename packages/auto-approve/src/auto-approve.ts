@@ -50,7 +50,7 @@ export async function authenticateWithSecret(
 
   const payload = version?.payload?.data?.toString() || '';
   if (payload === '') {
-    throw Error('did not retrieve a payload from SecretManager.');
+    throw new Error('did not retrieve a payload from SecretManager.');
   }
 
   return new Octokit({auth: payload});
