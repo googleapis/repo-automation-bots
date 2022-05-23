@@ -32,14 +32,14 @@
     "gcf-utils": "^13.5.2",
     "js-yaml": "^4.1.0",
     "jsonpath": "^1.1.1",
-    "minimatch": "^5.0.1"
+    "minimatch": "^5.1.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
     "@types/jsonpath": "^0.2.0",
     "@types/minimatch": "^3.0.5",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^17.0.33",
+    "@types/node": "^17.0.35",
     "@types/sinon": "^10.0.11",
     "c8": "^7.11.3",
     "cross-env": "^7.0.3",
