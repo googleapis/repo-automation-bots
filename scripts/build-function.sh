@@ -34,7 +34,7 @@ mkdir -p "${targetDir}"
 pushd "${directoryName}"
 
 # compile
-npm install
+npm ci
 npm run compile
 cp -r build "${targetDir}"
 cp package.json "${targetDir}/package.json"
