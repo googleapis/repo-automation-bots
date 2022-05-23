@@ -23,8 +23,6 @@ import {
   ConfigurationV2,
   AutoApproveNotConfigured,
 } from './interfaces';
-// eslint-disable-next-line node/no-extraneous-import
-import {RequestError} from '@octokit/request-error';
 
 const ajv = new Ajv();
 
