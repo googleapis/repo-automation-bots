@@ -126,9 +126,10 @@ export function getVersions(
       newMinorVersion
     )
   ) {
-    throw Error(
+    logger.warn(
       `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
     );
+    return undefined;
   }
   return {
     oldDependencyName,
@@ -194,9 +195,10 @@ export function getVersionsV2(
       newMinorVersion
     )
   ) {
-    throw Error(
+    logger.warn(
       `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
     );
+    return undefined;
   }
   return {
     oldDependencyName,
@@ -543,9 +545,10 @@ export function getJavaVersions(
       newMinorVersion
     )
   ) {
-    throw Error(
+    logger.warn(
       `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
     );
+    return undefined;
   }
 
   return {

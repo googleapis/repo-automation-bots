@@ -114,41 +114,40 @@ export class PythonDependency extends Process implements LanguageRule {
         x.targetFileToCheck.test(file.filename)
       );
 
-      if (fileMatch) {
-        const versions = getVersionsV2(
-          file,
-          fileMatch.oldVersion,
-          fileMatch.newVersion
+      if (!fileMatch) {
+        return false;
+      }
+
+      const versions = getVersionsV2(
+        file,
+        fileMatch.oldVersion,
+        fileMatch.newVersion
+      );
+
+      if (!versions) {
+        return false;
+      }
+
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
+        versions,
+        // We can assert this exists since we're in the class rule that contains it
+        fileMatch.dependencyTitle!,
+        this.incomingPR.title
+      );
+
+      const isVersionValid = runVersioningValidation(versions);
+
+      const oneDependencyChanged = isOneDependencyChanged(file);
+
+      if (!(doesDependencyMatch && isVersionValid && oneDependencyChanged)) {
+        reportIndividualChecks(
+          ['doesDependencyMatch', 'isVersionValid', 'oneDependencyChanged'],
+          [doesDependencyMatch, isVersionValid, oneDependencyChanged],
+          this.incomingPR.repoOwner,
+          this.incomingPR.repoName,
+          this.incomingPR.prNumber,
+          file.filename
         );
-        if (versions) {
-          const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
-            versions,
-            // We can assert this exists since we're in the class rule that contains it
-            fileMatch.dependencyTitle!,
-            this.incomingPR.title
-          );
-
-          const isVersionValid = runVersioningValidation(versions);
-
-          const oneDependencyChanged = isOneDependencyChanged(file);
-
-          if (
-            !(doesDependencyMatch && isVersionValid && oneDependencyChanged)
-          ) {
-            reportIndividualChecks(
-              ['doesDependencyMatch', 'isVersionValid', 'oneDependencyChanged'],
-              [doesDependencyMatch, isVersionValid, oneDependencyChanged],
-              this.incomingPR.repoOwner,
-              this.incomingPR.repoName,
-              this.incomingPR.prNumber,
-              file.filename
-            );
-            return false;
-          }
-        } else {
-          return false;
-        }
-      } else {
         return false;
       }
     }
