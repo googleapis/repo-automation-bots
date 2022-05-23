@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": ".repo-metadata.json",
-  "description": "Schema for .repo-metadtaa.json file",
+  "description": "Schema for .repo-metadata.json file",
   "additionalProperties": true,
   "type": "object",
   "properties": {
