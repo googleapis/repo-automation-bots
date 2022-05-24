@@ -67,7 +67,7 @@ export async function authenticateWithSecret(
  * @param headSha the sha upon which to check whether the config is correct
  * @returns true if the status check passed, false otherwise
  */
-async function evaluateAndSubmitCheckForConfig(
+export async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
   config: string | Configuration | ConfigurationV2 | undefined,
