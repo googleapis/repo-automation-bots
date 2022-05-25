@@ -131,6 +131,7 @@ export async function findPendingReleasePullRequests(
       }
     }
   }
+  logger.debug(`Found ${found.length} release pull requests`);
   return found;
 }
 
