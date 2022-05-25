@@ -110,19 +110,31 @@ async function doTrigger(
     logger.error(`no owner for ${pullRequest.number}`);
     return;
   }
+  const repo = pullRequest.base.repo.name;
+  const number = pullRequest.number;
   try {
     await triggerKokoroJob(pullRequest.html_url, token);
   } catch (e) {
+    logger.metric('release.trigger_failed', {
+      owner,
+      repo,
+      number,
+    });
     await markFailed(octokit, {
       owner,
-      repo: pullRequest.base.repo.name,
-      number: pullRequest.number,
+      repo,
+      number,
     });
   } finally {
+    logger.metric('release.triggered', {
+      owner,
+      repo,
+      number,
+    });
     await markTriggered(octokit, {
       owner,
-      repo: pullRequest.base.repo.name,
-      number: pullRequest.number,
+      repo,
+      number,
     });
   }
 }
