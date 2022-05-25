@@ -564,6 +564,18 @@ describe('ReleasePleaseBot', () => {
           'packages/java-pkg'
         );
       });
+
+      it('should allow missing repo language and no releaseType', async () => {
+        payload = require(resolve(fixturesPath, './push_to_main_no_language'));
+        getConfigStub.resolves(loadConfig('main_branch.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.notCalled(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+      });
     });
 
     describe('for manifest releases', () => {
