@@ -53,9 +53,11 @@ interface GitHubAPI {
   request: RequestFunctionType;
 }
 
+class BotConfigurationError extends Error {}
+
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language === null) {
-    throw Error('repository has no detected language');
+    throw new BotConfigurationError('repository has no detected language');
   }
   switch (language.toLowerCase()) {
     case 'java':
@@ -72,7 +74,7 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
       if (releasers.includes(language.toLowerCase() as ReleaseType)) {
         return language.toLowerCase() as ReleaseType;
       } else {
-        throw Error(`unknown release type: ${language}`);
+        throw new BotConfigurationError(`unknown release type: ${language}`);
       }
     }
   }
@@ -344,6 +346,9 @@ const handler = (app: Probot) => {
             `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
           );
           logger.warn(e);
+        } else if (e instanceof BotConfigurationError) {
+          // Consider opening an issue on the repository in the future
+          logger.warn(e);
         } else {
           throw e;
         }
@@ -466,6 +471,9 @@ const handler = (app: Probot) => {
           logger.warn(
             `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
           );
+          logger.warn(e);
+        } else if (e instanceof BotConfigurationError) {
+          // Consider opening an issue on the repository in the future
           logger.warn(e);
         } else {
           throw e;
