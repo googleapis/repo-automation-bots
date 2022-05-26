@@ -135,12 +135,12 @@ export async function checkAutoApproveConfig(
       } else {
         // This branch means auto-approve is not on this repo, so we're
         // throwing an error (essentially, skipping the check)
-        throw AutoApproveNotConfigured;
+        throw new AutoApproveNotConfigured();
       }
     } catch (err) {
       // This branch means auto-approve is not on this repo, so we're
       // throwing an error (essentially, skipping the check)
-      throw AutoApproveNotConfigured;
+      throw new AutoApproveNotConfigured();
     }
   } else {
     // This means auto-approve is on the PR, meaning we still need to confirm validity
