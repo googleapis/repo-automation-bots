@@ -96,7 +96,7 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
 
     reportIndividualChecks(
       ['authorshipMatches', 'titleMatches', 'bodyMatches', 'isGAPIC'],
-      [authorshipMatches, titleMatches, !bodyMatches, isGAPIC],
+      [authorshipMatches, !titleMatches, !bodyMatches, isGAPIC],
       this.incomingPR.repoOwner,
       this.incomingPR.repoName,
       this.incomingPR.prNumber
