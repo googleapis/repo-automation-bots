@@ -24,6 +24,7 @@ interface Args {
   'scheduler-service-account': string;
   'function-region': string;
   'function-name': string;
+  'target-type': string;
   region: string;
   project: string;
 }
@@ -52,6 +53,12 @@ const deployCommand: yargs.CommandModule<{}, Args> = {
         type: 'string',
         demand: true,
       })
+      .option('target-type', {
+        describe: 'backend service type',
+        type: 'string',
+        choices: ['function', 'run'],
+        default: 'function',
+      })
       .option('project', {
         describe: 'project to deploy to',
         type: 'string',
@@ -78,7 +85,8 @@ const deployCommand: yargs.CommandModule<{}, Args> = {
           argv['function-region'],
           argv['function-name'],
           proxyUrl,
-          argv['scheduler-service-account']
+          argv['scheduler-service-account'],
+          argv['target-type'],
         );
       })
     );
