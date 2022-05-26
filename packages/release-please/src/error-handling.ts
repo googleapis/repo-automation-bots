@@ -72,6 +72,19 @@ function issueNeedsUpdating(issue: Issue, expectedBody: string) {
   return issue.body === expectedBody;
 }
 
+/**
+ * Opens or edits an existing issue that matches the issue title and
+ * authenticated user.
+ *
+ * @param {Octokit} octokit - The Octokit instance.
+ * @param {string} owner - The owner of the repository.
+ * @param {string} repo - The name of the repository.
+ * @param {string} title - The issue title.
+ * @param {string} body - The issue body.
+ * @param {string[]} labels - Labels to attach to the issue.
+ * @param {GCFLogger} logger - A context logger.
+ * @returns {Issue} The created or updated issue.
+ */
 export async function addOrUpdateIssue(
   octokit: Octokit,
   owner: string,
