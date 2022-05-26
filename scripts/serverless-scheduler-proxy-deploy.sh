@@ -24,14 +24,21 @@ fi
 PROJECT_ID=$1
 REGION=$2
 
+if [[ -z "${SERVICE_IDENTIFIER}" ]]
+then
+    echo "Missing SERVICE_IDENTIFIER env var"
+    exit 1
+fi
+
 echo "Deploying proxy to project $PROJECT_ID, with region $REGION"
 
 gcloud beta run deploy \
-            --image "gcr.io/$PROJECT_ID/serverless-scheduler-proxy" \
-            --set-env-vars "PROJECT_ID=$PROJECT_ID" \
-            --platform managed \
-            --region $REGION \
-            --quiet \
-	    --service-account \
+    --image "gcr.io/$PROJECT_ID/serverless-scheduler-proxy" \
+    --set-env-vars "PROJECT_ID=$PROJECT_ID" \
+    --set-env-vars "SERVICE_IDENTIFIER=$SERVICE_IDENTIFIER" \
+    --platform managed \
+    --region $REGION \
+    --quiet \
+    --service-account \
 	    scheduler-proxy@repo-automation-bots.iam.gserviceaccount.com \
-            serverless-scheduler-proxy
+    serverless-scheduler-proxy
