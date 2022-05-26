@@ -86,7 +86,7 @@ const deployCommand: yargs.CommandModule<{}, Args> = {
           argv['function-name'],
           proxyUrl,
           argv['scheduler-service-account'],
-          argv['target-type'],
+          argv['target-type']
         );
       })
     );
