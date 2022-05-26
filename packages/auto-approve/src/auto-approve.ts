@@ -50,7 +50,7 @@ export async function authenticateWithSecret(
 
   const payload = version?.payload?.data?.toString() || '';
   if (payload === '') {
-    throw Error('did not retrieve a payload from SecretManager.');
+    throw new Error('did not retrieve a payload from SecretManager.');
   }
 
   return new Octokit({auth: payload});
@@ -67,7 +67,7 @@ export async function authenticateWithSecret(
  * @param headSha the sha upon which to check whether the config is correct
  * @returns true if the status check passed, false otherwise
  */
-async function evaluateAndSubmitCheckForConfig(
+export async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
   config: string | Configuration | ConfigurationV2 | undefined,

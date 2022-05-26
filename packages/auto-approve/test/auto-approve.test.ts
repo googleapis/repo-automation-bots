@@ -25,7 +25,12 @@ import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
-import {ConfigurationV2, Configuration, Reviews} from '../src/interfaces';
+import {
+  ConfigurationV2,
+  Configuration,
+  Reviews,
+  AutoApproveNotConfigured,
+} from '../src/interfaces';
 import * as fs from 'fs';
 import {logger} from 'gcf-utils';
 
@@ -557,29 +562,46 @@ describe('auto-approve', () => {
       assert.ok(secretOctokit.pulls.createReview.calledOnce);
       assert.ok(secretOctokit.issues.addLabels.calledOnce);
     });
+  });
 
-    describe('RELEASE_FREEZE', () => {
-      it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
-        sandbox.stub(process, 'env').value({});
-        process.env.RELEASE_FREEZE = 'true';
-        const consoleStub = sandbox.stub(logger, 'info');
+  describe('evaluate and submit auto approve check', () => {
+    it('returns undefined if auto approve is not configured on the repo', async () => {
+      checkAutoApproveStub.throws(new AutoApproveNotConfigured());
 
-        const payload = require(resolve(
-          fixturesPath,
-          'events',
-          'pull_request_release_please'
-        ));
+      assert.strictEqual(
+        await autoApprove.evaluateAndSubmitCheckForConfig(
+          'testOwner',
+          'testRepo',
+          'config',
+          new Octokit(),
+          '1234'
+        ),
+        undefined
+      );
+    });
+  });
 
-        await probot.receive({
-          name: 'pull_request',
-          payload,
-          id: 'abc123',
-        });
-        sandbox.assert.calledWith(
-          consoleStub,
-          sinon.match(/releases are currently frozen/)
-        );
+  describe('RELEASE_FREEZE', () => {
+    it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
+      sandbox.stub(process, 'env').value({});
+      process.env.RELEASE_FREEZE = 'true';
+      const consoleStub = sandbox.stub(logger, 'info');
+
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_release_please'
+      ));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
       });
+      sandbox.assert.calledWith(
+        consoleStub,
+        sinon.match(/releases are currently frozen/)
+      );
     });
   });
 });
