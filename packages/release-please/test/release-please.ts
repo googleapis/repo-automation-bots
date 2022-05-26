@@ -32,6 +32,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
+import * as errorHandlingModule from '../src/error-handling';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -157,6 +158,9 @@ describe('ReleasePleaseBot', () => {
           'testOwner/testRepo'
         );
         createPullRequestsStub.rejects(error);
+        const addIssueStub = sandbox
+          .stub(errorHandlingModule, 'addOrUpdateIssue')
+          .resolves();
 
         getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
         await probot.receive(
@@ -166,6 +170,7 @@ describe('ReleasePleaseBot', () => {
 
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
+        sinon.assert.calledOnce(addIssueStub);
       });
 
       it('should ignore if the branch is not the configured primary branch', async () => {

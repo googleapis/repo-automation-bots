@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.5.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.2...gcf-utils-v13.5.3) (2022-05-26)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @google-cloud/storage to v6 ([#3780](https://github.com/googleapis/repo-automation-bots/issues/3780)) ([cf8c6c3](https://github.com/googleapis/repo-automation-bots/commit/cf8c6c313da853a34559de7235588d65b69e2ef7))
+
 ### [13.5.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.1...gcf-utils-v13.5.2) (2022-05-02)
 
 

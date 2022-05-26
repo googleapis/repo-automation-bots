@@ -244,7 +244,7 @@ export class GCFBootstrapper {
       new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient =
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
-    this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
+    this.storage = new Storage({retryOptions: {autoRetry: !RUNNING_IN_TEST}});
     this.taskTargetEnvironment =
       options.taskTargetEnvironment || defaultTaskEnvironment();
     if (!options.projectId) {

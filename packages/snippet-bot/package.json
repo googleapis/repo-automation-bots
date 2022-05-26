@@ -30,7 +30,7 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.0.0",
     "@google-automations/label-utils": "^2.0.0",
-    "@google-cloud/storage": "^5.8.5",
+    "@google-cloud/storage": "^6.0.0",
     "gcf-utils": "^13.5.2",
     "lru-cache": "^7.10.1",
     "minimatch": "^5.0.0",

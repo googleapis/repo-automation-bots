@@ -42,6 +42,7 @@ import {
   DEFAULT_CONFIGURATION,
 } from './config-constants';
 import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
+import {addOrUpdateIssue} from './error-handling';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -232,6 +233,7 @@ async function runBranchConfiguration(
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
+  octokit: Octokit,
   logger: GCFLogger
 ) {
   let manifest = await buildManifest(
@@ -277,7 +279,15 @@ async function runBranchConfiguration(
       // In the future, this could raise an issue against the
       // installed repository
       logger.warn(e);
-      return;
+      await addOrUpdateIssue(
+        octokit,
+        github.repository.owner,
+        github.repository.repo,
+        'Configuration error for release-please',
+        e.message,
+        ['release-please'],
+        logger
+      );
     } else {
       // re-raise
       throw e;
@@ -337,6 +347,7 @@ const handler = (app: Probot) => {
           repoLanguage,
           repoUrl,
           branchConfiguration,
+          context.octokit,
           logger
         );
       } catch (e) {
@@ -463,6 +474,7 @@ const handler = (app: Probot) => {
           repoLanguage,
           repoUrl,
           branchConfiguration,
+          context.octokit,
           logger
         );
       } catch (e) {
