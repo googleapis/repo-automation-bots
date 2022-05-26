@@ -358,8 +358,16 @@ const handler = (app: Probot) => {
           );
           logger.warn(e);
         } else if (e instanceof BotConfigurationError) {
-          // Consider opening an issue on the repository in the future
           logger.warn(e);
+          await addOrUpdateIssue(
+            context.octokit,
+            github.repository.owner,
+            github.repository.repo,
+            'Configuration error for release-please',
+            e.message,
+            ['release-please'],
+            logger
+          );
         } else {
           throw e;
         }
@@ -485,8 +493,16 @@ const handler = (app: Probot) => {
           );
           logger.warn(e);
         } else if (e instanceof BotConfigurationError) {
-          // Consider opening an issue on the repository in the future
           logger.warn(e);
+          await addOrUpdateIssue(
+            context.octokit,
+            github.repository.owner,
+            github.repository.repo,
+            'Configuration error for release-please',
+            e.message,
+            ['release-please'],
+            logger
+          );
         } else {
           throw e;
         }
