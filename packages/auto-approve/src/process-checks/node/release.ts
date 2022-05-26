@@ -109,34 +109,35 @@ export class NodeRelease extends Process implements LanguageRule {
         fileRule.targetFileToCheck.test(x.filename)
       );
 
-      if (fileMatch) {
-        const versions = getVersionsV2(
-          fileMatch,
-          fileRule.oldVersion,
-          fileRule.newVersion
+      if (!fileMatch) {
+        return false;
+      }
+
+      const versions = getVersionsV2(
+        fileMatch,
+        fileRule.oldVersion,
+        fileRule.newVersion
+      );
+
+      if (!versions) {
+        return false;
+      }
+
+      const isVersionValid = runVersioningValidation(versions);
+
+      const oneDependencyChanged = isOneDependencyChanged(fileMatch);
+
+      const isMergedOnWeekDay = mergesOnWeekday();
+
+      if (!(isMergedOnWeekDay && isVersionValid && oneDependencyChanged)) {
+        reportIndividualChecks(
+          ['isMergedOnWeekDay', 'isVersionValid', 'oneDependencyChanged'],
+          [isMergedOnWeekDay, isVersionValid, oneDependencyChanged],
+          this.incomingPR.repoOwner,
+          this.incomingPR.repoName,
+          this.incomingPR.prNumber,
+          fileMatch.filename
         );
-        if (versions) {
-          const isVersionValid = runVersioningValidation(versions);
-
-          const oneDependencyChanged = isOneDependencyChanged(fileMatch);
-
-          const isMergedOnWeekDay = mergesOnWeekday();
-
-          if (!(isMergedOnWeekDay && isVersionValid && oneDependencyChanged)) {
-            reportIndividualChecks(
-              ['isMergedOnWeekDay', 'isVersionValid', 'oneDependencyChanged'],
-              [isMergedOnWeekDay, isVersionValid, oneDependencyChanged],
-              this.incomingPR.repoOwner,
-              this.incomingPR.repoName,
-              this.incomingPR.prNumber,
-              fileMatch.filename
-            );
-            return false;
-          }
-        } else {
-          return false;
-        }
-      } else {
         return false;
       }
     }
