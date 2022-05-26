@@ -56,20 +56,17 @@ async function findOpenIssueByCreator(
   const issues: Issue[] = [];
   for (const issue of await octokit.paginate(octokit.issues.listForRepo, {
     owner,
-    name,
     repo,
     state: 'open',
     creator,
   })) {
-    if (issue.repository) {
-      issues.push(issueFromGitHubIssue(owner, repo, issue));
-    }
+    issues.push(issueFromGitHubIssue(owner, repo, issue));
   }
   return issues;
 }
 
 function issueNeedsUpdating(issue: Issue, expectedBody: string) {
-  return issue.body === expectedBody;
+  return issue.body !== expectedBody;
 }
 
 /**
@@ -127,6 +124,7 @@ export async function addOrUpdateIssue(
   }
 
   // no existing issue - open a new one
+  logger.info('No existing issue found - opening new issue');
   const {data: newIssue} = await octokit.issues.create({
     owner,
     repo,
