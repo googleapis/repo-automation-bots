@@ -25,7 +25,13 @@ import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
-import {ConfigurationV2, Configuration, Reviews, File, AutoApproveNotConfigured} from '../src/interfaces';
+import {
+  ConfigurationV2,
+  Configuration,
+  Reviews,
+  File,
+  AutoApproveNotConfigured,
+} from '../src/interfaces';
 import * as fs from 'fs';
 import {logger} from 'gcf-utils';
 
