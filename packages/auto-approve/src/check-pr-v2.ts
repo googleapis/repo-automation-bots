@@ -110,6 +110,13 @@ export async function checkPRAgainstConfigV2(
     logger
   );
 
+  if (!changedFiles) {
+    logger.info(
+      `Config does not exist in PR or repo, skipping execution for ${repoOwner}/${repo}/${prNumber}`
+    );
+    return false;
+  }
+
   for (const rule of config.processes) {
     const Rule = typeMap.find(x => x.configValue === rule);
     // We can assert we'll find a match, since the config has already passed
