@@ -34,6 +34,7 @@ import {
 } from '../src/interfaces';
 import * as fs from 'fs';
 import {logger} from 'gcf-utils';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -182,6 +183,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(getChangedFilesStub.calledOnce);
       });
 
@@ -256,6 +258,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(getChangedFilesStub.calledOnce);
       });
 
@@ -391,6 +394,7 @@ describe('auto-approve', () => {
 
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(checkPRAgainstConfigV2Stub.calledOnce);
       });
 
@@ -431,6 +435,7 @@ describe('auto-approve', () => {
 
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(checkPRAgainstConfigStub.calledOnce);
       });
     });
@@ -457,24 +462,6 @@ describe('auto-approve', () => {
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(getBlobFromPRFilesStub.calledOnce);
-      });
-
-      it('gracefully exits if files cannot be retrieved from getChangedFiles', async () => {
-        getChangedFilesStub.restore();
-        const payload = require(resolve(
-          fixturesPath,
-          'events',
-          'pull_request_opened'
-        ));
-
-        const scopes = [listFiles('testOwner', 'testRepo', 404, undefined)];
-
-        await probot.receive({
-          name: 'pull_request',
-          payload,
-          id: 'abc123',
-        });
-        scopes.forEach(scope => scope.done());
       });
 
       it('attempts to create a passing status check if PR contains correct config', async () => {
@@ -559,6 +546,7 @@ describe('auto-approve', () => {
         });
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
     });
@@ -601,32 +589,50 @@ describe('auto-approve', () => {
 
       scopes.forEach(scope => scope.done());
       assert.ok(getSecretStub.calledOnce);
+      assert.ok(addLabelWithDatastoreLockStub.calledOnce);
       assert.ok(secretOctokit.pulls.createReview.calledOnce);
-      assert.ok(secretOctokit.issues.addLabels.calledOnce);
     });
+  });
 
-    describe('RELEASE_FREEZE', () => {
-      it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
-        sandbox.stub(process, 'env').value({});
-        process.env.RELEASE_FREEZE = 'true';
-        const consoleStub = sandbox.stub(logger, 'info');
+  describe('add label with datastore lock', () => {
+    it('adds a label in GH', async () => {
+      addLabelWithDatastoreLockStub.restore();
+      const mockDatastore = sinon.createStubInstance(DatastoreLock);
+      const datastoreMock = addLabels('owner', 'repo', 200);
 
-        const payload = require(resolve(
-          fixturesPath,
-          'events',
-          'pull_request_release_please'
-        ));
+      await autoApprove.addLabelWithDatastoreLock(
+        mockDatastore,
+        new TestingOctokit(),
+        'owner',
+        'repo',
+        1
+      );
 
-        await probot.receive({
-          name: 'pull_request',
-          payload,
-          id: 'abc123',
-        });
-        sandbox.assert.calledWith(
-          consoleStub,
-          sinon.match(/releases are currently frozen/)
-        );
+      datastoreMock.done();
+    });
+  });
+
+  describe('RELEASE_FREEZE', () => {
+    it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
+      sandbox.stub(process, 'env').value({});
+      process.env.RELEASE_FREEZE = 'true';
+      const consoleStub = sandbox.stub(logger, 'info');
+
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_release_please'
+      ));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
       });
+      sandbox.assert.calledWith(
+        consoleStub,
+        sinon.match(/releases are currently frozen/)
+      );
     });
   });
 });

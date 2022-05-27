@@ -65,9 +65,8 @@ export async function addLabelWithDatastoreLock(
   repo: string,
   prNumber: number
 ) {
-  console.log('hello?');
-  const doesLockExist = await lock.peek();
   let result;
+  const doesLockExist = await lock.peek();
   if (doesLockExist === false) {
     result = await lock.acquire();
   }
