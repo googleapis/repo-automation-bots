@@ -67,8 +67,11 @@ export async function addLabelWithDatastoreLock(
 ) {
   let result;
   const doesLockExist = await lock.peek();
+
   if (doesLockExist === false) {
     result = await lock.acquire();
+  } else {
+    await new Promise(res => setTimeout(res, 100));
   }
 
   await octokit.issues.addLabels({

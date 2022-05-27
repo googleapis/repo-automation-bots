@@ -561,6 +561,7 @@ describe('auto-approve', () => {
           id: 'abc123',
         });
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
@@ -624,6 +625,42 @@ describe('auto-approve', () => {
       );
 
       datastoreMock.done();
+    });
+
+    it('waits 10 seconds if there is a lock on the target', async () => {
+      addLabelWithDatastoreLockStub.restore();
+      const mockDatastore = sinon.createStubInstance(DatastoreLock);
+      const datastoreMock = addLabels('owner', 'repo', 200);
+
+      await Promise.race([
+        new Promise(res => setTimeout(res, 50)),
+        autoApprove.addLabelWithDatastoreLock(
+          mockDatastore,
+          new TestingOctokit(),
+          'owner',
+          'repo',
+          1
+        ),
+      ]);
+
+      assert.strictEqual(datastoreMock.isDone(), false);
+    });
+  });
+
+  describe('evaluate and submit auto approve check', () => {
+    it('returns undefined if auto approve is not configured on the repo', async () => {
+      checkAutoApproveStub.throws(new AutoApproveNotConfigured());
+
+      assert.strictEqual(
+        await autoApprove.evaluateAndSubmitCheckForConfig(
+          'testOwner',
+          'testRepo',
+          'config',
+          new Octokit(),
+          '1234'
+        ),
+        undefined
+      );
     });
   });
 
