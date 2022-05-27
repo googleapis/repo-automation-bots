@@ -35,6 +35,8 @@ steps:
     id: "serverless-scheduler-proxy-deploy"
     waitFor: ["serverless-scheduler-proxy-push"]
     entrypoint: bash
+    env:
+      - "SERVICE_IDENTIFIER=c7mcaca6sa"
     args:
       - "-e"
       - "./scripts/serverless-scheduler-proxy-deploy.sh"

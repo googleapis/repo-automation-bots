@@ -63,11 +63,12 @@ function listCommitsOnAPR(
 function getFilesOnAPR(
   owner: string,
   repo: string,
-  response: {filename: string; sha: string}[]
+  response: {filename: string; sha: string}[] | undefined,
+  code: number
 ) {
   return nock('https://api.github.com')
     .get(`/repos/${owner}/${repo}/pulls/1/files`)
-    .reply(200, response);
+    .reply(code, response);
 }
 
 describe('check pr against config', async () => {
@@ -101,9 +102,12 @@ describe('check pr against config', async () => {
       ) as ConfigurationV2;
 
       const scopes = [
-        getFilesOnAPR('GoogleCloudPlatform', 'python-docs-samples', [
-          {filename: 'requirements.txt', sha: '1234'},
-        ]),
+        getFilesOnAPR(
+          'GoogleCloudPlatform',
+          'python-docs-samples',
+          [{filename: 'requirements.txt', sha: '1234'}],
+          200
+        ),
         listCommitsOnAPR('GoogleCloudPlatform', 'python-docs-samples', [
           {author: {login: 'gcf-owl-bot[bot]'}},
         ]),
@@ -143,6 +147,26 @@ describe('check pr against config', async () => {
       scopes.forEach(scope => scope.done());
     });
 
+    it('gracefully exits if files cannot be retrieved from getChangedFiles', async () => {
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_fork'
+      ));
+      const scopes = [
+        getFilesOnAPR(
+          'GoogleCloudPlatform',
+          'python-docs-samples',
+          undefined,
+          404
+        ),
+      ];
+
+      await checkPR.checkPRAgainstConfigV2(validPR, pr, octokit);
+
+      scopes.forEach(scope => scope.done());
+    });
+
     it('should return false if incoming PR does not match any of the processes', async () => {
       const pr = require(resolve(
         fixturesPath,
@@ -151,9 +175,12 @@ describe('check pr against config', async () => {
       ));
 
       const scopes = [
-        getFilesOnAPR('testOwner', 'testRepo', [
-          {filename: 'requirements.txt', sha: '1234'},
-        ]),
+        getFilesOnAPR(
+          'testOwner',
+          'testRepo',
+          [{filename: 'requirements.txt', sha: '1234'}],
+          200
+        ),
         listCommitsOnAPR('testOwner', 'testRepo', [
           {author: {login: 'gcf-owl-bot[bot]'}},
         ]),
@@ -189,9 +216,12 @@ describe('check pr against config', async () => {
       ));
 
       const scopes = [
-        getFilesOnAPR('testOwner', 'testRepo', [
-          {filename: 'requirements.txt', sha: '1234'},
-        ]),
+        getFilesOnAPR(
+          'testOwner',
+          'testRepo',
+          [{filename: 'requirements.txt', sha: '1234'}],
+          200
+        ),
         listCommitsOnAPR('testOwner', 'testRepo', [
           {author: {login: 'gcf-owl-bot[bot]'}},
         ]),
@@ -226,10 +256,15 @@ describe('check pr against config', async () => {
       ));
 
       const scopes = [
-        getFilesOnAPR('testOwner', 'testRepo', [
-          {filename: 'changedFile1', sha: '1234'},
-          {filename: 'changedFile2', sha: '1234'},
-        ]),
+        getFilesOnAPR(
+          'testOwner',
+          'testRepo',
+          [
+            {filename: 'changedFile1', sha: '1234'},
+            {filename: 'changedFile2', sha: '1234'},
+          ],
+          200
+        ),
         listCommitsOnAPR('testOwner', 'testRepo', [
           {author: {login: 'gcf-owl-bot[bot]'}},
         ]),
@@ -266,14 +301,19 @@ describe('check pr against config', async () => {
       ));
 
       const scopes = [
-        getFilesOnAPR('testOwner', 'testRepo', [
-          {filename: 'README.md', sha: '1234'},
-          {
-            filename: '.github/readme/synth.metadata/synth.metadata',
-            sha: '1234',
-          },
-          {filename: 'README.md', sha: '1234'},
-        ]),
+        getFilesOnAPR(
+          'testOwner',
+          'testRepo',
+          [
+            {filename: 'README.md', sha: '1234'},
+            {
+              filename: '.github/readme/synth.metadata/synth.metadata',
+              sha: '1234',
+            },
+            {filename: 'README.md', sha: '1234'},
+          ],
+          200
+        ),
         listCommitsOnAPR('testOwner', 'testRepo', [
           {author: {login: 'gcf-owl-bot[bot]'}},
         ]),
@@ -312,13 +352,18 @@ describe('check pr against config', async () => {
       // Since this case is succeeding, it won't get to call all of the scopes for the rest
       // of the cases
       const scopes = [
-        getFilesOnAPR('testOwner', 'testRepo', [
-          {filename: 'README.md', sha: '1234'},
-          {
-            filename: '.github/readme/synth.metadata/synth.metadata',
-            sha: '1234',
-          },
-        ]),
+        getFilesOnAPR(
+          'testOwner',
+          'testRepo',
+          [
+            {filename: 'README.md', sha: '1234'},
+            {
+              filename: '.github/readme/synth.metadata/synth.metadata',
+              sha: '1234',
+            },
+          ],
+          200
+        ),
       ];
 
       const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
@@ -351,13 +396,18 @@ describe('check pr against config', async () => {
       ));
 
       const scopes = [
-        getFilesOnAPR('testOwner', 'testRepo', [
-          {filename: 'README.md', sha: '1234'},
-          {
-            filename: '.github/readme/synth.metadata/synth.metadata',
-            sha: '1234',
-          },
-        ]),
+        getFilesOnAPR(
+          'testOwner',
+          'testRepo',
+          [
+            {filename: 'README.md', sha: '1234'},
+            {
+              filename: '.github/readme/synth.metadata/synth.metadata',
+              sha: '1234',
+            },
+          ],
+          200
+        ),
       ];
       const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,

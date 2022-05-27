@@ -39,7 +39,7 @@ export async function getChangedFiles(
   repo: string,
   prNumber: number,
   logger: GCFLogger = defaultLogger
-): Promise<File[]> {
+): Promise<File[] | undefined> {
   try {
     return await octokit.paginate(octokit.pulls.listFiles, {
       owner,
@@ -53,6 +53,7 @@ export async function getChangedFiles(
       logger.error(
         `Not found error, ${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
       );
+      return undefined;
     }
     throw new Error(
       `${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`

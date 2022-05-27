@@ -20,15 +20,18 @@
                 "releaseType": {
                     "enum": [
                         "dart",
+                        "dotnet-yoshi",
                         "elixir",
                         "go",
                         "go-yoshi",
                         "helm",
+                        "java",
                         "java-bom",
                         "java-lts",
                         "java-backport",
                         "java-yoshi",
                         "krm-blueprint",
+                        "maven",
                         "node",
                         "ocaml",
                         "php",
@@ -134,7 +137,7 @@
                 "xpath": {
                     "type": "string"
                 }
-            }            
+            }
         }
     },
     "properties": {
