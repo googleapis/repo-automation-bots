@@ -30,6 +30,10 @@ if [[ -z "${PROJECT_ID}" ]]; then
     PROJECT_ID=repo-automation-bots
 fi
 
+if [[ -z "${TARGET_TYPE}" ]]; then
+    TARGET_TYPE=function
+fi
+
 npm i -g @google-automations/cron-utils
 
 pushd "${DIRECTORY}"
@@ -40,4 +44,5 @@ cron-utils deploy \
   --function-region="$FUNCTION_REGION" \
   --region="${REGION}" \
   --function-name="${FUNCTION_NAME}" \
-  --project="${PROJECT_ID}"
+  --project="${PROJECT_ID}" \
+  --target-type="${TARGET_TYPE}"

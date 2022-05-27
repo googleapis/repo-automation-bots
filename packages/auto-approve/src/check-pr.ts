@@ -84,6 +84,13 @@ export async function checkPRAgainstConfig(
       logger
     );
 
+    if (!changedFiles) {
+      logger.info(
+        `Config does not exist in PR or repo, skipping execution for ${repoOwner}/${repo}/${prNumber}`
+      );
+      return false;
+    }
+
     // This function checks to see if the PR is a 'special' PR,
     // i.e., if its authorship qualifies it for further checks
     const fileAndFileRules = getTargetFiles(

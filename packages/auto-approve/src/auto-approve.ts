@@ -203,6 +203,12 @@ export function handler(app: Probot) {
         logger
       );
 
+      if (!PRFiles) {
+        logger.info(
+          `Config does not exist in PR or repo, skipping execution for ${owner}/${repo}/${prNumber}`
+        );
+        return;
+      }
       // Check to see if the config is being modified in the PR, before we check
       // if it exists in the repo. If it's being modified, we want to submit
       // a check, and NOT auto-approve; if it isn't, then we want to check
