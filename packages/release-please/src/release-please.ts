@@ -54,9 +54,11 @@ interface GitHubAPI {
   request: RequestFunctionType;
 }
 
+class BotConfigurationError extends Error {}
+
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language === null) {
-    throw Error('repository has no detected language');
+    throw new BotConfigurationError('repository has no detected language');
   }
   switch (language.toLowerCase()) {
     case 'java':
@@ -73,7 +75,7 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
       if (releasers.includes(language.toLowerCase() as ReleaseType)) {
         return language.toLowerCase() as ReleaseType;
       } else {
-        throw Error(`unknown release type: ${language}`);
+        throw new BotConfigurationError(`unknown release type: ${language}`);
       }
     }
   }
@@ -355,6 +357,17 @@ const handler = (app: Probot) => {
             `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
           );
           logger.warn(e);
+        } else if (e instanceof BotConfigurationError) {
+          logger.warn(e);
+          await addOrUpdateIssue(
+            context.octokit,
+            github.repository.owner,
+            github.repository.repo,
+            'Configuration error for release-please',
+            e.message,
+            ['release-please'],
+            logger
+          );
         } else {
           throw e;
         }
@@ -479,6 +492,17 @@ const handler = (app: Probot) => {
             `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
           );
           logger.warn(e);
+        } else if (e instanceof BotConfigurationError) {
+          logger.warn(e);
+          await addOrUpdateIssue(
+            context.octokit,
+            github.repository.owner,
+            github.repository.repo,
+            'Configuration error for release-please',
+            e.message,
+            ['release-please'],
+            logger
+          );
         } else {
           throw e;
         }
