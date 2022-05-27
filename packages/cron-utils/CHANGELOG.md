@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.0.2...cron-utils-v3.1.0) (2022-05-27)
+
+
+### Features
+
+* allow targeting Cloud Run URLs with crons ([#3783](https://github.com/googleapis/repo-automation-bots/issues/3783)) ([87b67a8](https://github.com/googleapis/repo-automation-bots/commit/87b67a8f7eda65514a2c6f15367cc490140a5d12))
+
 ### [3.0.2](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.0.1...cron-utils-v3.0.2) (2022-02-08)
 
 
