@@ -45,6 +45,7 @@ steps:
     entrypoint: bash
     env:
       - "TARGET_TYPE=run"
+      - "FUNCTION_NAME=canary-bot-cloud-run"
     args:
       - "-e"
       - "./scripts/cron-deploy.sh"
