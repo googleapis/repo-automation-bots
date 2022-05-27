@@ -43,6 +43,8 @@ steps:
     id: "cron-deploy"
     waitFor: ["-"]
     entrypoint: bash
+    env:
+      - "TARGET_TYPE=run"
     args:
       - "-e"
       - "./scripts/cron-deploy.sh"
