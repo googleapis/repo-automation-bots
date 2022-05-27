@@ -170,6 +170,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(addLabelWithDatastoreLockStub.calledOnce);
       });
 
@@ -209,6 +210,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
       });
 
       it('approves and tags a PR if everything is valid, and it is coming from a fork', async () => {
@@ -241,6 +243,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(addLabelWithDatastoreLockStub.calledOnce);
       });
 
@@ -276,6 +279,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
       });
 
       it('logs to the console if config is valid but PR is not', async () => {
@@ -305,6 +309,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
       });
 
       // Confirming that we are first checking if auto-approve.yml is being modified
@@ -369,6 +374,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(checkPRAgainstConfigV2Stub.calledOnce);
       });
@@ -408,6 +414,7 @@ describe('auto-approve', () => {
         });
 
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(addLabelWithDatastoreLockStub.calledOnce);
         assert.ok(checkPRAgainstConfigStub.calledOnce);
       });
@@ -432,6 +439,7 @@ describe('auto-approve', () => {
           id: 'abc123',
         });
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
 
