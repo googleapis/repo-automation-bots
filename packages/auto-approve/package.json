@@ -27,6 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@google-automations/datastore-lock": "^3.2.0",
     "@google-cloud/secret-manager": "^3.12.0",
     "ajv": "^8.11.0",
     "dayjs": "^1.11.2",
@@ -44,7 +45,7 @@
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
     "js-yaml": "^4.1.0",
-    "mocha": "^10.0.0",
+    "mocha": "^9.2.2",
     "nock": "^13.2.4",
     "sinon": "^14.0.0",
     "smee-client": "^1.2.3",

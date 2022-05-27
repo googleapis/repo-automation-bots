@@ -33,9 +33,10 @@ import {
   Configuration,
   ConfigurationV2,
 } from './interfaces';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 
 const APPROVER = 'yoshi-approver';
-
+const LOCK_ID = 'auto-approve';
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
 export async function authenticateWithSecret(
@@ -54,6 +55,33 @@ export async function authenticateWithSecret(
   }
 
   return new Octokit({auth: payload});
+}
+
+// Add datastore locking to prevent race condition/trampling
+export async function addLabelWithDatastoreLock(
+  lock: DatastoreLock,
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  prNumber: number
+) {
+  console.log('hello?');
+  const doesLockExist = await lock.peek();
+  let result;
+  if (doesLockExist === false) {
+    result = await lock.acquire();
+  }
+
+  await octokit.issues.addLabels({
+    owner,
+    repo,
+    issue_number: prNumber,
+    labels: ['automerge: exact'],
+  });
+
+  if (result) {
+    await lock.release();
+  }
 }
 
 /**
@@ -291,12 +319,15 @@ export function handler(app: Probot) {
               pull_number: prNumber,
               event: 'APPROVE',
             });
-            await octokit.issues.addLabels({
+
+            await exports.addLabelWithDatastoreLock(
+              new DatastoreLock(LOCK_ID, context.payload.pull_request.url),
+              octokit,
               owner,
               repo,
-              issue_number: prNumber,
-              labels: ['automerge: exact'],
-            });
+              prNumber
+            );
+
             logger.metric('auto_approve.approved_tagged', {
               repo: `${owner}/${repo}`,
               pr: prNumber,
