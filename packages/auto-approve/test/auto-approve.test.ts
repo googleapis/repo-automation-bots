@@ -500,6 +500,7 @@ describe('auto-approve', () => {
           id: 'abc123',
         });
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
 
@@ -527,6 +528,7 @@ describe('auto-approve', () => {
           id: 'abc123',
         });
         scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(getBlobFromPRFilesStub.calledOnce);
       });
 
