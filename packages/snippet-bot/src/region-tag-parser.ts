@@ -19,7 +19,7 @@ import {isFile} from './utils';
 import {Octokit} from '@octokit/rest';
 import parseDiff from 'parse-diff';
 import fetch from 'node-fetch';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 
 /**
  * The result for unmatched region tag checks.
@@ -72,7 +72,8 @@ export async function parseRegionTagsInPullRequest(
   sha: string,
   headOwner: string,
   headRepo: string,
-  headSha: string
+  headSha: string,
+  logger: GCFLogger = defaultLogger
 ): Promise<ChangesInPullRequest> {
   const changes: RegionTagLocation[] = [];
   const files: string[] = [];
@@ -162,7 +163,7 @@ export async function parseRegionTagsInPullRequest(
       } catch (e) {
         const err = e as Error;
         // See: https://github.com/googleapis/repo-automation-bots/issues/2246
-        // TODO: Migrate to Git Data API.
+        // TODO(#2703): Migrate to Git Data API.
         err.message =
           'Skipping the diff entry because it failed to read the' +
           ` file: ${err.message}`;

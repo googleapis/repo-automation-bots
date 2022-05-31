@@ -167,7 +167,8 @@ describe('merge-on-green wrapper logic', () => {
           'testRepo',
           1,
           'main',
-          testingOctokitInstance
+          testingOctokitInstance,
+          logger
         );
       });
       const scopes = [getBranchProtection('main', 200, ['Special Check'])];
@@ -220,25 +221,23 @@ describe('merge-on-green wrapper logic', () => {
     });
 
     describe('cleaning up PRs', () => {
+      beforeEach(() => {
+        sandbox.stub(handler, 'getDatastore').resolves([
+          [
+            {
+              repo: 'testRepo',
+              number: 1,
+              owner: 'testOwner',
+              created: Date.now(),
+              branchProtection: ['Special Check'],
+              label: 'automerge',
+              author: 'testOwner',
+              reactionId: 1,
+            },
+          ],
+        ]);
+      });
       it('deletes a PR if PR is closed when cleaning up repository', async () => {
-        handler.getDatastore = async () => {
-          const pr = [
-            [
-              {
-                repo: 'testRepo',
-                number: 1,
-                owner: 'testOwner',
-                created: Date.now(),
-                branchProtection: ['Special Check'],
-                label: 'automerge',
-                author: 'testOwner',
-                reactionId: 1,
-              },
-            ],
-          ];
-          return pr;
-        };
-
         const scopes = [
           getPRCleanUp('closed', false),
           getLabels('automerge'),
@@ -389,9 +388,7 @@ describe('merge-on-green wrapper logic', () => {
           url: 'http://example.com',
           state: 'continue',
         };
-        handler.getDatastore = async () => {
-          return [[pr]];
-        };
+        sandbox.stub(handler, 'getDatastore').resolves([[pr]]);
 
         assert.deepStrictEqual(handler.maybeReducePRList([pr]), [[pr]]);
       });
@@ -412,13 +409,11 @@ describe('merge-on-green wrapper logic', () => {
             state: 'continue',
           });
         }
-        handler.getDatastore = async () => {
-          return [prs];
-        };
+        sandbox.stub(handler, 'getDatastore').resolves([prs]);
 
         const [reducedPRs] = handler.maybeReducePRList(prs);
 
-        assert.ok(reducedPRs.length === 25);
+        assert.strictEqual(reducedPRs.length, 25);
       });
     });
 
@@ -564,10 +559,6 @@ describe('merge-on-green wrapper logic', () => {
         removePRStub = sandbox.stub(handler, 'removePR');
       });
 
-      afterEach(() => {
-        addPRStub.restore();
-        removePRStub.restore();
-      });
       it('deletes a PR from datastore if it was closed', async () => {
         const getPRStub = sandbox.stub(handler, 'getPR').resolves({
           number: 1,

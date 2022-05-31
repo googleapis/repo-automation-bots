@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 import {Reviews, File, GHFile} from './interfaces';
 
@@ -37,8 +37,9 @@ export async function getChangedFiles(
   octokit: Octokit,
   owner: string,
   repo: string,
-  prNumber: number
-): Promise<File[]> {
+  prNumber: number,
+  logger: GCFLogger = defaultLogger
+): Promise<File[] | undefined> {
   try {
     return await octokit.paginate(octokit.pulls.listFiles, {
       owner,
@@ -52,6 +53,7 @@ export async function getChangedFiles(
       logger.error(
         `Not found error, ${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
       );
+      return undefined;
     }
     throw new Error(
       `${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`

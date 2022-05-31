@@ -41,12 +41,13 @@ import {
   Violation,
   checkProductPrefixViolations,
   checkRemovingUsedTagViolations,
+  checkTagFormat,
 } from './violations';
 import schema from './config-schema.json';
 
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {logger, addOrUpdateIssueComment} from 'gcf-utils';
+import {addOrUpdateIssueComment, getContextLogger, GCFLogger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
 import tar from 'tar';
@@ -95,7 +96,8 @@ async function getFiles(dir: string, allFiles: string[]) {
 
 async function fullScan(
   context: Context<'issues'>,
-  configuration: Configuration
+  configuration: Configuration,
+  logger: GCFLogger
 ) {
   const installationId = context.payload.installation?.id;
   const commentMark = `<!-- probot comment [${installationId}]-->`;
@@ -216,6 +218,7 @@ async function scanPullRequest(
   context: Context<'pull_request'> | Context<'issue_comment'>,
   pull_request: PullRequest,
   configuration: Configuration,
+  logger: GCFLogger,
   refreshing = false
 ) {
   const installationId = context.payload.installation?.id;
@@ -237,7 +240,8 @@ async function scanPullRequest(
     pull_request.base.sha,
     pull_request.head.repo.owner.login,
     pull_request.head.repo.name,
-    pull_request.head.sha
+    pull_request.head.sha,
+    logger
   );
 
   let mismatchedTags = false;
@@ -357,15 +361,22 @@ async function scanPullRequest(
   if (!noPrefixReq) {
     productPrefixViolations = await checkProductPrefixViolations(
       result,
-      configuration
+      configuration,
+      logger
     );
   }
+
+  // Check tag format.
+  let tagFormatViolations: Array<Violation> = [];
+  tagFormatViolations = await checkTagFormat(result, configuration);
+
   const removingUsedTagsViolations = await checkRemovingUsedTagViolations(
     result,
     configuration,
     parseResults,
     pull_request.base.repo.full_name,
-    pull_request.base.ref
+    pull_request.base.ref,
+    logger
   );
   const removeUsedTagViolations = [
     ...(removingUsedTagsViolations.get('REMOVE_USED_TAG') as Violation[]),
@@ -404,9 +415,22 @@ async function scanPullRequest(
     },
   });
 
+  // status check for tagFormatViolations
+  const tagFormatCheckParams = context.repo({
+    name: 'Region tag format',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'No violations',
+      summary: 'No violations found',
+      text: 'All the region tags have the correct format',
+    },
+  });
+
   if (
     productPrefixViolations.length > 0 ||
-    removeUsedTagViolations.length > 0
+    removeUsedTagViolations.length > 0 ||
+    tagFormatViolations.length > 0
   ) {
     commentBody += 'Here is the summary of possible violations 😱';
 
@@ -452,6 +476,27 @@ async function scanPullRequest(
         title: 'Removal of region tags in use',
         summary: '',
         text: removeUsedTagViolationsDetail,
+      };
+    }
+
+    // Rendering tag format violations.
+    if (tagFormatViolations.length > 0) {
+      let summary = '';
+      if (tagFormatViolations.length === 1) {
+        summary = 'There is a format violation for a region tag.';
+      } else {
+        summary = `There are format violations for ${tagFormatViolations.length} region tags.`;
+      }
+      const tagFormatViolationsDetail = formatViolations(
+        tagFormatViolations,
+        summary
+      );
+      commentBody += tagFormatViolationsDetail;
+      tagFormatCheckParams.conclusion = 'failure';
+      tagFormatCheckParams.output = {
+        title: '',
+        summary: 'Some region tags have the wrong format',
+        text: tagFormatViolationsDetail,
       };
     }
 
@@ -557,6 +602,16 @@ ${REFRESH_UI}
   ) {
     await aggregator.add(removeUsedTagCheckParams);
   }
+
+  // Status checks for tag format errors
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    configuration.aggregateChecks() ||
+    tagFormatViolations.length > 0
+  ) {
+    await aggregator.add(tagFormatCheckParams);
+  }
+
   await aggregator.submit();
   // emit metrics
   logger.metric('snippet-bot-violations', {
@@ -574,6 +629,11 @@ ${REFRESH_UI}
     violation_type: 'REMOVING_USED_TAG',
     count: removeUsedTagViolations.length,
   });
+  logger.metric('snippet-bot-violations', {
+    target: pull_request.url,
+    violation_type: 'TAG_FORMAT_ERROR',
+    count: tagFormatViolations.length,
+  });
 }
 
 /**
@@ -587,6 +647,7 @@ function getCommentMark(installationId: number | undefined): string {
 export = (app: Probot) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const configOptions = await getConfig<ConfigurationOptions>(
@@ -603,6 +664,7 @@ export = (app: Probot) => {
     await syncLabels(context.octokit, owner, repo, SNIPPET_BOT_LABELS);
   });
   app.on('issue_comment.edited', async context => {
+    const logger = getContextLogger(context);
     const commentMark = getCommentMark(context.payload.installation?.id);
 
     // If the comment is made by bots, and the comment has the refresh
@@ -647,11 +709,13 @@ export = (app: Probot) => {
       context,
       prResponse.data as PullRequest,
       configuration,
+      logger,
       true
     );
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const configOptions = await getConfig<ConfigurationOptions>(
@@ -671,10 +735,11 @@ export = (app: Probot) => {
       ...configOptions,
     });
     logger.info({config: configuration});
-    await fullScan(context, configuration);
+    await fullScan(context, configuration, logger);
   });
 
   app.on('pull_request.labeled', async context => {
+    const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const configOptions = await getConfig<ConfigurationOptions>(
@@ -727,6 +792,7 @@ export = (app: Probot) => {
       context,
       context.payload.pull_request as PullRequest,
       configuration,
+      logger,
       true
     );
   });
@@ -739,6 +805,7 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
+      const logger = getContextLogger(context);
       // Exit if the PR is closed.
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
@@ -793,7 +860,8 @@ export = (app: Probot) => {
       await scanPullRequest(
         context,
         context.payload.pull_request as PullRequest,
-        configuration
+        configuration,
+        logger
       );
     }
   );

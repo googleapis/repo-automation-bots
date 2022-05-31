@@ -30,6 +30,7 @@ import yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
 import * as assert from 'assert';
+import {GCFLogger} from 'gcf-utils';
 
 nock.disableNetConnect();
 
@@ -128,6 +129,37 @@ describe('Blunderbuss', () => {
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues/5')
+        .reply(200, issue)
+        .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
+      requests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'testOwner',
+        'testRepo',
+        CONFIGURATION_FILE_PATH,
+        {},
+        {schema: schema}
+      );
+      sinon.assert.notCalled(validateConfigStub);
+    });
+
+    it('assigns opened issues to reporter', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_no_assignees'
+      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
+      getConfigWithDefaultStub.resolves(loadConfig('valid_only_reporter.yml'));
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues/5')
@@ -727,7 +759,8 @@ describe('Blunderbuss getConfigWithDefault', () => {
       {
         assign_issues: sinon.match.array.deepEquals(['issues1']),
         assign_prs: sinon.match.array.deepEquals(['prs1']),
-      }
+      },
+      sinon.match.instanceOf(GCFLogger)
     );
   });
   it('fetch a real world config(python-docs-samples)', async () => {
@@ -757,7 +790,8 @@ describe('Blunderbuss getConfigWithDefault', () => {
     sinon.assert.calledOnceWithExactly(
       assignStub,
       sinon.match.instanceOf(Context),
-      sinon.match.object
+      sinon.match.object,
+      sinon.match.instanceOf(GCFLogger)
     );
     const config = assignStub.getCall(0).args[1];
     assert.strictEqual(config.assign_issues_by[0].labels[0], 'api: appengine');
@@ -767,7 +801,7 @@ describe('Blunderbuss getConfigWithDefault', () => {
 
 function fetchFilesInPR(configFile: string) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
+    .get('/repos/testOwner/testRepo/pulls/6/files?per_page=50')
     .reply(200, [
       {
         filename: `.github/${CONFIGURATION_FILE_PATH}`,
@@ -842,7 +876,8 @@ describe('Blunderbuss validateConfigChanges', () => {
     sinon.assert.calledOnceWithExactly(
       assignStub,
       sinon.match.instanceOf(Context),
-      sinon.match.object
+      sinon.match.object,
+      sinon.match.instanceOf(GCFLogger)
     );
   });
   it('creates a failing status check for a broken config', async () => {
@@ -867,7 +902,8 @@ describe('Blunderbuss validateConfigChanges', () => {
     sinon.assert.calledOnceWithExactly(
       assignStub,
       sinon.match.instanceOf(Context),
-      sinon.match.object
+      sinon.match.object,
+      sinon.match.instanceOf(GCFLogger)
     );
   });
 });

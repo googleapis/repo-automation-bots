@@ -473,7 +473,7 @@ function createConfigResponse(configFile: string) {
 // Emulate the given config file is modified in the PR.
 function fetchFilesInPR(configFile: string) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
+    .get('/repos/testOwner/testRepo/pulls/6/files?per_page=50')
     .reply(200, [
       {
         filename: `.github/${CONFIGURATION_FILE_PATH}`,

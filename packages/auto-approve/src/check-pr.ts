@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {PullRequestEvent} from '@octokit/webhooks-types/schema';
 import {getChangedFiles} from './get-pr-info';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {
   getTargetFiles,
   getVersions,
@@ -43,7 +43,8 @@ import {ValidPr, File} from './interfaces';
 export async function checkPRAgainstConfig(
   config: {rules: ValidPr[]},
   pr: PullRequestEvent,
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger = defaultLogger
 ): Promise<Boolean> {
   const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
@@ -79,8 +80,16 @@ export async function checkPRAgainstConfig(
       octokit,
       repoOwner,
       repo,
-      prNumber
+      prNumber,
+      logger
     );
+
+    if (!changedFiles) {
+      logger.info(
+        `Config does not exist in PR or repo, skipping execution for ${repoOwner}/${repo}/${prNumber}`
+      );
+      return false;
+    }
 
     // This function checks to see if the PR is a 'special' PR,
     // i.e., if its authorship qualifies it for further checks

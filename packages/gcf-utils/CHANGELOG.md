@@ -87,6 +87,48 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.5.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.2...gcf-utils-v13.5.3) (2022-05-26)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @google-cloud/storage to v6 ([#3780](https://github.com/googleapis/repo-automation-bots/issues/3780)) ([cf8c6c3](https://github.com/googleapis/repo-automation-bots/commit/cf8c6c313da853a34559de7235588d65b69e2ef7))
+
+### [13.5.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.1...gcf-utils-v13.5.2) (2022-05-02)
+
+
+### Bug Fixes
+
+* recalculate request bindings for downloaded payloads ([#3582](https://github.com/googleapis/repo-automation-bots/issues/3582)) ([ae3d35c](https://github.com/googleapis/repo-automation-bots/commit/ae3d35c8b9b875ba7a3b73ac10fbabbabd5adbe2))
+
+### [13.5.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.0...gcf-utils-v13.5.1) (2022-04-29)
+
+
+### Bug Fixes
+
+* export GCFLogger class ([#3533](https://github.com/googleapis/repo-automation-bots/issues/3533)) ([24b3b00](https://github.com/googleapis/repo-automation-bots/commit/24b3b009e2731c8bb46ab5eddcb9cf160194df54))
+
+## [13.5.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.4.0...gcf-utils-v13.5.0) (2022-04-28)
+
+
+### Features
+
+* inject trace logging attribute for request correlation ([#3526](https://github.com/googleapis/repo-automation-bots/issues/3526)) ([6083e2e](https://github.com/googleapis/repo-automation-bots/commit/6083e2e1aa88cd1e501c3632c93a08ee2fda71d2))
+
+## [13.4.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.3.1...gcf-utils-v13.4.0) (2022-04-27)
+
+
+### Features
+
+* instantiate new child logger for each request via weakmap cache ([#3516](https://github.com/googleapis/repo-automation-bots/issues/3516)) ([27b07f9](https://github.com/googleapis/repo-automation-bots/commit/27b07f9c6f6e422c055e809c50b27a930d369b68))
+
+### [13.3.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.3.0...gcf-utils-v13.3.1) (2022-04-21)
+
+
+### Bug Fixes
+
+* **owl-bot:** allow 30 minutes of execution before retry ([#3472](https://github.com/googleapis/repo-automation-bots/issues/3472)) ([a879b43](https://github.com/googleapis/repo-automation-bots/commit/a879b43becec5b9ce2b94f4b35b255ec6d48f08b)), closes [#3303](https://github.com/googleapis/repo-automation-bots/issues/3303)
+
 ## [13.3.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.2.2...gcf-utils-v13.3.0) (2022-03-31)
 
 

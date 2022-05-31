@@ -32,6 +32,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
+import * as errorHandlingModule from '../src/error-handling';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -157,6 +158,9 @@ describe('ReleasePleaseBot', () => {
           'testOwner/testRepo'
         );
         createPullRequestsStub.rejects(error);
+        const addIssueStub = sandbox
+          .stub(errorHandlingModule, 'addOrUpdateIssue')
+          .resolves();
 
         getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
         await probot.receive(
@@ -166,6 +170,7 @@ describe('ReleasePleaseBot', () => {
 
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
+        sinon.assert.calledOnce(addIssueStub);
       });
 
       it('should ignore if the branch is not the configured primary branch', async () => {
@@ -564,6 +569,22 @@ describe('ReleasePleaseBot', () => {
           'packages/java-pkg'
         );
       });
+
+      it('should allow missing repo language and no releaseType', async () => {
+        const addIssueStub = sandbox
+          .stub(errorHandlingModule, 'addOrUpdateIssue')
+          .resolves();
+        payload = require(resolve(fixturesPath, './push_to_main_no_language'));
+        getConfigStub.resolves(loadConfig('main_branch.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.notCalled(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnce(addIssueStub);
+      });
     });
 
     describe('for manifest releases', () => {
@@ -637,6 +658,27 @@ describe('ReleasePleaseBot', () => {
           'path/to/manifest.json'
         );
       });
+    });
+
+    it('should handle a misconfigured repository', async () => {
+      const fromManifestStub = sandbox
+        .stub(Manifest, 'fromManifest')
+        .rejects(
+          new Errors.ConfigurationError(
+            'some error message',
+            'releaser-name',
+            'repo-name'
+          )
+        );
+      getConfigStub.resolves(loadConfig('manifest_handle_gh_release.yml'));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+      sinon.assert.calledOnce(fromManifestStub);
     });
   });
 
@@ -747,7 +789,7 @@ describe('ReleasePleaseBot', () => {
         .resolves(fakeManifest);
     });
 
-    it('should try to create a release', async () => {
+    it('should try to create a release pull request', async () => {
       const payload = require(resolve(fixturesPath, './pull_request_labeled'));
       getConfigStub.resolves(loadConfig('valid.yml'));
       const requests = nock('https://api.github.com')
@@ -765,6 +807,34 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       sinon.assert.calledOnce(createPullRequestsStub);
       sinon.assert.notCalled(createReleasesStub);
+      sinon.assert.calledOnceWithExactly(
+        fromConfigStub,
+        sinon.match.instanceOf(GitHub),
+        'master',
+        sinon.match.has('releaseType', 'java-yoshi'),
+        sinon.match.any,
+        undefined
+      );
+    });
+
+    it('should try to tag a GitHub release', async () => {
+      const payload = require(resolve(fixturesPath, './pull_request_labeled'));
+      getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+      sinon.assert.calledOnce(createPullRequestsStub);
+      sinon.assert.calledOnce(createReleasesStub);
       sinon.assert.calledOnceWithExactly(
         fromConfigStub,
         sinon.match.instanceOf(GitHub),

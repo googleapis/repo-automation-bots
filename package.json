@@ -3,6 +3,9 @@
   "private": true,
   "license": "Apache-2.0",
   "repository": "googleapis/repo-automation-bots",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "scripts": {
     "run": "./scripts/scripts.js",
     "fix": "npm run run -- npm run fix",
@@ -12,7 +15,7 @@
   },
   "devDependencies": {
     "c8": "^7.1.0",
-    "gaxios": "^4.0.0",
+    "gaxios": "^5.0.0",
     "smee-client": "^1.1.0",
     "@google-cloud/mono-repo-publish": "^1.0.0"
   }

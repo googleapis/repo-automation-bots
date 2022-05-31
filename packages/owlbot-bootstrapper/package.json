@@ -1,0 +1,59 @@
+{
+  "name": "googleapis-bootstrapper",
+  "version": "1.0.0",
+  "description": "Bootstraps the initial files on new APIs to generate libraries",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "test": "cd cli && npm t && cd ../app && npm t && cd ../common-container && npm t",
+    "fix": "cd cli && npm run fix && cd ../app && npm run fix && cd ../common-container && npm run fix",
+    "lint": "cd cli && npm run lint && cd ../app && npm run lint && cd ../common-container && npm run lint"
+  },
+  "dependencies": {
+    "@google-cloud/cloudbuild": "^3.0.0",
+    "@google-cloud/secret-manager": "^3.12.0",
+    "@octokit/auth-app": "^3.6.1",
+    "@octokit/rest": "^18.12.0",
+    "@types/yargs": "^17.0.10",
+    "fs": "0.0.1-security",
+    "gaxios": "^5.0.0",
+    "gcf-utils": "^13.5.2",
+    "jsonwebtoken": "^8.5.1",
+    "node-fetch": "^3.2.4",
+    "nodejs-fetch": "^1.0.0",
+    "snap-shot-it": "^7.9.6",
+    "uuidv4": "^6.2.13",
+    "yargs": "^17.5.1"
+  },
+  "devDependencies": {
+    "@types/jwt-encode": "^1.0.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^17.0.35",
+    "@types/node-fetch": "^2.6.1",
+    "@types/sinon": "^10.0.11",
+    "c8": "^7.11.3",
+    "cross-env": "^7.0.3",
+    "gts": "^3.1.0",
+    "mocha": "^10.0.0",
+    "nock": "^13.2.4",
+    "sinon": "^14.0.0",
+    "smee-client": "^1.2.3",
+    "typescript": "~4.6.4"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  }
+}

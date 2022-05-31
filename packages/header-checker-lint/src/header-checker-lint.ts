@@ -17,9 +17,9 @@ import {Probot} from 'probot';
 import {LicenseType, detectLicenseHeader} from './header-parser';
 import {ConfigurationOptions, WELL_KNOWN_CONFIGURATION_FILE} from './config';
 import * as minimatch from 'minimatch';
-import {logger} from 'gcf-utils';
 import {getConfig, ConfigChecker} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
+import {getContextLogger} from 'gcf-utils';
 
 type Conclusion =
   | 'success'
@@ -82,6 +82,7 @@ export = (app: Probot) => {
         schema,
         WELL_KNOWN_CONFIGURATION_FILE
       );
+      const logger = getContextLogger(context);
       await configChecker.validateConfigChanges(
         context.octokit,
         owner,

@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Context} from 'probot';
 import * as util from 'util';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {
   PullRequestEvent,
   IssuesEvent,
@@ -62,7 +62,8 @@ export function isIssue(
 
 export async function assign(
   context: Context<'issues'> | Context<'pull_request'>,
-  config: Configuration
+  config: Configuration,
+  logger: GCFLogger = defaultLogger
 ) {
   let issue: Issue | undefined;
   let pullRequest: PullRequest | undefined;
@@ -209,7 +210,8 @@ export async function assign(
     ? preferredAssignees
     : assignConfig || [];
   possibleAssignees = await expandTeams(possibleAssignees, context);
-  const assignee = randomFrom(possibleAssignees, user);
+  const exclude = issue ? '' : user;
+  const assignee = randomFrom(possibleAssignees, exclude);
   if (!assignee) {
     context.log.info(
       util.format(

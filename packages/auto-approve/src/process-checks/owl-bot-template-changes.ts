@@ -24,7 +24,8 @@ import {Octokit} from '@octokit/rest';
 export class OwlBotTemplateChanges extends Process implements LanguageRule {
   classRule: {
     author: string;
-    titleRegex?: RegExp;
+    titleRegex: RegExp;
+    titleRegexExclude: RegExp;
     bodyRegex?: RegExp;
   };
 
@@ -52,7 +53,11 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
     ),
       (this.classRule = {
         author: 'gcf-owl-bot[bot]',
-        titleRegex: /(fix|feat|!)/,
+        // For this particular rule, we want to check a pattern and an antipattern;
+        // we want fix/feat/! to not be in the title, and we do want [autoapprove] to
+        // be in the title
+        titleRegex: /\[autoapprove\]/,
+        titleRegexExclude: /(fix|feat|!)/,
         bodyRegex: /PiperOrigin-RevId/,
       });
   }
@@ -63,10 +68,14 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
       this.incomingPR.author
     );
 
-    const titleMatches = checkTitleOrBody(
-      this.incomingPR.title,
-      this.classRule.titleRegex
-    );
+    const titleMatches =
+      // We don't want it to include fix, feat, or !
+      !checkTitleOrBody(
+        this.incomingPR.title,
+        this.classRule.titleRegexExclude
+      ) &&
+      // We do want it to include [autoapprove] in title
+      checkTitleOrBody(this.incomingPR.title, this.classRule.titleRegex);
 
     let bodyMatches = true;
     if (this.incomingPR.body) {
@@ -87,13 +96,13 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
 
     reportIndividualChecks(
       ['authorshipMatches', 'titleMatches', 'bodyMatches', 'isGAPIC'],
-      [authorshipMatches, !titleMatches, !bodyMatches, isGAPIC],
+      [authorshipMatches, titleMatches, !bodyMatches, isGAPIC],
       this.incomingPR.repoOwner,
       this.incomingPR.repoName,
       this.incomingPR.prNumber
     );
 
-    // We are looking for an antipattern, i.e., if title does not include fix or feat, or if body dodes not include PiperOrigin
-    return authorshipMatches && !titleMatches && !bodyMatches && isGAPIC;
+    // We are looking for an antipattern, i.e., if title does not include fix or feat, and if body dodes not include PiperOrigin
+    return authorshipMatches && titleMatches && !bodyMatches && isGAPIC;
   }
 }

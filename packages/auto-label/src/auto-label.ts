@@ -15,7 +15,7 @@
 import {Storage} from '@google-cloud/storage';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, Context} from 'probot';
-import {logger} from 'gcf-utils';
+import {GCFLogger, getContextLogger} from 'gcf-utils';
 import * as helper from './helper';
 import {
   CONFIG_FILE_NAME,
@@ -49,7 +49,7 @@ handler.getDriftFile = async (file: string) => {
   return contents.toString();
 };
 
-handler.getDriftRepos = async () => {
+handler.getDriftRepos = async (logger: GCFLogger) => {
   const jsonData = await handler.getDriftFile('public_repos.json');
   if (!jsonData) {
     logger.error(
@@ -60,7 +60,7 @@ handler.getDriftRepos = async () => {
   return JSON.parse(jsonData).repos as DriftRepo[];
 };
 
-handler.getDriftApis = async () => {
+handler.getDriftApis = async (logger: GCFLogger) => {
   const jsonData = await handler.getDriftFile('apis.json');
   if (!jsonData) {
     logger.error(
@@ -77,7 +77,11 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   issueNumber: number,
   issueTitle: string,
   driftRepos: DriftRepo[],
-  context: Context<'pull_request'> | Context<'issues'> | Context<'installation'>
+  context:
+    | Context<'pull_request'>
+    | Context<'issues'>
+    | Context<'installation'>,
+  logger: GCFLogger
 ) {
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
   const res = await context.octokit.issues
@@ -95,7 +99,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     logger.info(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
-    const apis = await handler.getDriftApis();
+    const apis = await handler.getDriftApis(logger);
     if (labelsOnIssue && labelsOnIssue?.find(x => x.name === API_NA_LABEL)) {
       logger.info(
         `${owner}/${repo}/${issueNumber} is marked as not applicable, skipping`
@@ -193,7 +197,8 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
   context: Context<'pull_request'>,
   owner: string,
   repo: string,
-  config: Config
+  config: Config,
+  logger: GCFLogger
 ) {
   if (config?.enabled === false) {
     logger.info(`Skipping for ${owner}/${repo}`);
@@ -202,7 +207,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
   const pull_number = context.payload.pull_request.number;
 
   if (config?.product) {
-    const driftRepos = await handler.getDriftRepos();
+    const driftRepos = await handler.getDriftRepos(logger);
     if (!driftRepos) {
       return;
     }
@@ -212,7 +217,8 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       pull_number,
       context.payload.pull_request.title,
       driftRepos,
-      context
+      context,
+      logger
     );
   }
 
@@ -285,7 +291,8 @@ async function updateStalenessLabel(
   context: Context<'pull_request'> | Context<'issues'>,
   owner: string,
   repo: string,
-  config: Config
+  config: Config,
+  logger: GCFLogger
 ) {
   // If user has turned on stale labels by configuring {staleness: {pullrequest: true, old: 60, extraold: 120}}
   // By default, this feature is turned off
@@ -376,7 +383,8 @@ async function updatePullRequestSizeLabel(
   context: Context<'pull_request'>,
   owner: string,
   repo: string,
-  config: Config
+  config: Config,
+  logger: GCFLogger
 ) {
   const pull_number = context.payload.pull_request.number;
   // Update pull request size label if user has turned on config, product and
@@ -456,6 +464,7 @@ export function handler(app: Probot) {
   // Nightly cron that backfills and corrects api labels
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const config = await getConfigWithDefault<Config>(
@@ -483,14 +492,14 @@ export function handler(app: Probot) {
       );
     }
     // Update staleness labels on all pull requests in the repo
-    updateStalenessLabel(context, owner, repo, config);
+    updateStalenessLabel(context, owner, repo, config, logger);
 
     logger.info(`running for org ${context.payload.cron_org}`);
     if (context.payload.cron_org !== owner) {
       logger.info(`skipping run for ${context.payload.cron_org}`);
       return;
     }
-    const driftRepos = await handler.getDriftRepos();
+    const driftRepos = await handler.getDriftRepos(logger);
     if (!driftRepos) {
       return;
     }
@@ -510,7 +519,8 @@ export function handler(app: Probot) {
           issue.number,
           issue.title,
           driftRepos,
-          context
+          context,
+          logger
         );
         if (wasNotAdded) {
           logger.info(
@@ -533,6 +543,7 @@ export function handler(app: Probot) {
   // Labels issues with product labels.
   // By default, this is turned on without user configuration.
   app.on(['issues.opened', 'issues.reopened'], async context => {
+    const logger = getContextLogger(context);
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const config = await getConfigWithDefault<Config>(
@@ -550,7 +561,7 @@ export function handler(app: Probot) {
       return;
     }
 
-    const driftRepos = await handler.getDriftRepos();
+    const driftRepos = await handler.getDriftRepos(logger);
     if (!driftRepos) {
       return;
     }
@@ -560,7 +571,8 @@ export function handler(app: Probot) {
       issueNumber,
       context.payload.issue.title,
       driftRepos,
-      context
+      context,
+      logger
     );
   });
 
@@ -568,6 +580,7 @@ export function handler(app: Probot) {
   // By default, product labels are turned on and language/path labels are
   // turned off.
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
+    const logger = getContextLogger(context);
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     // First check the config schema for PR.
@@ -587,17 +600,18 @@ export function handler(app: Probot) {
       DEFAULT_CONFIGS,
       {schema: schema}
     );
-    await updatePullRequestSizeLabel(context, owner, repo, config);
+    await updatePullRequestSizeLabel(context, owner, repo, config, logger);
     // For the auto label main logic, synchronize event is irrelevant.
     if (context.payload.action === 'synchronize') {
       return;
     }
-    await handler.autoLabelOnPR(context, owner, repo, config);
+    await handler.autoLabelOnPR(context, owner, repo, config, logger);
   });
 
   app.on(['installation.created'], async context => {
+    const logger = getContextLogger(context);
     const repositories = context.payload.repositories;
-    const driftRepos = await handler.getDriftRepos();
+    const driftRepos = await handler.getDriftRepos(logger);
     if (!LABEL_PRODUCT_BY_DEFAULT) return;
     if (!driftRepos) return;
 
@@ -638,7 +652,8 @@ export function handler(app: Probot) {
             issue.number,
             issue.title,
             driftRepos,
-            context
+            context,
+            logger
           );
         }
       }

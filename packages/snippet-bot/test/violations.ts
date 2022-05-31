@@ -17,6 +17,7 @@
 
 import {Configuration, DEFAULT_CONFIGURATION} from '../src//configuration';
 import {
+  checkTagFormat,
   checkProductPrefixViolations,
   checkRemovingUsedTagViolations,
   Violation,
@@ -35,8 +36,75 @@ import {resolve} from 'path';
 import assert from 'assert';
 import {describe, it} from 'mocha';
 import * as sinon from 'sinon';
+import {GCFLogger} from 'gcf-utils';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+interface testValue {
+  loc: RegionTagLocation;
+  expected: number;
+}
+
+function makeRegionTagLocation(v: string) {
+  const ret: RegionTagLocation = {
+    type: 'add',
+    regionTag: v,
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 42,
+  };
+  return ret;
+}
+
+// Array of given data and expected value.
+const testValues: testValue[] = [
+  // special character is not allowed
+  {loc: makeRegionTagLocation('run_hello_world@'), expected: 1},
+  // hyphen is not allowed
+  {loc: makeRegionTagLocation('run_hello-world'), expected: 1},
+  // make sure it's allowed
+  {loc: makeRegionTagLocation('run_hello'), expected: 0},
+  // make sure captal letters are allowed
+  {loc: makeRegionTagLocation('run_HELLO'), expected: 0},
+];
+
+for (const testValue of testValues) {
+  describe(`checkTagFormat with "${testValue.loc.regionTag}"`, () => {
+    const changes: ChangesInPullRequest = {
+      changes: [testValue.loc],
+      added: 1,
+      deleted: 0,
+      files: ['file'],
+    };
+    const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
+
+    let getApiLabelsStub: sinon.SinonStub<
+      [string, GCFLogger],
+      Promise<ApiLabels>
+    >;
+
+    const sandbox = sinon.createSandbox();
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    beforeEach(() => {
+      const apiLabels = require(resolve(
+        fixturesPath,
+        './violations-test-apiLabels'
+      ));
+      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+      getApiLabelsStub.resolves(apiLabels);
+    });
+    it('should warn wrong tag format', async () => {
+      const result = await checkTagFormat(changes, config);
+      assert(result.length === testValue.expected);
+    });
+  });
+}
 
 describe('checkProductPrefixViolations', () => {
   const loc: RegionTagLocation = {
@@ -86,7 +154,10 @@ describe('checkProductPrefixViolations', () => {
   };
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<ApiLabels>>;
+  let getApiLabelsStub: sinon.SinonStub<
+    [string, GCFLogger],
+    Promise<ApiLabels>
+  >;
 
   const sandbox = sinon.createSandbox();
 
@@ -144,7 +215,7 @@ describe('checkRemovingUsedTagViolations', () => {
 
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
 
   const sandbox = sinon.createSandbox();
 

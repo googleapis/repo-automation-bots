@@ -23,8 +23,6 @@ import {
   ConfigurationV2,
   AutoApproveNotConfigured,
 } from './interfaces';
-// eslint-disable-next-line node/no-extraneous-import
-import {RequestError} from '@octokit/request-error';
 
 const ajv = new Ajv();
 
@@ -137,12 +135,12 @@ export async function checkAutoApproveConfig(
       } else {
         // This branch means auto-approve is not on this repo, so we're
         // throwing an error (essentially, skipping the check)
-        throw AutoApproveNotConfigured;
+        throw new AutoApproveNotConfigured();
       }
     } catch (err) {
       // This branch means auto-approve is not on this repo, so we're
       // throwing an error (essentially, skipping the check)
-      throw AutoApproveNotConfigured;
+      throw new AutoApproveNotConfigured();
     }
   } else {
     // This means auto-approve is on the PR, meaning we still need to confirm validity
@@ -152,77 +150,6 @@ export async function checkAutoApproveConfig(
 
     // Check if config has correct schema
     message = await validateSchema(autoApproveFile);
-  }
-
-  return message;
-}
-
-/**
- * Confirms that the codeowners file contains a line that sets @googleapis/github/automation as codeowners for auto-approve.yml
- *
- * @param octokit Octokit instance to make calls to github API
- * @param owner of the repo of the incoming PR
- * @param repo of the incoming PR
- * @param codeOwnersPRFile if the incoming PR includes a codeowners file, that codeowners file; undefined if not
- * @returns undefined if the yaml is valid, otherwise an error message.
- */
-export async function checkCodeOwners(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  codeOwnersPRFile: string | undefined
-): Promise<string> {
-  let codeOwnersFile;
-  let message = '';
-  const createCodeownersMessage = `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`;
-  const addToExistingCodeownersMessage = `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
-
-  // If the CODEOWNERS file is being changed, make sure it includes the following regex. Otherwise, see if the
-  // existing CODEOWNERS file has that regex. If the CODEOWNERS file is being changed and the blob does not
-  // contain this regex, fail the check
-  if (codeOwnersPRFile) {
-    if (
-      !codeOwnersPRFile?.match(
-        /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
-      )
-    ) {
-      message = addToExistingCodeownersMessage;
-    }
-  } else {
-    // see if CODEOWNERS file exists in the repository
-    try {
-      codeOwnersFile = (
-        await octokit.repos.getContent({
-          owner,
-          repo,
-          path: '.github/CODEOWNERS',
-        })
-      ).data;
-    } catch (e) {
-      const err = e as RequestError;
-      if (err.status === 403 || err.status === 404) {
-        message = createCodeownersMessage;
-      } else {
-        throw err;
-      }
-    }
-
-    // if CODEOWNERS exists, make sure it is configured appropriately
-    if (codeOwnersFile && isFile(codeOwnersFile)) {
-      const file = Buffer.from(codeOwnersFile.content, 'base64').toString(
-        'utf8'
-      );
-      if (
-        !file.match(
-          /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
-        )
-      ) {
-        message = addToExistingCodeownersMessage;
-      }
-    } else {
-      // if CODEOWNERS doesn't exist, ask user to create it
-      message = createCodeownersMessage;
-    }
   }
 
   return message;

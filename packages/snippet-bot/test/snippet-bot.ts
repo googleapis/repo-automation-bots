@@ -34,6 +34,7 @@ import nock from 'nock';
 import * as fs from 'fs';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
+import {GCFLogger} from 'gcf-utils';
 
 nock.disableNetConnect();
 
@@ -149,8 +150,8 @@ describe('snippet-bot config validation', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
   let getConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
@@ -190,7 +191,7 @@ describe('snippet-bot config validation', () => {
 
     const configBlob = createConfigResponse('broken_config.yaml');
     const requests = nock('https://api.github.com')
-      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
       .reply(200, files_payload)
       .get(
         '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
@@ -225,7 +226,7 @@ describe('snippet-bot config validation', () => {
 
     const configBlob = createConfigResponse('correct_config.yaml');
     const requests = nock('https://api.github.com')
-      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
       .reply(200, files_payload)
       .get(
         '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
@@ -252,8 +253,8 @@ describe('snippet-bot bot-config-utils integration', () => {
 
   const sandbox = sinon.createSandbox();
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
   let validateConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
@@ -336,8 +337,8 @@ describe('snippet-bot', () => {
 
   const sandbox = sinon.createSandbox();
 
-  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string, GCFLogger], Promise<Snippets>>;
   let invalidateCacheStub: sinon.SinonStub;
   let getConfigStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
@@ -783,7 +784,7 @@ describe('snippet-bot', () => {
       );
     });
 
-    it('submits 3 checks on PR because alwaysCreateStatusCheck is true', async () => {
+    it('submits 4 checks on PR because alwaysCreateStatusCheck is true', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(
         resolve(fixturesPath, 'diff_without_regiontag_changes.txt')
@@ -807,6 +808,11 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -1048,6 +1054,84 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getApiLabelsStub);
+      sinon.assert.calledOnce(getSnippetsStub);
+      requests.done();
+      diffRequests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
+      );
+    });
+
+    it('gives warnings about tag format error', async () => {
+      getApiLabelsStub.reset();
+      const products = require(resolve(fixturesPath, './products'));
+      getApiLabelsStub.resolves(products);
+
+      getSnippetsStub.reset();
+      const snippets = require(resolve(fixturesPath, './snippets'));
+      getSnippetsStub.resolves(snippets);
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(
+        resolve(fixturesPath, 'diff-wrong-format.txt')
+      );
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const blob = require(resolve(fixturesPath, './failure_blob'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
+        )
+        .reply(200, blob)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);

@@ -39,6 +39,8 @@ import {
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {CopyStateStore} from './copy-state-store';
 import * as crypto from 'crypto';
+import {Logger} from './logger';
+import {ExecSyncOptions} from 'child_process';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -164,12 +166,14 @@ export async function copyCodeIntoCommit(
   yamlPaths: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   reportError: (error: any, yamlPath: string) => Promise<void>,
-  logger = console
+  logger: Logger = console
 ): Promise<{yamlPath: string; yaml: OwlBotYaml; copyTag: string}[]> {
   const cmd = newCmd(logger);
 
   // Copy code according to each yaml.
   const result = [];
+  const allSourcePaths = globGitRepo(params.sourceRepo);
+  const allDestPaths = globGitRepo(params.destDir);
   for (const yamlPath of yamlPaths) {
     const copyTag = copyTagFrom(yamlPath, params.sourceRepoCommitHash);
     const localYamlPath = path.join(params.destDir, yamlPath);
@@ -180,7 +184,14 @@ export async function copyCodeIntoCommit(
       await reportError(e, yamlPath);
       continue;
     }
-    copyDirs(params.sourceRepo, params.destDir, yaml, logger);
+    copyFiles(
+      params.sourceRepo,
+      allSourcePaths,
+      params.destDir,
+      allDestPaths,
+      yaml,
+      logger
+    );
     result.push({yamlPath, yaml, copyTag});
   }
 
@@ -206,8 +217,10 @@ export async function copyCodeIntoCommit(
 
   // Commit the changes.
   cwd = params.destDir;
-  cmd('git add -A', {cwd});
-  cmd(`git commit -F ${commitMsgFile.name} --allow-empty`, {cwd});
+  // Don't capture stdout because it may be too big to fit into a buffer.
+  const cmdOpts: ExecSyncOptions = {cwd, stdio: 'inherit'};
+  cmd('git add -A', cmdOpts);
+  cmd(`git commit -F ${commitMsgFile.name} --allow-empty`, cmdOpts);
   return result;
 }
 
@@ -267,7 +280,7 @@ export function branchNameForCopies(yamlPaths: string[]): string {
 async function findAndAppendPullRequest(
   params: WorkingCopyParams,
   yamlPaths: string[],
-  logger = console
+  logger: Logger = console
 ): Promise<boolean> {
   const cmd = newCmd(logger);
   const octokit = await params.octokitFactory.getShortLivedOctokit();
@@ -351,11 +364,13 @@ async function findAndAppendPullRequest(
         .trim() ?? '',
     WithRegenerateCheckbox.Yes
   );
+  const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
+  const apiList = abbreviateApiListForTitle(apiNames as string[]);
   await octokit.pulls.update({
     owner: params.destRepo.owner,
     repo: params.destRepo.repo,
     pull_number: pull.number,
-    title,
+    title: insertApiName(title, apiList),
     body,
   });
   return true;
@@ -390,7 +405,7 @@ interface WorkingCopyParams extends CopyParams {
 export async function copyCodeAndAppendOrCreatePullRequest(
   params: CopyParams,
   yamlPaths: string[],
-  logger = console
+  logger: Logger = console
 ): Promise<void> {
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
@@ -485,7 +500,7 @@ command in a local clone of this repo:
 
   // Create a pull request.
   const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
-  const apiList = apiNames.length > 3 ? 'Many APIs' : apiNames.join(',');
+  const apiList = abbreviateApiListForTitle(apiNames as string[]);
   const token = await params.octokitFactory.getGitHubShortLivedAccessToken();
   const pushUrl = params.destRepo.getCloneUrl(token);
   const pull = await createPullRequestFromLastCommit(
@@ -637,6 +652,8 @@ export async function regeneratePullRequest(
   cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
 
   const apiNames: string[] = [];
+  const allSourcePaths = globGitRepo(sourceDir);
+  const allDestPaths = globGitRepo(destDir);
   for (const tag of copyTags) {
     if (sourceRepoCommitHash !== tag.h) {
       logger.info(
@@ -662,7 +679,7 @@ export async function regeneratePullRequest(
     // Copy the files specified in the yaml.
     const yamlText = JSON.stringify(yaml, undefined, 2);
     console.info(`copyDirs(${sourceDir}, ${destDir}, ${yamlText}}`);
-    copyDirs(sourceDir, destDir, yaml, logger);
+    copyFiles(sourceDir, allSourcePaths, destDir, allDestPaths, yaml, logger);
 
     if (yaml['api-name']) {
       apiNames.push(yaml['api-name']);
@@ -670,8 +687,10 @@ export async function regeneratePullRequest(
   }
 
   // Commit the newly copied code.
-  cmd('git add -A', {cwd: destDir});
-  cmd(`git commit -F "${commitMsgFilePath}" --allow-empty`, {cwd: destDir});
+  // Don't capture stdout because it may be too big to fit into a buffer.
+  const cmdOpts: ExecSyncOptions = {cwd: destDir, stdio: 'inherit'};
+  cmd('git add -A', cmdOpts);
+  cmd(`git commit -F "${commitMsgFilePath}" --allow-empty`, cmdOpts);
 
   // Refresh the token because copyCode() may have taken a while.
   token = await octokitFactory.getGitHubShortLivedAccessToken();
@@ -685,7 +704,7 @@ export async function regeneratePullRequest(
   // Update the PR body with the full commit history.
   const {title, body} = resplit(commitMsg, WithRegenerateCheckbox.Yes);
 
-  const apiList = apiNames.length > 3 ? 'Many APIs' : apiNames.join(',');
+  const apiList = abbreviateApiListForTitle(apiNames);
   await octokit.pulls.update({
     owner: destRepo.owner,
     repo: destRepo.repo,
@@ -693,6 +712,19 @@ export async function regeneratePullRequest(
     title: insertApiName(title, apiList),
     body,
   });
+}
+
+/**
+ * Affected API names appears in the title of pull requests generated for
+ * mono repos.  Example:
+ *    chore: [Speech] remove unused imports
+ *            ^^^^^^
+ * This function returns a comma-separated string when there are a small
+ * number of APIs, and 'Many APIs' when there's many.  It returns an empty
+ * string if the list is empty.
+ */
+function abbreviateApiListForTitle(apiNames: string[]): string {
+  return apiNames.length > 3 ? 'Many APIs' : apiNames.join(',');
 }
 
 /**
@@ -717,7 +749,7 @@ export async function loadOwlBotYaml(yamlPath: string): Promise<OwlBotYaml> {
 export function toLocalRepo(
   repo: string,
   workDir: string,
-  logger = console,
+  logger: Logger = console,
   depth = 100,
   accessToken = ''
 ): string {
@@ -803,6 +835,15 @@ export function stat(path: string): fs.Stats | undefined {
   }
 }
 
+// glob all the files and dirs in a git repo directory,
+function globGitRepo(repoDir: string): string[] {
+  return glob.sync('**', {
+    cwd: repoDir,
+    dot: true,
+    ignore: ['.git', '.git/**'],
+  });
+}
+
 /**
  * Copies directories and files specified by yaml.
  * @param sourceDir the path to the source repository directory
@@ -813,7 +854,33 @@ export function copyDirs(
   sourceDir: string,
   destDir: string,
   yaml: OwlBotYaml,
-  logger = console
+  logger: Logger = console
+): void {
+  return copyFiles(
+    sourceDir,
+    globGitRepo(sourceDir),
+    destDir,
+    globGitRepo(destDir),
+    yaml,
+    logger
+  );
+}
+
+/**
+ * Copies directories and files specified by yaml.
+ * @param sourceDir the path to the source repository directory
+ * @param allSourcePaths the list of all the files and directories in the source directory.
+ * @param destDir the path to the dest repository directory.
+ * @param allDestPaths the list of all the files and directories in the dest directory.
+ * @param yaml the OwlBot.yaml file from the dest repository.
+ */
+function copyFiles(
+  sourceDir: string,
+  allSourcePaths: string[],
+  destDir: string,
+  allDestPaths: string[],
+  yaml: OwlBotYaml,
+  logger: Logger = console
 ): void {
   // Prepare to exclude paths.
   const excludes: RegExp[] = (yaml['deep-preserve-regex'] ?? []).map(x =>
@@ -830,11 +897,6 @@ export function copyDirs(
 
   // Wipe out the existing contents of the dest directory.
   const deadPaths: string[] = [];
-  const allDestPaths = glob.sync('**', {
-    cwd: destDir,
-    dot: true,
-    ignore: ['.git', '.git/**'],
-  });
   for (const rmDest of yaml['deep-remove-regex'] ?? []) {
     if (rmDest && stat(destDir)) {
       const rmRegExp = toFrontMatchRegExp(rmDest);
@@ -872,11 +934,6 @@ export function copyDirs(
   }
 
   // Copy the files from source to dest.
-  const allSourcePaths = glob.sync('**', {
-    cwd: sourceDir,
-    dot: true,
-    ignore: ['.git', '.git/**'],
-  });
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
     const regExp = toFrontMatchRegExp(deepCopy.source);
     const sourcePathsToCopy = allSourcePaths.filter(path =>

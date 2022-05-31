@@ -25,6 +25,7 @@ import {handler} from '../src/auto-label';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as helper from '../src/helper';
+import {GCFLogger} from 'gcf-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -52,7 +53,7 @@ function fetchConfig(configFile: string) {
 
 function fetchFilesInPR(configFile: string) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls/12/files?per_page=100')
+    .get('/repos/testOwner/testRepo/pulls/12/files?per_page=50')
     .reply(200, [
       {
         filename: `.github/${helper.CONFIG_FILE_NAME}`,
@@ -115,7 +116,8 @@ describe('getConfigWithDefault', () => {
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
-        sinon.match.any
+        sinon.match.any,
+        sinon.match.instanceOf(GCFLogger)
       );
       const config = autoLabelOnPRStub.getCall(0).args[3];
       assert.strictEqual(config.product, true);
@@ -142,7 +144,8 @@ describe('getConfigWithDefault', () => {
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
-        sinon.match.any
+        sinon.match.any,
+        sinon.match.instanceOf(GCFLogger)
       );
       const config = autoLabelOnPRStub.getCall(0).args[3];
       assert.strictEqual(config.product, false);
@@ -203,7 +206,8 @@ describe('validateConfigChanges', () => {
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
-        sinon.match.any
+        sinon.match.any,
+        sinon.match.instanceOf(GCFLogger)
       );
     });
     it('creates a failing status check for a correct config', async () => {
@@ -226,7 +230,8 @@ describe('validateConfigChanges', () => {
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
-        sinon.match.any
+        sinon.match.any,
+        sinon.match.instanceOf(GCFLogger)
       );
     });
   });

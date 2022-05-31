@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {logger} from 'gcf-utils';
+import {getContextLogger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 
 import {SyncRepoSettings} from './sync-repo-settings';
@@ -55,6 +55,7 @@ export function handler(app: Probot) {
    * If so, run the settings sync for that repo.
    */
   app.on('push', async context => {
+    const logger = getContextLogger(context);
     const branch = context.payload.ref;
     const defaultBranch = context.payload.repository.default_branch;
     if (branch !== `refs/heads/${defaultBranch}`) {
@@ -96,12 +97,13 @@ export function handler(app: Probot) {
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
-      defaultBranch: repo.default_branch,
+      defaultBranch,
     });
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on(['schedule.repository' as any], async context => {
+    const logger = getContextLogger(context);
     logger.info(`running for org ${context.payload.cron_org}`);
     const {owner, repo} = context.repo();
     if (context.payload.cron_org !== owner) {
@@ -125,7 +127,9 @@ export function handler(app: Probot) {
   });
 
   app.on('repository.transferred', async context => {
+    const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
+    const defaultBranch = context.payload.repository.default_branch;
     const config = await getConfig<RepoConfig>(
       context.octokit,
       owner,
@@ -137,7 +141,7 @@ export function handler(app: Probot) {
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
-      defaultBranch: repo.default_branch,
+      defaultBranch,
     });
   });
 }

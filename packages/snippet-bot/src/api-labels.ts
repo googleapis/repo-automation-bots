@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {Storage} from '@google-cloud/storage';
-import {logger} from 'gcf-utils';
+import {GCFLogger} from 'gcf-utils';
 
 const storage = new Storage();
 
@@ -28,7 +28,10 @@ export interface ApiLabels {
   products: Array<ApiLabel>;
 }
 
-export const getApiLabels = async (dataBucket: string): Promise<ApiLabels> => {
+export const getApiLabels = async (
+  dataBucket: string,
+  logger: GCFLogger
+): Promise<ApiLabels> => {
   const apis = await storage
     .bucket(dataBucket)
     .file('products.json')

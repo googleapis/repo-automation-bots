@@ -33,6 +33,14 @@ import {v4} from 'uuid';
 import {getServer} from './server/server';
 import {run} from '@googleapis/run';
 import {GoogleAuth} from 'google-auth-library';
+import {TriggerType, parseBotRequest, BotRequest} from './bot-request';
+import {
+  SCHEDULER_GLOBAL_EVENT_NAME,
+  SCHEDULER_INSTALLATION_EVENT_NAME,
+  SCHEDULER_REPOSITORY_EVENT_NAME,
+} from './custom-events';
+export {TriggerType} from './bot-request';
+export {GCFLogger} from './logging/gcf-logger';
 
 // On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
@@ -50,14 +58,6 @@ export type HandlerFunction = (
 
 type CronType = 'repository' | 'installation' | 'global';
 const DEFAULT_CRON_TYPE: CronType = 'repository';
-const SCHEDULER_GLOBAL_EVENT_NAME = 'schedule.global';
-const SCHEDULER_INSTALLATION_EVENT_NAME = 'schedule.installation';
-const SCHEDULER_REPOSITORY_EVENT_NAME = 'schedule.repository';
-const SCHEDULER_EVENT_NAMES = [
-  SCHEDULER_GLOBAL_EVENT_NAME,
-  SCHEDULER_INSTALLATION_EVENT_NAME,
-  SCHEDULER_REPOSITORY_EVENT_NAME,
-];
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 const DEFAULT_TASK_CALLER =
   'task-caller@repo-automation-bots.iam.gserviceaccount.com';
@@ -136,17 +136,6 @@ export interface CronPayload {
     login: string;
   };
   cron_org: string;
-}
-
-/**
- * Type of function execution trigger
- */
-export enum TriggerType {
-  GITHUB = 'GitHub Webhook',
-  SCHEDULER = 'Cloud Scheduler',
-  TASK = 'Cloud Task',
-  PUBSUB = 'Pub/Sub',
-  UNKNOWN = 'Unknown',
 }
 
 /**
@@ -255,7 +244,7 @@ export class GCFBootstrapper {
       new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient =
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
-    this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
+    this.storage = new Storage({retryOptions: {autoRetry: !RUNNING_IN_TEST}});
     this.taskTargetEnvironment =
       options.taskTargetEnvironment || defaultTaskEnvironment();
     if (!options.projectId) {
@@ -337,74 +326,10 @@ export class GCFBootstrapper {
       });
       return {
         ...config,
+        log: logger,
         Octokit: DefaultOctokit,
       } as Options;
     }
-  }
-
-  /**
-   * Parse the signature from the request headers.
-   *
-   * If the expected header is not set, returns `unset` because the verification
-   * function throws an exception on empty string when we would rather
-   * treat the error as an invalid signature.
-   * @param request incoming trigger request
-   */
-  private static parseSignatureHeader(request: express.Request): string {
-    const sha1Signature =
-      request.get('x-hub-signature') || request.get('X-Hub-Signature');
-    if (sha1Signature) {
-      return sha1Signature;
-    }
-    return 'unset';
-  }
-
-  /**
-   * Parse the event name, delivery id, signature and task id from the request headers
-   * @param request incoming trigger request
-   */
-  private static parseRequestHeaders(request: express.Request): {
-    name: string;
-    id: string;
-    signature: string;
-    taskId: string;
-    taskRetries: number;
-  } {
-    const name =
-      request.get('x-github-event') || request.get('X-GitHub-Event') || '';
-    const id =
-      request.get('x-github-delivery') ||
-      request.get('X-GitHub-Delivery') ||
-      '';
-    const signature = this.parseSignatureHeader(request);
-    const taskId =
-      request.get('X-CloudTasks-TaskName') ||
-      request.get('x-cloudtasks-taskname') ||
-      '';
-    const taskRetries = parseInt(
-      request.get('X-CloudTasks-TaskRetryCount') ||
-        request.get('x-cloudtasks-taskretrycount') ||
-        '0'
-    );
-    return {name, id, signature, taskId, taskRetries};
-  }
-
-  /**
-   * Determine the type of trigger that started this execution
-   * @param name event name from header
-   * @param taskId task id from header
-   */
-  private static parseTriggerType(name: string, taskId: string): TriggerType {
-    if (!taskId && SCHEDULER_EVENT_NAMES.includes(name)) {
-      return TriggerType.SCHEDULER;
-    } else if (!taskId && name === 'pubsub.message') {
-      return TriggerType.PUBSUB;
-    } else if (!taskId && name) {
-      return TriggerType.GITHUB;
-    } else if (name) {
-      return TriggerType.TASK;
-    }
-    return TriggerType.UNKNOWN;
   }
 
   private parseWrapConfig(wrapOptions: WrapOptions | undefined): WrapConfig {
@@ -459,20 +384,15 @@ export class GCFBootstrapper {
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapConfig.logging));
 
-      const {name, id, signature, taskId, taskRetries} =
-        GCFBootstrapper.parseRequestHeaders(request);
-
-      const triggerType: TriggerType = GCFBootstrapper.parseTriggerType(
-        name,
-        taskId
-      );
+      // parse all common fields from a bot request
+      const botRequest = parseBotRequest(request);
 
       // validate the signature
       if (
         !wrapConfig.skipVerification &&
         !(await this.probot.webhooks.verify(
           request.rawBody ? request.rawBody.toString() : request.body,
-          signature
+          botRequest.signature
         ))
       ) {
         response.status(400).send({
@@ -486,29 +406,57 @@ export class GCFBootstrapper {
        * Note: any logs written before resetting bindings may contain
        * bindings from previous executions
        */
+      const loggerBindings = this.buildLoggerBindings(botRequest, request.body);
       logger.resetBindings();
-      logger.addBindings(buildTriggerInfo(triggerType, id, name, request.body));
+      logger.addBindings(loggerBindings);
+      let requestLogger = logger.child(loggerBindings);
       try {
-        if (triggerType === TriggerType.UNKNOWN) {
+        if (botRequest.triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
           return;
-        } else if (triggerType === TriggerType.SCHEDULER) {
+        } else if (botRequest.triggerType === TriggerType.SCHEDULER) {
           // Cloud scheduler tasks (cron)
-          await this.handleScheduled(id, request, wrapConfig);
-        } else if (triggerType === TriggerType.PUBSUB) {
+          await this.handleScheduled(
+            botRequest.githubDeliveryId,
+            request,
+            wrapConfig,
+            requestLogger
+          );
+        } else if (botRequest.triggerType === TriggerType.PUBSUB) {
           const payload = this.parsePubSubPayload(request);
-          await this.enqueueTask({
-            id,
-            name,
-            body: JSON.stringify(payload),
-          });
-        } else if (triggerType === TriggerType.TASK) {
-          const maxRetries = this.getRetryLimit(wrapConfig, name);
+          await this.enqueueTask(
+            {
+              id: botRequest.githubDeliveryId,
+              name: botRequest.eventName,
+              body: JSON.stringify(payload),
+            },
+            requestLogger
+          );
+        } else if (botRequest.triggerType === TriggerType.TASK) {
+          // If the payload contains `tmpUrl` this indicates that the original
+          // payload has been written to Cloud Storage; download it.
+          const payload = await this.maybeDownloadOriginalBody(request.body);
+
+          // Regenerate the logger bindings based on the downloaded payload
+          const loggerBindings = this.buildLoggerBindings(
+            botRequest,
+            payload || {}
+          );
+          logger.resetBindings();
+          logger.addBindings(loggerBindings);
+          requestLogger = logger.child(loggerBindings);
+
+          const maxRetries = this.getRetryLimit(
+            wrapConfig,
+            botRequest.eventName
+          );
           // Abort task retries if we've hit the max number by
           // returning "success"
-          if (taskRetries > maxRetries) {
-            logger.metric('too-many-retries');
-            logger.info(`Too many retries: ${taskRetries} > ${maxRetries}`);
+          if (botRequest.taskRetryCount > maxRetries) {
+            requestLogger.metric('too-many-retries');
+            requestLogger.info(
+              `Too many retries: ${botRequest.taskRetryCount} > ${maxRetries}`
+            );
             // return 200 so we don't retry the task again
             response.send({
               statusCode: 200,
@@ -517,14 +465,10 @@ export class GCFBootstrapper {
             return;
           }
 
-          // If the payload contains `tmpUrl` this indicates that the original
-          // payload has been written to Cloud Storage; download it.
-          const payload = await this.maybeDownloadOriginalBody(request.body);
-
           // The payload does not exist, stop retrying on this task by letting
           // this request "succeed".
           if (!payload) {
-            logger.metric('payload-expired');
+            requestLogger.metric('payload-expired');
             response.send({
               statusCode: 200,
               body: JSON.stringify({message: 'Payload expired'}),
@@ -532,22 +476,26 @@ export class GCFBootstrapper {
             return;
           }
 
+          setContextLogger(payload, requestLogger);
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            name: name as any,
+            name: botRequest.eventName as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            id: id as any,
+            id: botRequest.githubDeliveryId as any,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             payload: payload as any,
           });
-        } else if (triggerType === TriggerType.GITHUB) {
-          await this.enqueueTask({
-            id,
-            name,
-            body: JSON.stringify(request.body),
-          });
+        } else if (botRequest.triggerType === TriggerType.GITHUB) {
+          await this.enqueueTask(
+            {
+              id: botRequest.githubDeliveryId,
+              name: botRequest.eventName,
+              body: JSON.stringify(request.body),
+            },
+            requestLogger
+          );
         }
 
         response.send({
@@ -555,7 +503,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
-        logger.error(err);
+        requestLogger.error(err);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -563,7 +511,26 @@ export class GCFBootstrapper {
         return;
       }
 
+      requestLogger.flushSync();
       logger.flushSync();
+    };
+  }
+
+  private buildLoggerBindings(
+    botRequest: BotRequest,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    requestBody: {[key: string]: any}
+  ) {
+    const extras: Record<string, string> = {};
+    const triggerInfo = buildTriggerInfo(botRequest, requestBody);
+    if (botRequest.traceId) {
+      extras[
+        'logging.googleapis.com/trace'
+      ] = `projects/${this.projectId}/traces/${botRequest.traceId}`;
+    }
+    return {
+      ...triggerInfo,
+      ...extras,
     };
   }
 
@@ -579,16 +546,17 @@ export class GCFBootstrapper {
   private async handleScheduled(
     id: string,
     req: express.Request,
-    wrapConfig: WrapConfig
+    wrapConfig: WrapConfig,
+    log: GCFLogger
   ) {
     const body: Scheduled = this.parseRequestBody(req);
     const cronType = body.cron_type ?? DEFAULT_CRON_TYPE;
     if (cronType === 'global') {
-      await this.handleScheduledGlobal(id, body);
+      await this.handleScheduledGlobal(id, body, log);
     } else if (cronType === 'installation') {
-      await this.handleScheduledInstallation(id, body, wrapConfig);
+      await this.handleScheduledInstallation(id, body, wrapConfig, log);
     } else {
-      await this.handleScheduledRepository(id, body, wrapConfig);
+      await this.handleScheduledRepository(id, body, wrapConfig, log);
     }
   }
 
@@ -601,12 +569,19 @@ export class GCFBootstrapper {
    *   parameters besides the ones defined by the Scheduled type.
    * @param signature
    */
-  private async handleScheduledGlobal(id: string, body: Scheduled) {
-    await this.enqueueTask({
-      id,
-      name: SCHEDULER_GLOBAL_EVENT_NAME,
-      body: JSON.stringify(body),
-    });
+  private async handleScheduledGlobal(
+    id: string,
+    body: Scheduled,
+    log: GCFLogger
+  ) {
+    await this.enqueueTask(
+      {
+        id,
+        name: SCHEDULER_GLOBAL_EVENT_NAME,
+        body: JSON.stringify(body),
+      },
+      log
+    );
   }
 
   /**
@@ -679,14 +654,18 @@ export class GCFBootstrapper {
   private async handleScheduledInstallation(
     id: string,
     body: Scheduled,
-    wrapConfig: WrapConfig
+    wrapConfig: WrapConfig,
+    log: GCFLogger
   ) {
     if (body.installation) {
-      await this.enqueueTask({
-        id,
-        name: SCHEDULER_INSTALLATION_EVENT_NAME,
-        body: JSON.stringify(body),
-      });
+      await this.enqueueTask(
+        {
+          id,
+          name: SCHEDULER_INSTALLATION_EVENT_NAME,
+          body: JSON.stringify(body),
+        },
+        log
+      );
     } else {
       const generator = this.eachInstallation(wrapConfig);
       for await (const installation of generator) {
@@ -705,11 +684,14 @@ export class GCFBootstrapper {
           ...body,
           ...extraParams,
         };
-        await this.enqueueTask({
-          id,
-          name: SCHEDULER_INSTALLATION_EVENT_NAME,
-          body: JSON.stringify(payload),
-        });
+        await this.enqueueTask(
+          {
+            id,
+            name: SCHEDULER_INSTALLATION_EVENT_NAME,
+            body: JSON.stringify(payload),
+          },
+          log
+        );
       }
     }
   }
@@ -733,7 +715,8 @@ export class GCFBootstrapper {
   private async handleScheduledRepository(
     id: string,
     body: Scheduled,
-    wrapConfig: WrapConfig
+    wrapConfig: WrapConfig,
+    log: GCFLogger
   ) {
     if (body.repo) {
       // Job was scheduled for a single repository:
@@ -741,7 +724,8 @@ export class GCFBootstrapper {
         body.repo,
         id,
         body,
-        SCHEDULER_REPOSITORY_EVENT_NAME
+        SCHEDULER_REPOSITORY_EVENT_NAME,
+        log
       );
     } else if (body.installation) {
       const generator = this.eachInstalledRepository(
@@ -759,7 +743,8 @@ export class GCFBootstrapper {
             repo.full_name,
             id,
             body,
-            SCHEDULER_REPOSITORY_EVENT_NAME
+            SCHEDULER_REPOSITORY_EVENT_NAME,
+            log
           )
         );
         if (promises.length >= batchSize) {
@@ -780,9 +765,7 @@ export class GCFBootstrapper {
         if (body.allowed_organizations !== undefined) {
           const org = installation?.account?.login.toLowerCase();
           if (!body.allowed_organizations.includes(org)) {
-            logger.info(
-              `${org} is not allowed for this scheduler job, skipping`
-            );
+            log.info(`${org} is not allowed for this scheduler job, skipping`);
             continue;
           }
         }
@@ -816,7 +799,8 @@ export class GCFBootstrapper {
               repo.full_name,
               id,
               payload,
-              SCHEDULER_REPOSITORY_EVENT_NAME
+              SCHEDULER_REPOSITORY_EVENT_NAME,
+              log
             )
           );
           if (promises.length >= batchSize) {
@@ -873,7 +857,8 @@ export class GCFBootstrapper {
     repoFullName: string,
     id: string,
     body: object,
-    eventName: string
+    eventName: string,
+    log: GCFLogger
   ) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
@@ -883,13 +868,16 @@ export class GCFBootstrapper {
       ...this.buildRepositoryDetails(repoFullName),
     };
     try {
-      await this.enqueueTask({
-        id,
-        name: eventName,
-        body: JSON.stringify(payload),
-      });
+      await this.enqueueTask(
+        {
+          id,
+          name: eventName,
+          body: JSON.stringify(payload),
+        },
+        log
+      );
     } catch (err) {
-      logger.error(err);
+      log.error(err);
     }
   }
 
@@ -988,8 +976,8 @@ export class GCFBootstrapper {
    * Schedule a event trigger as a Cloud Task.
    * @param params {EnqueueTaskParams} Task parameters.
    */
-  async enqueueTask(params: EnqueueTaskParams) {
-    logger.info(
+  async enqueueTask(params: EnqueueTaskParams, log: GCFLogger = logger) {
+    log.info(
       `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}`
     );
     // Make a task here and return 200 as this is coming from GitHub
@@ -1005,15 +993,16 @@ export class GCFBootstrapper {
       this.location,
       this.taskTargetName
     );
-    logger.info(`scheduling task in queue ${queueName}`);
+    log.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       // Payload conists of either the original params.body or, if Cloud
       // Storage has been configured, a tmp file in a bucket:
-      const payload = await this.maybeWriteBodyToTmp(params.body);
+      const payload = await this.maybeWriteBodyToTmp(params.body, log);
       const signature = (await this.probot?.webhooks.sign(payload)) || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
+          dispatchDeadline: {seconds: 60 * 30}, // 30 minutes.
           httpRequest: {
             httpMethod: 'POST',
             headers: {
@@ -1060,14 +1049,17 @@ export class GCFBootstrapper {
    *
    * @param body
    */
-  private async maybeWriteBodyToTmp(body: string): Promise<string> {
+  private async maybeWriteBodyToTmp(
+    body: string,
+    log: GCFLogger
+  ): Promise<string> {
     if (this.payloadBucket) {
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = this.storage.bucket(this.payloadBucket);
       const writeable = bucket.file(tmp).createWriteStream({
         validation: !RUNNING_IN_TEST,
       });
-      logger.info(`uploading payload to ${tmp}`);
+      log.info(`uploading payload to ${tmp}`);
       intoStream(body).pipe(writeable);
       await new Promise((resolve, reject) => {
         writeable.on('error', reject);
@@ -1115,4 +1107,23 @@ export class GCFBootstrapper {
       return payload;
     }
   }
+}
+
+const loggerCache = new WeakMap<object, GCFLogger>();
+
+// Helper to inject the request logger
+function setContextLogger(payload, logger: GCFLogger) {
+  loggerCache.set(payload, logger);
+}
+
+// Helper to extract the request logger from the request payload.
+// If gcf-utils wrapper did not provide a logger, fall back to the
+// default logger.
+export function getContextLogger(context): GCFLogger {
+  const requestLogger = loggerCache.get(context?.payload);
+  if (!requestLogger) {
+    logger.warn('Failed to find a context logger');
+    return logger;
+  }
+  return requestLogger;
 }
