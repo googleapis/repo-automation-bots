@@ -52,7 +52,7 @@
     "@types/get-stream": "^3.0.2",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.0.1",
-    "@types/pino": "^6.3.9",
+    "@types/pino": "^7.0.0",
     "@types/sinon": "^10.0.2",
     "@types/tmp": "^0.2.1",
     "@types/yargs": "^16.0.0",
