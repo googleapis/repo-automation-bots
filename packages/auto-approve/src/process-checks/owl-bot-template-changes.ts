@@ -96,13 +96,13 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
 
     reportIndividualChecks(
       ['authorshipMatches', 'titleMatches', 'bodyMatches', 'isGAPIC'],
-      [authorshipMatches, !titleMatches, !bodyMatches, isGAPIC],
+      [authorshipMatches, titleMatches, !bodyMatches, isGAPIC],
       this.incomingPR.repoOwner,
       this.incomingPR.repoName,
       this.incomingPR.prNumber
     );
 
-    // We are looking for an antipattern, i.e., if title does not include fix or feat, or if body dodes not include PiperOrigin
+    // We are looking for an antipattern, i.e., if title does not include fix or feat, and if body dodes not include PiperOrigin
     return authorshipMatches && titleMatches && !bodyMatches && isGAPIC;
   }
 }

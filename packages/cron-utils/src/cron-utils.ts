@@ -101,7 +101,8 @@ export async function createOrUpdateCron(
   functionRegion: string,
   functionName: string,
   baseTargetUrl: string,
-  serviceAccountEmail: string
+  serviceAccountEmail: string,
+  targetType = 'function'
 ): Promise<string | null> {
   console.log('creating or updating cron', cronEntry);
   const client = new v1.CloudSchedulerClient();
@@ -113,7 +114,7 @@ export async function createOrUpdateCron(
   const bodyContent = {
     ...extraParams,
     Name: functionName,
-    Type: 'function',
+    Type: targetType,
     Location: functionRegion,
   };
   const jobParams = {

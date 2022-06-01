@@ -32,6 +32,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
+import * as errorHandlingModule from '../src/error-handling';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -157,6 +158,9 @@ describe('ReleasePleaseBot', () => {
           'testOwner/testRepo'
         );
         createPullRequestsStub.rejects(error);
+        const addIssueStub = sandbox
+          .stub(errorHandlingModule, 'addOrUpdateIssue')
+          .resolves();
 
         getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
         await probot.receive(
@@ -166,6 +170,7 @@ describe('ReleasePleaseBot', () => {
 
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
+        sinon.assert.calledOnce(addIssueStub);
       });
 
       it('should ignore if the branch is not the configured primary branch', async () => {
@@ -563,6 +568,22 @@ describe('ReleasePleaseBot', () => {
           sinon.match.any,
           'packages/java-pkg'
         );
+      });
+
+      it('should allow missing repo language and no releaseType', async () => {
+        const addIssueStub = sandbox
+          .stub(errorHandlingModule, 'addOrUpdateIssue')
+          .resolves();
+        payload = require(resolve(fixturesPath, './push_to_main_no_language'));
+        getConfigStub.resolves(loadConfig('main_branch.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.notCalled(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnce(addIssueStub);
       });
     });
 

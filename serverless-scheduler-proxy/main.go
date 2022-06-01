@@ -75,10 +75,10 @@ func main() {
 func rewriteBotCronURL(c botConfig) func(*http.Request) {
 	return func(req *http.Request) {
 		req.Header.Add("x-github-event", "schedule.repository")
-		parser := func(bodyBytes []byte) (string, string) {
+		parser := func(bodyBytes []byte) (string, string, string) {
 			var pay reqPayload
 			json.Unmarshal(bodyBytes, &pay)
-			return pay.Name, pay.Location
+			return pay.Name, pay.Location, pay.Type
 		}
 		rewriteBotURL(c, parser, req)
 	}
@@ -87,7 +87,7 @@ func rewriteBotCronURL(c botConfig) func(*http.Request) {
 func rewriteBotPubSubURL(c botConfig) func(*http.Request) {
 	return func(req *http.Request) {
 		req.Header.Add("x-github-event", "pubsub.message")
-		parser := func(bodyBytes []byte) (string, string) {
+		parser := func(bodyBytes []byte) (string, string, string) {
 			var pay PubSubMessage
 			json.Unmarshal(bodyBytes, &pay)
 			log.Printf("handling pubsub message for subscription: %v\n", pay.Subscription)
@@ -95,7 +95,7 @@ func rewriteBotPubSubURL(c botConfig) func(*http.Request) {
 			var msg RepoAutomationPubSubMessage
 			json.Unmarshal(pay.Message.Data, &msg)
 			log.Printf("pubsub message for bot: %v in %v\n", msg.Name, msg.Location)
-			return msg.Name, msg.Location
+			return msg.Name, msg.Location, "function"
 		}
 		rewriteBotURL(c, parser, req)
 	}
@@ -104,7 +104,7 @@ func rewriteBotPubSubURL(c botConfig) func(*http.Request) {
 func rewriteBotContainerURL(c botConfig) func(*http.Request) {
 	return func(req *http.Request) {
 		req.Header.Add("x-github-event", "pubsub.message")
-		parser := func(bodyBytes []byte) (string, string) {
+		parser := func(bodyBytes []byte) (string, string, string) {
 			var pay PubSubMessage
 			if err := json.Unmarshal(bodyBytes, &pay); err != nil {
 				log.Printf("error occurred parsing container pubsub message: %v\n", err)
@@ -112,7 +112,7 @@ func rewriteBotContainerURL(c botConfig) func(*http.Request) {
 			log.Printf("handling container pubsub message for subscription: %v\n", pay.Subscription)
 			// TODO: pull bot name and location into configuration, once
 			// we validate this approach:
-			return "owl_bot", "us-central1"
+			return "owl_bot", "us-central1", "function"
 		}
 		rewriteBotURL(c, parser, req)
 	}
@@ -121,7 +121,7 @@ func rewriteBotContainerURL(c botConfig) func(*http.Request) {
 func rewriteBotCanaryURL(c botConfig) func(*http.Request) {
 	return func(req *http.Request) {
 		req.Header.Add("x-github-event", "pubsub.message")
-		parser := func(bodyBytes []byte) (string, string) {
+		parser := func(bodyBytes []byte) (string, string, string) {
 			var pay PubSubMessage
 			if err := json.Unmarshal(bodyBytes, &pay); err != nil {
 				log.Printf("error occurred parsing container pubsub message: %v\n", err)
@@ -129,14 +129,13 @@ func rewriteBotCanaryURL(c botConfig) func(*http.Request) {
 			log.Printf("handling container pubsub message for subscription: %v\n", pay.Subscription)
 			// TODO: pull bot name and location into configuration, once
 			// we validate this approach:
-			return "canary_bot", "us-central1"
+			return "canary_bot", "us-central1", "function"
 		}
 		rewriteBotURL(c, parser, req)
 	}
 }
 
-func rewriteBotURL(c botConfig, parser func([]byte) (string, string), req *http.Request) {
-
+func rewriteBotURL(c botConfig, parser func([]byte) (string, string, string), req *http.Request) {
 	var bodyBytes []byte
 	if req.Body != nil {
 		bodyBytes, _ = ioutil.ReadAll(req.Body)
@@ -145,7 +144,7 @@ func rewriteBotURL(c botConfig, parser func([]byte) (string, string), req *http.
 		log.Println("request had no body")
 	}
 
-	botName, botLocation := parser(bodyBytes)
+	botName, botLocation, botType := parser(bodyBytes)
 
 	u := req.URL.String()
 	req.URL.Scheme = "https"
@@ -153,11 +152,24 @@ func rewriteBotURL(c botConfig, parser func([]byte) (string, string), req *http.
 	// Explicitly remove UserAgent header
 	req.Header.Del("user-agent")
 
-	newHost := fmt.Sprintf("%v-%v.cloudfunctions.net", botLocation, c.project)
+	if botType == "run" {
+		// Cloud Run URLs look like <bot-name>-<service-identifier>.a.run.app
+		serviceIdentifier := os.Getenv("SERVICE_IDENTIFIER")
+		if serviceIdentifier == "" {
+			log.Fatal("SERVICE_IDENTIFIER environment variable not specified")
+		}
+		newHost := fmt.Sprintf("%v-%v-uc.a.run.app", botName, serviceIdentifier)
+		req.Host = newHost
+		req.URL.Host = newHost
+		req.URL.Path = "/"
+	} else {
+		// default to Cloud Function bot URLs
+		newHost := fmt.Sprintf("%v-%v.cloudfunctions.net", botLocation, c.project)
 
-	req.Host = newHost
-	req.URL.Host = newHost
-	req.URL.Path = fmt.Sprintf("/%v", botName)
+		req.Host = newHost
+		req.URL.Host = newHost
+		req.URL.Path = fmt.Sprintf("/%v", botName)
+	}
 
 	key, err := getBotSecret(req.Context(), c, botName)
 	if err != nil {
