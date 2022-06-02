@@ -81,3 +81,18 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
+
+  - name: gcr.io/cloud-builders/npm
+    id: "cron-deploy"
+    waitFor: ["-"]
+    entrypoint: bash
+    env:
+      - "TARGET_TYPE=run"
+      - "FUNCTION_NAME=release-trigger"
+    args:
+      - "-e"
+      - "./scripts/cron-deploy.sh"
+      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
+      - "$_FUNCTION_REGION"
+      - "$_REGION"
+      - "$_DIRECTORY"

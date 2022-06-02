@@ -110,19 +110,31 @@ async function doTrigger(
     logger.error(`no owner for ${pullRequest.number}`);
     return;
   }
+  const repo = pullRequest.base.repo.name;
+  const number = pullRequest.number;
   try {
     await triggerKokoroJob(pullRequest.html_url, token);
   } catch (e) {
+    logger.metric('release.trigger_failed', {
+      owner,
+      repo,
+      number,
+    });
     await markFailed(octokit, {
       owner,
-      repo: pullRequest.base.repo.name,
-      number: pullRequest.number,
+      repo,
+      number,
     });
   } finally {
+    logger.metric('release.triggered', {
+      owner,
+      repo,
+      number,
+    });
     await markTriggered(octokit, {
       owner,
-      repo: pullRequest.base.repo.name,
-      number: pullRequest.number,
+      repo,
+      number,
     });
   }
 }
@@ -168,6 +180,11 @@ export = (app: Probot) => {
     const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };
+    if (releasePullRequests.length === 0) {
+      logger.warn(
+        `Failed to find any pending pull requests for ${owner}/${repo}`
+      );
+    }
     for (const pullRequest of releasePullRequests) {
       if (
         !pullRequest.labels.some(label => {
@@ -309,5 +326,59 @@ export = (app: Probot) => {
       context.payload.pull_request.head.sha,
       context.payload.pull_request.number
     );
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
+    const logger = getContextLogger(context);
+    const repository = context.payload.repository;
+    const repoUrl = repository.full_name;
+    const owner = repository.owner.login;
+    const repo = repository.name;
+
+    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-trigger not allowed for owner: ${owner}`);
+      return;
+    }
+
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
+    if (!remoteConfiguration) {
+      logger.info(`release-trigger not configured for ${repoUrl}`);
+      return;
+    }
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+    if (!configuration.enabled) {
+      logger.info(`release-trigger not enabled for ${repoUrl}`);
+      return;
+    }
+
+    const releasePullRequests = await findPendingReleasePullRequests(
+      context.octokit,
+      {owner: repository.owner.login, repo: repository.name}
+    );
+    const {token} = (await context.octokit.auth({type: 'installation'})) as {
+      token: string;
+    };
+    for (const pullRequest of releasePullRequests) {
+      if (
+        !pullRequest.labels.some(label => {
+          return label.name === TAGGED_LABEL;
+        })
+      ) {
+        logger.info('ignore pull non-tagged pull request');
+        continue;
+      }
+
+      await doTriggerWithLock(context.octokit, pullRequest, token, logger);
+    }
   });
 };
