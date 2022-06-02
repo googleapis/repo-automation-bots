@@ -88,7 +88,7 @@ steps:
     entrypoint: bash
     env:
       - "TARGET_TYPE=run"
-      - "FUNCTION_NAME=release-trigger"
+      - "FUNCTION_NAME=release_trigger"
     args:
       - "-e"
       - "./scripts/cron-deploy.sh"
