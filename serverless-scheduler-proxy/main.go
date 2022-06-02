@@ -158,7 +158,7 @@ func rewriteBotURL(c botConfig, parser func([]byte) (string, string, string), re
 		if serviceIdentifier == "" {
 			log.Fatal("SERVICE_IDENTIFIER environment variable not specified")
 		}
-		newHost := fmt.Sprintf("%v-%v.a.run.app", botName, serviceIdentifier)
+		newHost := fmt.Sprintf("%v-%v-uc.a.run.app", botName, serviceIdentifier)
 		req.Host = newHost
 		req.URL.Host = newHost
 		req.URL.Path = "/"
