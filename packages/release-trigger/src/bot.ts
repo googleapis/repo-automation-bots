@@ -180,6 +180,11 @@ export = (app: Probot) => {
     const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };
+    if (releasePullRequests.length === 0) {
+      logger.warn(
+        `Failed to find any pending pull requests for ${owner}/${repo}`
+      );
+    }
     for (const pullRequest of releasePullRequests) {
       if (
         !pullRequest.labels.some(label => {
