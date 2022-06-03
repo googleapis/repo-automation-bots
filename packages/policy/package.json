@@ -49,7 +49,7 @@
     "nock": "^13.1.1",
     "sinon": "^14.0.0",
     "smee-client": "^1.2.2",
-    "typescript": "~4.6.0"
+    "typescript": "~4.7.0"
   },
   "engines": {
     "node": ">= 12.18.2"
