@@ -87,7 +87,7 @@ export interface PullRequest {
   closed_at: string | null;
 }
 
-const LAUNCH_DATE = new Date('2021-08-01');
+const LAUNCH_DATE = new Date('2022-06-01');
 export function isReleasePullRequest(pullRequest: PullRequest): boolean {
   return (
     pullRequest.state === 'closed' &&
@@ -131,6 +131,7 @@ export async function findPendingReleasePullRequests(
       }
     }
   }
+  logger.debug(`Found ${found.length} release pull requests`);
   return found;
 }
 

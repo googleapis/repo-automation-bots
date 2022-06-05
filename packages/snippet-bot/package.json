@@ -56,7 +56,7 @@
     "sinon": "^14.0.0",
     "smee-client": "^1.2.2",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.6.0"
+    "typescript": "~4.7.0"
   },
   "engines": {
     "node": ">= 12.18.2"
