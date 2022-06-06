@@ -107,7 +107,7 @@ export async function findPendingReleasePullRequests(
   octokit: Octokit,
   repository: Repository,
   maxNumber = 5,
-  maxPages = 2,
+  maxPages = 2
 ): Promise<PullRequest[]> {
   // TODO: switch to graphql
   const listGenerator = octokit.paginate.iterator(
