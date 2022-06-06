@@ -173,6 +173,10 @@ export = (app: Probot) => {
       return;
     }
 
+    // release-please may take some time to add the tagged label - wait a
+    // few seconds to let it tag the release PR
+    await delay(10_000);
+
     const releasePullRequests = await findPendingReleasePullRequests(
       context.octokit,
       {owner: repository.owner.login, repo: repository.name}
@@ -382,3 +386,7 @@ export = (app: Probot) => {
     }
   });
 };
+
+function delay(ms: number): Promise<void> {
+  return new Promise( resolve => setTimeout(resolve, ms) );
+}
