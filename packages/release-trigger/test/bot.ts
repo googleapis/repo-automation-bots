@@ -84,6 +84,9 @@ describe('bot', () => {
   });
 
   describe('on release publish', () => {
+    beforeEach(() => {
+      sandbox.stub(releaseTriggerModule, 'delay').resolves();
+    });
     it('should trigger a kokoro job via releasetool', async () => {
       const payload = require(resolve(
         fixturesPath,
