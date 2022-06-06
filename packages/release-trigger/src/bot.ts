@@ -37,6 +37,7 @@ import {
   TAGGED_LABEL,
   cleanupPublished,
   isReleasePullRequest,
+  delay,
 } from './release-trigger';
 
 const TRIGGER_LOCK_ID = 'release-trigger';
@@ -386,7 +387,3 @@ export = (app: Probot) => {
     }
   });
 };
-
-function delay(ms: number): Promise<void> {
-  return new Promise( resolve => setTimeout(resolve, ms) );
-}
