@@ -106,7 +106,8 @@ export function isReleasePullRequest(pullRequest: PullRequest): boolean {
 export async function findPendingReleasePullRequests(
   octokit: Octokit,
   repository: Repository,
-  maxNumber = 5
+  maxNumber = 5,
+  maxPages = 2
 ): Promise<PullRequest[]> {
   // TODO: switch to graphql
   const listGenerator = octokit.paginate.iterator(
@@ -121,6 +122,7 @@ export async function findPendingReleasePullRequests(
   );
 
   const found: PullRequest[] = [];
+  let page = 1;
   for await (const listResponse of listGenerator) {
     for (const pullRequest of listResponse.data) {
       if (isReleasePullRequest(pullRequest)) {
@@ -130,6 +132,10 @@ export async function findPendingReleasePullRequests(
         }
       }
     }
+    if (page >= maxPages) {
+      break;
+    }
+    page++;
   }
   logger.debug(`Found ${found.length} release pull requests`);
   return found;
@@ -205,4 +211,8 @@ export async function cleanupPublished(
     }
   }
   return success;
+}
+
+export function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

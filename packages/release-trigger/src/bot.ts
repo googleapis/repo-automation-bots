@@ -37,6 +37,7 @@ import {
   TAGGED_LABEL,
   cleanupPublished,
   isReleasePullRequest,
+  delay,
 } from './release-trigger';
 
 const TRIGGER_LOCK_ID = 'release-trigger';
@@ -172,6 +173,10 @@ export = (app: Probot) => {
       logger.info(`release-trigger not enabled for ${repoUrl}`);
       return;
     }
+
+    // release-please may take some time to add the tagged label - wait a
+    // few seconds to let it tag the release PR
+    await delay(10_000);
 
     const releasePullRequests = await findPendingReleasePullRequests(
       context.octokit,
