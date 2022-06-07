@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.5.4](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.3...gcf-utils-v13.5.4) (2022-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency pino to v8 ([#3826](https://github.com/googleapis/repo-automation-bots/issues/3826)) ([b9ee6b5](https://github.com/googleapis/repo-automation-bots/commit/b9ee6b5684e9f95e894d89c6b74745e9008983f4))
+
 ### [13.5.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.2...gcf-utils-v13.5.3) (2022-05-26)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "gcf-utils",
-  "version": "13.5.3",
+  "version": "13.5.4",
   "description": "An extension for running Probot in Google Cloud Functions",
   "scripts": {
     "compile": "tsc -p .",
