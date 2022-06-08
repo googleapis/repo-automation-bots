@@ -37,6 +37,7 @@ steps:
       - "MEMORY=8G"
       - "SERVICE_NAME=release-trigger-backend"
       - "CONCURRENCY=32"
+      - "NUMBER_OF_CPU=4"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
