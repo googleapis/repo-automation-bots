@@ -34,9 +34,9 @@ steps:
     entrypoint: bash
     env:
       - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
-      - "MEMORY=1G"
+      - "MEMORY=8G"
       - "SERVICE_NAME=release-trigger-backend"
-      - "CONCURRENCY=4"
+      - "CONCURRENCY=32"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
@@ -46,6 +46,12 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
+      # botName
+      - "release-trigger"
+      # timeout
+      - "3600"
+      # minInstances: To avoid "no instance" error
+      - "2"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker-frontend"
