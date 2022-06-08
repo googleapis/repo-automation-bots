@@ -15,6 +15,8 @@
 import {createProbot, Probot, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
 import {createProbotAuth} from 'octokit-auth-probot';
+// eslint-disable-next-line node/no-extraneous-import
+import AggregateError from 'aggregate-error';
 
 import getStream from 'get-stream';
 import intoStream from 'into-stream';
@@ -26,6 +28,8 @@ import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
@@ -477,16 +481,36 @@ export class GCFBootstrapper {
           }
 
           setContextLogger(payload, requestLogger);
-          // TODO: find out the best way to get this type, and whether we can
-          // keep using a custom event name.
-          await this.probot.receive({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            name: botRequest.eventName as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            id: botRequest.githubDeliveryId as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            payload: payload as any,
-          });
+
+          try {
+            // TODO: find out the best way to get this type, and whether we can
+            // keep using a custom event name.
+            await this.probot.receive({
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              name: botRequest.eventName as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              id: botRequest.githubDeliveryId as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              payload: payload as any,
+            });
+          } catch (e) {
+            const rateLimits = parseRateLimitError(e);
+            if (rateLimits) {
+              requestLogger.warn('Rate limit exceeded', rateLimits);
+              // On GitHub quota issues, return a 503 to throttle our task queues
+              // https://cloud.google.com/tasks/docs/common-pitfalls#backoff_errors_and_enforced_rates
+              response.status(503).send({
+                statusCode: 503,
+                body: JSON.stringify({
+                  ...rateLimits,
+                  message: 'Rate Limited',
+                }),
+              });
+              return;
+            } else {
+              throw e;
+            }
+          }
         } else if (botRequest.triggerType === TriggerType.GITHUB) {
           await this.enqueueTask(
             {
@@ -1126,4 +1150,51 @@ export function getContextLogger(context): GCFLogger {
     return logger;
   }
   return requestLogger;
+}
+
+interface RateLimits {
+  userId?: number;
+  remaining?: number;
+  reset?: number;
+  limit?: number;
+  resource?: string;
+}
+const RATE_LIMIT_MESSAGE = 'API rate limit exceeded';
+const RATE_LIMIT_REGEX = new RegExp('API rate limit exceeded for user ID (d+)');
+function parseRateLimitError(e: Error): RateLimits | undefined {
+  // If any of the aggregated errors are rate limit errors, then
+  // this should be considered a rate limit error
+  if (e instanceof AggregateError) {
+    for (const inner of e) {
+      const rateLimits = parseRateLimitError(inner);
+      if (rateLimits) {
+        return rateLimits;
+      }
+    }
+    return undefined;
+  } else if (!(e instanceof RequestError)) {
+    // other non-RequestErrors are not considered rate limit errors
+    return undefined;
+  }
+
+  if (e.status !== 403) {
+    return undefined;
+  }
+
+  if (
+    !!e.message.match(RATE_LIMIT_MESSAGE) ||
+    e.response.headers['x-ratelimit-remaining'] === '0'
+  ) {
+    const messageMatch = e.message.match(RATE_LIMIT_REGEX);
+    return {
+      userId: messageMatch ? parseInt(messageMatch[1]) : undefined,
+      remaining: parseInt(e.response.headers['x-ratelimit-remaining']),
+      reset: parseInt(e.response.headers['x-ratelimit-reset']),
+      limit: parseInt(e.response.headers['x-ratelimit-limit']),
+      resource:
+        (e.response.headers['x-ratelimit-resource'] as string) || undefined,
+    };
+  }
+
+  return undefined;
 }
