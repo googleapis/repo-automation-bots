@@ -1161,6 +1161,7 @@ interface RateLimits {
 }
 const RATE_LIMIT_MESSAGE = 'API rate limit exceeded';
 const RATE_LIMIT_REGEX = new RegExp('API rate limit exceeded for user ID (d+)');
+const SECONDARY_RATE_LIMIT_MESSAGE = 'exceeded a secondary rate limit';
 function parseRateLimitError(e: Error): RateLimits | undefined {
   // If any of the aggregated errors are rate limit errors, then
   // this should be considered a rate limit error
@@ -1193,6 +1194,11 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
       limit: parseInt(e.response.headers['x-ratelimit-limit']),
       resource:
         (e.response.headers['x-ratelimit-resource'] as string) || undefined,
+    };
+  } else if (e.message.includes(SECONDARY_RATE_LIMIT_MESSAGE)) {
+    // Secondary rate limit errors do not return remaining quotas
+    return {
+      resource: 'secondary',
     };
   }
 
