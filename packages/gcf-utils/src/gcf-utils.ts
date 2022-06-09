@@ -65,6 +65,8 @@ const DEFAULT_CRON_TYPE: CronType = 'repository';
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 const DEFAULT_TASK_CALLER =
   'task-caller@repo-automation-bots.iam.gserviceaccount.com';
+// Adding 2 minutes for each batch with 30 tasks
+export const FLOW_CONTROL_DELAY_IN_SECOND = 120;
 
 type BotEnvironment = 'functions' | 'run';
 
@@ -758,6 +760,7 @@ export class GCFBootstrapper {
       );
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchSize = 30;
+      let delayInSeconds = 0; // initial delay for the tasks
       for await (const repo of generator) {
         if (repo.archived === true || repo.disabled === true) {
           continue;
@@ -768,12 +771,15 @@ export class GCFBootstrapper {
             id,
             body,
             SCHEDULER_REPOSITORY_EVENT_NAME,
-            log
+            log,
+            delayInSeconds
           )
         );
         if (promises.length >= batchSize) {
           await Promise.all(promises);
           promises.splice(0, promises.length);
+          // add delay for flow control
+          delayInSeconds += FLOW_CONTROL_DELAY_IN_SECOND;
         }
       }
       // Wait for the rest.
@@ -785,6 +791,7 @@ export class GCFBootstrapper {
       const installationGenerator = this.eachInstallation(wrapConfig);
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchSize = 30;
+      let delayInSeconds = 0; // initial delay for the tasks
       for await (const installation of installationGenerator) {
         if (body.allowed_organizations !== undefined) {
           const org = installation?.account?.login.toLowerCase();
@@ -824,12 +831,15 @@ export class GCFBootstrapper {
               id,
               payload,
               SCHEDULER_REPOSITORY_EVENT_NAME,
-              log
+              log,
+              delayInSeconds
             )
           );
           if (promises.length >= batchSize) {
             await Promise.all(promises);
             promises.splice(0, promises.length);
+            // add delay for flow control
+            delayInSeconds += FLOW_CONTROL_DELAY_IN_SECOND;
           }
         }
         // Wait for the rest.
@@ -882,7 +892,8 @@ export class GCFBootstrapper {
     id: string,
     body: object,
     eventName: string,
-    log: GCFLogger
+    log: GCFLogger,
+    delayInSeconds: number = 0
   ) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
@@ -898,7 +909,8 @@ export class GCFBootstrapper {
           name: eventName,
           body: JSON.stringify(payload),
         },
-        log
+        log,
+        delayInSeconds
       );
     } catch (err) {
       log.error(err);
@@ -1000,7 +1012,7 @@ export class GCFBootstrapper {
    * Schedule a event trigger as a Cloud Task.
    * @param params {EnqueueTaskParams} Task parameters.
    */
-  async enqueueTask(params: EnqueueTaskParams, log: GCFLogger = logger) {
+  async enqueueTask(params: EnqueueTaskParams, log: GCFLogger = logger, delayInSeconds: number = 0) {
     log.info(
       `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}`
     );
@@ -1027,6 +1039,9 @@ export class GCFBootstrapper {
         parent: queuePath,
         task: {
           dispatchDeadline: {seconds: 60 * 30}, // 30 minutes.
+          scheduleTime: {
+            seconds: delayInSeconds + Date.now() / 1000,
+          },
           httpRequest: {
             httpMethod: 'POST',
             headers: {
@@ -1048,6 +1063,9 @@ export class GCFBootstrapper {
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
+          scheduleTime: {
+            seconds: delayInSeconds + Date.now() / 1000,
+          },
           httpRequest: {
             httpMethod: 'POST',
             headers: {
