@@ -65,8 +65,8 @@ const DEFAULT_CRON_TYPE: CronType = 'repository';
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 const DEFAULT_TASK_CALLER =
   'task-caller@repo-automation-bots.iam.gserviceaccount.com';
-// Adding 2 minutes for each batch with 30 tasks
-export const FLOW_CONTROL_DELAY_IN_SECOND = 120;
+// Adding 30 second delay for each batch with 30 tasks
+export const DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND = 30;
 
 type BotEnvironment = 'functions' | 'run';
 
@@ -109,6 +109,9 @@ export interface WrapOptions {
 
   // Maximum number of attempts for pubsub handlers. Defaults to `0`.
   maxPubSubRetries?: number;
+
+  // Delay in task scheduling flow control
+  flowControlDelayInSeconds?: number;
 }
 
 interface WrapConfig {
@@ -117,6 +120,7 @@ interface WrapConfig {
   maxCronRetries: number;
   maxRetries: number;
   maxPubSubRetries: number;
+  flowControlDelayInSeconds: number;
 }
 
 const DEFAULT_WRAP_CONFIG: WrapConfig = {
@@ -125,6 +129,7 @@ const DEFAULT_WRAP_CONFIG: WrapConfig = {
   maxCronRetries: 0,
   maxRetries: 10,
   maxPubSubRetries: 0,
+  flowControlDelayInSeconds: DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
 };
 
 export const logger = new GCFLogger();
@@ -233,6 +238,7 @@ export class GCFBootstrapper {
   taskTargetEnvironment: BotEnvironment;
   taskTargetName: string;
   taskCaller: string;
+  flowControlDelayInSeconds: number;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -274,6 +280,7 @@ export class GCFBootstrapper {
     this.payloadBucket = options.payloadBucket;
     this.taskTargetName = options.taskTargetName || this.functionName;
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
+    this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
   }
 
   async loadProbot(
@@ -386,6 +393,8 @@ export class GCFBootstrapper {
   gcf(appFn: ApplicationFunction, wrapOptions?: WrapOptions): HandlerFunction {
     return async (request: RequestWithRawBody, response: express.Response) => {
       const wrapConfig = this.parseWrapConfig(wrapOptions);
+
+      this.flowControlDelayInSeconds = wrapConfig.flowControlDelayInSeconds;
 
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapConfig.logging));
@@ -779,7 +788,7 @@ export class GCFBootstrapper {
           await Promise.all(promises);
           promises.splice(0, promises.length);
           // add delay for flow control
-          delayInSeconds += FLOW_CONTROL_DELAY_IN_SECOND;
+          delayInSeconds += this.flowControlDelayInSeconds;
         }
       }
       // Wait for the rest.
@@ -839,7 +848,7 @@ export class GCFBootstrapper {
             await Promise.all(promises);
             promises.splice(0, promises.length);
             // add delay for flow control
-            delayInSeconds += FLOW_CONTROL_DELAY_IN_SECOND;
+            delayInSeconds += this.flowControlDelayInSeconds;
           }
         }
         // Wait for the rest.

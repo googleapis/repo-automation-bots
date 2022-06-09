@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {
-  FLOW_CONTROL_DELAY_IN_SECOND,
+  DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
   GCFBootstrapper,
   WrapOptions,
   logger,
@@ -527,7 +527,7 @@ describe('GCFBootstrapper', () => {
 
     it('returns 503 on secondary rate limit errors', async () => {
       await mockBootstrapper(undefined, async app => {
-        app.on('issues', async _ => {
+        app.on('issues', async () => {
           throw new RequestError(
             'You have exceeded a secondary rate limit. Please wait a few minutes before you try again.',
             403,
@@ -805,8 +805,45 @@ describe('GCFBootstrapper', () => {
         const firstScheduleTime = firstTask.task.scheduleTime.seconds;
         const lastScheduleTime = lastTask.task.scheduleTime.seconds;
         assert(
-          lastScheduleTime - firstScheduleTime > FLOW_CONTROL_DELAY_IN_SECOND
+          lastScheduleTime - firstScheduleTime >
+            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND
         );
+        assert(
+          lastScheduleTime - firstScheduleTime <
+            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND + 1
+        );
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        listInstallationRepoRequests.done();
+      });
+
+      it('accepts a custom flow control delay', async () => {
+        const customDelay = 120;
+        await mockBootstrapper({
+          flowControlDelayInSeconds: customDelay,
+        });
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        const listInstallationRepoRequests = nockListInstallationManyRepos();
+
+        await handler(req, response);
+
+        const enqueueTaskCalls = enqueueTask.getCalls();
+        // We add delay for every 30 batch
+        assert(enqueueTaskCalls.length === 31);
+        const firstTask = enqueueTask.getCall(0).args[0];
+        const lastTask = enqueueTask.getCall(30).args[0];
+        const firstScheduleTime = firstTask.task.scheduleTime.seconds;
+        const lastScheduleTime = lastTask.task.scheduleTime.seconds;
+        assert(lastScheduleTime - firstScheduleTime > customDelay);
+        assert(lastScheduleTime - firstScheduleTime < customDelay + 1);
         sinon.assert.notCalled(issueSpy);
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
