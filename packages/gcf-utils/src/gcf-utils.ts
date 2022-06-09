@@ -893,7 +893,7 @@ export class GCFBootstrapper {
     body: object,
     eventName: string,
     log: GCFLogger,
-    delayInSeconds: number = 0
+    delayInSeconds = 0
   ) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
@@ -1012,7 +1012,11 @@ export class GCFBootstrapper {
    * Schedule a event trigger as a Cloud Task.
    * @param params {EnqueueTaskParams} Task parameters.
    */
-  async enqueueTask(params: EnqueueTaskParams, log: GCFLogger = logger, delayInSeconds: number = 0) {
+  async enqueueTask(
+    params: EnqueueTaskParams,
+    log: GCFLogger = logger,
+    delayInSeconds = 0
+  ) {
     log.info(
       `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}`
     );

@@ -479,7 +479,7 @@ describe('GCFBootstrapper', () => {
 
     it('returns 503 on rate limit errors', async () => {
       await mockBootstrapper(undefined, async app => {
-        app.on('issues', async _ => {
+        app.on('issues', async () => {
           throw new RequestError(
             'API rate limit exceeded for user ID 3456',
             403,
@@ -761,7 +761,9 @@ describe('GCFBootstrapper', () => {
         const lastTask = enqueueTask.getCall(30).args[0];
         const firstScheduleTime = firstTask.task.scheduleTime.seconds;
         const lastScheduleTime = lastTask.task.scheduleTime.seconds;
-        assert(lastScheduleTime - firstScheduleTime > FLOW_CONTROL_DELAY_IN_SECOND);
+        assert(
+          lastScheduleTime - firstScheduleTime > FLOW_CONTROL_DELAY_IN_SECOND
+        );
         sinon.assert.notCalled(issueSpy);
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
