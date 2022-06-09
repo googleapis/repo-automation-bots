@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.6.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.4...gcf-utils-v13.6.0) (2022-06-09)
+
+
+### Features
+
+* log and return 503 on rate limit RequestErrors ([#3812](https://github.com/googleapis/repo-automation-bots/issues/3812)) ([6239c57](https://github.com/googleapis/repo-automation-bots/commit/6239c57b79d950ef57a78134d24ed95d8752ea27))
+
 ## [13.5.4](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.3...gcf-utils-v13.5.4) (2022-06-07)
 
 
