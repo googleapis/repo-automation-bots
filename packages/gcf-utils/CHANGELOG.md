@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.8.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.7.0...gcf-utils-v13.8.0) (2022-06-09)
+
+
+### Features
+
+* **gcf-utils:** Make the flow control delay configurable ([#3885](https://github.com/googleapis/repo-automation-bots/issues/3885)) ([b4fa541](https://github.com/googleapis/repo-automation-bots/commit/b4fa541904021cf8c45b05e4fb07056424e25c49))
+
 ## [13.7.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.6.0...gcf-utils-v13.7.0) (2022-06-09)
 
 
