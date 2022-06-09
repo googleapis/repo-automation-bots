@@ -87,6 +87,18 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.7.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.6.0...gcf-utils-v13.7.0) (2022-06-09)
+
+
+### Features
+
+* **gcf-utils:** add flow control for scheduling jobs ([#3881](https://github.com/googleapis/repo-automation-bots/issues/3881)) ([dfef647](https://github.com/googleapis/repo-automation-bots/commit/dfef64756391269bdc77c104f0ec2dd64a5374f7))
+
+
+### Bug Fixes
+
+* also handle secondary rate limit errors from GitHub API ([#3879](https://github.com/googleapis/repo-automation-bots/issues/3879)) ([e971f81](https://github.com/googleapis/repo-automation-bots/commit/e971f81de06a5ff0e76f00da2ddf61e72ff7c3ff))
+
 ## [13.6.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.4...gcf-utils-v13.6.0) (2022-06-09)
 
 
