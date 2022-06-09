@@ -525,6 +525,49 @@ describe('GCFBootstrapper', () => {
       assert.strictEqual(response.statusCode, 503);
     });
 
+    it('returns 503 on secondary rate limit errors', async () => {
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async _ => {
+          throw new RequestError(
+            'You have exceeded a secondary rate limit. Please wait a few minutes before you try again.',
+            403,
+            {
+              response: {
+                headers: {},
+                status: 403,
+                url: '',
+                data: '',
+              },
+              request: {
+                headers: {},
+                method: 'POST',
+                url: '',
+              },
+            }
+          );
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 503);
+    });
+
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
       await mockBootstrapper();
       req.body = {
