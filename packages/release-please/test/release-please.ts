@@ -670,6 +670,9 @@ describe('ReleasePleaseBot', () => {
             'repo-name'
           )
         );
+      const addIssueStub = sandbox
+        .stub(errorHandlingModule, 'addOrUpdateIssue')
+        .resolves();
       getConfigStub.resolves(loadConfig('manifest_handle_gh_release.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -679,6 +682,7 @@ describe('ReleasePleaseBot', () => {
       sinon.assert.notCalled(createPullRequestsStub);
       sinon.assert.notCalled(createReleasesStub);
       sinon.assert.calledOnce(fromManifestStub);
+      sinon.assert.calledOnce(addIssueStub);
     });
   });
 

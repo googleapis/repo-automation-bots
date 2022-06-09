@@ -33,7 +33,7 @@
     "@octokit/rest": "^18.12.0",
     "@octokit/webhooks": "^9.24.0",
     "gcf-utils": "^13.5.3",
-    "release-please": "^13.18.0"
+    "release-please": "^13.18.3"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
