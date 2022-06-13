@@ -18,11 +18,26 @@ import {logger} from 'gcf-utils';
 
 import * as child_process from 'child_process';
 
+export class TriggerError extends Error {
+  readonly cause: Error;
+  readonly command: string;
+  readonly stdout: string;
+  readonly stderr: string;
+  constructor(cause: Error, command: string, stdout: string, stderr: string) {
+    super(cause.message);
+    this.cause = cause;
+    this.command = command;
+    this.stdout = stdout;
+    this.stderr = stderr;
+    this.name = TriggerError.name;
+  }
+}
+
 export const exec = function (
   command: string,
   token: string
-): Promise<{stdout: string; stderr: string}> {
-  return new Promise((resolve, reject) => {
+): Promise<{stdout: string; stderr: string; error?: Error}> {
+  return new Promise((resolve, _reject) => {
     child_process.exec(
       command,
       {
@@ -38,11 +53,7 @@ export const exec = function (
         if (stderr) {
           logger.warn(stderr);
         }
-        if (error) {
-          reject(error);
-        } else {
-          resolve({stdout, stderr});
-        }
+        resolve({stdout, stderr, error: error || undefined});
       }
     );
   });
@@ -149,19 +160,12 @@ export async function triggerKokoroJob(
 
   const command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
   logger.debug(`command: ${command}`);
-  try {
-    const {stdout, stderr} = await exec(command, token);
-    if (stdout) {
-      logger.info(stdout);
-    }
-    if (stderr) {
-      logger.warn(stderr);
-    }
-    return {stdout, stderr};
-  } catch (e) {
-    logger.error(`error executing command: ${command}`, e);
-    throw e;
+  const {stdout, stderr, error} = await exec(command, token);
+  if (error) {
+    logger.error(`error executing command: ${command}`, error);
+    throw new TriggerError(error, command, stdout, stderr);
   }
+  return {stdout, stderr};
 }
 
 export async function markTriggered(
