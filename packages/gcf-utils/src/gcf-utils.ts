@@ -32,7 +32,7 @@ import {Octokit} from '@octokit/rest';
 import {RequestError} from '@octokit/request-error';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
-import {GCFLogger} from './logging/gcf-logger';
+import {GCFLogger, buildRequestLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
 import {run} from '@googleapis/run';
@@ -424,7 +424,7 @@ export class GCFBootstrapper {
       const loggerBindings = this.buildLoggerBindings(botRequest, request.body);
       logger.resetBindings();
       logger.addBindings(loggerBindings);
-      let requestLogger = logger.child(loggerBindings);
+      let requestLogger = buildRequestLogger(logger, loggerBindings);
       try {
         if (botRequest.triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
@@ -459,7 +459,7 @@ export class GCFBootstrapper {
           );
           logger.resetBindings();
           logger.addBindings(loggerBindings);
-          requestLogger = logger.child(loggerBindings);
+          requestLogger = buildRequestLogger(logger, loggerBindings);
 
           const maxRetries = this.getRetryLimit(
             wrapConfig,
@@ -538,7 +538,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
-        requestLogger.error(err);
+        logErrors(requestLogger, err);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -1234,4 +1234,14 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
   }
 
   return undefined;
+}
+
+function logErrors(logger: GCFLogger, e: Error) {
+  if (e instanceof AggregateError) {
+    for (const inner of e) {
+      logErrors(logger, inner);
+    }
+  } else {
+    logger.error(e);
+  }
 }
