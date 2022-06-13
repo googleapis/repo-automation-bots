@@ -26,6 +26,7 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {Options, ApplicationFunction} from 'probot';
+import * as loggerModule from '../src/logging/gcf-logger';
 import * as express from 'express';
 import fs from 'fs';
 import sinon from 'sinon';
@@ -473,8 +474,73 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(globalCronSpy);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.called(sendStub);
-
       assert.strictEqual(response.statusCode, 500);
+    });
+
+    it('logs errors for single handler errors', async () => {
+      const fakeLogger = new GCFLogger();
+      sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
+      const errorStub = sandbox.stub(fakeLogger, 'error');
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new SyntaxError('Some error message');
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      sinon.assert.calledOnce(errorStub);
+      sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
+    });
+
+    it('logs errors for multiple handler errors', async () => {
+      const fakeLogger = new GCFLogger();
+      sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
+      const errorStub = sandbox.stub(fakeLogger, 'error');
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new SyntaxError('Some error message');
+        });
+        app.on('issues', async () => {
+          throw new Error('Another error message');
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      sinon.assert.calledTwice(errorStub);
+      sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
+      sinon.assert.calledWith(errorStub, sinon.match.instanceOf(Error));
     });
 
     it('returns 503 on rate limit errors', async () => {
