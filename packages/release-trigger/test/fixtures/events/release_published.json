@@ -152,5 +152,9 @@
     "received_events_url": "https://api.github.com/users/Codertocat/received_events",
     "type": "User",
     "site_admin": false
+  },
+  "installation": {
+    "id": 11835543,
+    "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTE4MzU1NDM="
   }
 }

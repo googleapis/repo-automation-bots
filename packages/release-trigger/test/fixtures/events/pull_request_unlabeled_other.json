@@ -456,5 +456,9 @@
     "default": true,
     "description": "some other label",
     "name": "other label"
+  },
+  "installation": {
+    "id": 11835543,
+    "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTE4MzU1NDM="
   }
 }
