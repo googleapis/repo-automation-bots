@@ -1236,9 +1236,17 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
   return undefined;
 }
 
+/**
+ * Log errors for Error Reporting. If the handled error is an
+ * AggregateError, log each of its contained errors individually.
+ * @param {GCFLogger} logger The logger to log to
+ * @param {Error} e The error to log
+ */
 function logErrors(logger: GCFLogger, e: Error) {
   if (e instanceof AggregateError) {
     for (const inner of e) {
+      // AggregateError should not contain an AggregateError, but
+      // we can run this recursively anyways.
       logErrors(logger, inner);
     }
   } else {
