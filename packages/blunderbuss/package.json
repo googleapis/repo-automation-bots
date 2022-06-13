@@ -31,13 +31,13 @@
     "@google-automations/bot-config-utils": "^4.0.2",
     "@google-automations/datastore-lock": "^3.2.0",
     "@google-automations/label-utils": "^2.0.2",
-    "gcf-utils": "^13.5.3"
+    "gcf-utils": "^13.8.0"
   },
   "devDependencies": {
-    "@octokit/webhooks": "^9.24.0",
+    "@octokit/webhooks": "^9.26.0",
     "@octokit/types": "^6.34.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^17.0.40",
+    "@types/node": "^17.0.42",
     "@types/sinon": "^10.0.11",
     "c8": "^7.11.3",
     "cross-env": "^7.0.3",
