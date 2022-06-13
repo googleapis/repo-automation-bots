@@ -753,14 +753,15 @@ export function toLocalRepo(
   depth = 100,
   accessToken = ''
 ): string {
+  const cmd = newCmd(logger);
   if (stat(repo)?.isDirectory()) {
     logger.info(`Using local source repo directory ${repo}`);
+    cmd(`git config --global --add safe.directory ${repo}`);
     return repo;
   } else {
     const githubRepo = githubRepoFromOwnerSlashName(repo);
     const localDir = path.join(workDir, githubRepo.repo);
     const url = githubRepo.getCloneUrl(accessToken);
-    const cmd = newCmd(logger);
     cmd(`git clone --depth=${depth} "${url}" ${localDir}`);
     return localDir;
   }
