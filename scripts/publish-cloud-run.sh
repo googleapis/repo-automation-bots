@@ -112,6 +112,9 @@ fi
 if [ -n "${MEMORY}" ]; then
   deployArgs+=( "--memory" "${MEMORY}" )
 fi
+if [ -n "${NUMBER_OF_CPU}" ]; then
+  deployArgs+=( "--cpu" "${NUMBER_OF_CPU}" )
+fi
 echo "About to cloud run app ${SERVICE_NAME}"
 gcloud run deploy "${SERVICE_NAME}" "${deployArgs[@]}"
 

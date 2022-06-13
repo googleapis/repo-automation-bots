@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
   GCFBootstrapper,
   WrapOptions,
   logger,
@@ -22,6 +23,8 @@ import {
 } from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {Options, ApplicationFunction} from 'probot';
 import * as express from 'express';
 import fs from 'fs';
@@ -43,6 +46,15 @@ function nockListInstallationRepos() {
       .get('/installation/repositories')
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       .reply(200, require('../../test/fixtures/installations.json'))
+  );
+}
+
+function nockListInstallationManyRepos() {
+  return (
+    nock('https://api.github.com/')
+      .get('/installation/repositories')
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      .reply(200, require('../../test/fixtures/many_installations.json'))
   );
 }
 
@@ -461,6 +473,99 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(globalCronSpy);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 500);
+    });
+
+    it('returns 503 on rate limit errors', async () => {
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new RequestError(
+            'API rate limit exceeded for user ID 3456',
+            403,
+            {
+              response: {
+                headers: {
+                  'x-ratelimit-remaining': '0',
+                  'x-ratelimit-reset': '1653880306',
+                  'x-ratelimit-limit': '5000',
+                  'x-ratelimit-resource': 'core',
+                },
+                status: 403,
+                url: '',
+                data: '',
+              },
+              request: {
+                headers: {},
+                method: 'POST',
+                url: '',
+              },
+            }
+          );
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 503);
+    });
+
+    it('returns 503 on secondary rate limit errors', async () => {
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new RequestError(
+            'You have exceeded a secondary rate limit. Please wait a few minutes before you try again.',
+            403,
+            {
+              response: {
+                headers: {},
+                status: 403,
+                url: '',
+                data: '',
+              },
+              request: {
+                headers: {},
+                method: 'POST',
+                url: '',
+              },
+            }
+          );
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 503);
     });
 
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
@@ -672,6 +777,73 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
 
         sinon.assert.calledTwice(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        listInstallationRepoRequests.done();
+      });
+
+      it('ensures that task is enqueued with flow control when called by scheduler for many repos', async () => {
+        await mockBootstrapper();
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        const listInstallationRepoRequests = nockListInstallationManyRepos();
+
+        await handler(req, response);
+
+        const enqueueTaskCalls = enqueueTask.getCalls();
+        // We add delay for every 30 batch
+        assert(enqueueTaskCalls.length === 31);
+        const firstTask = enqueueTask.getCall(0).args[0];
+        const lastTask = enqueueTask.getCall(30).args[0];
+        const firstScheduleTime = firstTask.task.scheduleTime.seconds;
+        const lastScheduleTime = lastTask.task.scheduleTime.seconds;
+        assert(
+          lastScheduleTime - firstScheduleTime >
+            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND
+        );
+        assert(
+          lastScheduleTime - firstScheduleTime <
+            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND + 1
+        );
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        listInstallationRepoRequests.done();
+      });
+
+      it('accepts a custom flow control delay', async () => {
+        const customDelay = 120;
+        await mockBootstrapper({
+          flowControlDelayInSeconds: customDelay,
+        });
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        const listInstallationRepoRequests = nockListInstallationManyRepos();
+
+        await handler(req, response);
+
+        const enqueueTaskCalls = enqueueTask.getCalls();
+        // We add delay for every 30 batch
+        assert(enqueueTaskCalls.length === 31);
+        const firstTask = enqueueTask.getCall(0).args[0];
+        const lastTask = enqueueTask.getCall(30).args[0];
+        const firstScheduleTime = firstTask.task.scheduleTime.seconds;
+        const lastScheduleTime = lastTask.task.scheduleTime.seconds;
+        assert(lastScheduleTime - firstScheduleTime > customDelay);
+        assert(lastScheduleTime - firstScheduleTime < customDelay + 1);
         sinon.assert.notCalled(issueSpy);
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);

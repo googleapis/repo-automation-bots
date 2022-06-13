@@ -1,0 +1,5 @@
+cron:
+  - name: release-trigger-fallback
+    # run every other hour
+    schedule: 0 */2 * * *
+    description: trigger pending releases missed by webhooks

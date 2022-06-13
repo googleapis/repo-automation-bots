@@ -4,7 +4,7 @@ cron:
     schedule: 0 2 * * *
     params:
       installation:
-        id: 14397196
+        id: 17974345
       cron_org: googleapis
 
   - name: canary-bot-installation

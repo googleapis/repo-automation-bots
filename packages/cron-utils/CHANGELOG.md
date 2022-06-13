@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.1](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.1.0...cron-utils-v3.1.1) (2022-06-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @google-cloud/scheduler to v3 ([#3788](https://github.com/googleapis/repo-automation-bots/issues/3788)) ([5c7f677](https://github.com/googleapis/repo-automation-bots/commit/5c7f677bc45fe758833e0506a6e30d4c5c637cd5))
+
 ## [3.1.0](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.0.2...cron-utils-v3.1.0) (2022-05-27)
 
 

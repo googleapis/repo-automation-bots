@@ -15,6 +15,8 @@
 import {createProbot, Probot, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
 import {createProbotAuth} from 'octokit-auth-probot';
+// eslint-disable-next-line node/no-extraneous-import
+import AggregateError from 'aggregate-error';
 
 import getStream from 'get-stream';
 import intoStream from 'into-stream';
@@ -26,6 +28,8 @@ import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
@@ -61,6 +65,8 @@ const DEFAULT_CRON_TYPE: CronType = 'repository';
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 const DEFAULT_TASK_CALLER =
   'task-caller@repo-automation-bots.iam.gserviceaccount.com';
+// Adding 30 second delay for each batch with 30 tasks
+export const DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND = 30;
 
 type BotEnvironment = 'functions' | 'run';
 
@@ -103,6 +109,9 @@ export interface WrapOptions {
 
   // Maximum number of attempts for pubsub handlers. Defaults to `0`.
   maxPubSubRetries?: number;
+
+  // Delay in task scheduling flow control
+  flowControlDelayInSeconds?: number;
 }
 
 interface WrapConfig {
@@ -111,6 +120,7 @@ interface WrapConfig {
   maxCronRetries: number;
   maxRetries: number;
   maxPubSubRetries: number;
+  flowControlDelayInSeconds: number;
 }
 
 const DEFAULT_WRAP_CONFIG: WrapConfig = {
@@ -119,6 +129,7 @@ const DEFAULT_WRAP_CONFIG: WrapConfig = {
   maxCronRetries: 0,
   maxRetries: 10,
   maxPubSubRetries: 0,
+  flowControlDelayInSeconds: DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
 };
 
 export const logger = new GCFLogger();
@@ -227,6 +238,7 @@ export class GCFBootstrapper {
   taskTargetEnvironment: BotEnvironment;
   taskTargetName: string;
   taskCaller: string;
+  flowControlDelayInSeconds: number;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -268,6 +280,7 @@ export class GCFBootstrapper {
     this.payloadBucket = options.payloadBucket;
     this.taskTargetName = options.taskTargetName || this.functionName;
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
+    this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
   }
 
   async loadProbot(
@@ -381,6 +394,8 @@ export class GCFBootstrapper {
     return async (request: RequestWithRawBody, response: express.Response) => {
       const wrapConfig = this.parseWrapConfig(wrapOptions);
 
+      this.flowControlDelayInSeconds = wrapConfig.flowControlDelayInSeconds;
+
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapConfig.logging));
 
@@ -477,16 +492,36 @@ export class GCFBootstrapper {
           }
 
           setContextLogger(payload, requestLogger);
-          // TODO: find out the best way to get this type, and whether we can
-          // keep using a custom event name.
-          await this.probot.receive({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            name: botRequest.eventName as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            id: botRequest.githubDeliveryId as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            payload: payload as any,
-          });
+
+          try {
+            // TODO: find out the best way to get this type, and whether we can
+            // keep using a custom event name.
+            await this.probot.receive({
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              name: botRequest.eventName as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              id: botRequest.githubDeliveryId as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              payload: payload as any,
+            });
+          } catch (e) {
+            const rateLimits = parseRateLimitError(e);
+            if (rateLimits) {
+              requestLogger.warn('Rate limit exceeded', rateLimits);
+              // On GitHub quota issues, return a 503 to throttle our task queues
+              // https://cloud.google.com/tasks/docs/common-pitfalls#backoff_errors_and_enforced_rates
+              response.status(503).send({
+                statusCode: 503,
+                body: JSON.stringify({
+                  ...rateLimits,
+                  message: 'Rate Limited',
+                }),
+              });
+              return;
+            } else {
+              throw e;
+            }
+          }
         } else if (botRequest.triggerType === TriggerType.GITHUB) {
           await this.enqueueTask(
             {
@@ -734,6 +769,7 @@ export class GCFBootstrapper {
       );
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchSize = 30;
+      let delayInSeconds = 0; // initial delay for the tasks
       for await (const repo of generator) {
         if (repo.archived === true || repo.disabled === true) {
           continue;
@@ -744,12 +780,15 @@ export class GCFBootstrapper {
             id,
             body,
             SCHEDULER_REPOSITORY_EVENT_NAME,
-            log
+            log,
+            delayInSeconds
           )
         );
         if (promises.length >= batchSize) {
           await Promise.all(promises);
           promises.splice(0, promises.length);
+          // add delay for flow control
+          delayInSeconds += this.flowControlDelayInSeconds;
         }
       }
       // Wait for the rest.
@@ -761,6 +800,7 @@ export class GCFBootstrapper {
       const installationGenerator = this.eachInstallation(wrapConfig);
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchSize = 30;
+      let delayInSeconds = 0; // initial delay for the tasks
       for await (const installation of installationGenerator) {
         if (body.allowed_organizations !== undefined) {
           const org = installation?.account?.login.toLowerCase();
@@ -800,12 +840,15 @@ export class GCFBootstrapper {
               id,
               payload,
               SCHEDULER_REPOSITORY_EVENT_NAME,
-              log
+              log,
+              delayInSeconds
             )
           );
           if (promises.length >= batchSize) {
             await Promise.all(promises);
             promises.splice(0, promises.length);
+            // add delay for flow control
+            delayInSeconds += this.flowControlDelayInSeconds;
           }
         }
         // Wait for the rest.
@@ -858,7 +901,8 @@ export class GCFBootstrapper {
     id: string,
     body: object,
     eventName: string,
-    log: GCFLogger
+    log: GCFLogger,
+    delayInSeconds = 0
   ) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
@@ -874,7 +918,8 @@ export class GCFBootstrapper {
           name: eventName,
           body: JSON.stringify(payload),
         },
-        log
+        log,
+        delayInSeconds
       );
     } catch (err) {
       log.error(err);
@@ -976,7 +1021,11 @@ export class GCFBootstrapper {
    * Schedule a event trigger as a Cloud Task.
    * @param params {EnqueueTaskParams} Task parameters.
    */
-  async enqueueTask(params: EnqueueTaskParams, log: GCFLogger = logger) {
+  async enqueueTask(
+    params: EnqueueTaskParams,
+    log: GCFLogger = logger,
+    delayInSeconds = 0
+  ) {
     log.info(
       `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}`
     );
@@ -1003,6 +1052,9 @@ export class GCFBootstrapper {
         parent: queuePath,
         task: {
           dispatchDeadline: {seconds: 60 * 30}, // 30 minutes.
+          scheduleTime: {
+            seconds: delayInSeconds + Date.now() / 1000,
+          },
           httpRequest: {
             httpMethod: 'POST',
             headers: {
@@ -1024,6 +1076,9 @@ export class GCFBootstrapper {
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
+          scheduleTime: {
+            seconds: delayInSeconds + Date.now() / 1000,
+          },
           httpRequest: {
             httpMethod: 'POST',
             headers: {
@@ -1126,4 +1181,57 @@ export function getContextLogger(context): GCFLogger {
     return logger;
   }
   return requestLogger;
+}
+
+interface RateLimits {
+  userId?: number;
+  remaining?: number;
+  reset?: number;
+  limit?: number;
+  resource?: string;
+}
+const RATE_LIMIT_MESSAGE = 'API rate limit exceeded';
+const RATE_LIMIT_REGEX = new RegExp('API rate limit exceeded for user ID (d+)');
+const SECONDARY_RATE_LIMIT_MESSAGE = 'exceeded a secondary rate limit';
+function parseRateLimitError(e: Error): RateLimits | undefined {
+  // If any of the aggregated errors are rate limit errors, then
+  // this should be considered a rate limit error
+  if (e instanceof AggregateError) {
+    for (const inner of e) {
+      const rateLimits = parseRateLimitError(inner);
+      if (rateLimits) {
+        return rateLimits;
+      }
+    }
+    return undefined;
+  } else if (!(e instanceof RequestError)) {
+    // other non-RequestErrors are not considered rate limit errors
+    return undefined;
+  }
+
+  if (e.status !== 403) {
+    return undefined;
+  }
+
+  if (
+    !!e.message.match(RATE_LIMIT_MESSAGE) ||
+    e.response.headers['x-ratelimit-remaining'] === '0'
+  ) {
+    const messageMatch = e.message.match(RATE_LIMIT_REGEX);
+    return {
+      userId: messageMatch ? parseInt(messageMatch[1]) : undefined,
+      remaining: parseInt(e.response.headers['x-ratelimit-remaining']),
+      reset: parseInt(e.response.headers['x-ratelimit-reset']),
+      limit: parseInt(e.response.headers['x-ratelimit-limit']),
+      resource:
+        (e.response.headers['x-ratelimit-resource'] as string) || undefined,
+    };
+  } else if (e.message.includes(SECONDARY_RATE_LIMIT_MESSAGE)) {
+    // Secondary rate limit errors do not return remaining quotas
+    return {
+      resource: 'secondary',
+    };
+  }
+
+  return undefined;
 }

@@ -50,7 +50,7 @@ function buildFakePullRequest(
     ...{
       labels: ['autorelease: tagged'],
       mergeCommitSha: 'abcd1234',
-      closedAt: '2021-08-15T19:01:12Z',
+      closedAt: '2022-08-15T19:01:12Z',
     },
     ...options,
   };
