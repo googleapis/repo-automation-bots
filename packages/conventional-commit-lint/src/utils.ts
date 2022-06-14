@@ -203,11 +203,3 @@ export async function scanPullRequest(
 
   await context.octokit.checks.create(checkParams);
 }
-
-// export function lint_wrapper(message: string, rules: any): ILint {
-//   // support "foo!: message" syntax, see:
-//   // https://github.com/conventional-changelog/commitlint/pull/767
-//   message = message.replace('!:', ':');
-
-//   return lint(message.toLowerCase(), rules);
-// }

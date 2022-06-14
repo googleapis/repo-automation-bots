@@ -83,7 +83,7 @@ describe('ConventionalCommitLint', () => {
     sinon.assert.notCalled(addOrUpdateIssueCommentStub);
   });
 
-  it('adds a comment when the commit message and the PR title defer', async () => {
+  it('adds a comment when the commit message and the PR title differ', async () => {
     addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithCorrectMessage = require(resolve(
       fixturesPath,
