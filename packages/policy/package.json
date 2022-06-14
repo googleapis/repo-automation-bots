@@ -32,7 +32,7 @@
     "@google-cloud/bigquery": "^6.0.0",
     "code-suggester": "^3.0.0",
     "gaxios": "^5.0.0",
-    "gcf-utils": "^13.5.2",
+    "gcf-utils": "^13.8.0",
     "lru-cache": "^7.10.1",
     "uuid": "^8.3.2"
   },
