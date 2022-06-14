@@ -159,7 +159,6 @@ export class SplitRepo {
    * Initializes an empty git repo locally, and creates an empty repo on github
    */
   public async createAndInitializeEmptyGitRepo(directoryPath: string) {
-    console.log('here');
     checkIfGitIsInstalled(cmd);
     await this._createRepo(this.octokit, this.repoName);
     await this._initializeEmptyGitRepo(this.repoName, directoryPath);
