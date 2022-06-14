@@ -16,10 +16,12 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {describe, it, beforeEach} from 'mocha';
+import {Probot, ProbotOctokit} from 'probot';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
+import * as gcfUtilsModule from 'gcf-utils';
+import * as sinon from 'sinon';
 
 import myProbotApp from '../src/conventional-commit-lint';
 
@@ -27,30 +29,41 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-// TODO: stop disabling warn once the following upstream patch is landed:
-// https://github.com/probot/probot/pull/926
-global.console.warn = () => {};
-
 describe('ConventionalCommitLint', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
+  let addOrUpdateIssueCommentStub: sinon.SinonStub;
+  const pr11 = require(resolve(fixturesPath, './pr11'));
 
   beforeEach(() => {
-    probot = createProbot({
-      overrides: {
-        githubToken: 'abc123',
-        Octokit: ProbotOctokit.defaults({
-          retry: {enabled: false},
-          throttle: {enabled: false},
-        }),
-      },
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(myProbotApp);
+    addOrUpdateIssueCommentStub = sandbox.stub(
+      gcfUtilsModule,
+      'addOrUpdateIssueComment'
+    );
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
   });
 
   it('sets a "failure" context on PR, if commits fail linting', async () => {
+    addOrUpdateIssueCommentStub.resolves(null);
+    const pr11WithBadMessage = require(resolve(
+      fixturesPath,
+      './pr11WithBadMessage'
+    ));
     const payload = require(resolve(
       fixturesPath,
-      './pull_request_synchronize'
+      './pull_request_synchronize_bad_message'
     ));
     const invalidCommits = [
       ...require(resolve(fixturesPath, './invalid_commit')),
@@ -58,16 +71,44 @@ describe('ConventionalCommitLint', () => {
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
       .reply(200, invalidCommits)
-      .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-      .reply(200)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11WithBadMessage)
       .post('/repos/bcoe/test-release-please/check-runs', body => {
         snapshot(body);
         return true;
       })
       .reply(200);
-
     await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
+    sinon.assert.notCalled(addOrUpdateIssueCommentStub);
+  });
+
+  it('adds a comment when the commit message and the PR title differ', async () => {
+    addOrUpdateIssueCommentStub.resolves(null);
+    const pr11WithCorrectMessage = require(resolve(
+      fixturesPath,
+      './pr11WithCorrectMessage'
+    ));
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize_valid_message'
+    ));
+    const invalidCommits = [
+      ...require(resolve(fixturesPath, './invalid_commit')),
+    ];
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, invalidCommits)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11WithCorrectMessage)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+    sinon.assert.calledOnce(addOrUpdateIssueCommentStub);
   });
 
   it('sets a "success" context on PR, if commit lint succeeds', async () => {
@@ -80,8 +121,8 @@ describe('ConventionalCommitLint', () => {
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
       .reply(200, validCommits)
-      .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-      .reply(200)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11)
       .post('/repos/bcoe/test-release-please/check-runs', body => {
         snapshot(body);
         return true;
@@ -123,8 +164,8 @@ describe('ConventionalCommitLint', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
         .reply(200, invalidCommits)
-        .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-        .reply(200)
+        .get('/repos/bcoe/test-release-please/pulls/11')
+        .reply(200, pr11)
         .post('/repos/bcoe/test-release-please/check-runs', body => {
           snapshot(body);
           return true;
@@ -153,8 +194,8 @@ describe('ConventionalCommitLint', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
         .reply(200, invalidCommits)
-        .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-        .reply(200)
+        .get('/repos/bcoe/test-release-please/pulls/11')
+        .reply(200, pr11)
         .post('/repos/bcoe/test-release-please/check-runs', body => {
           snapshot(body);
           return true;
@@ -175,8 +216,8 @@ describe('ConventionalCommitLint', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
         .reply(200, invalidCommit)
-        .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-        .reply(200)
+        .get('/repos/bcoe/test-release-please/pulls/11')
+        .reply(200, pr11)
         .post('/repos/bcoe/test-release-please/check-runs', body => {
           snapshot(body);
           return true;
@@ -197,7 +238,7 @@ describe('ConventionalCommitLint', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
         .reply(200, invalidCommit)
-        .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
+        .get('/repos/bcoe/test-release-please/pulls/11')
         .reply(200, {auto_merge: {merge_method: 'squash'}})
         .post('/repos/bcoe/test-release-please/check-runs', body => {
           snapshot(body);
@@ -222,8 +263,8 @@ describe('ConventionalCommitLint', () => {
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
       .reply(200, validCommits)
-      .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-      .reply(200)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11)
       .post('/repos/bcoe/test-release-please/check-runs', body => {
         snapshot(body);
         return true;
@@ -246,8 +287,8 @@ describe('ConventionalCommitLint', () => {
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
       .reply(200, validCommits)
-      .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-      .reply(200)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11)
       .post('/repos/bcoe/test-release-please/check-runs', body => {
         snapshot(body);
         return true;
@@ -270,8 +311,8 @@ describe('ConventionalCommitLint', () => {
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
       .reply(200, validCommits)
-      .get('/repos/bcoe/test-release-please/pulls/11?per_page=100')
-      .reply(200)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11)
       .post('/repos/bcoe/test-release-please/check-runs', body => {
         snapshot(body);
         return true;
