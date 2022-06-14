@@ -25,7 +25,7 @@ import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
 import {SplitRepo} from './split-repo';
-import { execSync } from 'child_process';
+import {execSync} from 'child_process';
 
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
@@ -38,12 +38,12 @@ export async function preProcess(argv: CliArgs) {
   );
   const githubToken =
     await githubAuthenticator.getGitHubShortLivedAccessToken();
-  
+
   const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
 
   // Pass in a github token so that language-specific containers can
   // Make calls to Github
-  process.env.GITHUB_TOKEN = githubToken;
+  process.env._GITHUB_TOKEN = githubToken;
 
   const isMonoRepository = isMonoRepo(argv.language as Language);
 
@@ -65,8 +65,6 @@ export async function preProcess(argv: CliArgs) {
       );
 
       await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
-      logger.info(execSync('pwd').toString());
-      logger.info(execSync('ls').toString());
       logger.info(`Repo ${monoRepo.repoName} cloned`);
     } else {
       // Split-repo pre-process (before language specific-container)
@@ -84,9 +82,15 @@ export async function preProcess(argv: CliArgs) {
       logger.info(`Initialized empty git repo ${splitRepo.repoName}`);
     }
   } catch (err) {
+    logger.info(
+      `Pre process failed; opening an issue on googleapis/${
+        argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1] ?? 'googleapis'
+      }`
+    );
+
     await openAnIssue(
       octokit,
-      argv.repoToClone!.match(/\/([\w-]*)\.git/)![1] ?? 'googleapis',
+      argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1] ?? 'googleapis',
       argv.apiId,
       argv.buildId,
       argv.projectId,

@@ -93,10 +93,11 @@ describe('common utils tests', async () => {
     assert.ok(stdoutBranch.includes(branchName));
   });
 
-  it('should open an issue on a given repo', async () => {
+  it('should open an issue on a given repo, and should not print any GH tokens', async () => {
+    let issueSnapshot;
     const scope = nock('https://api.github.com')
       .post(`/repos/${ORG}/googleapis/issues`, body => {
-        snapshot(body);
+        issueSnapshot = snapshot(body);
         return true;
       })
       .reply(201);
@@ -108,8 +109,11 @@ describe('common utils tests', async () => {
       '1234',
       'myproject',
       'python',
-      'We are missing this piece of critical info'
+      'We are missing this piece of critical info, you used ghs_12346578'
     );
+
+    //eslint-disable-next-line no-useless-escape
+    assert.ok(!issueSnapshot.match(/ghs_[\w\d]*[^@:\/\.]/g));
     scope.done();
   });
 

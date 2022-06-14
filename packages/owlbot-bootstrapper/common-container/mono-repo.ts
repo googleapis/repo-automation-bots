@@ -48,7 +48,8 @@ export class MonoRepo {
     this.language = language;
     this.repoToCloneUrl = repoToCloneUrl;
     // Get the repo name from the repoToCloneUrl, i.e. github.com/googleapis/nodejs-kms.git becomes nodejs-kms
-    this.repoName = repoToCloneUrl.match(/\/([\w-]*)\.git/)![1];
+    // Or /googleapis/nodejs-kms becomes nodejs-kms
+    this.repoName = repoToCloneUrl.match(/\/([\w-]*)(.git|$)/)![1];
     this.githubToken = githubToken;
     this.octokit = octokit;
   }
@@ -65,10 +66,12 @@ export class MonoRepo {
     repoToCloneUrl: string,
     directoryPath: string
   ) {
-    const repoToCloneRegexp = /github\.com\/[a-z-]*\/[a-z-]*\.git/
+    const repoToCloneRegexp = /github\.com\/[a-z-]*\/[a-z-]*\.git/;
     const repoToClone = repoToCloneUrl.match(repoToCloneRegexp)?.[0];
     if (!repoToClone) {
-      logger.error('repoToClone arg is in the wrong format; must include github.com:orgName/repoName.git')
+      logger.error(
+        'repoToClone arg is in the wrong format; must include github.com:orgName/repoName.git'
+      );
     }
     if (repoToCloneUrl.includes('github')) {
       cmd(`git clone https://x-access-token:${githubToken}@${repoToClone}`, {
@@ -77,7 +80,7 @@ export class MonoRepo {
     } else {
       cmd(`git clone ${repoToCloneUrl}`, {cwd: directoryPath});
     }
-    logger.info(`Repo ${repoToCloneUrl} cloned`)
+    logger.info(`Repo ${repoToCloneUrl} cloned`);
   }
 
   /**

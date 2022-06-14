@@ -145,7 +145,9 @@ describe('post processing', async () => {
 
     const scope = nock('https://api.github.com')
       .post(
-        `/repos/${ORG}/${argv.repoToClone?.split('/')[2].split('.')[0]}/issues`
+        `/repos/${ORG}/${
+          argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1]
+        }/issues`
       )
       .reply(201);
 

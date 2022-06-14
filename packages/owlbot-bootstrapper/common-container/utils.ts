@@ -113,13 +113,16 @@ export async function openAnIssue(
   language?: string,
   errorBody?: string
 ) {
-  const tokenRedaction = /ghs_[\w\d]*[^@:\/\.]/g
+  //eslint-disable-next-line no-useless-escape
+  const tokenRedaction = /ghs_[\w\d]*[^@:\/\.]/g;
   try {
     await octokit.rest.issues.create({
       owner: ORG,
       repo: repoName,
       title: `Googleapis Bootstrapper failed creating ${apiName} for ${language}`,
-      body: `Check build number ${buildId} in ${projectId} for more details:\n\n${errorBody?.toString().replace(tokenRedaction, '')}`,
+      body: `Check build number ${buildId} in ${projectId} for more details:\n\n${errorBody
+        ?.toString()
+        .replace(tokenRedaction, '')}`,
     });
   } catch (err: any) {
     logger.error(err.toString().replace(tokenRedaction, ''));
@@ -157,7 +160,8 @@ export async function getBranchName(directoryPath: string) {
  * @param options the options for executing the command (i.e., dir path to execute the cp in)
  */
 export function cmd(command: string, options?: ExecSyncOptions | undefined) {
-  const tokenRedaction = /ghs_[\w\d]*[^@:\/\.]/g
+  //eslint-disable-next-line no-useless-escape
+  const tokenRedaction = /ghs_[\w\d]*[^@:\/\.]/g;
   logger.info(command.toString().replace(tokenRedaction, ''));
   try {
     const output = execSync(command, options);
