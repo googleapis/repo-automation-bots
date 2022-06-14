@@ -108,7 +108,7 @@ export = (app: Probot) => {
       try {
         await assign(context, config, logger);
       } finally {
-        lock.release();
+        await lock.release();
       }
     }
   );
