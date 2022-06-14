@@ -19,7 +19,11 @@ type Destination = NodeJS.WritableStream | SonicBoom;
 type LogEntry = {[key: string]: unknown};
 
 /**
- * A logger standardized logger for Google Cloud Functions
+ * A logger standardized logger for Google Cloud Functions (and Cloud Run).
+ * This logger outputs structured (JSON) logs formatted so that Google
+ * Cloud Logging can efficiently search and filter entries. `console.log()`
+ * entries will appear in Cloud Logging, but will lack developer specified
+ * metadata (bindings) and granular severity levels.
  */
 export class GCFLogger {
   private destination!: Destination;
