@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ChildProcess, execSync, ExecSyncOptions} from 'child_process';
+import {execSync, ExecSyncOptions} from 'child_process';
 import {logger} from 'gcf-utils';
 import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
@@ -56,6 +56,7 @@ export async function setConfig(directoryPath: string) {
 export async function openABranch(repoName: string, directoryPath: string) {
   const UUID = uuid().split('-')[4];
   const branchName = `${BRANCH_NAME_PREFIX}-${UUID}`;
+  logger.info(`Opening branch ${branchName} on ${repoName}`);
   try {
     fs.writeFileSync(`${directoryPath}/branchName.md`, branchName);
     // Need to push an empty commit to  push branch up
@@ -112,15 +113,16 @@ export async function openAnIssue(
   language?: string,
   errorBody?: string
 ) {
+  const tokenRedaction = /ghs_[\w\d]*[^@:\/\.]/g
   try {
     await octokit.rest.issues.create({
       owner: ORG,
       repo: repoName,
       title: `Googleapis Bootstrapper failed creating ${apiName} for ${language}`,
-      body: `Check build number ${buildId} in ${projectId} for more details:\n\n${errorBody}`,
+      body: `Check build number ${buildId} in ${projectId} for more details:\n\n${errorBody?.toString().replace(tokenRedaction, '')}`,
     });
   } catch (err: any) {
-    logger.error(err);
+    logger.error(err.toString().replace(tokenRedaction, ''));
     throw err;
   }
 }
@@ -155,12 +157,13 @@ export async function getBranchName(directoryPath: string) {
  * @param options the options for executing the command (i.e., dir path to execute the cp in)
  */
 export function cmd(command: string, options?: ExecSyncOptions | undefined) {
-  logger.info(command);
+  const tokenRedaction = /ghs_[\w\d]*[^@:\/\.]/g
+  logger.info(command.toString().replace(tokenRedaction, ''));
   try {
     const output = execSync(command, options);
-    logger.info(output.toString());
+    logger.info(output.toString().replace(tokenRedaction, ''));
   } catch (err) {
-    logger.error((err as any).toString());
+    logger.error((err as any).toString().replace(tokenRedaction, ''));
     throw err;
   }
 }

@@ -88,7 +88,6 @@ describe('post processing', async () => {
       language: 'nodejs',
       repoToClone: 'github.com/googleapis/nodejs-kms.git',
       installationId: '12345',
-      container: 'gcr.io/myproject/owlbot-bootstrapper:latest',
     };
 
     await postProcess(argv);
@@ -103,7 +102,6 @@ describe('post processing', async () => {
       apiId: 'google.cloud.kms.v1',
       language: 'python',
       installationId: '12345',
-      container: 'gcr.io/myproject/owlbot-bootstrapper:latest',
     };
 
     await postProcess(argv);
@@ -118,7 +116,6 @@ describe('post processing', async () => {
       apiId: 'google.cloud.kms.v1',
       language: 'python',
       installationId: '12345',
-      container: 'gcr.io/myproject/owlbot-bootstrapper:latest',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -140,7 +137,6 @@ describe('post processing', async () => {
       language: 'nodejs',
       installationId: '12345',
       repoToClone: 'github.com/googleapis/nodejs-kms.git',
-      container: 'gcr.io/myproject/owlbot-bootstrapper:latest',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
