@@ -30,24 +30,24 @@
     "@google-automations/bot-config-utils": "^4.0.2",
     "@google-automations/datastore-lock": "^3.2.0",
     "@google-automations/label-utils": "^2.0.2",
-    "@octokit/openapi-types": "^11.2.0",
+    "@octokit/openapi-types": "^12.0.0",
     "@octokit/types": "^6.34.0",
-    "gcf-utils": "^13.5.3",
-    "probot": "^12.2.3",
+    "gcf-utils": "^13.8.0",
+    "probot": "^12.2.4",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
-    "@types/node": "^17.0.36",
+    "@types/node": "^17.0.40",
     "@types/sinon": "^10.0.11",
     "c8": "^7.11.3",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
     "mocha": "^10.0.0",
-    "nock": "^13.2.4",
+    "nock": "^13.2.6",
     "sinon": "^14.0.0",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.7.2"
+    "typescript": "~4.7.3"
   },
   "engines": {
     "node": ">= 12.18.2"

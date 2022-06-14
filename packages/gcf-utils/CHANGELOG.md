@@ -87,6 +87,39 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.8.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.7.0...gcf-utils-v13.8.0) (2022-06-09)
+
+
+### Features
+
+* **gcf-utils:** Make the flow control delay configurable ([#3885](https://github.com/googleapis/repo-automation-bots/issues/3885)) ([b4fa541](https://github.com/googleapis/repo-automation-bots/commit/b4fa541904021cf8c45b05e4fb07056424e25c49))
+
+## [13.7.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.6.0...gcf-utils-v13.7.0) (2022-06-09)
+
+
+### Features
+
+* **gcf-utils:** add flow control for scheduling jobs ([#3881](https://github.com/googleapis/repo-automation-bots/issues/3881)) ([dfef647](https://github.com/googleapis/repo-automation-bots/commit/dfef64756391269bdc77c104f0ec2dd64a5374f7))
+
+
+### Bug Fixes
+
+* also handle secondary rate limit errors from GitHub API ([#3879](https://github.com/googleapis/repo-automation-bots/issues/3879)) ([e971f81](https://github.com/googleapis/repo-automation-bots/commit/e971f81de06a5ff0e76f00da2ddf61e72ff7c3ff))
+
+## [13.6.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.4...gcf-utils-v13.6.0) (2022-06-09)
+
+
+### Features
+
+* log and return 503 on rate limit RequestErrors ([#3812](https://github.com/googleapis/repo-automation-bots/issues/3812)) ([6239c57](https://github.com/googleapis/repo-automation-bots/commit/6239c57b79d950ef57a78134d24ed95d8752ea27))
+
+## [13.5.4](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.3...gcf-utils-v13.5.4) (2022-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency pino to v8 ([#3826](https://github.com/googleapis/repo-automation-bots/issues/3826)) ([b9ee6b5](https://github.com/googleapis/repo-automation-bots/commit/b9ee6b5684e9f95e894d89c6b74745e9008983f4))
+
 ### [13.5.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.5.2...gcf-utils-v13.5.3) (2022-05-26)
 
 

@@ -21,6 +21,8 @@ import {Octokit} from '@octokit/rest';
 // GitHubAPI interface:
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
@@ -228,6 +230,55 @@ async function buildManifest(
   );
 }
 
+async function runBranchConfigurationWithConfigurationHandling(
+  github: GitHub,
+  repoLanguage: string | null,
+  repoUrl: string,
+  branchConfiguration: BranchConfiguration,
+  octokit: Octokit,
+  logger: GCFLogger
+) {
+  try {
+    await runBranchConfiguration(
+      github,
+      repoLanguage,
+      repoUrl,
+      branchConfiguration,
+      octokit,
+      logger
+    );
+  } catch (e) {
+    if (e instanceof Errors.ConfigurationError) {
+      // In the future, this could raise an issue against the
+      // installed repository
+      logger.warn(e);
+      await addOrUpdateIssue(
+        octokit,
+        github.repository.owner,
+        github.repository.repo,
+        'Configuration error for release-please',
+        e.message,
+        ['release-please'],
+        logger
+      );
+    } else if (e instanceof BotConfigurationError) {
+      logger.warn(e);
+      await addOrUpdateIssue(
+        octokit,
+        github.repository.owner,
+        github.repository.repo,
+        'Configuration error for release-please',
+        e.message,
+        ['release-please'],
+        logger
+      );
+    } else {
+      // re-raise
+      throw e;
+    }
+  }
+}
+
 async function runBranchConfiguration(
   github: GitHub,
   repoLanguage: string | null,
@@ -271,28 +322,8 @@ async function runBranchConfiguration(
     }
   }
 
-  try {
-    logger.info(`creating pull request for (${repoUrl})`);
-    await Runner.createPullRequests(manifest);
-  } catch (e) {
-    if (e instanceof Errors.ConfigurationError) {
-      // In the future, this could raise an issue against the
-      // installed repository
-      logger.warn(e);
-      await addOrUpdateIssue(
-        octokit,
-        github.repository.owner,
-        github.repository.repo,
-        'Configuration error for release-please',
-        e.message,
-        ['release-please'],
-        logger
-      );
-    } else {
-      // re-raise
-      throw e;
-    }
-  }
+  logger.info(`creating pull request for (${repoUrl})`);
+  await Runner.createPullRequests(manifest);
 }
 
 const handler = (app: Probot) => {
@@ -341,37 +372,14 @@ const handler = (app: Probot) => {
 
     for (const branchConfiguration of branchConfigurations) {
       logger.debug(branchConfiguration);
-      try {
-        await runBranchConfiguration(
-          github,
-          repoLanguage,
-          repoUrl,
-          branchConfiguration,
-          context.octokit,
-          logger
-        );
-      } catch (e) {
-        if (e instanceof Errors.ConfigurationError) {
-          // Consider opening an issue on the repository in the future
-          logger.warn(
-            `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
-          );
-          logger.warn(e);
-        } else if (e instanceof BotConfigurationError) {
-          logger.warn(e);
-          await addOrUpdateIssue(
-            context.octokit,
-            github.repository.owner,
-            github.repository.repo,
-            'Configuration error for release-please',
-            e.message,
-            ['release-please'],
-            logger
-          );
-        } else {
-          throw e;
-        }
-      }
+      await runBranchConfigurationWithConfigurationHandling(
+        github,
+        repoLanguage,
+        repoUrl,
+        branchConfiguration,
+        context.octokit,
+        logger
+      );
     }
   });
 
@@ -434,12 +442,21 @@ const handler = (app: Probot) => {
     const repoLanguage = context.payload.repository.language;
 
     // remove the label
-    await context.octokit.issues.removeLabel({
-      name: FORCE_RUN_LABEL,
-      issue_number: context.payload.pull_request.number,
-      owner,
-      repo,
-    });
+    try {
+      await context.octokit.issues.removeLabel({
+        name: FORCE_RUN_LABEL,
+        issue_number: context.payload.pull_request.number,
+        owner,
+        repo,
+      });
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 404) {
+        // on retries, the label may no longer exist on the PR
+        logger.info('label no longer exists on PR');
+      } else {
+        throw e;
+      }
+    }
 
     // check release please config
     const remoteConfiguration = await getConfigWithDefaultBranch(
@@ -476,37 +493,14 @@ const handler = (app: Probot) => {
 
     for (const branchConfiguration of branchConfigurations) {
       logger.debug(branchConfiguration);
-      try {
-        await runBranchConfiguration(
-          github,
-          repoLanguage,
-          repoUrl,
-          branchConfiguration,
-          context.octokit,
-          logger
-        );
-      } catch (e) {
-        if (e instanceof Errors.ConfigurationError) {
-          // Consider opening an issue on the repository in the future
-          logger.warn(
-            `Invalid configuration for ${owner}/${repo}/${branchConfiguration.branch}`
-          );
-          logger.warn(e);
-        } else if (e instanceof BotConfigurationError) {
-          logger.warn(e);
-          await addOrUpdateIssue(
-            context.octokit,
-            github.repository.owner,
-            github.repository.repo,
-            'Configuration error for release-please',
-            e.message,
-            ['release-please'],
-            logger
-          );
-        } else {
-          throw e;
-        }
-      }
+      await runBranchConfigurationWithConfigurationHandling(
+        github,
+        repoLanguage,
+        repoUrl,
+        branchConfiguration,
+        context.octokit,
+        logger
+      );
     }
   });
 
