@@ -62,7 +62,7 @@ exports['ConventionalCommitLint PR With Multiple Commits has a valid title, inva
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
 }
 
-exports['ConventionalCommitLint adds a comment when the commit message and the PR title defer 1'] = {
+exports['ConventionalCommitLint adds a comment when the commit message and the PR title differ 1'] = {
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
   "conclusion": "failure",
   "name": "conventionalcommits.org",
