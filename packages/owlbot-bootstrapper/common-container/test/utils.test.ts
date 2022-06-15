@@ -113,7 +113,7 @@ describe('common utils tests', async () => {
     );
 
     //eslint-disable-next-line no-useless-escape
-    assert.ok(!issueSnapshot?.match(/ghs_[\w\d]*[^@:\/\.]/g));
+    assert.ok(!issueSnapshot!.match(/ghs_[\w\d]*[^@:\/\.]/g));
     scope.done();
   });
 
