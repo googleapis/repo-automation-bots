@@ -94,10 +94,11 @@ describe('common utils tests', async () => {
   });
 
   it('should open an issue on a given repo, and should not print any GH tokens', async () => {
-    let issueSnapshot;
+    let issueSnapshot: any;
     const scope = nock('https://api.github.com')
       .post(`/repos/${ORG}/googleapis/issues`, body => {
-        issueSnapshot = snapshot(body);
+        issueSnapshot = body.toString();
+        snapshot(body);
         return true;
       })
       .reply(201);
@@ -113,7 +114,7 @@ describe('common utils tests', async () => {
     );
 
     //eslint-disable-next-line no-useless-escape
-    assert.ok(!issueSnapshot!.match(/ghs_[\w\d]*[^@:\/\.]/g));
+    assert.ok(!issueSnapshot.match(/ghs_[\w\d]*[^@:\/\.]/g));
     scope.done();
   });
 
