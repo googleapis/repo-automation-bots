@@ -23,15 +23,17 @@ assign_prs_by:
   - labels:
     - 'bot: owl-bot'
     to:
-    - bcoe
     - chingor13
     - tmatsuo
+    - SurferJeffAtGoogle
 
 assign_issues:
   - chingor13
   - tmatsuo
+  - SurferJeffAtGoogle
 assign_prs:
   - bcoe
   - chingor13
   - sofisl
   - tmatsuo
+  - SurferJeffAtGoogle
