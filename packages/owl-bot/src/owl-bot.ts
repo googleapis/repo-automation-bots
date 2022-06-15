@@ -164,7 +164,9 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       const logger = getContextLogger(context);
 
       if (context.payload.pull_request.draft) {
-        logger.info(`skipping draft PR ${context.payload.pull_request.issue_url}`);
+        logger.info(
+          `skipping draft PR ${context.payload.pull_request.issue_url}`
+        );
         return;
       }
 
@@ -177,8 +179,6 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       const baseRef = context.payload.pull_request.base.ref;
       const defaultBranch =
         context.payload?.repository?.default_branch ?? 'main';
-
-
 
       if (!installation) {
         throw Error(`no installation token found for ${head}`);
