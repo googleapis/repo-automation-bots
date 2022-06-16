@@ -37,4 +37,4 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
-      - "nodejs12"
+      - "nodejs14"
