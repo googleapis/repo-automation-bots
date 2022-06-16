@@ -18,12 +18,13 @@ import tmp from 'tmp';
 import yargs = require('yargs');
 import path = require('path');
 import {copyCode, loadOwlBotYaml} from '../../copy-code';
+import {OwlBotYaml} from '../../config-files';
 
 interface Args {
   'source-repo': string;
   'source-repo-commit-hash': string;
   dest: string | undefined;
-  'config-file': string;
+  'config-file': string[];
 }
 
 export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
@@ -52,18 +53,22 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
       })
       .option('config-file', {
         describe: 'Path in the directory to the .OwlBot.yaml config.',
-        type: 'string',
-        default: '.github/.OwlBot.yaml',
+        type: 'array',
+        default: ['.github/.OwlBot.yaml'],
       });
   },
   async handler(argv) {
     const destDir = argv.dest ?? process.cwd();
+    const yamls: OwlBotYaml[] = [];
+    for (const configFile of argv['config-file']) {
+      yamls.push(await loadOwlBotYaml(path.join(destDir, configFile)));
+    }
     await copyCode(
       argv['source-repo'],
       argv['source-repo-commit-hash'],
       destDir,
       tmp.dirSync().name,
-      await loadOwlBotYaml(path.join(destDir, argv['config-file']))
+      yamls
     );
   },
 };
