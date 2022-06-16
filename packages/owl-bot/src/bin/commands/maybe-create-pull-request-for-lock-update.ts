@@ -56,7 +56,7 @@ export const maybeCreatePullRequestForLockUpdateCommand: yargs.CommandModule<
       });
   },
   async handler(argv) {
-    if (argv.force || shouldCreatePullRequestForLockUpdate()) {
+    if (argv.force || (await shouldCreatePullRequestForLockUpdate())) {
       await createPullRequestForLockUpdate(octokitFactoryFrom(argv));
     }
   },
