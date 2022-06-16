@@ -22,8 +22,6 @@ interface CliArgs {
   repoToClone?: string;
   language: string;
   installationId: string;
-  container: string;
-  languageContainer?: string;
   buildId?: string;
 }
 
@@ -59,16 +57,6 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       })
       .option('installationId', {
         describe: 'Github app installation ID',
-        type: 'string',
-        demand: true,
-      })
-      .option('container', {
-        describe: 'common container image',
-        type: 'string',
-        demand: true,
-      })
-      .option('languageContainer', {
-        describe: 'language-specific container image',
         type: 'string',
         demand: true,
       })
