@@ -162,6 +162,14 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     ],
     async context => {
       const logger = getContextLogger(context);
+
+      if (context.payload.pull_request.draft) {
+        logger.info(
+          `skipping draft PR ${context.payload.pull_request.issue_url}`
+        );
+        return;
+      }
+
       const head = context.payload.pull_request.head.repo.full_name;
       const base = context.payload.pull_request.base.repo.full_name;
       const baseOwner = base.split('/')[0];
