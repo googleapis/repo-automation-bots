@@ -46,6 +46,7 @@ steps:
     - 'REPO_TO_CLONE=$_REPO_TO_CLONE'
     - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
     - 'BUILD_ID=$BUILD_ID'
+    - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
   # Commits and pushes changes to a branch; if the repo is nonempty, opens a PR
   - name: ${_CONTAINER}
     args:
