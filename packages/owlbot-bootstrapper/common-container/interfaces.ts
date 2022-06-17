@@ -43,7 +43,5 @@ export interface CliArgs {
   repoToClone?: string;
   language: string;
   installationId: string;
-  container: string;
-  languageContainer?: string;
   buildId?: string;
 }

@@ -42,6 +42,7 @@ export async function runTrigger(argv: CliArgs, cb: CloudBuildClient) {
         _INSTALLATION_ID: argv.installationId,
         _CONTAINER: argv.container,
         _LANGUAGE_CONTAINER: argv.languageContainer,
+        _PROJECT_ID: argv.projectId,
       },
     },
   });
