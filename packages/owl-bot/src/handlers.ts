@@ -232,9 +232,8 @@ export async function scanGithubForConfigs(
       const err = e as RequestError;
       if (err.status === 404) {
         logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
-        continue;
       } else {
-        throw err;
+        logger.error(`error refreshing ${githubOrg}/${repo.name}: ${e}`);
       }
     }
   }
