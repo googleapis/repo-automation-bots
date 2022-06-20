@@ -27,30 +27,30 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/secret-manager": "^3.12.0",
+    "@google-cloud/secret-manager": "^4.0.0",
     "ajv": "^8.11.0",
-    "dayjs": "^1.11.2",
+    "dayjs": "^1.11.3",
     "gcf-utils": "^13.8.1"
   },
   "devDependencies": {
     "@octokit/rest": "^18.12.0",
-    "@octokit/webhooks": "^9.24.0",
+    "@octokit/webhooks": "^9.26.0",
     "@octokit/webhooks-definitions": "^3.62.6",
     "@probot/octokit-plugin-config": "^1.1.5",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^17.0.40",
+    "@types/node": "^18.0.0",
     "@types/sinon": "^10.0.11",
     "c8": "^7.11.3",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
     "js-yaml": "^4.1.0",
     "mocha": "^10.0.0",
-    "nock": "^13.2.6",
+    "nock": "^13.2.7",
     "sinon": "^14.0.0",
     "smee-client": "^1.2.3",
     "snap-shot-it": "^7.9.6",
     "ts-node": "^10.8.1",
-    "typescript": "~4.7.3"
+    "typescript": "~4.7.4"
   },
   "engines": {
     "node": ">= 12.18.2"
