@@ -35,7 +35,10 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
   const abcDir = makeAbcRepo();
 
   it('does nothing when no files changed', async () => {
-    assert.strictEqual(false, shouldCreatePullRequestForLockUpdate(abcDir));
+    assert.strictEqual(
+      false,
+      await shouldCreatePullRequestForLockUpdate(abcDir)
+    );
   });
 
   it('creates a pull request when a file changed', async () => {
@@ -44,7 +47,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
     cmd(`git clone ${abcDir} ${cloneDir}`);
     makeDirTree(cloneDir, ['x.txt:New file added.']);
 
-    assert.ok(shouldCreatePullRequestForLockUpdate(cloneDir));
+    assert.ok(await shouldCreatePullRequestForLockUpdate(cloneDir));
 
     // Mock the call to createPullRequestFromLastCommit
     const calls: any[][] = [];
