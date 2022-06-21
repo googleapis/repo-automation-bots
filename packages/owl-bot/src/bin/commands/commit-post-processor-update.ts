@@ -85,7 +85,7 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   }
   // Add all pending changes to the commit.
   cmd('git add -A .', {cwd: repoDir});
-  if (!hasGitChanges(repoDir, cmd)) {
+  if (!(await hasGitChanges(repoDir))) {
     console.log(
       "The post processor made no changes; I won't commit any changes."
     );
