@@ -753,14 +753,15 @@ export function toLocalRepo(
   depth = 100,
   accessToken = ''
 ): string {
+  const cmd = newCmd(logger);
   if (stat(repo)?.isDirectory()) {
     logger.info(`Using local source repo directory ${repo}`);
+    cmd(`git config --global --add safe.directory ${repo}`);
     return repo;
   } else {
     const githubRepo = githubRepoFromOwnerSlashName(repo);
     const localDir = path.join(workDir, githubRepo.repo);
     const url = githubRepo.getCloneUrl(accessToken);
-    const cmd = newCmd(logger);
     cmd(`git clone --depth=${depth} "${url}" ${localDir}`);
     return localDir;
   }
@@ -775,7 +776,7 @@ export function toLocalRepo(
  *   the empty string to use the most recent commit hash in sourceRepo.
  * @param destDir the locally checkout out repo with an .OwlBot.yaml file.
  * @param workDir a working directory where googleapis-gen will be cloned.
- * @param yaml the yaml file loaded from the destDir
+ * @param yamls the yaml file loaded from the destDir
  * @returns the commit hash from which code was copied. That will match sourceCommitHash
  *    parameter if it was provided.  If not, it will be the most recent commit from
  *    the source repo.  Also returns the path to the text file to use as a
@@ -786,7 +787,7 @@ export async function copyCode(
   sourceCommitHash: string,
   destDir: string,
   workDir: string,
-  yaml: OwlBotYaml,
+  yamls: OwlBotYaml[],
   logger = console
 ): Promise<{sourceCommitHash: string; commitMsgPath: string}> {
   const cmd = newCmd(logger);
@@ -806,7 +807,9 @@ export async function copyCode(
       .trim();
   }
 
-  copyDirs(sourceDir, destDir, yaml, logger);
+  for (const yaml of yamls) {
+    copyDirs(sourceDir, destDir, yaml, logger);
+  }
 
   // Commit changes to branch.
   const commitMsgFile = tmp.fileSync({

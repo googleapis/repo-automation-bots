@@ -40,7 +40,7 @@ FROM node:14-slim
 WORKDIR /usr/cli
 
 COPY package*.json ./
-COPY --from=BUILD /usr/cli build build
+COPY --from=BUILD /usr/cli/build build
 RUN apt-get update && apt-get install -y git
 
 RUN npm ci --only=production
@@ -48,5 +48,5 @@ RUN npm ci --only=production
 ENV NODE_ENV "production"
 
 # Run the web service on container startup.
-ENTRYPOINT [ "node", "/usr/cli/build/cli/cli.js" ]
+ENTRYPOINT [ "node", "/usr/cli/build/cli.js" ]
 
