@@ -85,5 +85,6 @@
     "probot": "^12.1.1",
     "tmp": "^0.2.1",
     "yargs": "^17.0.1"
-  }
+  },
+  "optionalDependencies": { "fsevents": "*" }
 }
