@@ -41,25 +41,25 @@ describe('hasGitChanges', () => {
   afterEach(() => {
     cmd('git reset . && git checkout . && git clean -fdx', {cwd: workDir});
   });
-  it('should return true for modified files', () => {
+  it('should return true for modified files', async () => {
     cmd('echo foo > a.txt', {cwd: workDir});
-    assert.ok(hasGitChanges(workDir));
+    assert.ok(await hasGitChanges(workDir));
   });
-  it('should return true for modified staged files', () => {
+  it('should return true for modified staged files', async () => {
     cmd('echo foo > a.txt', {cwd: workDir});
     cmd('git add a.txt', {cwd: workDir});
-    assert.ok(hasGitChanges(workDir));
+    assert.ok(await hasGitChanges(workDir));
   });
-  it('should return true for added files', () => {
+  it('should return true for added files', async () => {
     cmd('echo foo > new-file.txt', {cwd: workDir});
-    assert.ok(hasGitChanges(workDir));
+    assert.ok(await hasGitChanges(workDir));
   });
-  it('should return true for added staged files', () => {
+  it('should return true for added staged files', async () => {
     cmd('echo foo > new-file.txt', {cwd: workDir});
     cmd('git add new-file.txt', {cwd: workDir});
-    assert.ok(hasGitChanges(workDir));
+    assert.ok(await hasGitChanges(workDir));
   });
-  it('should return false for an untouched directory', () => {
-    assert.ok(!hasGitChanges(workDir));
+  it('should return false for an untouched directory', async () => {
+    assert.ok(!(await hasGitChanges(workDir)));
   });
 });
