@@ -24,8 +24,10 @@ const octokit = new Octokit({auth: '123'});
 
 describe('addOrUpdateIssue', () => {
   beforeEach(() => {
-    nock('https://api.github.com/').get('/user').reply(200, {
-      login: 'release-please[bot]',
+    nock('https://api.github.com/').get('/app').reply(200, {
+      id: 12345,
+      slug: 'release-please',
+      name: 'Release Please',
     });
   });
   it('opens a new issue', async () => {

@@ -47,5 +47,6 @@
     "express": "^4.17.3",
     "gcf-utils": "^13.3.0",
     "google-auth-library": "^7.14.1"
-  }
+  },
+  "optionalDependencies": { "fsevents": "*" }
 }
