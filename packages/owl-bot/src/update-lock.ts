@@ -19,12 +19,11 @@ import {OctokitFactory} from './octokit-util';
 import {hasGitChanges} from './git-utils';
 
 /** Returns true if there are pending changes, and logs when there isn't. */
-export function shouldCreatePullRequestForLockUpdate(
+export async function shouldCreatePullRequestForLockUpdate(
   localRepoDir = '.',
   logger = console
-): boolean {
-  const cmd = newCmd(logger);
-  if (hasGitChanges(localRepoDir, cmd)) {
+): Promise<boolean> {
+  if (await hasGitChanges(localRepoDir)) {
     return true;
   } else {
     logger.log(

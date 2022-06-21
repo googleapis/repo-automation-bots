@@ -70,6 +70,19 @@ function issueNeedsUpdating(issue: Issue, expectedBody: string) {
 }
 
 /**
+ * Return the authenticated username of the installed GitHub app. Apps are
+ * not allowed to use the users.getAuthenticated() endpoint.
+ * @param {Octokit} octokit
+ * @return {string} The username of the authenticated app
+ */
+async function getAuthenticatedBotUser(octokit: Octokit): Promise<string> {
+  const {
+    data: {slug},
+  } = await octokit.apps.getAuthenticated();
+  return `${slug}[bot]`;
+}
+
+/**
  * Opens or edits an existing issue that matches the issue title and
  * authenticated user.
  *
@@ -91,9 +104,7 @@ export async function addOrUpdateIssue(
   labels: string[],
   logger: GCFLogger
 ): Promise<Issue> {
-  const {
-    data: {login: issueOpener},
-  } = await octokit.users.getAuthenticated();
+  const issueOpener = await getAuthenticatedBotUser(octokit);
   const issues = await findOpenIssueByCreator(
     octokit,
     owner,
