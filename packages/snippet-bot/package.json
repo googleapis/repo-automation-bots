@@ -58,6 +58,7 @@
     "snap-shot-it": "^7.9.6",
     "typescript": "~4.7.0"
   },
+  "optionalDependencies": { "fsevents": "*" },
   "engines": {
     "node": ">= 12.18.2"
   }
