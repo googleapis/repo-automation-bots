@@ -16,7 +16,7 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {getContextLogger, GCFLogger} from 'gcf-utils';
+import {getContextLogger, GCFLogger, addOrUpdateIssueComment} from 'gcf-utils';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
@@ -38,6 +38,7 @@ import {
   cleanupPublished,
   isReleasePullRequest,
   delay,
+  TriggerError,
 } from './release-trigger';
 
 const TRIGGER_LOCK_ID = 'release-trigger';
@@ -57,7 +58,8 @@ async function doTriggerWithLock(
   octokit: Octokit,
   pullRequest: PullRequest,
   token: string,
-  logger: GCFLogger
+  logger: GCFLogger,
+  installationId: number
 ) {
   const lock = new DatastoreLock(
     TRIGGER_LOCK_ID,
@@ -84,7 +86,7 @@ async function doTriggerWithLock(
   try {
     // double-check that the pull request is triggerable
     if (isReleasePullRequest(pullRequest)) {
-      await doTrigger(octokit, pullRequest, token, logger);
+      await doTrigger(octokit, pullRequest, token, logger, installationId);
     } else {
       logger.warn(`Skipping triggering release PR: ${pullRequest.html_url}`);
     }
@@ -104,7 +106,8 @@ async function doTrigger(
   octokit: Octokit,
   pullRequest: PullRequest,
   token: string,
-  logger: GCFLogger
+  logger: GCFLogger,
+  installationId: number
 ) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
@@ -126,6 +129,17 @@ async function doTrigger(
       repo,
       number,
     });
+    if (e instanceof TriggerError) {
+      const commentBody = `Release triggering failed:\n\nstdout:\n \`\`\`\n${e.stdout}\n\`\`\`\n\nstderr: \`\`\`\n${e.stderr}\n\`\`\``;
+      await addOrUpdateIssueComment(
+        octokit,
+        owner,
+        repo,
+        number,
+        installationId,
+        commentBody
+      );
+    }
   } finally {
     logger.metric('release.triggered', {
       owner,
@@ -200,7 +214,13 @@ export = (app: Probot) => {
         continue;
       }
 
-      await doTriggerWithLock(context.octokit, pullRequest, token, logger);
+      await doTriggerWithLock(
+        context.octokit,
+        pullRequest,
+        token,
+        logger,
+        context.payload.installation!.id
+      );
     }
   });
 
@@ -306,7 +326,8 @@ export = (app: Probot) => {
       context.octokit,
       context.payload.pull_request,
       token,
-      logger
+      logger,
+      context.payload.installation!.id
     );
   });
 
@@ -383,7 +404,13 @@ export = (app: Probot) => {
         continue;
       }
 
-      await doTriggerWithLock(context.octokit, pullRequest, token, logger);
+      await doTriggerWithLock(
+        context.octokit,
+        pullRequest,
+        token,
+        logger,
+        context.payload.installation!.id
+      );
     }
   });
 };
