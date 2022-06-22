@@ -87,6 +87,23 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.8.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.8.1...gcf-utils-v13.8.2) (2022-06-22)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/run to v10 ([#3983](https://github.com/googleapis/repo-automation-bots/issues/3983)) ([468e537](https://github.com/googleapis/repo-automation-bots/commit/468e537e838d302465ce1d3de534e3168e1f08b6))
+
+## [13.8.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.8.0...gcf-utils-v13.8.1) (2022-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @google-cloud/kms to v3 ([#3893](https://github.com/googleapis/repo-automation-bots/issues/3893)) ([c63b279](https://github.com/googleapis/repo-automation-bots/commit/c63b279df053abb9e4f814508307674d6a2cfd66))
+* **deps:** update dependency @google-cloud/tasks to v3 ([#3895](https://github.com/googleapis/repo-automation-bots/issues/3895)) ([7977ccc](https://github.com/googleapis/repo-automation-bots/commit/7977ccc91d471564cda0fb1ee4f589651756899d))
+* **deps:** update dependency @googleapis/run to v9 ([#3939](https://github.com/googleapis/repo-automation-bots/issues/3939)) ([dd6e779](https://github.com/googleapis/repo-automation-bots/commit/dd6e779509fd242a181897bd506ef8d1226c9e5e))
+* when logging errors, log all errors contained in an AggregateError ([#3933](https://github.com/googleapis/repo-automation-bots/issues/3933)) ([3266d11](https://github.com/googleapis/repo-automation-bots/commit/3266d1149fd05cdddeecb45d3f75f3cc9896e7ee)), closes [#3819](https://github.com/googleapis/repo-automation-bots/issues/3819)
+
 ## [13.8.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.7.0...gcf-utils-v13.8.0) (2022-06-09)
 
 

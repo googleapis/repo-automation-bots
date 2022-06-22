@@ -278,7 +278,7 @@ describe('copyCode', function () {
       abcCommits[1],
       destRepo,
       tmp.dirSync().name,
-      owlBotYaml
+      [owlBotYaml]
     );
     assert.strictEqual(sourceCommitHash, abcCommits[1]);
     assert.ok(stat(commitMsgPath)!.size > 0);
@@ -302,7 +302,7 @@ describe('copyCode', function () {
       '',
       destRepo,
       tmp.dirSync().name,
-      owlBotYaml
+      [owlBotYaml]
     );
 
     assert.strictEqual(sourceCommitHash, abcCommits[0]);

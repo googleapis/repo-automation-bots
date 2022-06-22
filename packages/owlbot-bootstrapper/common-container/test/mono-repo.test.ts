@@ -60,14 +60,14 @@ describe('MonoRepo class', async () => {
 
   const octokit = new Octokit({auth: 'abc1234'});
 
-  let monoRepo = new MonoRepo(
-    'nodejs' as Language,
-    'github.com/soficodes/nodejs-kms.git',
-    'ghs_1234',
-    octokit
-  );
-
   it('should create the right type of object', async () => {
+    const monoRepo = new MonoRepo(
+      'nodejs' as Language,
+      'github.com/soficodes/nodejs-kms.git',
+      'ghs_1234',
+      octokit
+    );
+
     const expectation = {
       language: Language.Nodejs,
       repoToCloneUrl: 'github.com/soficodes/nodejs-kms.git',
@@ -84,6 +84,13 @@ describe('MonoRepo class', async () => {
   });
 
   it('should clone a given repo', async () => {
+    const monoRepo = new MonoRepo(
+      'nodejs' as Language,
+      'github.com/soficodes/nodejs-kms.git',
+      'ghs_1234',
+      octokit
+    );
+
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
 
     assert.ok(fs.statSync(`${directoryPath}/${FAKE_REPO_NAME}`));
@@ -99,6 +106,13 @@ describe('MonoRepo class', async () => {
   });
 
   it('should open a branch, then commit and push to that branch', async () => {
+    const monoRepo = new MonoRepo(
+      'nodejs' as Language,
+      'github.com/soficodes/nodejs-kms.git',
+      'ghs_1234',
+      octokit
+    );
+
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
     await utils.openABranch(FAKE_REPO_NAME, directoryPath);
     const branchName = await utils.getBranchName(directoryPath);
@@ -128,16 +142,17 @@ describe('MonoRepo class', async () => {
   });
 
   it('should open a branch, then commit and push to that branch in the composite workflow', async () => {
-    const scope = nock('https://api.github.com')
-      .post(`/repos/googleapis/${FAKE_REPO_NAME}/pulls`)
-      .reply(201);
-
-    monoRepo = new MonoRepo(
+    const monoRepo = new MonoRepo(
       'nodejs' as Language,
       repoToClonePath,
       'ghs_1234',
       octokit
     );
+
+    const scope = nock('https://api.github.com')
+      .post(`/repos/googleapis/${FAKE_REPO_NAME}/pulls`)
+      .reply(201);
+
     monoRepo.repoName = FAKE_REPO_NAME;
     await monoRepo.cloneRepoAndOpenBranch(directoryPath);
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');

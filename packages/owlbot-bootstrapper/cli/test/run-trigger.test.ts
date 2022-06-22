@@ -68,6 +68,7 @@ describe('tests running build trigger', () => {
             _INSTALLATION_ID: INSTALLATION_ID,
             _CONTAINER: COMMON_CONTAINER_IMAGE,
             _LANGUAGE_CONTAINER: LANGUAGE_CONTAINER,
+            _PROJECT_ID: PROJECT_ID,
           },
         },
       })

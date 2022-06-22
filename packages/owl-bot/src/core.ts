@@ -650,32 +650,6 @@ async function updatePullRequestAfterPostProcessor(
           `${pull.head.repo.full_name}`
       );
     }
-  } else {
-    // If the pull request is a DRAFT lock file update, close it or promote it.
-    if (
-      pull.draft &&
-      pull.labels.find(label => label.name === OWL_BOT_LOCK_UPDATE)
-    ) {
-      if (1 === files.length && files[0].filename === OWL_BOT_LOCK_PATH) {
-        // It only updated the lock file.  No reason to merge this pull request.
-        // Close it.
-        await octokit.pulls.update({
-          owner,
-          repo,
-          pull_number: prNumber,
-          state: 'closed',
-        });
-      } else {
-        // It triggered changes to READMEs, scripts, etc.  Promote it to
-        // "Ready for review".
-        await octokit.pulls.update({
-          owner,
-          repo,
-          pull_number: prNumber,
-          draft: false,
-        });
-      }
-    }
   }
 }
 

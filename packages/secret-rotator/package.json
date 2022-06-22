@@ -43,9 +43,10 @@
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^3.12.0",
-    "@googleapis/iam": "^2.3.0",
+    "@googleapis/iam": "^3.0.0",
     "express": "^4.17.3",
     "gcf-utils": "^13.3.0",
     "google-auth-library": "^7.14.1"
-  }
+  },
+  "optionalDependencies": { "fsevents": "*" }
 }

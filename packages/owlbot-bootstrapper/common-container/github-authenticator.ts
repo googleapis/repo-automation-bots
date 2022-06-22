@@ -30,7 +30,7 @@ export class GithubAuthenticator {
   projectId: string;
   appInstallationId: string;
   secretManagerClient: SecretManagerServiceClient;
-  OWLBOT_SECRET_NAME = 'owlbot-bootstrapper-app';
+  OWLBOT_SECRET_NAME = 'owlbot-bootstrapper';
 
   constructor(
     projectId: string,

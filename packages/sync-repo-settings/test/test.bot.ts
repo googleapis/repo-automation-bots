@@ -179,7 +179,6 @@ describe('Sync repo settings', () => {
         [
           'ci/kokoro: Samples test',
           'ci/kokoro: System test',
-          'docs',
           'lint',
           'test (10)',
           'test (12)',

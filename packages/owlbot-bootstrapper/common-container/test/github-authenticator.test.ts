@@ -52,7 +52,7 @@ describe('behavior of Github Authenticator Class', async () => {
       projectId: 'projectId',
       appInstallationId: '2345567',
       secretManagerClient: secretManagerClientStub,
-      OWLBOT_SECRET_NAME: 'owlbot-bootstrapper-app',
+      OWLBOT_SECRET_NAME: 'owlbot-bootstrapper',
     };
 
     assert.deepStrictEqual(

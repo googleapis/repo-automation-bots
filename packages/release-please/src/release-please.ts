@@ -21,6 +21,8 @@ import {Octokit} from '@octokit/rest';
 // GitHubAPI interface:
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
@@ -440,12 +442,21 @@ const handler = (app: Probot) => {
     const repoLanguage = context.payload.repository.language;
 
     // remove the label
-    await context.octokit.issues.removeLabel({
-      name: FORCE_RUN_LABEL,
-      issue_number: context.payload.pull_request.number,
-      owner,
-      repo,
-    });
+    try {
+      await context.octokit.issues.removeLabel({
+        name: FORCE_RUN_LABEL,
+        issue_number: context.payload.pull_request.number,
+        owner,
+        repo,
+      });
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 404) {
+        // on retries, the label may no longer exist on the PR
+        logger.info('label no longer exists on PR');
+      } else {
+        throw e;
+      }
+    }
 
     // check release please config
     const remoteConfiguration = await getConfigWithDefaultBranch(
