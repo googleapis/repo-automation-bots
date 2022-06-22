@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Cmd, newCmd} from './cmd';
-
-const defaultCmd = newCmd();
+import * as proc from 'child_process';
 
 /**
  * Returns true if the specified directory has any git changes
  * @param {string} cwd Directory to check
- * @param {Cmd} cmd Optional command executor
  * @returns {boolean} Returns true if there are any pending git changes
  */
-export function hasGitChanges(cwd: string, cmd: Cmd = defaultCmd): boolean {
+export function hasGitChanges(cwd: string): Promise<boolean> {
   // `git status` --porcelain returns empty stdout when no changes are pending.
-  // We don't need the entire list, so only check to see if there's a single line
-  const output = cmd('git status . --porcelain | head -n 1', {cwd})
-    .toString('utf-8')
-    .trim();
-  return !!output;
+  // We don't need the entire list.  Just check if there's *any* output.
+  const cmd = 'git';
+  const args = ['status', '.', '--porcelain'];
+  console.log([cmd, ...args].join(' '));
+  const child = proc.spawn(cmd, args, {cwd});
+  return new Promise<boolean>((resolve, reject) => {
+    child.stderr.on('data', data => reject(data));
+    child.stdout.on('data', () => resolve(true));
+    child.on('close', () => resolve(false));
+  });
 }
