@@ -21,6 +21,8 @@ import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import * as releaseTriggerModule from '../src/release-trigger';
+import * as gcfUtils from 'gcf-utils';
+import {TriggerError} from '../src/release-trigger';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 
 const sandbox = sinon.createSandbox();
@@ -195,6 +197,100 @@ describe('bot', () => {
       );
       requests.done();
     });
+
+    it('should comment on the pull request if triggering crashes', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/release_published'
+      ));
+      const pull1 = buildFakePullRequest('Codertocat', 'Hello-World', 1234);
+      const pull2 = buildFakePullRequest('Codertocat', 'Hello-World', 1235);
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1234')
+        .reply(200, pull1)
+        .get('/repos/Codertocat/Hello-World/pulls/1235')
+        .reply(200, pull2);
+
+      getConfigStub.resolves({enabled: true});
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const findPullRequestsStub = sandbox
+        .stub(releaseTriggerModule, 'findPendingReleasePullRequests')
+        .resolves([pull1, pull2]);
+      const triggerKokoroJobStub = sandbox
+        .stub(releaseTriggerModule, 'triggerKokoroJob')
+        .rejects(
+          new TriggerError(
+            new Error(),
+            'some command',
+            'some stdout',
+            'some stderr'
+          )
+        );
+      const markTriggeredStub = sandbox
+        .stub(releaseTriggerModule, 'markTriggered')
+        .resolves();
+      const markFailedStub = sandbox
+        .stub(releaseTriggerModule, 'markFailed')
+        .resolves();
+      const commentStub = sandbox
+        .stub(gcfUtils, 'addOrUpdateIssueComment')
+        .resolves();
+
+      await probot.receive({
+        name: 'release',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getConfigStub);
+      sinon.assert.calledOnce(findPullRequestsStub);
+      sinon.assert.calledWith(
+        triggerKokoroJobStub,
+        'https://github.com/Codertocat/Hello-World/pull/1234'
+      );
+      sinon.assert.calledWith(
+        triggerKokoroJobStub,
+        'https://github.com/Codertocat/Hello-World/pull/1235'
+      );
+      sinon.assert.calledWith(
+        markTriggeredStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1234})
+      );
+      sinon.assert.calledWith(
+        markTriggeredStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1235})
+      );
+      sinon.assert.calledWith(
+        markFailedStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1234})
+      );
+      sinon.assert.calledWith(
+        markFailedStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1235})
+      );
+      sinon.assert.calledWith(
+        commentStub,
+        sinon.match.any,
+        'Codertocat',
+        'Hello-World',
+        1234,
+        11835543
+      );
+      sinon.assert.calledWith(
+        commentStub,
+        sinon.match.any,
+        'Codertocat',
+        'Hello-World',
+        1235,
+        11835543
+      );
+      requests.done();
+    });
   });
 
   describe('on pull request unlabeled', () => {
@@ -282,6 +378,70 @@ describe('bot', () => {
       sinon.assert.calledOnce(getConfigStub);
       sinon.assert.notCalled(triggerKokoroJobStub);
       sinon.assert.notCalled(markTriggeredStub);
+    });
+
+    it('should comment on the pull request if triggering crashes', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/pull_request_unlabeled'
+      ));
+      getConfigStub.resolves({enabled: true});
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const pull = buildFakePullRequest('Codertocat', 'Hello-World', 2);
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/2')
+        .reply(200, pull);
+      const triggerKokoroJobStub = sandbox
+        .stub(releaseTriggerModule, 'triggerKokoroJob')
+        .rejects(
+          new TriggerError(
+            new Error(),
+            'some command',
+            'some stdout',
+            'some stderr'
+          )
+        );
+      const markTriggeredStub = sandbox
+        .stub(releaseTriggerModule, 'markTriggered')
+        .resolves();
+      const markFailedStub = sandbox
+        .stub(releaseTriggerModule, 'markFailed')
+        .resolves();
+      const commentStub = sandbox
+        .stub(gcfUtils, 'addOrUpdateIssueComment')
+        .resolves();
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getConfigStub);
+      sinon.assert.calledWith(
+        triggerKokoroJobStub,
+        'https://github.com/Codertocat/Hello-World/pull/2'
+      );
+      sinon.assert.calledWith(
+        markTriggeredStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 2})
+      );
+      sinon.assert.calledWith(
+        markFailedStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 2})
+      );
+      sinon.assert.calledWith(
+        commentStub,
+        sinon.match.any,
+        'Codertocat',
+        'Hello-World',
+        2,
+        11835543
+      );
+      requests.done();
     });
   });
 

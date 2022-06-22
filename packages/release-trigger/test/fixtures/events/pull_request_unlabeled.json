@@ -458,5 +458,9 @@
     "default": true,
     "description": "Release was triggered",
     "name": "autorelease: triggered"
+  },
+  "installation": {
+    "id": 11835543,
+    "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTE4MzU1NDM="
   }
 }

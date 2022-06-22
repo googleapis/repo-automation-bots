@@ -224,9 +224,11 @@ describe('release-trigger', () => {
     });
 
     it('should catch and log an exception', async () => {
-      const execStub = sandbox
-        .stub(releaseTriggerModule, 'exec')
-        .rejects(new Error('Command failed: /bin/false'));
+      const execStub = sandbox.stub(releaseTriggerModule, 'exec').resolves({
+        stdout: 'some stdout message',
+        stderr: 'some stderr message',
+        error: new Error('Command failed: /bin/false'),
+      });
       const errorStub = sandbox.stub(logger, 'error');
       await assert.rejects(
         triggerKokoroJob(
@@ -234,8 +236,8 @@ describe('release-trigger', () => {
           'fake-token'
         ),
         err => {
-          if (err instanceof Error) {
-            return err.message.startsWith('Command failed: /bin/false');
+          if (err instanceof releaseTriggerModule.TriggerError) {
+            return err.message.includes('Command failed: /bin/false');
           }
           return false;
         }
