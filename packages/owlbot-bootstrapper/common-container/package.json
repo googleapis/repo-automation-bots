@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@google-cloud/cloudbuild": "^3.0.0",
-    "@google-cloud/secret-manager": "^3.11.0",
+    "@google-cloud/secret-manager": "^4.0.0",
     "@octokit/auth-app": "^3.6.1",
     "@octokit/rest": "^18.12.0",
     "@types/yargs": "^17.0.9",
