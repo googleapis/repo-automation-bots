@@ -91,6 +91,17 @@ export = (app: Probot) => {
         return;
       }
 
+      let user: string;
+      if (isIssue(context.payload)) {
+        user = context.payload.issue.user.login;
+      } else {
+        user = context.payload.pull_request.user.login;
+      }
+
+      if (config.ignore_authors?.includes(user)) {
+        return;
+      }
+
       let lockTarget: string;
       if (isIssue(context.payload)) {
         lockTarget = context.payload.issue.url;
