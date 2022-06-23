@@ -60,11 +60,10 @@ export async function authenticateWithSecret(
  * Grabs an etag for a PR, and retries adding a label if etag is different
  *
  * @param retryCount the amount of retries for adding a label
- * @param owner owner of the repo of the incoming PR
+ * @param owner string, of the repo of the incoming PR
  * @param repo string, the name of the repo of the incoming PR
  * @param prNumber number, the number of the PR
  * @param octokit the octokit instance
- * @returns true if the status check passed, false otherwise
  */
 export async function retryAddLabel(
   retryCount: number,
