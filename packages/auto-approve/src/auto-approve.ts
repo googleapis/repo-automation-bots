@@ -70,7 +70,8 @@ export async function retryAddLabel(
   owner: string,
   repo: string,
   prNumber: number,
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger = defaultLogger
 ): Promise<void> {
   const etag = (
     await octokit.issues.listLabelsOnIssue({
