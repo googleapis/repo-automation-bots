@@ -16,7 +16,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {getContextLogger, logger as defaultLogger} from 'gcf-utils';
+import {GCFLogger, getContextLogger, logger as defaultLogger} from 'gcf-utils';
 import {checkPRAgainstConfig} from './check-pr';
 import {checkPRAgainstConfigV2} from './check-pr-v2';
 import {
@@ -95,7 +95,6 @@ export async function retryAddLabel(
     });
   } catch (err) {
     if ((err as any).status === 412 && retryCount < 3) {
-      setTimeout(() => 2000);
       retryCount++;
       await retryAddLabel(retryCount, owner, repo, prNumber, octokit);
     } else if ((err as any).status === 412) {
