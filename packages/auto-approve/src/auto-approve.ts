@@ -16,7 +16,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {getContextLogger, logger} from 'gcf-utils';
+import {getContextLogger, logger as defaultLogger} from 'gcf-utils';
 import {checkPRAgainstConfig} from './check-pr';
 import {checkPRAgainstConfigV2} from './check-pr-v2';
 import {
