@@ -61,5 +61,8 @@ steps:
     - "$_REPO_TO_CLONE"
     - "--installationId"
     - "$_INSTALLATION_ID'"
+    - "--owlbotYamlPath"
+    - "$_OWLBOT_YAML_PATH"
     - "--buildId"
     - "$BUILD_ID"
+
