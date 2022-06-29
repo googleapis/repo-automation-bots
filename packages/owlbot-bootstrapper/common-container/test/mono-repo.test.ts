@@ -66,7 +66,8 @@ describe('MonoRepo class', async () => {
       'github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
-      octokit
+      octokit,
+      'packages/google-cloud-kms/.OwlBot.yaml'
     );
 
     const expectation = {
@@ -75,6 +76,7 @@ describe('MonoRepo class', async () => {
       githubToken: 'ghs_1234',
       octokit,
       repoName: 'nodejs-kms',
+      owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml'
     };
 
     assert.deepStrictEqual(monoRepo.language, expectation.language);
@@ -82,6 +84,7 @@ describe('MonoRepo class', async () => {
     assert.deepStrictEqual(monoRepo.githubToken, expectation.githubToken);
     assert.deepStrictEqual(monoRepo.octokit, expectation.octokit);
     assert.deepStrictEqual(monoRepo.repoName, 'nodejs-kms');
+    assert.deepStrictEqual(monoRepo.owlbotYamlPath, expectation.owlbotYamlPath);
   });
 
   it('should clone a given repo', async () => {

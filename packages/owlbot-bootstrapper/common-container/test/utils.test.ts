@@ -68,7 +68,7 @@ describe('common utils tests', async () => {
     assert.deepStrictEqual(branchName, 'specialName');
   });
 
-  it('get opens a PR against the main branch', async () => {
+  it('opens a PR against the main branch', async () => {
     const scopes = [
       nock('https://api.github.com')
         .get('/repos/googleapis/googleapis-gen/commits')

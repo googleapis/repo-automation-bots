@@ -63,7 +63,8 @@ describe('SplitRepo class', async () => {
     'python' as Language,
     'google.cloud.kms.v1',
     octokit,
-    'ghs_1234'
+    'ghs_1234',
+    '.github/.OwlBot.yaml'
   );
   it('should create the right type of object', async () => {
     const expectation = {
@@ -72,6 +73,7 @@ describe('SplitRepo class', async () => {
       githubToken: 'ghs_1234',
       octokit,
       repoName: 'python-kms',
+      owlbotYamlPath: '.github/.OwlBot.yaml',
     };
 
     assert.deepStrictEqual(splitRepo.language, expectation.language);
@@ -79,6 +81,10 @@ describe('SplitRepo class', async () => {
     assert.deepStrictEqual(splitRepo.githubToken, expectation.githubToken);
     assert.deepStrictEqual(splitRepo.octokit, expectation.octokit);
     assert.deepStrictEqual(splitRepo.repoName, 'python-kms');
+    assert.deepStrictEqual(
+      splitRepo.owlbotYamlPath,
+      expectation.owlbotYamlPath
+    );
   });
 
   it('should create the right repo name', async () => {
