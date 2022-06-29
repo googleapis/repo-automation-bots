@@ -111,8 +111,8 @@ export async function openAPR(
   octokit: Octokit,
   branchName: string,
   repoName: string,
-  owlbotYamlPath?: string,
-  apiId?: string
+  apiId: string,
+  owlbotYamlPath?: string
 ) {
   try {
     await octokit.rest.pulls.create({
@@ -120,7 +120,7 @@ export async function openAPR(
       repo: repoName,
       head: branchName,
       base: 'main',
-      title: `feat: add initial files for ${apiId ? apiId : repoName}`,
+      title: `feat: add initial files for ${apiId}`,
       body: await getPRText(octokit, owlbotYamlPath),
     });
   } catch (err: any) {

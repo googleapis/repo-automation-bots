@@ -152,11 +152,12 @@ export class SplitRepo {
     repoName: string,
     octokit: Octokit,
     directoryPath: string,
+    apiId: string,
     owlbotYamlPath?: string
   ) {
     await openABranch(repoName, directoryPath);
     const branchName = await getBranchName(directoryPath);
-    await openAPR(octokit, branchName, repoName, owlbotYamlPath);
+    await openAPR(octokit, branchName, repoName, apiId, owlbotYamlPath);
   }
 
   /**
@@ -188,6 +189,7 @@ export class SplitRepo {
       this.repoName,
       this.octokit,
       directoryPath,
+      this.apiId,
       this.owlbotYamlPath
     );
   }

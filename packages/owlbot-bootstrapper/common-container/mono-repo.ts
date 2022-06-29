@@ -121,8 +121,8 @@ export class MonoRepo {
       this.octokit,
       branchName,
       this.repoName,
-      this.owlbotYamlPath,
-      this.apiId
+      this.apiId,
+      this.owlbotYamlPath
     );
   }
 
