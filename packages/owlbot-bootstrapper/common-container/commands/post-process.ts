@@ -35,11 +35,6 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: true,
       })
-      .option('triggerId', {
-        describe: 'trigger of build to run',
-        type: 'string',
-        demand: true,
-      })
       .option('apiId', {
         describe: 'api ID to generate a library for',
         type: 'string',

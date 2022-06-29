@@ -19,7 +19,7 @@ import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../utils';
+import {ORG, REGENERATE_CHECKBOX_TEXT} from '../utils';
 import snapshot from 'snap-shot-it';
 import {Language} from '../interfaces';
 import sinon from 'sinon';
@@ -69,12 +69,52 @@ describe('common utils tests', async () => {
   });
 
   it('get opens a PR against the main branch', async () => {
-    const scope = nock('https://api.github.com')
-      .post('/repos/googleapis/nodejs-kms/pulls')
-      .reply(201);
+    const scopes = [
+      nock('https://api.github.com')
+        .get('/repos/googleapis/googleapis-gen/commits')
+        .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}),
+      nock('https://api.github.com')
+        .post('/repos/googleapis/nodejs-kms/pulls', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(201),
+    ];
 
-    await utils.openAPR(octokit, 'specialName', 'nodejs-kms');
+    await utils.openAPR(
+      octokit,
+      'specialName',
+      'nodejs-kms',
+      'google.cloud.kms.v1'
+    );
+    scopes.forEach(scope => scope.done());
+  });
+
+  it('gets the latest commit sha from googlepis-gen', async () => {
+    const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/googleapis-gen/commits')
+      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'});
+
+    const sha = await utils.getLatestShaGoogleapisGen(octokit);
     scope.done();
+    assert(sha, '6dcb09b5b57875f334f61aebed695e2e4193db5e');
+  });
+
+  it('returns the PR text with copy tag text', async () => {
+    process.env.OWLBOT_YAML_PATH = 'packages/google-cloud-kms/.OwlBot.yaml';
+
+    const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/googleapis-gen/commits')
+      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'});
+
+    const prText = await utils.getPRText(octokit);
+    console.log(prText);
+    const expectation = `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:\n${Buffer.from(
+      '{"p":"packages/google-cloud-kms/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
+    ).toString('base64')}`;
+    assert(prText, expectation);
+    scope.done();
+    delete process.env.OWLBOT_YAML_PATH;
   });
 
   it('should open a branch, then push that branch to origin', async () => {

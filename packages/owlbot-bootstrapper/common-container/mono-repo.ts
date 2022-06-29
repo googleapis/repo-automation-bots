@@ -37,12 +37,14 @@ export class MonoRepo {
   repoToCloneUrl: string;
   repoName: string;
   githubToken: string;
+  apiId: string;
   octokit: Octokit;
 
   constructor(
     language: Language,
     repoToCloneUrl: string,
     githubToken: string,
+    apiId: string,
     octokit: Octokit
   ) {
     this.language = language;
@@ -51,6 +53,7 @@ export class MonoRepo {
     // Or /googleapis/nodejs-kms becomes nodejs-kms
     this.repoName = repoToCloneUrl.match(/\/([\w-]*)(.git|$)/)![1];
     this.githubToken = githubToken;
+    this.apiId = apiId;
     this.octokit = octokit;
   }
 
@@ -111,7 +114,7 @@ export class MonoRepo {
     checkIfGitIsInstalled(cmd);
     const branchName = await getBranchName(directoryPath);
     await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
-    await openAPR(this.octokit, branchName, this.repoName);
+    await openAPR(this.octokit, branchName, this.repoName, this.apiId);
   }
 
   /**

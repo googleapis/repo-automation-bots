@@ -149,9 +149,14 @@ describe('SplitRepo class', async () => {
   });
 
   it('should create an empty PR', async () => {
-    const scope = nock('https://api.github.com')
-      .post('/repos/googleapis/fakeRepo/pulls')
-      .reply(201);
+    const scopes = [
+      nock('https://api.github.com')
+        .get('/repos/googleapis/googleapis-gen/commits')
+        .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}),
+      nock('https://api.github.com')
+        .post('/repos/googleapis/fakeRepo/pulls')
+        .reply(201),
+    ];
 
     await splitRepo._initializeEmptyGitRepo(FAKE_REPO_NAME, directoryPath);
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
@@ -173,12 +178,15 @@ describe('SplitRepo class', async () => {
     });
 
     assert.ok(stdoutBranch.includes('owlbot-bootstrapper-initial-PR'));
-    scope.done();
+    scopes.forEach(scope => scope.done());
   });
 
   it('should create and initialize an empty repo on github, then push to main and create an empty PR', async () => {
     const scopes = [
       nock('https://api.github.com').post('/orgs/googleapis/repos').reply(201),
+      nock('https://api.github.com')
+        .get('/repos/googleapis/googleapis-gen/commits')
+        .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}),
       nock('https://api.github.com')
         .post('/repos/googleapis/fakeRepo/pulls')
         .reply(201),
