@@ -176,7 +176,8 @@ describe('SplitRepo class', async () => {
     await splitRepo._createEmptyBranchAndOpenPR(
       FAKE_REPO_NAME,
       octokit,
-      directoryPath
+      directoryPath,
+      'google.cloud.kms.v1'
     );
 
     const stdoutBranch = execSync('git branch', {

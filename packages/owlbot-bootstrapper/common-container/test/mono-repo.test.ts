@@ -76,7 +76,7 @@ describe('MonoRepo class', async () => {
       githubToken: 'ghs_1234',
       octokit,
       repoName: 'nodejs-kms',
-      owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml'
+      owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
     };
 
     assert.deepStrictEqual(monoRepo.language, expectation.language);
@@ -111,7 +111,12 @@ describe('MonoRepo class', async () => {
         .reply(201),
     ];
 
-    await utils.openAPR(octokit, 'specialName', 'nodejs-kms');
+    await utils.openAPR(
+      octokit,
+      'specialName',
+      'nodejs-kms',
+      'google.cloud.kms.v1'
+    );
     scopes.forEach(scope => scope.done());
   });
 
