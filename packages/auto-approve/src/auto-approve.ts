@@ -59,14 +59,14 @@ export async function authenticateWithSecret(
 /**
  * Grabs an etag for a PR, and retries adding a label if etag is different
  *
- * @param retryCount the amount of retries for adding a label
+ * @param numAttemptsRemaining the amount of retries for adding a label
  * @param owner string, of the repo of the incoming PR
  * @param repo string, the name of the repo of the incoming PR
  * @param prNumber number, the number of the PR
  * @param octokit the octokit instance
  */
 export async function retryAddLabel(
-  retryCount: number,
+  numAttemptsRemaining: number,
   owner: string,
   repo: string,
   prNumber: number,
@@ -94,9 +94,12 @@ export async function retryAddLabel(
       headers: {'if-none-match': `'${etag}'`},
     });
   } catch (err) {
-    if ((err as any).status === 412 && retryCount < 3) {
-      retryCount++;
-      await retryAddLabel(retryCount, owner, repo, prNumber, octokit);
+    if (
+      (err as {message: string; status: number}).status === 412 &&
+      numAttemptsRemaining > 0
+    ) {
+      numAttemptsRemaining--;
+      await retryAddLabel(numAttemptsRemaining, owner, repo, prNumber, octokit);
     } else if ((err as any).status === 412) {
       logger.error('Etag keeps changing; cannot add label successfully');
       throw err;
@@ -348,7 +351,7 @@ export function handler(app: Probot) {
               event: 'APPROVE',
             });
 
-            await retryAddLabel(0, owner, repo, prNumber, octokit);
+            await retryAddLabel(3, owner, repo, prNumber, octokit);
 
             logger.metric('auto_approve.approved_tagged', {
               repo: `${owner}/${repo}`,
