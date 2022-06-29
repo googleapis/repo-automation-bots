@@ -48,14 +48,14 @@ export class SplitRepo {
     apiId: string,
     octokit: Octokit,
     githubToken?: string,
-    owlBotYamlPath?: string
+    owlbotYamlPath?: string
   ) {
     this.language = language;
     this.apiId = apiId;
     this.repoName = this._createRepoName(this.language, this.apiId);
     this.githubToken = githubToken;
     this.octokit = octokit;
-    this.owlbotYamlPath = owlBotYamlPath;
+    this.owlbotYamlPath = owlbotYamlPath;
   }
   /**
    * Creates a new repo in github

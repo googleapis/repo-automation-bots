@@ -57,7 +57,8 @@ export async function postProcess(argv: CliArgs) {
         argv.repoToClone!,
         githubToken,
         argv.apiId,
-        octokit
+        octokit,
+        argv.owlbotYamlPath
       );
 
       await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
@@ -69,7 +70,8 @@ export async function postProcess(argv: CliArgs) {
         argv.language as Language,
         argv.apiId!,
         octokit,
-        githubToken
+        githubToken,
+        argv.owlbotYamlPath
       );
       await splitRepo.pushToMainAndCreateEmptyPR(DIRECTORY_PATH);
       logger.info(

@@ -39,7 +39,7 @@ export class MonoRepo {
   githubToken: string;
   apiId: string;
   octokit: Octokit;
-  owlBotYamlPath?: string;
+  owlbotYamlPath?: string;
 
   constructor(
     language: Language,
@@ -47,7 +47,7 @@ export class MonoRepo {
     githubToken: string,
     apiId: string,
     octokit: Octokit,
-    owlBotYamlPath?: string
+    owlbotYamlPath?: string
   ) {
     this.language = language;
     this.repoToCloneUrl = repoToCloneUrl;
@@ -57,7 +57,7 @@ export class MonoRepo {
     this.githubToken = githubToken;
     this.apiId = apiId;
     this.octokit = octokit;
-    this.owlBotYamlPath = owlBotYamlPath;
+    this.owlbotYamlPath = owlbotYamlPath;
   }
 
   /**
@@ -121,7 +121,7 @@ export class MonoRepo {
       this.octokit,
       branchName,
       this.repoName,
-      this.owlBotYamlPath,
+      this.owlbotYamlPath,
       this.apiId
     );
   }
