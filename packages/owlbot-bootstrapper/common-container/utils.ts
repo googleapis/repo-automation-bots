@@ -18,7 +18,6 @@ import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {Language} from './interfaces';
-import path from 'path';
 
 const BRANCH_NAME_FILE = 'branchName.md';
 export const REGENERATE_CHECKBOX_TEXT =
@@ -60,15 +59,17 @@ export async function getLatestShaGoogleapisGen(octokit: Octokit) {
 }
 
 /**
- * Function that compiles all the information for the PR being generated
+ * Function that compiles all the information for the body of the PR being generated
  * @param octokit authenticated octokit instance
  * @returns full PR text for the PR being created
  */
-export async function getPRText(octokit: Octokit) {
+export async function getPRText(octokit: Octokit, owlbotYamlPath?: string) {
+  if (!owlbotYamlPath)
+    logger.warn('No owlbot yaml path passed from language-container');
   const latestSha = await getLatestShaGoogleapisGen(octokit);
   // Language-specific containers need to provide their path to their new .OwlBot.yaml
   // file, since this container won't know the structure of other repos
-  const copyTagInfo = `{"p":"${process.env.OWLBOT_YAML_PATH}","h":"${latestSha}"}`;
+  const copyTagInfo = `{"p":"${owlbotYamlPath}","h":"${latestSha}"}`;
   const copyTagInfoEncoded = Buffer.from(copyTagInfo).toString('base64');
 
   return `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:\n${copyTagInfoEncoded}`;
@@ -110,6 +111,7 @@ export async function openAPR(
   octokit: Octokit,
   branchName: string,
   repoName: string,
+  owlbotYamlPath?: string,
   apiId?: string
 ) {
   try {
@@ -119,7 +121,7 @@ export async function openAPR(
       head: branchName,
       base: 'main',
       title: `feat: add initial files for ${apiId ? apiId : repoName}`,
-      body: await getPRText(octokit),
+      body: await getPRText(octokit, owlbotYamlPath),
     });
   } catch (err: any) {
     logger.error(err);

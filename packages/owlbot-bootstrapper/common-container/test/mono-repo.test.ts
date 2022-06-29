@@ -22,7 +22,6 @@ import * as fs from 'fs';
 import {MonoRepo} from '../mono-repo';
 import * as utils from '../utils';
 import assert from 'assert';
-import { showCompletionScript } from 'yargs';
 
 nock.disableNetConnect();
 

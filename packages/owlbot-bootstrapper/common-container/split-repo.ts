@@ -41,18 +41,21 @@ export class SplitRepo {
   apiId: string;
   octokit: Octokit;
   githubToken?: string;
+  owlbotYamlPath?: string;
 
   constructor(
     language: Language,
     apiId: string,
     octokit: Octokit,
-    githubToken?: string
+    githubToken?: string,
+    owlBotYamlPath?: string
   ) {
     this.language = language;
     this.apiId = apiId;
     this.repoName = this._createRepoName(this.language, this.apiId);
     this.githubToken = githubToken;
     this.octokit = octokit;
+    this.owlbotYamlPath = owlBotYamlPath;
   }
   /**
    * Creates a new repo in github
@@ -148,11 +151,12 @@ export class SplitRepo {
   public async _createEmptyBranchAndOpenPR(
     repoName: string,
     octokit: Octokit,
-    directoryPath: string
+    directoryPath: string,
+    owlbotYamlPath?: string
   ) {
     await openABranch(repoName, directoryPath);
     const branchName = await getBranchName(directoryPath);
-    await openAPR(octokit, branchName, repoName);
+    await openAPR(octokit, branchName, repoName, owlbotYamlPath);
   }
 
   /**
@@ -183,7 +187,8 @@ export class SplitRepo {
     await this._createEmptyBranchAndOpenPR(
       this.repoName,
       this.octokit,
-      directoryPath
+      directoryPath,
+      this.owlbotYamlPath
     );
   }
 }

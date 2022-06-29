@@ -85,6 +85,7 @@ describe('common utils tests', async () => {
       octokit,
       'specialName',
       'nodejs-kms',
+      '.github/.Owlbot.yaml',
       'google.cloud.kms.v1'
     );
     scopes.forEach(scope => scope.done());
@@ -101,20 +102,17 @@ describe('common utils tests', async () => {
   });
 
   it('returns the PR text with copy tag text', async () => {
-    process.env.OWLBOT_YAML_PATH = 'packages/google-cloud-kms/.OwlBot.yaml';
-
     const scope = nock('https://api.github.com')
       .get('/repos/googleapis/googleapis-gen/commits')
       .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'});
 
-    const prText = await utils.getPRText(octokit);
+    const prText = await utils.getPRText(octokit, '.github/.Owlbot.yaml');
     console.log(prText);
     const expectation = `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:\n${Buffer.from(
       '{"p":"packages/google-cloud-kms/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
     ).toString('base64')}`;
     assert(prText, expectation);
     scope.done();
-    delete process.env.OWLBOT_YAML_PATH;
   });
 
   it('should open a branch, then push that branch to origin', async () => {

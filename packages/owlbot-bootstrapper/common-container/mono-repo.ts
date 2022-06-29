@@ -39,13 +39,15 @@ export class MonoRepo {
   githubToken: string;
   apiId: string;
   octokit: Octokit;
+  owlBotYamlPath?: string;
 
   constructor(
     language: Language,
     repoToCloneUrl: string,
     githubToken: string,
     apiId: string,
-    octokit: Octokit
+    octokit: Octokit,
+    owlBotYamlPath?: string
   ) {
     this.language = language;
     this.repoToCloneUrl = repoToCloneUrl;
@@ -55,6 +57,7 @@ export class MonoRepo {
     this.githubToken = githubToken;
     this.apiId = apiId;
     this.octokit = octokit;
+    this.owlBotYamlPath = owlBotYamlPath;
   }
 
   /**
@@ -114,7 +117,13 @@ export class MonoRepo {
     checkIfGitIsInstalled(cmd);
     const branchName = await getBranchName(directoryPath);
     await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
-    await openAPR(this.octokit, branchName, this.repoName, this.apiId);
+    await openAPR(
+      this.octokit,
+      branchName,
+      this.repoName,
+      this.owlBotYamlPath,
+      this.apiId
+    );
   }
 
   /**

@@ -14,16 +14,7 @@
 
 import yargs from 'yargs';
 import {postProcess} from '../post-process';
-
-interface CliArgs {
-  projectId: string;
-  triggerId?: string;
-  apiId: string;
-  repoToClone?: string;
-  language: string;
-  installationId: string;
-  buildId?: string;
-}
+import {CliArgs} from '../interfaces';
 
 export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
   command: 'post-process',
@@ -54,6 +45,10 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         describe: 'Github app installation ID',
         type: 'string',
         demand: true,
+      })
+      .option('owlbotYamlPath', {
+        describe: 'the .OwlBot.yaml path of the new API',
+        type: 'string',
       })
       .option('buildId', {
         describe: 'build id of given build',
