@@ -46,10 +46,6 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: true,
       })
-      .option('owlbotYamlPath', {
-        describe: 'the .OwlBot.yaml path of the new API',
-        type: 'string',
-      })
       .option('buildId', {
         describe: 'build id of given build',
         type: 'string',
