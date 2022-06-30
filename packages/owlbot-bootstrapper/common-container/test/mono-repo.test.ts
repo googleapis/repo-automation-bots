@@ -66,8 +66,7 @@ describe('MonoRepo class', async () => {
       'github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
-      octokit,
-      'packages/google-cloud-kms/.OwlBot.yaml'
+      octokit
     );
 
     const expectation = {
@@ -76,7 +75,6 @@ describe('MonoRepo class', async () => {
       githubToken: 'ghs_1234',
       octokit,
       repoName: 'nodejs-kms',
-      owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
     };
 
     assert.deepStrictEqual(monoRepo.language, expectation.language);
@@ -84,7 +82,6 @@ describe('MonoRepo class', async () => {
     assert.deepStrictEqual(monoRepo.githubToken, expectation.githubToken);
     assert.deepStrictEqual(monoRepo.octokit, expectation.octokit);
     assert.deepStrictEqual(monoRepo.repoName, 'nodejs-kms');
-    assert.deepStrictEqual(monoRepo.owlbotYamlPath, expectation.owlbotYamlPath);
   });
 
   it('should clone a given repo', async () => {
@@ -101,7 +98,14 @@ describe('MonoRepo class', async () => {
     assert.ok(fs.statSync(`${directoryPath}/${FAKE_REPO_NAME}`));
   });
 
-  it('get opens a PR against the main branch', async () => {
+  it('opens a PR against the main branch', async () => {
+    execSync(
+      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
+      {
+        cwd: directoryPath,
+      }
+    );
+
     const scopes = [
       nock('https://api.github.com')
         .get('/repos/googleapis/googleapis-gen/commits')
@@ -115,12 +119,20 @@ describe('MonoRepo class', async () => {
       octokit,
       'specialName',
       'nodejs-kms',
-      'google.cloud.kms.v1'
+      'google.cloud.kms.v1',
+      directoryPath
     );
     scopes.forEach(scope => scope.done());
   });
 
   it('should open a branch, then commit and push to that branch', async () => {
+    execSync(
+      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
+      {
+        cwd: directoryPath,
+      }
+    );
+
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
       'github.com/soficodes/nodejs-kms.git',
@@ -131,7 +143,10 @@ describe('MonoRepo class', async () => {
 
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
     await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = await utils.getBranchName(directoryPath);
+    const branchName = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.BRANCH_NAME_FILE
+    );
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     await monoRepo._commitAndPushToBranch(
       branchName,
@@ -158,6 +173,12 @@ describe('MonoRepo class', async () => {
   });
 
   it('should open a branch, then commit and push to that branch in the composite workflow', async () => {
+    execSync(
+      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
+      {
+        cwd: directoryPath,
+      }
+    );
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
       repoToClonePath,

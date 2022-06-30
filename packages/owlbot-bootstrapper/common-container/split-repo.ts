@@ -16,12 +16,14 @@ import {logger} from 'gcf-utils';
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
 import {
-  getBranchName,
+  getWellKnownFileContents,
   openABranch,
   openAPR,
   cmd,
   checkIfGitIsInstalled,
   ORG,
+  BRANCH_NAME_FILE,
+  OWLBOT_YAML_FILE,
 } from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
@@ -41,21 +43,18 @@ export class SplitRepo {
   apiId: string;
   octokit: Octokit;
   githubToken?: string;
-  owlbotYamlPath?: string;
 
   constructor(
     language: Language,
     apiId: string,
     octokit: Octokit,
-    githubToken?: string,
-    owlbotYamlPath?: string
+    githubToken?: string
   ) {
     this.language = language;
     this.apiId = apiId;
     this.repoName = this._createRepoName(this.language, this.apiId);
     this.githubToken = githubToken;
     this.octokit = octokit;
-    this.owlbotYamlPath = owlbotYamlPath;
   }
   /**
    * Creates a new repo in github
@@ -152,12 +151,14 @@ export class SplitRepo {
     repoName: string,
     octokit: Octokit,
     directoryPath: string,
-    apiId: string,
-    owlbotYamlPath?: string
+    apiId: string
   ) {
     await openABranch(repoName, directoryPath);
-    const branchName = await getBranchName(directoryPath);
-    await openAPR(octokit, branchName, repoName, apiId, owlbotYamlPath);
+    const branchName = await getWellKnownFileContents(
+      directoryPath,
+      BRANCH_NAME_FILE
+    );
+    await openAPR(octokit, branchName, repoName, apiId, directoryPath);
   }
 
   /**
@@ -189,8 +190,7 @@ export class SplitRepo {
       this.repoName,
       this.octokit,
       directoryPath,
-      this.apiId,
-      this.owlbotYamlPath
+      this.apiId
     );
   }
 }

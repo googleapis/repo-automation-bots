@@ -15,11 +15,12 @@
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
 import {
-  getBranchName,
+  getWellKnownFileContents,
   openABranch,
   openAPR,
   cmd,
   checkIfGitIsInstalled,
+  BRANCH_NAME_FILE,
 } from './utils';
 import {logger} from 'gcf-utils';
 
@@ -39,15 +40,13 @@ export class MonoRepo {
   githubToken: string;
   apiId: string;
   octokit: Octokit;
-  owlbotYamlPath?: string;
 
   constructor(
     language: Language,
     repoToCloneUrl: string,
     githubToken: string,
     apiId: string,
-    octokit: Octokit,
-    owlbotYamlPath?: string
+    octokit: Octokit
   ) {
     this.language = language;
     this.repoToCloneUrl = repoToCloneUrl;
@@ -57,7 +56,6 @@ export class MonoRepo {
     this.githubToken = githubToken;
     this.apiId = apiId;
     this.octokit = octokit;
-    this.owlbotYamlPath = owlbotYamlPath;
   }
 
   /**
@@ -115,14 +113,17 @@ export class MonoRepo {
    */
   public async pushToBranchAndOpenPR(directoryPath: string) {
     checkIfGitIsInstalled(cmd);
-    const branchName = await getBranchName(directoryPath);
+    const branchName = await getWellKnownFileContents(
+      directoryPath,
+      BRANCH_NAME_FILE
+    );
     await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
     await openAPR(
       this.octokit,
       branchName,
       this.repoName,
       this.apiId,
-      this.owlbotYamlPath
+      directoryPath
     );
   }
 

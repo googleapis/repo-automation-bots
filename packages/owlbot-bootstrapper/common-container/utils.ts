@@ -18,13 +18,15 @@ import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {Language} from './interfaces';
+import { dir } from 'console';
 
-const BRANCH_NAME_FILE = 'branchName.md';
+export const BRANCH_NAME_FILE = 'branchName.md';
 export const REGENERATE_CHECKBOX_TEXT =
   '- [x] Regenerate this pull request now.';
 const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 export const ORG = 'googleapis';
 export const DIRECTORY_PATH = '/workspace';
+export const OWLBOT_YAML_FILE = 'owlbotYamlPath.md';
 
 /**
  * Saves the user name and email for owlbot-bootstrapper in git-credentials so as to not need to enter them when pushing using https protocol
@@ -63,7 +65,11 @@ export async function getLatestShaGoogleapisGen(octokit: Octokit) {
  * @param octokit authenticated octokit instance
  * @returns full PR text for the PR being created
  */
-export async function getPRText(octokit: Octokit, owlbotYamlPath?: string) {
+export async function getPRText(octokit: Octokit, directoryPath: string) {
+  const owlbotYamlPath = getWellKnownFileContents(
+    directoryPath,
+    OWLBOT_YAML_FILE
+  );
   if (!owlbotYamlPath)
     logger.warn('No owlbot yaml path passed from language-container');
   const latestSha = await getLatestShaGoogleapisGen(octokit);
@@ -112,7 +118,7 @@ export async function openAPR(
   branchName: string,
   repoName: string,
   apiId: string,
-  owlbotYamlPath?: string
+  directoryPath: string
 ) {
   try {
     await octokit.rest.pulls.create({
@@ -121,7 +127,7 @@ export async function openAPR(
       head: branchName,
       base: 'main',
       title: `feat: add initial files for ${apiId}`,
-      body: await getPRText(octokit, owlbotYamlPath),
+      body: await getPRText(octokit, directoryPath),
     });
   } catch (err: any) {
     logger.error(err);
@@ -170,11 +176,14 @@ export async function openAnIssue(
  * Since a separate container needs the UUID for the branch of the first container,
  * we need to save it in a well-known location that language-specific containers can access later on.
  */
-export async function getBranchName(directoryPath: string) {
+export function getWellKnownFileContents(
+  directoryPath: string,
+  fileName: string
+) {
   try {
     return (
       fs
-        .readFileSync(`${directoryPath}/${BRANCH_NAME_FILE}`)
+        .readFileSync(`${directoryPath}/${fileName}`)
         .toString()
         // Need to remove whitespace from branch name
         .replace(/\s+/g, '')

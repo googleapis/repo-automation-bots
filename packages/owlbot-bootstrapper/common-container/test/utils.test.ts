@@ -63,12 +63,34 @@ describe('common utils tests', async () => {
   it('get branch name from a well-known path', async () => {
     await execSync('echo specialName > branchName.md', {cwd: directoryPath});
 
-    const branchName = await utils.getBranchName(directoryPath);
+    const branchName = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.BRANCH_NAME_FILE
+    );
 
     assert.deepStrictEqual(branchName, 'specialName');
   });
 
+  it('gets owlbot.yaml path from a well-known path', async () => {
+    await execSync('echo "specialName.yaml" > owlbotYamlPath.md', {
+      cwd: directoryPath,
+    });
+
+    const branchName = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.OWLBOT_YAML_FILE
+    );
+
+    assert.deepStrictEqual(branchName, 'specialName.yaml');
+  });
+
   it('opens a PR against the main branch', async () => {
+    execSync(
+      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
+      {
+        cwd: directoryPath,
+      }
+    );
     const scopes = [
       nock('https://api.github.com')
         .get('/repos/googleapis/googleapis-gen/commits')
@@ -85,8 +107,8 @@ describe('common utils tests', async () => {
       octokit,
       'specialName',
       'nodejs-kms',
-      '.github/.Owlbot.yaml',
-      'google.cloud.kms.v1'
+      'google.cloud.kms.v1',
+      directoryPath
     );
     scopes.forEach(scope => scope.done());
   });
@@ -102,11 +124,17 @@ describe('common utils tests', async () => {
   });
 
   it('returns the PR text with copy tag text', async () => {
+    execSync(
+      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
+      {
+        cwd: directoryPath,
+      }
+    );
     const scope = nock('https://api.github.com')
       .get('/repos/googleapis/googleapis-gen/commits')
       .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'});
 
-    const prText = await utils.getPRText(octokit, '.github/.Owlbot.yaml');
+    const prText = await utils.getPRText(octokit, directoryPath);
     console.log(prText);
     const expectation = `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:\n${Buffer.from(
       '{"p":"packages/google-cloud-kms/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
@@ -122,7 +150,10 @@ describe('common utils tests', async () => {
       directoryPath
     );
     await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = await utils.getBranchName(directoryPath);
+    const branchName = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.BRANCH_NAME_FILE
+    );
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
