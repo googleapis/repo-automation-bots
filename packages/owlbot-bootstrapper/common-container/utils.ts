@@ -18,7 +18,7 @@ import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {Language} from './interfaces';
-import { dir } from 'console';
+import {dir} from 'console';
 
 export const BRANCH_NAME_FILE = 'branchName.md';
 export const REGENERATE_CHECKBOX_TEXT =
