@@ -91,17 +91,14 @@ describe('common utils tests', async () => {
         cwd: directoryPath,
       }
     );
-    const scopes = [
-      nock('https://api.github.com')
-        .get('/repos/googleapis/googleapis-gen/commits')
-        .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}),
-      nock('https://api.github.com')
-        .post('/repos/googleapis/nodejs-kms/pulls', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(201),
-    ];
+    const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/googleapis-gen/commits')
+      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
+      .post('/repos/googleapis/nodejs-kms/pulls', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(201);
 
     await utils.openAPR(
       octokit,
@@ -110,7 +107,7 @@ describe('common utils tests', async () => {
       'google.cloud.kms.v1',
       directoryPath
     );
-    scopes.forEach(scope => scope.done());
+    scope.done();
   });
 
   it('gets the latest commit sha from googlepis-gen', async () => {

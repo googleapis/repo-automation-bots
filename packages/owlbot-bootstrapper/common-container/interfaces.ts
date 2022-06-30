@@ -44,5 +44,4 @@ export interface CliArgs {
   language: string;
   installationId: string;
   buildId?: string;
-  owlbotYamlPath?: string;
 }
