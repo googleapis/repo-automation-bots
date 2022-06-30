@@ -40,6 +40,17 @@ describe('MonoRepo class', async () => {
       await execSync(
         `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`
       );
+      fs.writeFileSync(
+        `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+        JSON.stringify(
+          {
+            branchName: 'specialName',
+            owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
+          },
+          null,
+          4
+        )
+      );
     } catch (err) {
       if (!(err as any).toString().match(/File exists/)) {
         throw err;
@@ -100,7 +111,7 @@ describe('MonoRepo class', async () => {
 
   it('opens a PR against the main branch', async () => {
     execSync(
-      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
+      `echo "{owlbotYamlPath: packages/google-cloud-kms/.OwlBot.yaml}" > ${utils.INTER_CONTAINER_VARS_FILE}`,
       {
         cwd: directoryPath,
       }
@@ -123,13 +134,6 @@ describe('MonoRepo class', async () => {
   });
 
   it('should open a branch, then commit and push to that branch', async () => {
-    execSync(
-      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
-      {
-        cwd: directoryPath,
-      }
-    );
-
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
       'github.com/soficodes/nodejs-kms.git',
@@ -142,8 +146,8 @@ describe('MonoRepo class', async () => {
     await utils.openABranch(FAKE_REPO_NAME, directoryPath);
     const branchName = await utils.getWellKnownFileContents(
       directoryPath,
-      utils.BRANCH_NAME_FILE
-    );
+      utils.INTER_CONTAINER_VARS_FILE
+    ).branchName;
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     await monoRepo._commitAndPushToBranch(
       branchName,
@@ -170,12 +174,6 @@ describe('MonoRepo class', async () => {
   });
 
   it('should open a branch, then commit and push to that branch in the composite workflow', async () => {
-    execSync(
-      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
-      {
-        cwd: directoryPath,
-      }
-    );
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
       repoToClonePath,

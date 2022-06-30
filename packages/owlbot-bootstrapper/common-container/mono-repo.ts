@@ -20,7 +20,7 @@ import {
   openAPR,
   cmd,
   checkIfGitIsInstalled,
-  BRANCH_NAME_FILE,
+  INTER_CONTAINER_VARS_FILE,
 } from './utils';
 import {logger} from 'gcf-utils';
 
@@ -112,18 +112,22 @@ export class MonoRepo {
    * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    */
   public async pushToBranchAndOpenPR(directoryPath: string) {
-    checkIfGitIsInstalled(cmd);
-    const branchName = await getWellKnownFileContents(
+    const interContainerVars = getWellKnownFileContents(
       directoryPath,
-      BRANCH_NAME_FILE
+      INTER_CONTAINER_VARS_FILE
     );
-    await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
+    checkIfGitIsInstalled(cmd);
+    await this._commitAndPushToBranch(
+      interContainerVars.branchName,
+      this.repoName,
+      directoryPath
+    );
     await openAPR(
       this.octokit,
-      branchName,
+      interContainerVars.branchName,
       this.repoName,
       this.apiId,
-      directoryPath
+      interContainerVars.owlbotYamlPath
     );
   }
 

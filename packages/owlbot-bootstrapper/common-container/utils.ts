@@ -17,16 +17,14 @@ import {logger} from 'gcf-utils';
 import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
-import {Language} from './interfaces';
-import {dir} from 'console';
+import {InterContainerVars, Language} from './interfaces';
 
-export const BRANCH_NAME_FILE = 'branchName.md';
+export const INTER_CONTAINER_VARS_FILE = 'interContainerVars.json';
 export const REGENERATE_CHECKBOX_TEXT =
   '- [x] Regenerate this pull request now.';
 const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 export const ORG = 'googleapis';
 export const DIRECTORY_PATH = '/workspace';
-export const OWLBOT_YAML_FILE = 'owlbotYamlPath.md';
 
 /**
  * Saves the user name and email for owlbot-bootstrapper in git-credentials so as to not need to enter them when pushing using https protocol
@@ -65,11 +63,7 @@ export async function getLatestShaGoogleapisGen(octokit: Octokit) {
  * @param octokit authenticated octokit instance
  * @returns full PR text for the PR being created
  */
-export async function getPRText(octokit: Octokit, directoryPath: string) {
-  const owlbotYamlPath = getWellKnownFileContents(
-    directoryPath,
-    OWLBOT_YAML_FILE
-  );
+export async function getPRText(octokit: Octokit, owlbotYamlPath: string) {
   if (!owlbotYamlPath)
     logger.warn('No owlbot yaml path passed from language-container');
   const latestSha = await getLatestShaGoogleapisGen(octokit);
@@ -94,7 +88,16 @@ export async function openABranch(repoName: string, directoryPath: string) {
   const branchName = `${BRANCH_NAME_PREFIX}-${UUID}`;
   logger.info(`Opening branch ${branchName} on ${repoName}`);
   try {
-    fs.writeFileSync(`${directoryPath}/branchName.md`, branchName);
+    // Need to get contents first, to make sure we're not overwriting any other information
+    const contents = getWellKnownFileContents(
+      directoryPath,
+      INTER_CONTAINER_VARS_FILE
+    );
+    contents.branchName = branchName;
+    fs.writeFileSync(
+      `${directoryPath}/${INTER_CONTAINER_VARS_FILE}`,
+      JSON.stringify(contents, null, 4)
+    );
     // Need to push an empty commit to  push branch up
     cmd(
       `git checkout -b ${branchName}; git commit --allow-empty -m "initial commit"; git push -u origin ${branchName}`,
@@ -118,7 +121,7 @@ export async function openAPR(
   branchName: string,
   repoName: string,
   apiId: string,
-  directoryPath: string
+  owlbotYamlPath: string
 ) {
   try {
     await octokit.rest.pulls.create({
@@ -127,7 +130,7 @@ export async function openAPR(
       head: branchName,
       base: 'main',
       title: `feat: add initial files for ${apiId}`,
-      body: await getPRText(octokit, directoryPath),
+      body: await getPRText(octokit, owlbotYamlPath),
     });
   } catch (err: any) {
     logger.error(err);
@@ -169,24 +172,24 @@ export async function openAnIssue(
 }
 
 /**
- * Gets the branch name with a UUID
+ * Gets variables saved to a well-known file passed between containers
  *
  * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
+ * @param fileNameJSON name of the file that contains the inter-container variables, must be JSON
  * @returns the branch name with a UUID from a well-known file path (/workspace/branchName.md)
  * Since a separate container needs the UUID for the branch of the first container,
  * we need to save it in a well-known location that language-specific containers can access later on.
  */
 export function getWellKnownFileContents(
   directoryPath: string,
-  fileName: string
-) {
+  fileNameJSON: string
+): InterContainerVars {
   try {
-    return (
-      fs
-        .readFileSync(`${directoryPath}/${fileName}`)
-        .toString()
-        // Need to remove whitespace from branch name
-        .replace(/\s+/g, '')
+    console.log(
+      fs.readFileSync(`${directoryPath}/${fileNameJSON}`).toString('utf8')
+    );
+    return JSON.parse(
+      fs.readFileSync(`${directoryPath}/${fileNameJSON}`).toString()
     );
   } catch (err) {
     logger.error(err as any);

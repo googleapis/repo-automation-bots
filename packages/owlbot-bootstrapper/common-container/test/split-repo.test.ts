@@ -34,11 +34,21 @@ describe('SplitRepo class', async () => {
   beforeEach(async () => {
     directoryPath = path.join(__dirname, FAKE_WORKSPACE);
     repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
-    console.log(directoryPath);
     try {
       await execSync(`mkdir ${directoryPath}`);
       await execSync(
         `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init --bare`
+      );
+      fs.writeFileSync(
+        `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+        JSON.stringify(
+          {
+            branchName: 'specialName',
+            owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
+          },
+          null,
+          4
+        )
       );
     } catch (err) {
       if (!(err as any).toString().match(/File exists/)) {
@@ -149,21 +159,11 @@ describe('SplitRepo class', async () => {
   });
 
   it('should create an empty PR', async () => {
-    execSync(
-      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
-      {
-        cwd: directoryPath,
-      }
-    );
-
-    const scopes = [
-      nock('https://api.github.com')
-        .get('/repos/googleapis/googleapis-gen/commits')
-        .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}),
-      nock('https://api.github.com')
-        .post('/repos/googleapis/fakeRepo/pulls')
-        .reply(201),
-    ];
+    const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/googleapis-gen/commits')
+      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
+      .post('/repos/googleapis/fakeRepo/pulls')
+      .reply(201);
 
     await splitRepo._initializeEmptyGitRepo(FAKE_REPO_NAME, directoryPath);
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
@@ -178,7 +178,9 @@ describe('SplitRepo class', async () => {
       FAKE_REPO_NAME,
       octokit,
       directoryPath,
-      'google.cloud.kms.v1'
+      'google.cloud.kms.v1',
+      'branchName',
+      'packages/google-cloud-kms/.OwlBot.yaml'
     );
 
     const stdoutBranch = execSync('git branch', {
@@ -186,17 +188,10 @@ describe('SplitRepo class', async () => {
     });
 
     assert.ok(stdoutBranch.includes('owlbot-bootstrapper-initial-PR'));
-    scopes.forEach(scope => scope.done());
+    scope.done();
   });
 
   it('should create and initialize an empty repo on github, then push to main and create an empty PR', async () => {
-    execSync(
-      'echo "packages/google-cloud-kms/.OwlBot.yaml" > owlbotYamlPath.md',
-      {
-        cwd: directoryPath,
-      }
-    );
-
     const scope = nock('https://api.github.com')
       .post('/orgs/googleapis/repos')
       .reply(201)

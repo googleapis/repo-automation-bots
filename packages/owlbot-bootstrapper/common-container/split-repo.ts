@@ -22,8 +22,7 @@ import {
   cmd,
   checkIfGitIsInstalled,
   ORG,
-  BRANCH_NAME_FILE,
-  OWLBOT_YAML_FILE,
+  INTER_CONTAINER_VARS_FILE,
 } from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
@@ -151,14 +150,12 @@ export class SplitRepo {
     repoName: string,
     octokit: Octokit,
     directoryPath: string,
-    apiId: string
+    apiId: string,
+    branchName: string,
+    owlbotYamlPath: string
   ) {
     await openABranch(repoName, directoryPath);
-    const branchName = await getWellKnownFileContents(
-      directoryPath,
-      BRANCH_NAME_FILE
-    );
-    await openAPR(octokit, branchName, repoName, apiId, directoryPath);
+    await openAPR(octokit, branchName, repoName, apiId, owlbotYamlPath);
   }
 
   /**
@@ -180,6 +177,10 @@ export class SplitRepo {
     repoUrl?: string
   ) {
     checkIfGitIsInstalled(cmd);
+    const interContainerVars = getWellKnownFileContents(
+      directoryPath,
+      INTER_CONTAINER_VARS_FILE
+    );
     await this._commitAndPushToMain(
       this.repoName,
       directoryPath,
@@ -190,7 +191,9 @@ export class SplitRepo {
       this.repoName,
       this.octokit,
       directoryPath,
-      this.apiId
+      this.apiId,
+      interContainerVars.branchName,
+      interContainerVars.owlbotYamlPath
     );
   }
 }

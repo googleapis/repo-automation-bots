@@ -45,3 +45,8 @@ export interface CliArgs {
   installationId: string;
   buildId?: string;
 }
+
+export interface InterContainerVars {
+  branchName: string;
+  owlbotYamlPath: string;
+}
