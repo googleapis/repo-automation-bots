@@ -110,13 +110,6 @@ describe('MonoRepo class', async () => {
   });
 
   it('opens a PR against the main branch', async () => {
-    execSync(
-      `echo "{owlbotYamlPath: packages/google-cloud-kms/.OwlBot.yaml}" > ${utils.INTER_CONTAINER_VARS_FILE}`,
-      {
-        cwd: directoryPath,
-      }
-    );
-
     const scope = nock('https://api.github.com')
       .get('/repos/googleapis/googleapis-gen/commits')
       .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
