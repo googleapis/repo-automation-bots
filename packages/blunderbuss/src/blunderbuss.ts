@@ -91,15 +91,26 @@ export = (app: Probot) => {
         return;
       }
 
-      let lockTarget: string;
+      let url: string;
+      let user: string;
+
       if (isIssue(context.payload)) {
-        lockTarget = context.payload.issue.url;
+        url = context.payload.issue.url;
+        user = context.payload.issue.user.login;
       } else {
-        lockTarget = context.payload.pull_request.url;
+        url = context.payload.pull_request.url;
+        user = context.payload.pull_request.user.login;
+      }
+
+      if (config.ignore_authors?.includes(user)) {
+        logger.info(
+          `Skipping ${url} because ${user} is on the ignore_authors list.`
+        );
+        return;
       }
 
       // Acquire the lock.
-      const lock = new DatastoreLock('blunderbuss', lockTarget);
+      const lock = new DatastoreLock('blunderbuss', url);
       const lockResult = await lock.acquire();
       if (!lockResult) {
         throw new Error('Failed to acquire a lock for ${lockTarget}');

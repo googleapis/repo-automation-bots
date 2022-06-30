@@ -46,6 +46,13 @@
 	    "type": "array",
 	    "items": {"$ref": "#/definitions/ByConfig"},
 	    "default": []
+	},
+	"ignore_authors": {
+		"type": "array",
+		"items": {
+		    "type": "string"
+		},
+		"default": []
 	}
     }
 }

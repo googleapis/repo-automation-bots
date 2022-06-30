@@ -437,6 +437,18 @@ describe('Blunderbuss', () => {
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       scopes.forEach(s => s.done());
     });
+
+    it('ignores issue when configured to ignore', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_opened_no_assignees'
+      ));
+
+      getConfigWithDefaultStub.resolves(loadConfig('ignore.yml'));
+
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
+    });
   });
 
   describe('pr tests', () => {
@@ -665,6 +677,20 @@ describe('Blunderbuss', () => {
         id: 'abc123',
       });
       requests.done();
+    });
+
+    it('ignores PR when user ignored', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_no_assignees.json'
+      ));
+      getConfigWithDefaultStub.resolves(loadConfig('ignore.yml'));
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
     });
   });
 });
