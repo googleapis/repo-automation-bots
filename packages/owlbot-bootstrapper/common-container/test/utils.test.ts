@@ -19,10 +19,11 @@ import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../utils';
+import {ORG, REGENERATE_CHECKBOX_TEXT} from '../utils';
 import snapshot from 'snap-shot-it';
 import {Language} from '../interfaces';
 import sinon from 'sinon';
+import * as fs from 'fs';
 
 let directoryPath: string;
 let repoToClonePath: string;
@@ -40,6 +41,17 @@ describe('common utils tests', async () => {
       await execSync(`mkdir ${directoryPath}`);
       await execSync(
         `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`
+      );
+      fs.writeFileSync(
+        `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+        JSON.stringify(
+          {
+            branchName: 'specialName',
+            owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
+          },
+          null,
+          4
+        )
       );
     } catch (err) {
       if (!(err as any).toString().match(/File exists/)) {
@@ -61,19 +73,67 @@ describe('common utils tests', async () => {
   const octokit = new Octokit({auth: 'abc1234'});
 
   it('get branch name from a well-known path', async () => {
-    await execSync('echo specialName > branchName.md', {cwd: directoryPath});
-
-    const branchName = await utils.getBranchName(directoryPath);
+    const branchName = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.INTER_CONTAINER_VARS_FILE
+    ).branchName;
 
     assert.deepStrictEqual(branchName, 'specialName');
   });
 
-  it('get opens a PR against the main branch', async () => {
+  it('gets owlbot.yaml path from a well-known path', async () => {
+    const owlbotPath = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.INTER_CONTAINER_VARS_FILE
+    ).owlbotYamlPath;
+
+    assert.deepStrictEqual(
+      owlbotPath,
+      'packages/google-cloud-kms/.OwlBot.yaml'
+    );
+  });
+
+  it('opens a PR against the main branch', async () => {
     const scope = nock('https://api.github.com')
-      .post('/repos/googleapis/nodejs-kms/pulls')
+      .get('/repos/googleapis/googleapis-gen/commits')
+      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
+      .post('/repos/googleapis/nodejs-kms/pulls', body => {
+        snapshot(body);
+        return true;
+      })
       .reply(201);
 
-    await utils.openAPR(octokit, 'specialName', 'nodejs-kms');
+    await utils.openAPR(
+      octokit,
+      'specialName',
+      'nodejs-kms',
+      'google.cloud.kms.v1',
+      'packages/google-cloud-kms/.OwlBot.yaml'
+    );
+    scope.done();
+  });
+
+  it('gets the latest commit sha from googlepis-gen', async () => {
+    const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/googleapis-gen/commits')
+      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'});
+
+    const sha = await utils.getLatestShaGoogleapisGen(octokit);
+    scope.done();
+    assert(sha, '6dcb09b5b57875f334f61aebed695e2e4193db5e');
+  });
+
+  it('returns the PR text with copy tag text', async () => {
+    const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/googleapis-gen/commits')
+      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'});
+
+    const prText = await utils.getPRText(octokit, directoryPath);
+    console.log(prText);
+    const expectation = `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:\n${Buffer.from(
+      '{"p":"packages/google-cloud-kms/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
+    ).toString('base64')}`;
+    assert(prText, expectation);
     scope.done();
   });
 
@@ -84,7 +144,10 @@ describe('common utils tests', async () => {
       directoryPath
     );
     await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = await utils.getBranchName(directoryPath);
+    const branchName = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.INTER_CONTAINER_VARS_FILE
+    ).branchName;
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
