@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.1](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v3.2.0...datastore-lock-v3.2.1) (2022-07-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @google-cloud/datastore to v7 ([#4027](https://github.com/googleapis/repo-automation-bots/issues/4027)) ([ae6bb2a](https://github.com/googleapis/repo-automation-bots/commit/ae6bb2acb77dd58a5253a4835c408e0418cdfcc4))
+
 ## [3.2.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v3.1.1...datastore-lock-v3.2.0) (2022-04-14)
 
 
