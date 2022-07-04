@@ -85,6 +85,12 @@ function listFiles(
     .reply(code, response);
 }
 
+function listLabels(owner: string, repo: string, code: number, etag?: string) {
+  return nock('https://api.github.com')
+    .get(`/repos/${owner}/${repo}/issues/1/labels`)
+    .reply(code, 'labels', etag ? {etag} : undefined);
+}
+
 function submitReview(owner: string, repo: string, status: number) {
   return nock('https://api.github.com')
     .post(`/repos/${owner}/${repo}/pulls/1/reviews`, body => {
@@ -96,6 +102,21 @@ function submitReview(owner: string, repo: string, status: number) {
 
 function addLabels(owner: string, repo: string, status: number) {
   return nock('https://api.github.com')
+    .post(`/repos/${owner}/${repo}/issues/1/labels`)
+    .reply(status);
+}
+
+function addLabelsReqHeaders(
+  owner: string,
+  repo: string,
+  status: number,
+  etag: string
+) {
+  return nock('https://api.github.com', {
+    reqheaders: {
+      'if-none-match': `'${etag}'`,
+    },
+  })
     .post(`/repos/${owner}/${repo}/issues/1/labels`)
     .reply(status);
 }
@@ -167,6 +188,7 @@ describe('auto-approve', () => {
           ),
           getReviewsCompleted('testOwner', 'testRepo', []),
           submitReview('testOwner', 'testRepo', 200),
+          listLabels('testOwner', 'testRepo', 200),
           addLabels('testOwner', 'testRepo', 200),
           createCheck('testOwner', 'testRepo', 200),
         ];
@@ -242,6 +264,7 @@ describe('auto-approve', () => {
           ),
           getReviewsCompleted('GoogleCloudPlatform', 'python-docs-samples', []),
           submitReview('GoogleCloudPlatform', 'python-docs-samples', 200),
+          listLabels('GoogleCloudPlatform', 'python-docs-samples', 200),
           addLabels('GoogleCloudPlatform', 'python-docs-samples', 200),
           createCheck('GoogleCloudPlatform', 'python-docs-samples', 200),
         ];
@@ -254,6 +277,107 @@ describe('auto-approve', () => {
 
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
+      });
+
+      it('retries if etag is not current', async () => {
+        checkPRAgainstConfigStub.returns(true);
+        checkAutoApproveStub.returns('');
+        getSecretStub.returns(new Octokit({auth: '123'}));
+        getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scopes = [
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
+            200
+          ),
+          getReviewsCompleted('testOwner', 'testRepo', []),
+          submitReview('testOwner', 'testRepo', 200),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 412),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 412),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
+
+      it('stops retrying to add the label after 3 attempts, even if it is never successful', async () => {
+        checkPRAgainstConfigStub.returns(true);
+        checkAutoApproveStub.returns('');
+        getSecretStub.returns(new Octokit({auth: '123'}));
+        getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scopes = [
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
+            200
+          ),
+          createCheck('testOwner', 'testRepo', 200),
+          getReviewsCompleted('testOwner', 'testRepo', []),
+          submitReview('testOwner', 'testRepo', 200),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 412),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 412),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 412),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 412),
+        ];
+
+        await assert.rejects(
+          async () =>
+            await probot.receive({
+              name: 'pull_request',
+              payload,
+              id: 'abc123',
+            })
+        );
+
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
+
+      it('respects weak matching of if-none-match', async () => {
+        const scopes = [
+          listLabels('testOwner', 'testRepo', 200, 'W/"19d7"'),
+          addLabelsReqHeaders('testOwner', 'testRepo', 200, 'W/"19d7"'),
+        ];
+
+        await autoApprove.retryAddLabel(
+          0,
+          'testOwner',
+          'testRepo',
+          1,
+          new Octokit()
+        );
+        scopes.forEach(scope => scope.done());
       });
 
       it('submits a failing check if config exists but is not valid', async () => {
@@ -377,6 +501,7 @@ describe('auto-approve', () => {
           ),
           getReviewsCompleted('testOwner', 'testRepo', []),
           submitReview('testOwner', 'testRepo', 200),
+          listLabels('testOwner', 'testRepo', 200),
           addLabels('testOwner', 'testRepo', 200),
           createCheck('testOwner', 'testRepo', 200),
         ];
@@ -418,6 +543,7 @@ describe('auto-approve', () => {
           ),
           getReviewsCompleted('testOwner', 'testRepo', []),
           submitReview('testOwner', 'testRepo', 200),
+          listLabels('testOwner', 'testRepo', 200),
           addLabels('testOwner', 'testRepo', 200),
           createCheck('testOwner', 'testRepo', 200),
         ];
@@ -548,6 +674,7 @@ describe('auto-approve', () => {
           ),
           getReviewsCompleted('testOwner', 'testRepo', []),
           submitReview('testOwner', 'testRepo', 200),
+          listLabels('testOwner', 'testRepo', 200),
           addLabels('testOwner', 'testRepo', 200),
           createCheck('testOwner', 'testRepo', 200),
         ];
@@ -590,6 +717,7 @@ describe('auto-approve', () => {
         ),
         getReviewsCompleted('testOwner', 'testRepo', []),
         submitReview('testOwner', 'testRepo', 200),
+        listLabels('testOwner', 'testRepo', 200),
         addLabels('testOwner', 'testRepo', 200),
         createCheck('testOwner', 'testRepo', 200),
       ];
