@@ -15,11 +15,12 @@
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
 import {
-  getBranchName,
+  getWellKnownFileContents,
   openABranch,
   openAPR,
   cmd,
   checkIfGitIsInstalled,
+  INTER_CONTAINER_VARS_FILE,
 } from './utils';
 import {logger} from 'gcf-utils';
 
@@ -37,12 +38,14 @@ export class MonoRepo {
   repoToCloneUrl: string;
   repoName: string;
   githubToken: string;
+  apiId: string;
   octokit: Octokit;
 
   constructor(
     language: Language,
     repoToCloneUrl: string,
     githubToken: string,
+    apiId: string,
     octokit: Octokit
   ) {
     this.language = language;
@@ -51,6 +54,7 @@ export class MonoRepo {
     // Or /googleapis/nodejs-kms becomes nodejs-kms
     this.repoName = repoToCloneUrl.match(/\/([\w-]*)(.git|$)/)![1];
     this.githubToken = githubToken;
+    this.apiId = apiId;
     this.octokit = octokit;
   }
 
@@ -108,10 +112,23 @@ export class MonoRepo {
    * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
    */
   public async pushToBranchAndOpenPR(directoryPath: string) {
+    const interContainerVars = getWellKnownFileContents(
+      directoryPath,
+      INTER_CONTAINER_VARS_FILE
+    );
     checkIfGitIsInstalled(cmd);
-    const branchName = await getBranchName(directoryPath);
-    await this._commitAndPushToBranch(branchName, this.repoName, directoryPath);
-    await openAPR(this.octokit, branchName, this.repoName);
+    await this._commitAndPushToBranch(
+      interContainerVars.branchName,
+      this.repoName,
+      directoryPath
+    );
+    await openAPR(
+      this.octokit,
+      interContainerVars.branchName,
+      this.repoName,
+      this.apiId,
+      interContainerVars.owlbotYamlPath
+    );
   }
 
   /**

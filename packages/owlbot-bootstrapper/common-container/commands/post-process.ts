@@ -14,16 +14,7 @@
 
 import yargs from 'yargs';
 import {postProcess} from '../post-process';
-
-interface CliArgs {
-  projectId: string;
-  triggerId?: string;
-  apiId: string;
-  repoToClone?: string;
-  language: string;
-  installationId: string;
-  buildId?: string;
-}
+import {CliArgs} from '../interfaces';
 
 export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
   command: 'post-process',
@@ -32,11 +23,6 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
     return yargs
       .option('projectId', {
         describe: 'project ID which contains the build file',
-        type: 'string',
-        demand: true,
-      })
-      .option('triggerId', {
-        describe: 'trigger of build to run',
         type: 'string',
         demand: true,
       })

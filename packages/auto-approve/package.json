@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@octokit/rest": "^18.12.0",
-    "@octokit/webhooks": "^9.26.0",
+    "@octokit/webhooks": "^10.0.0",
     "@octokit/webhooks-definitions": "^3.62.6",
     "@probot/octokit-plugin-config": "^1.1.5",
     "@types/mocha": "^9.1.1",

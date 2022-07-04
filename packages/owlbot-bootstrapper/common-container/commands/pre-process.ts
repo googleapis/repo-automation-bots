@@ -14,16 +14,7 @@
 
 import yargs from 'yargs';
 import {preProcess} from '../pre-process';
-
-interface CliArgs {
-  projectId: string;
-  triggerId?: string;
-  apiId: string;
-  repoToClone?: string;
-  language: string;
-  installationId: string;
-  buildId?: string;
-}
+import {CliArgs} from '../interfaces';
 
 export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
   command: 'pre-process',

@@ -16,12 +16,13 @@ import {logger} from 'gcf-utils';
 import {Language} from './interfaces';
 import {Octokit} from '@octokit/rest';
 import {
-  getBranchName,
+  getWellKnownFileContents,
   openABranch,
   openAPR,
   cmd,
   checkIfGitIsInstalled,
   ORG,
+  INTER_CONTAINER_VARS_FILE,
 } from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
@@ -148,11 +149,13 @@ export class SplitRepo {
   public async _createEmptyBranchAndOpenPR(
     repoName: string,
     octokit: Octokit,
-    directoryPath: string
+    directoryPath: string,
+    apiId: string,
+    branchName: string,
+    owlbotYamlPath: string
   ) {
     await openABranch(repoName, directoryPath);
-    const branchName = await getBranchName(directoryPath);
-    await openAPR(octokit, branchName, repoName);
+    await openAPR(octokit, branchName, repoName, apiId, owlbotYamlPath);
   }
 
   /**
@@ -174,6 +177,10 @@ export class SplitRepo {
     repoUrl?: string
   ) {
     checkIfGitIsInstalled(cmd);
+    const interContainerVars = getWellKnownFileContents(
+      directoryPath,
+      INTER_CONTAINER_VARS_FILE
+    );
     await this._commitAndPushToMain(
       this.repoName,
       directoryPath,
@@ -183,7 +190,10 @@ export class SplitRepo {
     await this._createEmptyBranchAndOpenPR(
       this.repoName,
       this.octokit,
-      directoryPath
+      directoryPath,
+      this.apiId,
+      interContainerVars.branchName,
+      interContainerVars.owlbotYamlPath
     );
   }
 }

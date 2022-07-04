@@ -56,6 +56,7 @@ export async function postProcess(argv: CliArgs) {
         argv.language as Language,
         argv.repoToClone!,
         githubToken,
+        argv.apiId,
         octokit
       );
 

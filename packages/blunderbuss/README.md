@@ -26,6 +26,9 @@ assign_issues_by:
 assign_prs:
   - pr_assignee_1
   - pr_assignee_2
+ignore_authors:
+  - dependabot
+  - renovate
 ```
 
 Blunderbuss can also be manually triggered by attaching a "blunderbuss: assign" label to either an
