@@ -16,7 +16,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {getContextLogger} from 'gcf-utils';
+import {GCFLogger, getContextLogger, logger as defaultLogger} from 'gcf-utils';
 import {checkPRAgainstConfig} from './check-pr';
 import {checkPRAgainstConfigV2} from './check-pr-v2';
 import {
@@ -54,6 +54,59 @@ export async function authenticateWithSecret(
   }
 
   return new Octokit({auth: payload});
+}
+
+/**
+ * Grabs an etag for a PR, and retries adding a label if etag is different
+ *
+ * @param numAttemptsRemaining the amount of retries for adding a label
+ * @param owner string, of the repo of the incoming PR
+ * @param repo string, the name of the repo of the incoming PR
+ * @param prNumber number, the number of the PR
+ * @param octokit the octokit instance
+ */
+export async function retryAddLabel(
+  numAttemptsRemaining: number,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit,
+  logger: GCFLogger = defaultLogger
+): Promise<void> {
+  const etag = (
+    await octokit.issues.listLabelsOnIssue({
+      owner,
+      repo,
+      issue_number: prNumber,
+    })
+  ).headers.etag;
+
+  try {
+    await octokit.issues.addLabels({
+      owner,
+      repo,
+      issue_number: prNumber,
+      labels: ['automerge: exact'],
+      // The comparison with the stored ETag for if-none-match uses the
+      // weak comparison algorithm, meaning two files are considered identical
+      // if the content is equivalent, not identical.
+      // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
+      headers: {'if-none-match': `'${etag}'`},
+    });
+  } catch (err) {
+    if (
+      (err as {message: string; status: number}).status === 412 &&
+      numAttemptsRemaining > 0
+    ) {
+      numAttemptsRemaining--;
+      await retryAddLabel(numAttemptsRemaining, owner, repo, prNumber, octokit);
+    } else if ((err as any).status === 412) {
+      logger.error('Etag keeps changing; cannot add label successfully');
+      throw err;
+    } else {
+      throw err;
+    }
+  }
 }
 
 /**
@@ -297,12 +350,9 @@ export function handler(app: Probot) {
               pull_number: prNumber,
               event: 'APPROVE',
             });
-            await octokit.issues.addLabels({
-              owner,
-              repo,
-              issue_number: prNumber,
-              labels: ['automerge: exact'],
-            });
+
+            await retryAddLabel(3, owner, repo, prNumber, octokit);
+
             logger.metric('auto_approve.approved_tagged', {
               repo: `${owner}/${repo}`,
               pr: prNumber,
