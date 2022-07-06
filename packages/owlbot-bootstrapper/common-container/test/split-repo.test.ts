@@ -30,7 +30,7 @@ const FAKE_WORKSPACE = 'workspace';
 
 nock.disableNetConnect();
 
-describe('SplitRepo class', async () => {
+describe.only('SplitRepo class', async () => {
   beforeEach(async () => {
     directoryPath = path.join(__dirname, FAKE_WORKSPACE);
     repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
@@ -39,17 +39,7 @@ describe('SplitRepo class', async () => {
       await execSync(
         `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init --bare`
       );
-      fs.writeFileSync(
-        `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
-        JSON.stringify(
-          {
-            branchName: 'specialName',
-            owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
-          },
-          null,
-          4
-        )
-      );
+
     } catch (err) {
       if (!(err as any).toString().match(/File exists/)) {
         throw err;
@@ -192,6 +182,17 @@ describe('SplitRepo class', async () => {
   });
 
   it('should create and initialize an empty repo on github, then push to main and create an empty PR', async () => {
+    fs.writeFileSync(
+      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      JSON.stringify(
+        {
+          branchName: 'specialName',
+          owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
+        },
+        null,
+        4
+      )
+    );
     const scope = nock('https://api.github.com')
       .post('/orgs/googleapis/repos')
       .reply(201)
