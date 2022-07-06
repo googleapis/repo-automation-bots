@@ -32,7 +32,7 @@
     "@commitlint/config-conventional": "^17.0.2",
     "@commitlint/lint": "^17.0.0",
     "@octokit/openapi-types": "^12.1.0",
-    "@octokit/webhooks-types": "^5.8.0",
+    "@octokit/webhooks-types": "^6.0.0",
     "gcf-utils": "^13.8.1"
   },
   "devDependencies": {
