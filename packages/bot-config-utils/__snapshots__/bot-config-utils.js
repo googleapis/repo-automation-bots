@@ -7,7 +7,7 @@ exports[
   output: {
     title: 'Config schema error',
     summary: 'An error found in the config file',
-    text: 'You tried to add .github/test.yml, but the config file must be .github/test.yaml\n',
+    text: 'You tried to add .github/test.yml, but the config file must be .github/test.yaml',
   },
 };
 
@@ -33,7 +33,7 @@ exports[
   output: {
     title: 'Config schema error',
     summary: 'An error found in the config file',
-    text: 'You tried to add .github/test.yaml, but the config file must be .github/test.yml\n',
+    text: 'You tried to add .github/test.yaml, but the config file must be .github/test.yml',
   },
 };
 
