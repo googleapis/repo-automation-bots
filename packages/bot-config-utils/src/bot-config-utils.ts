@@ -193,29 +193,19 @@ async function validateFile<ConfigType>(
  * @template ConfigType
  */
 export class ConfigChecker<ConfigType> {
-  private schema: object;
-  private additionalSchemas: Array<object>;
   private configPath: string;
-  private badConfigFiles: Array<string>;
-  private configName: string;
-  private config: ConfigType | null;
+  private checker: MultiConfigChecker;
   constructor(
     schema: object,
     configFileName: string,
     additionalSchemas: Array<object> = []
   ) {
-    this.schema = schema;
-    this.additionalSchemas = additionalSchemas;
     this.configPath = `.github/${configFileName}`;
-    this.badConfigFiles = new Array<string>();
-    this.config = null;
-    const parsed = path.parse(this.configPath);
-    if (parsed.ext === '.yml') {
-      this.badConfigFiles.push(`${parsed.dir}/${parsed.name}.yaml`);
-    } else if (parsed.ext === '.yaml') {
-      this.badConfigFiles.push(`${parsed.dir}/${parsed.name}.yml`);
-    }
-    this.configName = parsed.name;
+    const config: Record<string, object> = {};
+    config[this.configPath] = schema;
+    const additionalConfig: Record<string, object[]> = {};
+    additionalConfig[this.configPath] = additionalSchemas;
+    this.checker = new MultiConfigChecker(config, additionalConfig);
   }
 
   /**
@@ -224,7 +214,11 @@ export class ConfigChecker<ConfigType> {
    * @return {ConfigType | null} When the validation fails, it returns null.
    */
   public getConfig(): ConfigType | null {
-    return this.config;
+    const config = this.checker.getConfig(this.configPath);
+    if (config) {
+      return config as unknown as ConfigType;
+    }
+    return null;
   }
 
   /**
@@ -247,78 +241,14 @@ export class ConfigChecker<ConfigType> {
     prNumber: number,
     logger: GCFLogger = defaultLogger
   ): Promise<void> {
-    // Sometimes the head branch is gone.
-    // In that case, the requests for fetching files might fail with 404.
-    // We can just ignore those cases.
-    try {
-      const listFilesParams = {
-        owner: owner,
-        repo: repo,
-        pull_number: prNumber,
-        per_page: 50, // Currently 30 is GitHub's default.
-      };
-      let errorText = '';
-      for await (const response of octokit.paginate.iterator(
-        octokit.rest.pulls.listFiles,
-        listFilesParams
-      )) {
-        for (const file of response.data) {
-          if (file.status === 'removed') {
-            continue;
-          }
-          logger.trace(`file: ${file.filename}`);
-          if (this.badConfigFiles.indexOf(file.filename) > -1) {
-            // Trying to add a config file with a wrong file extension.
-            errorText +=
-              `You tried to add ${file.filename}, ` +
-              `but the config file must be ${this.configPath}\n`;
-          }
-          if (file.filename === this.configPath) {
-            const blob = await octokit.git.getBlob({
-              owner: owner,
-              repo: repo,
-              file_sha: file.sha,
-            });
-            const fileContents = Buffer.from(
-              blob.data.content,
-              'base64'
-            ).toString('utf8');
-            const result = validateConfig<ConfigType>(
-              fileContents,
-              this.schema,
-              {
-                additionalSchemas: this.additionalSchemas,
-              }
-            );
-            if (result.isValid) {
-              this.config = result.config as ConfigType;
-            } else {
-              errorText += result.errorText;
-            }
-          }
-          if (errorText !== '') {
-            const checkParams = {
-              owner: owner,
-              repo: repo,
-              name: `${this.configName} config schema`,
-              conclusion: 'failure' as Conclusion,
-              head_sha: commitSha,
-              output: {
-                title: 'Config schema error',
-                summary: 'An error found in the config file',
-                text: errorText,
-              },
-            };
-            await octokit.checks.create(checkParams);
-          }
-        }
-      }
-    } catch (e) {
-      const err = e as RequestError;
-      if (err.status !== 404) {
-        throw err;
-      }
-    }
+    await this.checker.validateConfigChanges(
+      octokit,
+      owner,
+      repo,
+      commitSha,
+      prNumber,
+      logger
+    );
   }
 }
 
@@ -329,9 +259,10 @@ export class ConfigChecker<ConfigType> {
  */
 export class MultiConfigChecker {
   private schemasByFile: Record<string, object>;
+  private additionalSchemasByFile: Record<string, object[]>;
   private configNamesByFile: Record<string, string>;
   private badConfigFiles: Record<string, string>;
-  private logger: GCFLogger;
+  private parsedConfigs: Record<string, object>;
 
   /**
    * Instantiate a new MultiConfigChecker
@@ -341,12 +272,13 @@ export class MultiConfigChecker {
    */
   constructor(
     schemasByFile: Record<string, object>,
-    logger: GCFLogger = defaultLogger
+    additionalSchemasByFile: Record<string, object[]> = {}
   ) {
     this.schemasByFile = schemasByFile;
+    this.additionalSchemasByFile = additionalSchemasByFile;
     this.badConfigFiles = {};
     this.configNamesByFile = {};
-    this.logger = logger;
+    this.parsedConfigs = {};
     for (const configPath in schemasByFile) {
       const parsed = path.parse(configPath);
       if (parsed.ext === '.yml') {
@@ -356,6 +288,18 @@ export class MultiConfigChecker {
       }
       this.configNamesByFile[configPath] = parsed.name;
     }
+  }
+
+  /**
+   * Returns the parsed config for a given filename. Only available after
+   * the config file has been validated (and is valid).
+   * @param {string} filename The path of the config
+   */
+  public getConfig(filename: string): object | null {
+    if (this.parsedConfigs[filename]) {
+      return this.parsedConfigs[filename];
+    }
+    return null;
   }
 
   /**
@@ -376,7 +320,8 @@ export class MultiConfigChecker {
     owner: string,
     repo: string,
     commitSha: string,
-    prNumber: number
+    prNumber: number,
+    logger: GCFLogger = defaultLogger
   ): Promise<void> {
     const errorTextByFile: Record<string, string[]> = {};
     function addError(file: string, message: string) {
@@ -404,7 +349,7 @@ export class MultiConfigChecker {
           if (file.status === 'removed') {
             continue;
           }
-          this.logger.trace(`file: ${file.filename}`);
+          logger.trace(`file: ${file.filename}`);
           if (this.badConfigFiles[file.filename]) {
             // Trying to add a config file with a wrong file extension.
             addError(
@@ -415,6 +360,7 @@ export class MultiConfigChecker {
             );
           }
           const schema = this.schemasByFile[file.filename];
+          const additionalSchemas = this.additionalSchemasByFile[file.filename];
           if (schema) {
             const result = await validateFile(
               octokit,
@@ -423,10 +369,15 @@ export class MultiConfigChecker {
               file.sha,
               file.filename,
               schema,
-              {}
+              {
+                additionalSchemas,
+              }
             );
             if (!result.isValid && result.errorText) {
               addError(file.filename, result.errorText);
+            }
+            if (result.config) {
+              this.parsedConfigs[file.filename] = result.config as object;
             }
           }
         }
