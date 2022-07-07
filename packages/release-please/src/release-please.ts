@@ -26,7 +26,6 @@ import {RequestError} from '@octokit/request-error';
 import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {
   getConfig,
-  InvalidConfigurationFormat,
   MultiConfigChecker,
 } from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
@@ -552,26 +551,13 @@ const handler = (app: Probot) => {
     const schemasByFile: Record<string, object> = {
       '.github/release-please.yml': schema,
     };
-    let remoteConfiguration: ConfigurationOptions | null;
-    try {
-      // Look up latest config from the head branch (with validation).
-      remoteConfiguration = await getConfig<ConfigurationOptions>(
-        context.octokit,
-        headOwner,
-        headRepo,
-        WELL_KNOWN_CONFIGURATION_FILE,
-        {branch: headBranch}
-      );
-    } catch (e) {
-      if (e instanceof InvalidConfigurationFormat) {
-        // If the bot config is invalid, then the other handler will add a failing check
-        logger.warn(
-          `Invalid configuration in pull request head bot config: ${headOwner}/${headRepo}`
-        );
-        return;
-      }
-      throw e;
-    }
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      headOwner,
+      headRepo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {branch: headBranch}
+    );
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
