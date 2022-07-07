@@ -30,7 +30,7 @@ const FAKE_WORKSPACE = 'workspace';
 
 nock.disableNetConnect();
 
-describe.only('SplitRepo class', async () => {
+describe('SplitRepo class', async () => {
   beforeEach(async () => {
     directoryPath = path.join(__dirname, FAKE_WORKSPACE);
     repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
@@ -39,7 +39,6 @@ describe.only('SplitRepo class', async () => {
       await execSync(
         `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init --bare`
       );
-
     } catch (err) {
       if (!(err as any).toString().match(/File exists/)) {
         throw err;
