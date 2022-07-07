@@ -267,8 +267,8 @@ export class MultiConfigChecker {
   /**
    * Instantiate a new MultiConfigChecker
    *
-   * @param {Record<string, object} schemasByFile JSON schemas indexed by filename
-   * @param {GCFLogger} logger A custom logger. Defaults to the default gcf-utils logger
+   * @param {Record<string, object>} schemasByFile JSON schemas indexed by filename
+   * @param {Record<string, object[]>} additionalSchemasByFile Additional JSON schemas indexed by filename
    */
   constructor(
     schemasByFile: Record<string, object>,
@@ -312,6 +312,7 @@ export class MultiConfigChecker {
    * @param {string} repo - The name of the base repository of the PR.
    * @param {string} commitSha - The commit hash of the tip of the PR head.
    * @param {number} prNumber - The number of the PR.
+   * @param {GCFLogger} logger - Optional. Logger for debug output.
    *
    * @return {Promise<void>}
    */
