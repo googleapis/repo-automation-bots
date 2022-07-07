@@ -25,7 +25,6 @@ import {request} from '@octokit/request';
 import {RequestError} from '@octokit/request-error';
 import {getContextLogger, GCFLogger} from 'gcf-utils';
 import {
-  ConfigChecker,
   getConfig,
   InvalidConfigurationFormat,
   MultiConfigChecker,
@@ -52,7 +51,6 @@ import {
 } from './config-constants';
 import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
 import {addOrUpdateIssue} from './error-handling';
-import Ajv from 'ajv';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -336,89 +334,6 @@ async function runBranchConfiguration(
   await Runner.createPullRequests(manifest);
 }
 
-async function validateManifestConfigs(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  prNumber: number,
-  manifestConfigs: Set<string>,
-  manifestFiles: Set<string>,
-  logger: GCFLogger
-): Promise<string[]> {
-  const ajv = new Ajv();
-  const manifestValidator = ajv.compile(manifestSchema);
-  const configValidator = ajv.compile(configSchema);
-  const errorMessages: string[] = [];
-
-  // Sometimes the head branch is gone.
-  // In that case, the requests for fetching files might fail with 404.
-  // We can just ignore those cases.
-  try {
-    const listFilesParams = {
-      owner: owner,
-      repo: repo,
-      pull_number: prNumber,
-      per_page: 50, // Currently 30 is GitHub's default.
-    };
-    for await (const response of octokit.paginate.iterator(
-      octokit.rest.pulls.listFiles,
-      listFilesParams
-    )) {
-      for (const file of response.data) {
-        if (file.status === 'removed') {
-          continue;
-        }
-        logger.debug(`file: ${file.filename}`);
-        if (manifestConfigs.has(file.filename)) {
-          const blob = await octokit.git.getBlob({
-            owner: owner,
-            repo: repo,
-            file_sha: file.sha,
-          });
-          const fileContents = Buffer.from(
-            blob.data.content,
-            'base64'
-          ).toString('utf8');
-          if (!configValidator(fileContents) && configValidator.errors) {
-            // save error message
-            for (const error of configValidator.errors) {
-              logger.debug(
-                `config validation error: ${error.schemaPath}, ${error.message}`
-              );
-              errorMessages.push(`${error.schemaPath}: ${error.message}`);
-            }
-          }
-        } else if (manifestFiles.has(file.filename)) {
-          const blob = await octokit.git.getBlob({
-            owner: owner,
-            repo: repo,
-            file_sha: file.sha,
-          });
-          const fileContents = Buffer.from(
-            blob.data.content,
-            'base64'
-          ).toString('utf8');
-          if (!manifestValidator(fileContents) && manifestValidator.errors) {
-            // save error message
-            for (const error of manifestValidator.errors) {
-              logger.debug(
-                `manifest validation error: ${error.schemaPath}, ${error.message}`
-              );
-              errorMessages.push(`${error.schemaPath}: ${error.message}`);
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    const err = e as RequestError;
-    if (err.status !== 404) {
-      throw err;
-    }
-  }
-  return errorMessages;
-}
-
 const handler = (app: Probot) => {
   app.on('push', async context => {
     const logger = getContextLogger(context);
@@ -694,7 +609,6 @@ const handler = (app: Probot) => {
         throw e;
       }
     }
-    console.log(schemasByFile);
 
     const configChecker = new MultiConfigChecker(schemasByFile);
     const {owner, repo} = context.repo();
