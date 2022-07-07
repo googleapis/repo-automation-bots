@@ -30,6 +30,8 @@ import * as express from 'express';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
+// eslint-disable-next-line node/no-extraneous-import
+import {GraphqlResponseError} from '@octokit/graphql';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, buildRequestLogger} from './logging/gcf-logger';
@@ -1204,35 +1206,43 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
       }
     }
     return undefined;
-  } else if (!(e instanceof RequestError)) {
-    // other non-RequestErrors are not considered rate limit errors
+  } else if (e instanceof RequestError) {
+    if (e.status !== 403) {
+      return undefined;
+    }
+
+    if (
+      !!e.message.match(RATE_LIMIT_MESSAGE) ||
+      e.response.headers['x-ratelimit-remaining'] === '0'
+    ) {
+      const messageMatch = e.message.match(RATE_LIMIT_REGEX);
+      return {
+        userId: messageMatch ? parseInt(messageMatch[1]) : undefined,
+        remaining: parseInt(e.response.headers['x-ratelimit-remaining']),
+        reset: parseInt(e.response.headers['x-ratelimit-reset']),
+        limit: parseInt(e.response.headers['x-ratelimit-limit']),
+        resource:
+          (e.response.headers['x-ratelimit-resource'] as string) || undefined,
+      };
+    } else if (e.message.includes(SECONDARY_RATE_LIMIT_MESSAGE)) {
+      // Secondary rate limit errors do not return remaining quotas
+      return {
+        resource: 'secondary',
+      };
+    }
+  } else if (e instanceof GraphqlResponseError) {
+    if (e.headers['x-ratelimit-remaining'] === '0') {
+      return {
+        remaining: parseInt(e.headers['x-ratelimit-remaining']),
+        reset: parseInt(e.headers['x-ratelimit-reset']),
+        limit: parseInt(e.headers['x-ratelimit-limit']),
+        resource: (e.headers['x-ratelimit-resource'] as string) || undefined,
+      };
+    }
     return undefined;
   }
 
-  if (e.status !== 403) {
-    return undefined;
-  }
-
-  if (
-    !!e.message.match(RATE_LIMIT_MESSAGE) ||
-    e.response.headers['x-ratelimit-remaining'] === '0'
-  ) {
-    const messageMatch = e.message.match(RATE_LIMIT_REGEX);
-    return {
-      userId: messageMatch ? parseInt(messageMatch[1]) : undefined,
-      remaining: parseInt(e.response.headers['x-ratelimit-remaining']),
-      reset: parseInt(e.response.headers['x-ratelimit-reset']),
-      limit: parseInt(e.response.headers['x-ratelimit-limit']),
-      resource:
-        (e.response.headers['x-ratelimit-resource'] as string) || undefined,
-    };
-  } else if (e.message.includes(SECONDARY_RATE_LIMIT_MESSAGE)) {
-    // Secondary rate limit errors do not return remaining quotas
-    return {
-      resource: 'secondary',
-    };
-  }
-
+  // other non-RequestErrors are not considered rate limit errors
   return undefined;
 }
 
