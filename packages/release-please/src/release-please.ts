@@ -24,7 +24,12 @@ import {request} from '@octokit/request';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {getContextLogger, GCFLogger} from 'gcf-utils';
-import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {
+  ConfigChecker,
+  getConfig,
+  InvalidConfigurationFormat,
+  MultiConfigChecker,
+} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {
   Errors,
@@ -35,6 +40,8 @@ import {
   ReleaserConfig,
   getReleaserTypes,
   setLogger,
+  manifestSchema,
+  configSchema,
 } from 'release-please';
 import schema from './config-schema.json';
 import {
@@ -45,6 +52,7 @@ import {
 } from './config-constants';
 import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
 import {addOrUpdateIssue} from './error-handling';
+import Ajv from 'ajv';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -55,6 +63,8 @@ interface GitHubAPI {
   graphql: Function;
   request: RequestFunctionType;
 }
+const DEFAULT_RELEASE_PLEASE_CONFIG = 'release-please-config.json';
+const DEFAULT_RELEASE_PLEASE_MANIFEST = '.release-please-manifest.json';
 
 class BotConfigurationError extends Error {}
 
@@ -326,6 +336,89 @@ async function runBranchConfiguration(
   await Runner.createPullRequests(manifest);
 }
 
+async function validateManifestConfigs(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  manifestConfigs: Set<string>,
+  manifestFiles: Set<string>,
+  logger: GCFLogger
+): Promise<string[]> {
+  const ajv = new Ajv();
+  const manifestValidator = ajv.compile(manifestSchema);
+  const configValidator = ajv.compile(configSchema);
+  const errorMessages: string[] = [];
+
+  // Sometimes the head branch is gone.
+  // In that case, the requests for fetching files might fail with 404.
+  // We can just ignore those cases.
+  try {
+    const listFilesParams = {
+      owner: owner,
+      repo: repo,
+      pull_number: prNumber,
+      per_page: 50, // Currently 30 is GitHub's default.
+    };
+    for await (const response of octokit.paginate.iterator(
+      octokit.rest.pulls.listFiles,
+      listFilesParams
+    )) {
+      for (const file of response.data) {
+        if (file.status === 'removed') {
+          continue;
+        }
+        logger.debug(`file: ${file.filename}`);
+        if (manifestConfigs.has(file.filename)) {
+          const blob = await octokit.git.getBlob({
+            owner: owner,
+            repo: repo,
+            file_sha: file.sha,
+          });
+          const fileContents = Buffer.from(
+            blob.data.content,
+            'base64'
+          ).toString('utf8');
+          if (!configValidator(fileContents) && configValidator.errors) {
+            // save error message
+            for (const error of configValidator.errors) {
+              logger.debug(
+                `config validation error: ${error.schemaPath}, ${error.message}`
+              );
+              errorMessages.push(`${error.schemaPath}: ${error.message}`);
+            }
+          }
+        } else if (manifestFiles.has(file.filename)) {
+          const blob = await octokit.git.getBlob({
+            owner: owner,
+            repo: repo,
+            file_sha: file.sha,
+          });
+          const fileContents = Buffer.from(
+            blob.data.content,
+            'base64'
+          ).toString('utf8');
+          if (!manifestValidator(fileContents) && manifestValidator.errors) {
+            // save error message
+            for (const error of manifestValidator.errors) {
+              logger.debug(
+                `manifest validation error: ${error.schemaPath}, ${error.message}`
+              );
+              errorMessages.push(`${error.schemaPath}: ${error.message}`);
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    const err = e as RequestError;
+    if (err.status !== 404) {
+      throw err;
+    }
+  }
+  return errorMessages;
+}
+
 const handler = (app: Probot) => {
   app.on('push', async context => {
     const logger = getContextLogger(context);
@@ -527,19 +620,90 @@ const handler = (app: Probot) => {
       url: context.payload.repository.releases_url,
     });
   });
+
   // Check the config schema on PRs.
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
-    const configChecker = new ConfigChecker<ConfigurationOptions>(
-      schema,
-      WELL_KNOWN_CONFIGURATION_FILE
-    );
+    const logger = getContextLogger(context);
+    const repoUrl = context.payload.repository.full_name;
+    const baseBranch = context.payload.pull_request.base.ref;
+    const prNumber = context.payload.pull_request.number;
+    const headSha = context.payload.pull_request.head.sha;
+    const defaultBranch = context.payload.pull_request.base.repo.default_branch;
+
+    const headOwner = context.payload.pull_request.head.repo.owner.login;
+    const headRepo = context.payload.pull_request.head.repo.name;
+    const headBranch = context.payload.pull_request.head.ref;
+
+    const schemasByFile: Record<string, object> = {
+      '.github/release-please.yml': schema,
+    };
+    let remoteConfiguration: ConfigurationOptions | null;
+    try {
+      // Look up latest config from the head branch (with validation).
+      remoteConfiguration = await getConfig<ConfigurationOptions>(
+        context.octokit,
+        headOwner,
+        headRepo,
+        WELL_KNOWN_CONFIGURATION_FILE,
+        {branch: headBranch}
+      );
+    } catch (e) {
+      if (e instanceof InvalidConfigurationFormat) {
+        // If the bot config is invalid, then the other handler will add a failing check
+        logger.warn(
+          `Invalid configuration in pull request head bot config: ${headOwner}/${headRepo}`
+        );
+        return;
+      }
+      throw e;
+    }
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      logger.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+    if (!remoteConfiguration.primaryBranch) {
+      remoteConfiguration.primaryBranch = defaultBranch;
+    }
+
+    try {
+      const branchConfigurations = findBranchConfiguration(
+        baseBranch,
+        remoteConfiguration
+      );
+      logger.info(
+        `found ${branchConfigurations.length} configuration(s) for ${baseBranch}`
+      );
+
+      // Collect all manifest configs
+      for (const branchConfig of branchConfigurations) {
+        if (branchConfig.manifest) {
+          schemasByFile[
+            branchConfig.manifestConfig || DEFAULT_RELEASE_PLEASE_CONFIG
+          ] = configSchema;
+          schemasByFile[
+            branchConfig.manifestFile || DEFAULT_RELEASE_PLEASE_MANIFEST
+          ] = manifestSchema;
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        logger.warn(e);
+      } else {
+        throw e;
+      }
+    }
+    console.log(schemasByFile);
+
+    const configChecker = new MultiConfigChecker(schemasByFile);
     const {owner, repo} = context.repo();
     await configChecker.validateConfigChanges(
       context.octokit,
       owner,
       repo,
-      context.payload.pull_request.head.sha,
-      context.payload.pull_request.number
+      headSha,
+      prNumber
     );
   });
 
