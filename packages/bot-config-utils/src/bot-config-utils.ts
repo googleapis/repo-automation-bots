@@ -147,7 +147,7 @@ async function validateFile<ConfigType>(
   let candidate: ConfigType;
   const parsedFile = path.parse(filename);
   switch (parsedFile.ext) {
-    case 'json':
+    case '.json':
       try {
         candidate = JSON.parse(fileContents) as ConfigType;
       } catch (e) {
@@ -159,8 +159,8 @@ async function validateFile<ConfigType>(
         };
       }
       break;
-    case 'yaml':
-    case 'yml':
+    case '.yaml':
+    case '.yml':
       try {
         // When the config file is empty, the result of `yaml.load` is
         // undefined. We use an empty object in that case because bot

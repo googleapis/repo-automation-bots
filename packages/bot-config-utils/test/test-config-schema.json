@@ -6,9 +6,9 @@
     "description": "Schema for test app configuration",
     "additionalProperties": false,
     "properties": {
-	"testConfig": {
-	    "description": "The test config",
-	    "type": "string",
-	}
+        "testConfig": {
+            "description": "The test config",
+            "type": "string"
+        }
     }
 }
