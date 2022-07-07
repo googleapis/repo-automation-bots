@@ -88,12 +88,7 @@ export async function openABranch(repoName: string, directoryPath: string) {
   const branchName = `${BRANCH_NAME_PREFIX}-${UUID}`;
   logger.info(`Opening branch ${branchName} on ${repoName}`);
   try {
-    // Need to get contents first, to make sure we're not overwriting any other information
-    const contents = getWellKnownFileContents(
-      directoryPath,
-      INTER_CONTAINER_VARS_FILE
-    );
-    contents.branchName = branchName;
+    const contents = {branchName};
     fs.writeFileSync(
       `${directoryPath}/${INTER_CONTAINER_VARS_FILE}`,
       JSON.stringify(contents, null, 4)
