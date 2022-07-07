@@ -15,6 +15,7 @@
 import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
 import {addOrUpdateIssue} from '../src/issue-utils';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
