@@ -30,6 +30,9 @@
 # Fail immediately.
 set -e
 
+# googleapis uses bazelisk to manage the bazel version
+alias bazel=$(which bazelisk)
+
 # path to clone of https://github.com/googleapis/googleapis with
 #   with the correct source branch checked out.
 export GOOGLEAPIS=${GOOGLEAPIS:=`realpath googleapis`}
