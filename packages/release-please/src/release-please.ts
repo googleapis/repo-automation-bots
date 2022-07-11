@@ -44,7 +44,7 @@ import {
   DEFAULT_CONFIGURATION,
 } from './config-constants';
 import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
-import {addOrUpdateIssue} from './error-handling';
+import {addOrUpdateIssue} from '@google-automations/issue-utils';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
