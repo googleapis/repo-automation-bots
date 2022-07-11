@@ -79,7 +79,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
         targets=$(cd "$GOOGLEAPIS" \
-        && /tools/bazelisk query $BAZEL_FLAGS  'filter("-(go|csharp|java|php|ruby|nodejs|py)$", kind("rule", //...:*))' \
+        && bazelisk query $BAZEL_FLAGS  'filter("-(go|csharp|java|php|ruby|nodejs|py)$", kind("rule", //...:*))' \
         | grep -v -E ":(proto|grpc|gapic)-.*-java$")
     else
         targets="$BUILD_TARGETS"
@@ -94,12 +94,12 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     else
         fetch_targets="$FETCH_TARGETS"
     fi
-    (cd "$GOOGLEAPIS" && /tools/bazelisk fetch $BAZEL_FLAGS $fetch_targets)
+    (cd "$GOOGLEAPIS" && bazelisk fetch $BAZEL_FLAGS $fetch_targets)
     # Some API always fails to build.  One failing API should not prevent all other
     # APIs from being updated.
     set +e
     # Invoke bazel build.
-    (cd "$GOOGLEAPIS" && /tools/bazelisk build $BAZEL_FLAGS -k $targets)
+    (cd "$GOOGLEAPIS" && bazelisk build $BAZEL_FLAGS -k $targets)
 
     # Clear out the existing contents of googleapis-gen before we copy back into it,
     # so that deleted APIs will be be removed.
