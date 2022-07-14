@@ -29,11 +29,12 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.0.2",
+    "@google-automations/issue-utils": "^1.0.0",
     "@google-automations/label-utils": "^2.0.2",
     "@octokit/rest": "^18.12.0",
     "@octokit/webhooks": "^10.0.0",
-    "gcf-utils": "^13.8.1",
-    "release-please": "^13.18.3"
+    "gcf-utils": "^13.8.3",
+    "release-please": "^13.19.3"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",

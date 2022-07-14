@@ -40,17 +40,6 @@ describe('MonoRepo class', async () => {
       await execSync(
         `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`
       );
-      fs.writeFileSync(
-        `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
-        JSON.stringify(
-          {
-            branchName: 'specialName',
-            owlbotYamlPath: 'packages/google-cloud-kms/.OwlBot.yaml',
-          },
-          null,
-          4
-        )
-      );
     } catch (err) {
       if (!(err as any).toString().match(/File exists/)) {
         throw err;

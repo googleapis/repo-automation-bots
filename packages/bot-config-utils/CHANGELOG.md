@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.1.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.0.2...bot-config-utils-v4.1.0) (2022-07-07)
+
+
+### Features
+
+* add MultiConfigChecker to validate multiple schemas in a single pass ([#4045](https://github.com/googleapis/repo-automation-bots/issues/4045)) ([542b050](https://github.com/googleapis/repo-automation-bots/commit/542b050c0023dfc5248e2a11c633dc600c6ee12b))
+* support validating JSON files as well ([542b050](https://github.com/googleapis/repo-automation-bots/commit/542b050c0023dfc5248e2a11c633dc600c6ee12b))
+
 ### [4.0.2](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.0.1...bot-config-utils-v4.0.2) (2022-05-10)
 
 

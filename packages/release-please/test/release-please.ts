@@ -32,7 +32,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
-import * as errorHandlingModule from '../src/error-handling';
+import * as errorHandlingModule from '@google-automations/issue-utils';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();

@@ -1,28 +1,24 @@
 {
-  "name": "@google-automations/bot-config-utils",
-  "version": "4.1.0",
-  "description": "Utilities for github bot config",
+  "name": "@google-automations/issue-utils",
+  "version": "1.0.0",
+  "description": "Utilities for github issues",
   "scripts": {
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
     "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
-    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
     "fix": "gts fix",
     "lint": "gts check"
   },
-  "main": "./build/src/bot-config-utils.js",
+  "main": "./build/src/issue-utils.js",
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "ajv": "^8.11.0",
-    "js-yaml": "^4.1.0",
-    "gcf-utils": "^13.8.1"
+    "gcf-utils": "^13.8.2"
   },
   "devDependencies": {
-    "@octokit/types": "^6.35.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.0.0",
     "@types/sinon": "^10.0.11",
@@ -40,10 +36,10 @@
     "node": ">= 12.18.2"
   },
   "keywords": [
-    "Bot config",
+    "github issues",
     "Probot"
   ],
-  "author": "Takashi Matsuo <tmatsuo@google.com>",
+  "author": "Jeff Ching <chingor@google.com>",
   "license": "Apache-2.0",
   "files": [
     "build/src"

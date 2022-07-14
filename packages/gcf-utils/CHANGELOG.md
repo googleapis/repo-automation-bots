@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.8.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.8.2...gcf-utils-v13.8.3) (2022-07-07)
+
+
+### Bug Fixes
+
+* handle GraphqlResponseErrors that are rate limit errors ([#4048](https://github.com/googleapis/repo-automation-bots/issues/4048)) ([236d7c6](https://github.com/googleapis/repo-automation-bots/commit/236d7c60f241c70665f82a048cebc00761393761))
+
 ## [13.8.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.8.1...gcf-utils-v13.8.2) (2022-06-22)
 
 
