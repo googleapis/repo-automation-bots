@@ -55,7 +55,7 @@ export async function getLatestShaGoogleapisGen(octokit: Octokit) {
     owner: ORG,
     repo: 'googleapis-gen',
   });
-  return commits[commits.length - 1].sha;
+  return commits[0].sha;
 }
 
 /**
