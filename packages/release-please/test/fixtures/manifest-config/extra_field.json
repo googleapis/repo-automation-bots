@@ -1,0 +1,6 @@
+{
+  "extra-field": "this should not be allowed",
+  "packages": {
+    "foo": {}
+  }
+}

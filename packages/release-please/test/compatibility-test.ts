@@ -40,7 +40,11 @@ const PR_NUMBER = 12;
 
 // Emulate getContent and getBlob.
 function createConfigResponse(configFile: string) {
-  const config = fs.readFileSync(resolve(fixturesPath, 'config', configFile));
+  return createBlobResponse(`config/${configFile}`);
+}
+
+function createBlobResponse(configFile: string) {
+  const config = fs.readFileSync(resolve(fixturesPath, configFile));
   const base64Config = config.toString('base64');
   return {
     size: base64Config.length,
@@ -58,17 +62,23 @@ function fetchConfig(configFile: string) {
     .reply(200, createConfigResponse(configFile));
 }
 
+const defaultFetchFiles = [
+  {
+    filename: `.github/${WELL_KNOWN_CONFIGURATION_FILE}`,
+    sha: 'testsha',
+  },
+];
+
 // Emulate the given config file is modified in the PR.
-function fetchFilesInPR(configFile: string) {
+function fetchFilesInPR(configFile: string, files = defaultFetchFiles) {
   return nock('https://api.github.com')
     .get(`/repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}/files?per_page=50`)
-    .reply(200, [
-      {
-        filename: `.github/${WELL_KNOWN_CONFIGURATION_FILE}`,
-        sha: 'testsha',
-      },
-    ])
+    .reply(200, files)
     .get(`/repos/${OWNER}/${REPO}/git/blobs/testsha`)
+    .reply(200, createConfigResponse(configFile))
+    .get(
+      `/repos/${OWNER}/${REPO}/contents/.github%2Frelease-please.yml?ref=mockpr`
+    )
     .reply(200, createConfigResponse(configFile));
 }
 
@@ -111,6 +121,106 @@ describe('release-please bot', () => {
           return true;
         })
         .reply(200);
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      scope.done();
+    });
+    it('should create a failing status check for broken default manifest configs', async () => {
+      const scope = fetchFilesInPR('manifest.yml', [
+        {
+          filename: `.github/${WELL_KNOWN_CONFIGURATION_FILE}`,
+          sha: 'testsha',
+        },
+        {
+          filename: 'release-please-config.json',
+          sha: 'configsha',
+        },
+        {
+          filename: '.release-please-manifest.json',
+          sha: 'manifestsha',
+        },
+      ])
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/configsha`)
+        .reply(200, createBlobResponse('manifest-config/invalid.json'))
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/manifestsha`)
+        .reply(200, createBlobResponse('manifest/invalid.json'))
+        .post(`/repos/${OWNER}/${REPO}/check-runs`, body => {
+          snapshot(body);
+          return true;
+        })
+        .twice()
+        .reply(200);
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      scope.done();
+    });
+    it('should allow valid default manifest configs', async () => {
+      const scope = fetchFilesInPR('manifest.yml', [
+        {
+          filename: `.github/${WELL_KNOWN_CONFIGURATION_FILE}`,
+          sha: 'testsha',
+        },
+        {
+          filename: 'release-please-config.json',
+          sha: 'configsha',
+        },
+        {
+          filename: '.release-please-manifest.json',
+          sha: 'manifestsha',
+        },
+      ])
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/configsha`)
+        .reply(200, createBlobResponse('manifest-config/valid.json'))
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/manifestsha`)
+        .reply(200, createBlobResponse('manifest/valid.json'));
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      scope.done();
+    });
+    it('should create a failing status check for broken custom manifest configs', async () => {
+      const scope = fetchFilesInPR('manifest_custom_paths.yml', [
+        {
+          filename: `.github/${WELL_KNOWN_CONFIGURATION_FILE}`,
+          sha: 'testsha',
+        },
+        {
+          filename: 'path/to/config.json',
+          sha: 'configsha',
+        },
+        {
+          filename: 'path/to/manifest.json',
+          sha: 'manifestsha',
+        },
+      ])
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/configsha`)
+        .reply(200, createBlobResponse('manifest-config/invalid.json'))
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/manifestsha`)
+        .reply(200, createBlobResponse('manifest/invalid.json'))
+        .post(`/repos/${OWNER}/${REPO}/check-runs`, body => {
+          snapshot(body);
+          return true;
+        })
+        .twice()
+        .reply(200);
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      scope.done();
+    });
+    it('should allow valid custom manifest configs', async () => {
+      const scope = fetchFilesInPR('manifest_custom_paths.yml', [
+        {
+          filename: `.github/${WELL_KNOWN_CONFIGURATION_FILE}`,
+          sha: 'testsha',
+        },
+        {
+          filename: 'path/to/config.json',
+          sha: 'configsha',
+        },
+        {
+          filename: 'path/to/manifest.json',
+          sha: 'manifestsha',
+        },
+      ])
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/configsha`)
+        .reply(200, createBlobResponse('manifest-config/valid.json'))
+        .get(`/repos/${OWNER}/${REPO}/git/blobs/manifestsha`)
+        .reply(200, createBlobResponse('manifest/valid.json'));
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       scope.done();
     });

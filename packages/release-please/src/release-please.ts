@@ -24,7 +24,10 @@ import {request} from '@octokit/request';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {getContextLogger, GCFLogger} from 'gcf-utils';
-import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {
+  getConfig,
+  MultiConfigChecker,
+} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {
   Errors,
@@ -35,6 +38,8 @@ import {
   ReleaserConfig,
   getReleaserTypes,
   setLogger,
+  manifestSchema,
+  configSchema,
 } from 'release-please';
 import schema from './config-schema.json';
 import {
@@ -55,6 +60,8 @@ interface GitHubAPI {
   graphql: Function;
   request: RequestFunctionType;
 }
+const DEFAULT_RELEASE_PLEASE_CONFIG = 'release-please-config.json';
+const DEFAULT_RELEASE_PLEASE_MANIFEST = '.release-please-manifest.json';
 
 class BotConfigurationError extends Error {}
 
@@ -527,19 +534,82 @@ const handler = (app: Probot) => {
       url: context.payload.repository.releases_url,
     });
   });
+
   // Check the config schema on PRs.
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
-    const configChecker = new ConfigChecker<ConfigurationOptions>(
-      schema,
-      WELL_KNOWN_CONFIGURATION_FILE
+    const logger = getContextLogger(context);
+    const repoUrl = context.payload.repository.full_name;
+    const baseBranch = context.payload.pull_request.base.ref;
+    const prNumber = context.payload.pull_request.number;
+    const headSha = context.payload.pull_request.head.sha;
+    const defaultBranch = context.payload.pull_request.base.repo.default_branch;
+
+    const headOwner = context.payload.pull_request.head.repo.owner.login;
+    const headRepo = context.payload.pull_request.head.repo.name;
+    const headBranch = context.payload.pull_request.head.ref;
+
+    const schemasByFile: Record<string, object> = {
+      '.github/release-please.yml': schema,
+    };
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      headOwner,
+      headRepo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {branch: headBranch}
     );
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      logger.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+    if (!remoteConfiguration.primaryBranch) {
+      remoteConfiguration.primaryBranch = defaultBranch;
+    }
+
+    // Use a try/catch here because we are validating the `.github/release-please.yml`
+    // file after the fact so it's possible that the config does not match as expected
+    // (e.g. if `branches` is not an array)
+    try {
+      const branchConfigurations = findBranchConfiguration(
+        baseBranch,
+        remoteConfiguration
+      );
+      logger.info(
+        `found ${branchConfigurations.length} configuration(s) for ${baseBranch}`
+      );
+
+      // Collect all manifest configs
+      for (const branchConfig of branchConfigurations) {
+        if (branchConfig.manifest) {
+          schemasByFile[
+            branchConfig.manifestConfig || DEFAULT_RELEASE_PLEASE_CONFIG
+          ] = configSchema;
+          schemasByFile[
+            branchConfig.manifestFile || DEFAULT_RELEASE_PLEASE_MANIFEST
+          ] = manifestSchema;
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        logger.warn(e);
+      } else {
+        throw e;
+      }
+    }
+
+    // The config checker fetches and validates each touched config file
+    // against the specified schema. It creates a failing commit check for
+    // each invalid file.
+    const configChecker = new MultiConfigChecker(schemasByFile);
     const {owner, repo} = context.repo();
     await configChecker.validateConfigChanges(
       context.octokit,
       owner,
       repo,
-      context.payload.pull_request.head.sha,
-      context.payload.pull_request.number
+      headSha,
+      prNumber
     );
   });
 
