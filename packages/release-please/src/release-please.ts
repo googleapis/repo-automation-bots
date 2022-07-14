@@ -568,6 +568,9 @@ const handler = (app: Probot) => {
       remoteConfiguration.primaryBranch = defaultBranch;
     }
 
+    // Use a try/catch here because we are validating the `.github/release-please.yml`
+    // file after the fact so it's possible that the config does not match as expected
+    // (e.g. if `branches` is not an array)
     try {
       const branchConfigurations = findBranchConfiguration(
         baseBranch,
@@ -596,6 +599,9 @@ const handler = (app: Probot) => {
       }
     }
 
+    // The config checker fetches and validates each touched config file
+    // against the specified schema. It creates a failing commit check for
+    // each invalid file.
     const configChecker = new MultiConfigChecker(schemasByFile);
     const {owner, repo} = context.repo();
     await configChecker.validateConfigChanges(
