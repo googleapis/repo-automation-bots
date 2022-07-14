@@ -17,6 +17,9 @@ commandTests:
 - name: "bazel version"
   command: ["bazel", "--version"]
   expectedOutput: ["bazel.*.*"]
+- name: "bazelisk version"
+  command: ["bazelisk", "--version"]
+  expectedOutput: ["bazel.*.*"]
 - name: "git version"
   command: ["git", "--version"]
   expectedOutput: ["git version.*.*"]

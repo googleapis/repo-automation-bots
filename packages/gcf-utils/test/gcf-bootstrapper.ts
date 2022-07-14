@@ -25,6 +25,8 @@ import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
+// eslint-disable-next-line node/no-extraneous-import
+import {GraphqlResponseError} from '@octokit/graphql';
 import {Options, ApplicationFunction} from 'probot';
 import * as loggerModule from '../src/logging/gcf-logger';
 import * as express from 'express';
@@ -609,6 +611,57 @@ describe('GCFBootstrapper', () => {
                 method: 'POST',
                 url: '',
               },
+            }
+          );
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 503);
+    });
+
+    it('returns 503 on graphql rate limit errors', async () => {
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new GraphqlResponseError(
+            {
+              method: 'GET',
+              url: 'fake',
+            },
+            {
+              'x-ratelimit-remaining': '0',
+              'x-ratelimit-reset': '1653880306',
+              'x-ratelimit-limit': '12500',
+              'x-ratelimit-resource': 'graphql',
+            },
+            {
+              data: {},
+              errors: [
+                {
+                  type: 'RATE_LIMITED',
+                  message:
+                    'API rate limit exceeded for installation ID 1848216',
+                  path: ['fake'],
+                  extensions: {},
+                  locations: [{line: 1, column: 2}],
+                },
+              ],
             }
           );
         });

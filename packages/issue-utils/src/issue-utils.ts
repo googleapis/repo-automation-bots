@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {GCFLogger} from 'gcf-utils';
+import {GCFLogger, logger as defaultLogger} from 'gcf-utils';
 
 export interface Issue {
   owner: string;
@@ -102,7 +102,7 @@ export async function addOrUpdateIssue(
   title: string,
   body: string,
   labels: string[],
-  logger: GCFLogger
+  logger: GCFLogger = defaultLogger
 ): Promise<Issue> {
   const issueOpener = await getAuthenticatedBotUser(octokit);
   const issues = await findOpenIssueByCreator(
