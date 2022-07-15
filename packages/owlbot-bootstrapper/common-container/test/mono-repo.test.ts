@@ -125,17 +125,29 @@ describe('MonoRepo class', async () => {
 
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
     await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = utils.getWellKnownFileContents(
+    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    const contents = utils.getWellKnownFileContents(
       directoryPath,
       utils.INTER_CONTAINER_VARS_FILE
-    ).branchName;
-    console.log(branchName);
-    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    );
+    contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
+    fs.writeFileSync(
+      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      JSON.stringify(contents, null, 4)
+    );
+    const interContainerVars = utils.getWellKnownFileContents(
+      directoryPath,
+      utils.INTER_CONTAINER_VARS_FILE
+    );
+    const copyTagInfo = utils.getCopyTagText(
+      '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+      interContainerVars.owlbotYamlPath
+    );
     await monoRepo._commitAndPushToBranch(
-      branchName,
+      interContainerVars.branchName,
       FAKE_REPO_NAME,
       directoryPath,
-      'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
+      copyTagInfo
     );
 
     const stdoutBranch = execSync('git branch', {
@@ -147,11 +159,11 @@ describe('MonoRepo class', async () => {
     });
 
     const stdoutReadmeExists = execSync(
-      `git cat-file -e origin/${branchName}:README.md && echo README exists`,
+      `git cat-file -e origin/${interContainerVars.branchName}:README.md && echo README exists`,
       {cwd: `${directoryPath}/${FAKE_REPO_NAME}`}
     );
 
-    assert.ok(stdoutBranch.includes(branchName));
+    assert.ok(stdoutBranch.includes(interContainerVars.branchName));
     assert.ok(
       stdoutCommit
         .toString('utf-8')
@@ -204,8 +216,6 @@ describe('MonoRepo class', async () => {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
     });
 
-    console.log('stdoutCommit');
-    console.log(stdoutCommit.toString('utf8'));
     assert.ok(stdoutBranch.includes('owlbot-bootstrapper-initial-PR'));
     assert.ok(
       stdoutCommit

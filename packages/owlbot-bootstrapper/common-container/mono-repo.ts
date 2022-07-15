@@ -119,7 +119,6 @@ export class MonoRepo {
       directoryPath,
       INTER_CONTAINER_VARS_FILE
     );
-    console.log(interContainerVars);
     const latestSha = await getLatestShaGoogleapisGen(this.octokit);
     const copyTagText = getCopyTagText(
       latestSha,
