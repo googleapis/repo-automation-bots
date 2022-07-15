@@ -72,7 +72,7 @@ export async function getPRText(octokit: Octokit, owlbotYamlPath: string) {
   const copyTagInfo = `{"p":"${owlbotYamlPath}","h":"${latestSha}"}`;
   const copyTagInfoEncoded = Buffer.from(copyTagInfo).toString('base64');
 
-  return `${REGENERATE_CHECKBOX_TEXT}\nSource-Link: googleapis/googleapis-gen@${latestSha}\nCopy-Tag:\n${copyTagInfoEncoded}`;
+  return `${REGENERATE_CHECKBOX_TEXT}\nSource-Link: https://googleapis/googleapis-gen@${latestSha}\nCopy-Tag:\n${copyTagInfoEncoded}`;
 }
 
 /**
