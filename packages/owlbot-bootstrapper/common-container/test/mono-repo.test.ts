@@ -100,8 +100,6 @@ describe('MonoRepo class', async () => {
 
   it('opens a PR against the main branch', async () => {
     const scope = nock('https://api.github.com')
-      .get('/repos/googleapis/googleapis-gen/commits')
-      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
       .post('/repos/googleapis/nodejs-kms/pulls')
       .reply(201);
 
@@ -110,7 +108,8 @@ describe('MonoRepo class', async () => {
       'specialName',
       'nodejs-kms',
       'google.cloud.kms.v1',
-      directoryPath
+      '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+      'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
     );
     scope.done();
   });
@@ -126,15 +125,17 @@ describe('MonoRepo class', async () => {
 
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
     await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = await utils.getWellKnownFileContents(
+    const branchName = utils.getWellKnownFileContents(
       directoryPath,
       utils.INTER_CONTAINER_VARS_FILE
     ).branchName;
+    console.log(branchName);
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     await monoRepo._commitAndPushToBranch(
       branchName,
       FAKE_REPO_NAME,
-      directoryPath
+      directoryPath,
+      'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
     );
 
     const stdoutBranch = execSync('git branch', {
@@ -151,7 +152,18 @@ describe('MonoRepo class', async () => {
     );
 
     assert.ok(stdoutBranch.includes(branchName));
-    assert.ok(stdoutCommit.includes('feat: initial generation of library'));
+    assert.ok(
+      stdoutCommit
+        .toString('utf-8')
+        .includes('feat: initial generation of library')
+    );
+    assert.ok(
+      stdoutCommit
+        .toString('utf8')
+        .includes(
+          'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
+        )
+    );
     assert.ok(stdoutReadmeExists.includes('README exists'));
   });
 
@@ -163,7 +175,6 @@ describe('MonoRepo class', async () => {
       'google.cloud.kms.v1',
       octokit
     );
-
     const scope = nock('https://api.github.com')
       .get('/repos/googleapis/googleapis-gen/commits')
       .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
@@ -172,6 +183,16 @@ describe('MonoRepo class', async () => {
 
     monoRepo.repoName = FAKE_REPO_NAME;
     await monoRepo.cloneRepoAndOpenBranch(directoryPath);
+    const contents = utils.getWellKnownFileContents(
+      directoryPath,
+      utils.INTER_CONTAINER_VARS_FILE
+    );
+    contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
+    fs.writeFileSync(
+      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      JSON.stringify(contents, null, 4)
+    );
+
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     await monoRepo.pushToBranchAndOpenPR(directoryPath);
 
@@ -183,8 +204,21 @@ describe('MonoRepo class', async () => {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
     });
 
+    console.log('stdoutCommit');
+    console.log(stdoutCommit.toString('utf8'));
     assert.ok(stdoutBranch.includes('owlbot-bootstrapper-initial-PR'));
-    assert.ok(stdoutCommit.includes('feat: initial generation of library'));
+    assert.ok(
+      stdoutCommit
+        .toString('utf-8')
+        .includes('feat: initial generation of library')
+    );
+    assert.ok(
+      stdoutCommit
+        .toString('utf8')
+        .includes(
+          'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
+        )
+    );
     scope.done();
   });
 });

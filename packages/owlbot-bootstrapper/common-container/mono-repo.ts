@@ -21,6 +21,8 @@ import {
   cmd,
   checkIfGitIsInstalled,
   INTER_CONTAINER_VARS_FILE,
+  getCopyTagText,
+  getLatestShaGoogleapisGen,
 } from './utils';
 import {logger} from 'gcf-utils';
 
@@ -97,10 +99,11 @@ export class MonoRepo {
   public async _commitAndPushToBranch(
     branchName: string,
     repoName: string,
-    directoryPath: string
+    directoryPath: string,
+    copyTagText: string
   ) {
     cmd(
-      `git add .; git commit -m "feat: initial generation of library"; git push -u origin ${branchName}`,
+      `git add .; git commit -m "feat: initial generation of library\n${copyTagText}"; git push -u origin ${branchName}`,
       {
         cwd: `${directoryPath}/${repoName}`,
       }
@@ -116,18 +119,26 @@ export class MonoRepo {
       directoryPath,
       INTER_CONTAINER_VARS_FILE
     );
+    console.log(interContainerVars);
+    const latestSha = await getLatestShaGoogleapisGen(this.octokit);
+    const copyTagText = getCopyTagText(
+      latestSha,
+      interContainerVars.owlbotYamlPath
+    );
     checkIfGitIsInstalled(cmd);
     await this._commitAndPushToBranch(
       interContainerVars.branchName,
       this.repoName,
-      directoryPath
+      directoryPath,
+      copyTagText
     );
     await openAPR(
       this.octokit,
       interContainerVars.branchName,
       this.repoName,
       this.apiId,
-      interContainerVars.owlbotYamlPath
+      latestSha,
+      copyTagText
     );
   }
 

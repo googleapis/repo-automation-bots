@@ -95,8 +95,6 @@ describe('common utils tests', async () => {
 
   it('opens a PR against the main branch', async () => {
     const scope = nock('https://api.github.com')
-      .get('/repos/googleapis/googleapis-gen/commits')
-      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
       .post('/repos/googleapis/nodejs-kms/pulls', body => {
         snapshot(body);
         return true;
@@ -108,7 +106,8 @@ describe('common utils tests', async () => {
       'specialName',
       'nodejs-kms',
       'google.cloud.kms.v1',
-      'packages/google-cloud-kms/.OwlBot.yaml'
+      '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+      'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
     );
     scope.done();
   });
@@ -126,18 +125,29 @@ describe('common utils tests', async () => {
     assert(sha, '6dcb09b5b57875f334f61aebed695e2e4193db5e');
   });
 
-  it('returns the PR text with copy tag text', async () => {
-    const scope = nock('https://api.github.com')
-      .get('/repos/googleapis/googleapis-gen/commits')
-      .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'});
+  it('gets the copy-tag text', () => {
+    const copyTagText = utils.getCopyTagText(
+      '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+      'packages/google-cloud-kms/.github/.OwlBot.yaml'
+    );
 
-    const prText = await utils.getPRText(octokit, directoryPath);
-    console.log(prText);
-    const expectation = `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:\n${Buffer.from(
-      '{"p":"packages/google-cloud-kms/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
+    const expectation = `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:${Buffer.from(
+      '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
+    ).toString('base64')}`;
+    assert(copyTagText, expectation);
+  });
+
+  it('returns the PR text with copy tag text', () => {
+    const prText = utils.getPRText(
+      '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+      `Copy-Tag:${Buffer.from(
+        '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
+      ).toString('base64')}`
+    );
+    const expectation = `${REGENERATE_CHECKBOX_TEXT}\nSource-Link: https://googleapis-gen@6dcb09b5b57875f334f61aebed695e2e4193db5e\nCopy-Tag:${Buffer.from(
+      '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
     ).toString('base64')}`;
     assert(prText, expectation);
-    scope.done();
   });
 
   it('should open a branch, then push that branch to origin', async () => {

@@ -58,21 +58,23 @@ export async function getLatestShaGoogleapisGen(octokit: Octokit) {
   return commits[0].sha;
 }
 
-/**
- * Function that compiles all the information for the body of the PR being generated
- * @param octokit authenticated octokit instance
- * @returns full PR text for the PR being created
- */
-export async function getPRText(octokit: Octokit, owlbotYamlPath: string) {
+export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
   if (!owlbotYamlPath)
     logger.warn('No owlbot yaml path passed from language-container');
-  const latestSha = await getLatestShaGoogleapisGen(octokit);
   // Language-specific containers need to provide their path to their new .OwlBot.yaml
   // file, since this container won't know the structure of other repos
   const copyTagInfo = `{"p":"${owlbotYamlPath}","h":"${latestSha}"}`;
   const copyTagInfoEncoded = Buffer.from(copyTagInfo).toString('base64');
 
-  return `${REGENERATE_CHECKBOX_TEXT}\nSource-Link: https://googleapis/googleapis-gen@${latestSha}\nCopy-Tag:\n${copyTagInfoEncoded}`;
+  return `Copy-Tag: ${copyTagInfoEncoded}`;
+}
+/**
+ * Function that compiles all the information for the body of the PR being generated
+ * @param octokit authenticated octokit instance
+ * @returns full PR text for the PR being created
+ */
+export async function getPRText(latestSha: string, copyTagText: string) {
+  return `${REGENERATE_CHECKBOX_TEXT}\nSource-Link: https://googleapis/googleapis-gen@${latestSha}\n${copyTagText}`;
 }
 
 /**
@@ -95,7 +97,7 @@ export async function openABranch(repoName: string, directoryPath: string) {
     );
     // Need to push an empty commit to  push branch up
     cmd(
-      `git checkout -b ${branchName}; git commit --allow-empty -m "initial commit"; git push -u origin ${branchName}`,
+      `git checkout -b ${branchName}; git commit --allow-empty -m "feat: initial commit"; git push -u origin ${branchName}`,
       {cwd: `${directoryPath}/${repoName}`}
     );
   } catch (err) {
@@ -116,7 +118,8 @@ export async function openAPR(
   branchName: string,
   repoName: string,
   apiId: string,
-  owlbotYamlPath: string
+  latestSha: string,
+  copyTagText: string
 ) {
   try {
     await octokit.rest.pulls.create({
@@ -125,7 +128,7 @@ export async function openAPR(
       head: branchName,
       base: 'main',
       title: `feat: add initial files for ${apiId}`,
-      body: await getPRText(octokit, owlbotYamlPath),
+      body: await getPRText(latestSha, copyTagText),
     });
   } catch (err: any) {
     logger.error(err);
