@@ -23,6 +23,8 @@ import {
   checkIfGitIsInstalled,
   ORG,
   INTER_CONTAINER_VARS_FILE,
+  getLatestShaGoogleapisGen,
+  getCopyTagText,
 } from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
@@ -152,10 +154,11 @@ export class SplitRepo {
     directoryPath: string,
     apiId: string,
     branchName: string,
-    owlbotYamlPath: string
+    latestSha: string,
+    copyTagText: string
   ) {
     await openABranch(repoName, directoryPath);
-    await openAPR(octokit, branchName, repoName, apiId, owlbotYamlPath);
+    await openAPR(octokit, branchName, repoName, apiId, latestSha, copyTagText);
   }
 
   /**
@@ -181,6 +184,11 @@ export class SplitRepo {
       directoryPath,
       INTER_CONTAINER_VARS_FILE
     );
+    const latestSha = await getLatestShaGoogleapisGen(this.octokit);
+    const copyTagText = getCopyTagText(
+      latestSha,
+      interContainerVars.owlbotYamlPath
+    );
     await this._commitAndPushToMain(
       this.repoName,
       directoryPath,
@@ -193,7 +201,8 @@ export class SplitRepo {
       directoryPath,
       this.apiId,
       interContainerVars.branchName,
-      interContainerVars.owlbotYamlPath
+      latestSha,
+      copyTagText
     );
   }
 }
