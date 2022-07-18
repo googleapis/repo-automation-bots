@@ -335,6 +335,20 @@ async function findAndAppendPullRequest(
     return true; // No changes to push.
   }
 
+  // Did another instance of owl bot win the race to update this PR?
+  for (const yaml of copiedYamls) {
+    const found = await params.copyStateStore.findBuildForCopy(
+      params.destRepo,
+      yaml.copyTag
+    );
+    if (found) {
+      logger.info(
+        `Another instance of Owl Bot already pushed a new commit to ${pull.html_url}.`
+      );
+      return true; // No changes to push.
+    }
+  }
+
   // Push the changes to the pull request.
   const token = await params.octokitFactory.getGitHubShortLivedAccessToken();
   const pushUrl = params.destRepo.getCloneUrl(token);
