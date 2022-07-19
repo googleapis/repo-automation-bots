@@ -541,25 +541,30 @@ describe('regenerate pull requests', function () {
       .filter(s => s);
   });
 
+  let destRepo!: GithubRepo;
+  let pulls!: FakePulls;
+  let issues!: FakeIssues;
+  let octokit!: OctokitType;
+  let factory!: OctokitFactory;
+  let commitMessage1 = '';
+  let commitMessage2 = '';
+  let destDir = '';
   beforeEach(() => {
     cmd('git checkout main', {cwd: abcRepo});
-  });
-
-  it('regenerates a pull request', async () => {
-    const destRepo = makeDestRepo(bYaml);
-    const pulls = new FakePulls();
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(pulls, issues);
-    const factory = newFakeOctokitFactory(octokit, 'test-token');
+    destRepo = makeDestRepo(bYaml);
+    pulls = new FakePulls();
+    issues = new FakeIssues();
+    octokit = newFakeOctokit(pulls, issues);
+    factory = newFakeOctokitFactory(octokit, 'test-token');
 
     // Create the pull request.
     pulls.create({});
 
     // Create a pull request branch with three more commits.
-    const destDir = destRepo.getCloneUrl();
+    destDir = destRepo.getCloneUrl();
     cmd('git checkout -b pull-branch', {cwd: destDir});
     const f1 = tmp.fileSync();
-    const commitMessage1 = `pull-commit-1
+    commitMessage1 = `pull-commit-1
 
 Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[1])}`;
     fs.writeSync(f1.fd, commitMessage1);
@@ -571,7 +576,7 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[1])}`;
     cmd('git commit --allow-empty -m "Updates from OwlBot"', {cwd: destDir});
 
     const f2 = tmp.fileSync();
-    const commitMessage2 = `pull-commit-2
+    commitMessage2 = `pull-commit-2
 
 Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
     fs.writeSync(f2.fd, commitMessage2);
@@ -580,8 +585,10 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
 
     // Switch back to the main branch.
     cmd('git checkout main', {cwd: destDir});
+  });
 
-    await cc.regeneratePullRequest(abcRepo, destRepo, 'pull-branch', factory);
+  it('regenerates a pull request', async () => {
+    await cc.copyCodeIntoPullRequest(abcRepo, destRepo, 'pull-branch', factory);
 
     // Confirm commit messages were merged and pushed to pull-branch.
     const gitLog = cmd('git log -1 --format=%B pull-branch', {
@@ -602,5 +609,25 @@ Copy-Tag: ${copyTagFrom('.github/.OwlBot.yaml', abcCommits[2])}`;
         title: 'pull-commit-2',
       },
     ]);
+  });
+
+  it('appends a pull request', async () => {
+    await cc.copyCodeIntoPullRequest(
+      abcRepo,
+      destRepo,
+      'pull-branch',
+      factory,
+      'append'
+    );
+
+    // Confirm new commit message.
+    const gitLog = cmd('git log -1 --format=%B pull-branch', {
+      cwd: destDir,
+    }).toString('utf-8');
+    const expected = `Owl Bot copied code from https://github.com/${abcRepo}/commit/${abcCommits[2]}\n\n`;
+    assert.strictEqual(gitLog, expected);
+
+    // Confirm we didn't call github API to change pull request.
+    assert.deepStrictEqual(pulls.updates, []);
   });
 });

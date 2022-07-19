@@ -13,24 +13,24 @@
 // limitations under the License.
 
 import yargs = require('yargs');
-import {DEFAULT_OWL_BOT_YAML_PATH} from '../../config-files';
-import {regeneratePullRequest} from '../../copy-code';
+import {
+  copyCodeIntoPullRequest,
+  CopyCodeIntoPullRequestAction,
+} from '../../copy-code';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {octokitFactoryFromToken} from '../../octokit-util';
 
 interface Args {
   'source-repo': string;
-  'source-repo-commit-hash': string;
-  'owl-bot-yaml-path': string;
   'dest-repo': string;
   'dest-branch': string;
   'github-token': string;
+  action: string;
 }
 
 export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
   command: 'copy-code-into-pull-request',
-  describe:
-    'Regenerates a pull request. Uses `git push -f` to overwrite branch.',
+  describe: 'Regenerates or appends a pull request.',
   builder(yargs) {
     return yargs
       .option('source-repo', {
@@ -38,19 +38,6 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
         type: 'string',
         demand: false,
         default: 'googleapis/googleapis-gen',
-      })
-      .option('source-repo-commit-hash', {
-        describe:
-          'The commit hash of the source repo from which to copy files.',
-        type: 'string',
-        demand: true,
-      })
-      .option('owl-bot-yaml-path', {
-        describe:
-          "Obsolete. .OwlBot.yaml paths are now pulled from the pull request's Copy-Tags.",
-        type: 'string',
-        demand: false,
-        default: DEFAULT_OWL_BOT_YAML_PATH,
       })
       .option('dest-repo', {
         describe: 'Copy the code into this repo.',
@@ -66,14 +53,22 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
         describe: 'Short-lived github token.',
         type: 'string',
         demand: true,
+      })
+      .option('action', {
+        describe:
+          'Regenerate the pull request from scratch or append a commit?',
+        choices: ['regenerate', 'append'] as const,
+        demand: false,
+        default: 'regenerate',
       });
   },
   async handler(argv) {
-    await regeneratePullRequest(
+    await copyCodeIntoPullRequest(
       argv['source-repo'],
       githubRepoFromOwnerSlashName(argv['dest-repo']),
       argv['dest-branch'],
-      octokitFactoryFromToken(argv['github-token'])
+      octokitFactoryFromToken(argv['github-token']),
+      argv.action as CopyCodeIntoPullRequestAction
     );
   },
 };
