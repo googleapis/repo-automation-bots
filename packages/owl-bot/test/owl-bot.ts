@@ -15,7 +15,12 @@
 import * as assert from 'assert';
 import {core} from '../src/core';
 import {DatastoreLock} from '@google-automations/datastore-lock';
-import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from '../src/labels';
+import {
+  OWLBOT_RUN_LABEL,
+  OWL_BOT_COPY_COMMAND_LABEL,
+  OWL_BOT_IGNORE,
+  OWL_BOT_LABELS,
+} from '../src/labels';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
@@ -1058,6 +1063,57 @@ describe('OwlBot', () => {
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
+  it('triggers build when "owlbot:copy-code" label is added', async () => {
+    const payload = {
+      action: 'labeled',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'rennie',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWL_BOT_COPY_COMMAND_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          ref: 'main',
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+        },
+      },
+      label: {
+        name: OWL_BOT_COPY_COMMAND_LABEL,
+      },
+    };
+    const githubMock = nock('https://api.github.com')
+      .delete(
+        '/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Acopy-code'
+      )
+      .reply(200);
+    const triggerRegenerateStub = sandbox.stub(
+      core,
+      'triggerRegeneratePullRequest'
+    );
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(triggerRegenerateStub);
+    githubMock.done();
+  });
   it('does not crash if "owlbot:run" label has already been deleted', async () => {
     const payload = {
       action: 'labeled',
@@ -1238,7 +1294,7 @@ describe('OwlBot', () => {
         base: {
           ref: 'main',
           repo: {
-            full_name: 'SurferJeffAtGoogle/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1361,7 +1417,7 @@ describe('OwlBot', () => {
         base: {
           ref: 'main',
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1370,7 +1426,7 @@ describe('OwlBot', () => {
       },
     };
     const githubMock = nock('https://api.github.com')
-      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const lastCommitFromOwlBotStub = sandbox
       .stub(core, 'lastCommitFromOwlBotPostProcessor')
@@ -1966,10 +2022,10 @@ describe('userCheckedRegenerateBox()', () => {
       owner: 'googleapis',
       repo: 'nodejs-dlp',
       prNumber: 48,
-      prBody: 'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
       gcpProjectId: 'project-1',
       buildTriggerId: 'trigger-4',
       branch: 'owl-bot-update-branch',
+      action: 'regenerate',
     });
   });
 });

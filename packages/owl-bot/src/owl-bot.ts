@@ -32,7 +32,12 @@ import {
   PullRequestEditedEvent,
   PullRequestLabeledEvent,
 } from '@octokit/webhooks-types';
-import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
+import {
+  OWLBOT_RUN_LABEL,
+  OWL_BOT_COPY_COMMAND_LABEL,
+  OWL_BOT_IGNORE,
+  OWL_BOT_LABELS,
+} from './labels';
 import {OwlBotLock} from './config-files';
 import {octokitFactoryFrom} from './octokit-util';
 import {githubRepo} from './github-repo';
@@ -80,25 +85,24 @@ async function releaseLock(lock: DatastoreLock): Promise<void> {
   }
 }
 
+function envOrThrow(varName: string): string {
+  const value = process.env[varName];
+  if (!value) {
+    throw Error(`must set ${varName}`);
+  }
+  return value;
+}
+
 function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // Fail fast if the Cloud Function doesn't have its environment configured:
-  if (!process.env.APP_ID) {
-    throw Error('must set APP_ID');
-  }
-  const appId = Number(process.env.APP_ID);
-  if (!process.env.PROJECT_ID) {
-    throw Error('must set PROJECT_ID');
-  }
-  const project: string = process.env.PROJECT_ID;
-  if (!process.env.CLOUD_BUILD_TRIGGER) {
-    throw Error('must set CLOUD_BUILD_TRIGGER');
-  }
-  const trigger: string = process.env.CLOUD_BUILD_TRIGGER;
-  const trigger_regenerate_pull_request =
-    process.env.CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST ?? '';
-  if (!trigger_regenerate_pull_request) {
-    throw Error('must set CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST');
-  }
+  const appId = Number(envOrThrow('APP_ID'));
+  const project = envOrThrow('PROJECT_ID');
+  const triggers: TriggerIdsForLabels = {
+    regeneratePullRequest: envOrThrow(
+      'CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST'
+    ),
+    runPostProcessor: envOrThrow('CLOUD_BUILD_TRIGGER'),
+  };
   if (!privateKey) {
     throw Error('GitHub app private key must be provided');
   }
@@ -126,7 +130,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       appId,
       privateKey,
       project,
-      trigger,
+      triggers,
       context.payload,
       context.octokit,
       logger
@@ -137,7 +141,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   app.on(['pull_request.edited'], async context => {
     const regenerate = userCheckedRegenerateBox(
       project,
-      trigger_regenerate_pull_request,
+      triggers.regeneratePullRequest,
       context.payload
     );
     if (regenerate) {
@@ -206,7 +210,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         appId,
         privateKey,
         project,
-        trigger,
+        triggers.runPostProcessor,
         {
           head,
           base,
@@ -308,11 +312,16 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   });
 }
 
+export interface TriggerIdsForLabels {
+  runPostProcessor: string;
+  regeneratePullRequest: string;
+}
+
 async function handlePullRequestLabeled(
   appId: number,
   privateKey: string,
   project: string,
-  trigger: string,
+  triggers: TriggerIdsForLabels,
   payload: PullRequestLabeledEvent,
   octokit: Octokit,
   logger: GCFLogger = defaultLogger
@@ -327,20 +336,28 @@ async function handlePullRequestLabeled(
     throw Error(`no installation token found for ${head}`);
   }
 
+  // We limit the organization for running post processor.
+  if (!ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
+    logger.info(`base ${base} is not allowed to invoke Owl Bot, skipping`);
+    return;
+  }
+
+  const command_labels = [OWLBOT_RUN_LABEL, OWL_BOT_COPY_COMMAND_LABEL];
+
   // Only run on label event if the label added is the owlbot label
-  if (payload.label.name !== OWLBOT_RUN_LABEL) {
+  if (!command_labels.includes(payload.label.name)) {
     logger.info(
       `skipping non-owlbot label: ${payload.label.name} ${head} for ${base}`
     );
     return;
   }
 
-  const hasRunLabel = !!payload.pull_request.labels.filter(
-    l => l.name === OWLBOT_RUN_LABEL
-  ).length;
+  const hasCommandLabel = payload.pull_request.labels.some(l =>
+    command_labels.includes(l.name)
+  );
 
   // Only run post-processor if appropriate label added:
-  if (!hasRunLabel) {
+  if (!hasCommandLabel) {
     logger.info(
       `skipping labels ${payload.pull_request.labels
         .map(l => l.name)
@@ -350,7 +367,33 @@ async function handlePullRequestLabeled(
   }
 
   // Remove run label before continuing
-  await removeOwlBotRunLabel(owner, repo, prNumber, octokit, logger);
+  await removeOwlBotLabel(
+    owner,
+    repo,
+    prNumber,
+    octokit,
+    payload.label.name,
+    logger
+  );
+
+  if (payload.label.name === OWL_BOT_COPY_COMMAND_LABEL) {
+    // Owl Bot Bootstrapper requested Owl Bot to copy code from googleapis-gen.
+    const octokitFactory = octokitFactoryFrom({
+      'app-id': appId,
+      privateKey,
+      installation,
+    });
+    await core.triggerRegeneratePullRequest(octokitFactory, {
+      branch: payload.pull_request.head.ref,
+      gcpProjectId: project,
+      owner,
+      prNumber,
+      buildTriggerId: triggers.regeneratePullRequest,
+      repo,
+      action: 'append',
+    });
+    return;
+  }
 
   // If the last commit made to the PR was already from OwlBot, and the label
   // has been added by a bot account (most likely trusted contributor bot)
@@ -370,21 +413,13 @@ async function handlePullRequestLabeled(
     return;
   }
 
-  // We limit the organization for running post processor.
-  if (!ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
-    logger.info(
-      `base ${base} is not allowed to run the post processor, skipping`
-    );
-    return;
-  }
-
   // If label is explicitly added, run as if PR is made against default branch:
   const defaultBranch = payload?.repository?.default_branch;
   await runPostProcessorWithLock(
     appId,
     privateKey,
     project,
-    trigger,
+    triggers.runPostProcessor,
     {
       head,
       base,
@@ -410,16 +445,17 @@ async function handlePullRequestLabeled(
  * @param {string} repo - repo of PR.
  * @param {number} repo - PR number.
  */
-async function removeOwlBotRunLabel(
+async function removeOwlBotLabel(
   owner: string,
   repo: string,
   prNumber: number,
   octokit: Octokit,
+  label: string,
   logger: GCFLogger
 ) {
   try {
     await octokit.issues.removeLabel({
-      name: OWLBOT_RUN_LABEL,
+      name: label,
       issue_number: prNumber,
       owner,
       repo,
@@ -708,10 +744,10 @@ function userCheckedRegenerateBox(
     owner,
     repo,
     prNumber,
-    prBody: newBody,
     gcpProjectId: project,
     buildTriggerId: trigger,
     branch: payload.pull_request.head.ref,
+    action: 'regenerate',
   };
 }
 
