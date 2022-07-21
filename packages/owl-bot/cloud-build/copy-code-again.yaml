@@ -68,6 +68,8 @@ steps:
       - ${_PR_BRANCH}
       - --github-token
       - ${_GITHUB_TOKEN}
+      - --action
+      - ${_ACTION}
     env:
       - 'HOME=/workspace'
 
