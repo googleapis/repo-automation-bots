@@ -46,9 +46,9 @@ const AUTOMERGE_LABEL = 'automerge';
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
 delete rules['subject-full-stop'];
-rules['header-max-length'] = [2, 'always', 256];
-rules['body-max-line-length'] = [2, 'always', 256];
-rules['footer-max-line-length'] = [2, 'always', 256];
+rules['header-max-length'] = [2, 'always', Number.MAX_VALUE];
+rules['body-max-line-length'] = [2, 'always', Number.MAX_VALUE];
+rules['footer-max-line-length'] = [2, 'always', Number.MAX_VALUE];
 
 export async function scanPullRequest(
   context: Context<'pull_request'> | Context<'issue_comment'>,
