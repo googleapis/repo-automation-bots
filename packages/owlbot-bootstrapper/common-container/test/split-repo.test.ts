@@ -25,7 +25,7 @@ import assert from 'assert';
 
 let directoryPath: string;
 let repoToClonePath: string;
-const FAKE_REPO_NAME = 'fakeRepo';
+const FAKE_REPO_NAME = 'fakeApi';
 const FAKE_WORKSPACE = 'workspace';
 
 nock.disableNetConnect();
@@ -58,13 +58,13 @@ describe('SplitRepo class', async () => {
   });
   const octokit = new Octokit({auth: 'abc1234'});
 
-  let splitRepo = new SplitRepo(
-    'python' as Language,
-    'google.cloud.kms.v1',
-    octokit,
-    'ghs_1234'
-  );
   it('should create the right type of object', async () => {
+    const splitRepo = new SplitRepo(
+      'python' as Language,
+      'google.cloud.kms.v1',
+      octokit,
+      'ghs_1234'
+    );
     const expectation = {
       language: Language.Python,
       apiId: 'google.cloud.kms.v1',
@@ -114,32 +114,52 @@ describe('SplitRepo class', async () => {
   });
 
   it('should create an empty git repo on disk', async () => {
+    const splitRepo = new SplitRepo(
+      'python' as Language,
+      'google.cloud.kms.v1',
+      octokit,
+      'ghs_1234'
+    );
+
     await splitRepo._initializeEmptyGitRepo('python-kms-1', directoryPath);
     assert.ok(fs.statSync(`${directoryPath}/${splitRepo.repoName}-1`));
     assert.ok(fs.statSync(`${directoryPath}/${splitRepo.repoName}-1/.git`));
   });
 
   it('should push changes in an empty repo to github', async () => {
-    await splitRepo._initializeEmptyGitRepo(FAKE_REPO_NAME, directoryPath);
-    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    const splitRepo = new SplitRepo(
+      'python' as Language,
+      `google.cloud.${FAKE_REPO_NAME}.v1`,
+      octokit,
+      'ghs_1234'
+    );
+
+    await splitRepo._initializeEmptyGitRepo(
+      `python-${FAKE_REPO_NAME}`,
+      directoryPath
+    );
+    fs.writeFileSync(
+      `${directoryPath}/python-${FAKE_REPO_NAME}/README.md`,
+      'hello!'
+    );
     await splitRepo._commitAndPushToMain(
-      FAKE_REPO_NAME,
+      `python-${FAKE_REPO_NAME}`,
       directoryPath,
       undefined,
       repoToClonePath
     );
 
     const stdoutBranch = execSync('git branch', {
-      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+      cwd: `${directoryPath}/python-${FAKE_REPO_NAME}`,
     });
 
     const stdoutCommit = execSync('git log', {
-      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+      cwd: `${directoryPath}/python-${FAKE_REPO_NAME}`,
     });
 
     const stdoutReadmeExists = execSync(
       'git cat-file -e origin/main:README.md && echo README exists',
-      {cwd: `${directoryPath}/${FAKE_REPO_NAME}`}
+      {cwd: `${directoryPath}/python-${FAKE_REPO_NAME}`}
     );
 
     assert.ok(stdoutBranch.includes('main'));
@@ -148,31 +168,46 @@ describe('SplitRepo class', async () => {
   });
 
   it('should create an empty PR', async () => {
+    const splitRepo = new SplitRepo(
+      'python' as Language,
+      `google.cloud.${FAKE_REPO_NAME}.v1`,
+      octokit,
+      'ghs_1234'
+    );
+
     const scope = nock('https://api.github.com')
-      .post('/repos/googleapis/fakeRepo/pulls')
+      .post(`/repos/googleapis/python-${FAKE_REPO_NAME}/pulls`)
+      .reply(201, {number: 1})
+      .post(`/repos/googleapis/python-${FAKE_REPO_NAME}/issues/1/labels`)
       .reply(201);
 
-    await splitRepo._initializeEmptyGitRepo(FAKE_REPO_NAME, directoryPath);
-    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    await splitRepo._initializeEmptyGitRepo(
+      `python-${FAKE_REPO_NAME}`,
+      directoryPath
+    );
+    fs.writeFileSync(
+      `${directoryPath}/python-${FAKE_REPO_NAME}/README.md`,
+      'hello!'
+    );
     await splitRepo._commitAndPushToMain(
-      FAKE_REPO_NAME,
+      `python-${FAKE_REPO_NAME}`,
       directoryPath,
       undefined,
       repoToClonePath
     );
 
     await splitRepo._createEmptyBranchAndOpenPR(
-      FAKE_REPO_NAME,
+      `python-${FAKE_REPO_NAME}`,
       octokit,
       directoryPath,
-      'google.cloud.kms.v1',
+      `google.cloud.${FAKE_REPO_NAME}.v1`,
       'branchName',
       '6dcb09b5b57875f334f61aebed695e2e4193db5e',
       'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
     );
 
     const stdoutBranch = execSync('git branch', {
-      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+      cwd: `${directoryPath}/python-${FAKE_REPO_NAME}`,
     });
 
     assert.ok(stdoutBranch.includes('owlbot-bootstrapper-initial-PR'));
@@ -196,32 +231,35 @@ describe('SplitRepo class', async () => {
       .reply(201)
       .get('/repos/googleapis/googleapis-gen/commits')
       .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
-      .post('/repos/googleapis/fakeRepo/pulls')
+      .post(`/repos/googleapis/python-${FAKE_REPO_NAME}/pulls`)
+      .reply(201, {number: 1})
+      .post(`/repos/googleapis/python-${FAKE_REPO_NAME}/issues/1/labels`)
       .reply(201);
 
-    splitRepo = new SplitRepo(
+    const splitRepo = new SplitRepo(
       'python' as Language,
-      'google.cloud.kms.v1',
+      `google.cloud.${FAKE_REPO_NAME}.v1`,
       octokit
     );
 
-    splitRepo.repoName = FAKE_REPO_NAME;
-
     await splitRepo.createAndInitializeEmptyGitRepo(directoryPath);
-    fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
+    fs.writeFileSync(
+      `${directoryPath}/python-${FAKE_REPO_NAME}/README.md`,
+      'hello!'
+    );
     await splitRepo.pushToMainAndCreateEmptyPR(directoryPath, repoToClonePath);
 
     const stdoutBranch = execSync('git branch', {
-      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+      cwd: `${directoryPath}/python-${FAKE_REPO_NAME}`,
     });
 
     const stdoutCommit = execSync('git log', {
-      cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
+      cwd: `${directoryPath}/python-${FAKE_REPO_NAME}`,
     });
 
     const stdoutReadmeExists = execSync(
       'git cat-file -e origin/main:README.md && echo README exists',
-      {cwd: `${directoryPath}/${FAKE_REPO_NAME}`}
+      {cwd: `${directoryPath}/python-${FAKE_REPO_NAME}`}
     );
 
     assert.ok(stdoutBranch.includes('main'));

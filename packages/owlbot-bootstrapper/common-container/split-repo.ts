@@ -25,6 +25,7 @@ import {
   INTER_CONTAINER_VARS_FILE,
   getLatestShaGoogleapisGen,
   getCopyTagText,
+  addOwlBotLabel,
 } from './utils';
 
 export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
@@ -158,7 +159,15 @@ export class SplitRepo {
     copyTagText: string
   ) {
     await openABranch(repoName, directoryPath);
-    await openAPR(octokit, branchName, repoName, apiId, latestSha, copyTagText);
+    const prNumber = await openAPR(
+      octokit,
+      branchName,
+      repoName,
+      apiId,
+      latestSha,
+      copyTagText
+    );
+    await addOwlBotLabel(this.octokit, this.repoName, prNumber);
   }
 
   /**

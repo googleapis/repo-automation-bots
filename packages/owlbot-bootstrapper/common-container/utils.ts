@@ -20,11 +20,10 @@ import * as fs from 'fs';
 import {InterContainerVars, Language} from './interfaces';
 
 export const INTER_CONTAINER_VARS_FILE = 'interContainerVars.json';
-export const REGENERATE_CHECKBOX_TEXT =
-  '- [x] Regenerate this pull request now.';
 const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 export const ORG = 'googleapis';
 export const DIRECTORY_PATH = '/workspace';
+export const OWLBOT_LABEL = 'owlbot:copy-code';
 
 /**
  * Saves the user name and email for owlbot-bootstrapper in git-credentials so as to not need to enter them when pushing using https protocol
@@ -74,7 +73,7 @@ export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
  * @returns full PR text for the PR being created
  */
 export async function getPRText(latestSha: string, copyTagText: string) {
-  return `${REGENERATE_CHECKBOX_TEXT}\nSource-Link: https://googleapis/googleapis-gen@${latestSha}\n${copyTagText}`;
+  return `Source-Link: https://googleapis/googleapis-gen@${latestSha}\n${copyTagText}`;
 }
 
 /**
@@ -120,9 +119,9 @@ export async function openAPR(
   apiId: string,
   latestSha: string,
   copyTagText: string
-) {
+): Promise<number> {
   try {
-    await octokit.rest.pulls.create({
+    const pr = await octokit.rest.pulls.create({
       owner: ORG,
       repo: repoName,
       head: branchName,
@@ -130,10 +129,32 @@ export async function openAPR(
       title: `feat: add initial files for ${apiId}`,
       body: await getPRText(latestSha, copyTagText),
     });
+
+    return pr.data.number;
   } catch (err: any) {
     logger.error(err);
     throw err;
   }
+}
+
+/**
+ * Adds an owlbot copy-code label to PR.
+ *
+ * @param octokit an authenticated octokit instance
+ * @param repo the name of the repo
+ * @param prNumber the number of the PR to open.
+ */
+export async function addOwlBotLabel(
+  octokit: Octokit,
+  repo: string,
+  prNumber: number
+) {
+  await octokit.issues.addLabels({
+    owner: ORG,
+    repo,
+    issue_number: prNumber,
+    labels: [OWLBOT_LABEL],
+  });
 }
 
 /**
