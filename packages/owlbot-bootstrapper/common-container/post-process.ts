@@ -51,7 +51,7 @@ export async function postProcess(argv: CliArgs) {
   try {
     if (isMonoRepository) {
       // Mono-repo post-process (after language specific-container)
-      logger.info(`${process.env.LANGUAGE} is a mono repo`);
+      logger.info(`${argv.language} is a mono repo`);
       const monoRepo = new MonoRepo(
         argv.language as Language,
         argv.repoToClone!,

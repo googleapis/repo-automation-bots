@@ -15,18 +15,6 @@ exports['ConventionalCommitLint sets a "success" context on PR, if commit lint s
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
 }
 
-exports['ConventionalCommitLint sets a "success" context on PR, if the body is less than 256 in length 1'] = {
-  "name": "conventionalcommits.org",
-  "conclusion": "success",
-  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
-}
-
-exports['ConventionalCommitLint sets a "success" context on PR, if the footer is less than 256 in length 1'] = {
-  "name": "conventionalcommits.org",
-  "conclusion": "success",
-  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
-}
-
 exports['ConventionalCommitLint sets a "success" context on PR, if subject contains a full stop 1'] = {
   "name": "conventionalcommits.org",
   "conclusion": "success",
@@ -71,4 +59,10 @@ exports['ConventionalCommitLint adds a comment when the commit message and the P
     "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git commit --amend` and edit your message to match Conventional Commit guidelines.",
     "text": ":x: linting errors for \"*fix all the bugs*\"\n* subject may not be empty\n* type may not be empty\n\n\n"
   }
+}
+
+exports['ConventionalCommitLint sets a "success" context on PR with very long lines 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
 }

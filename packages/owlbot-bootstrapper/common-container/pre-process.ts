@@ -40,10 +40,6 @@ export async function preProcess(argv: CliArgs) {
 
   const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
 
-  // Pass in a github token so that language-specific containers can
-  // Make calls to Github
-  process.env._GITHUB_TOKEN = githubToken;
-
   const isMonoRepository = isMonoRepo(argv.language as Language);
 
   if (argv.repoToClone === '' && isMonoRepository) {

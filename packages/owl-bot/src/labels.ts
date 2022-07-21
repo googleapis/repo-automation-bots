@@ -14,6 +14,7 @@
 
 export const OWLBOT_RUN_LABEL = 'owlbot:run';
 export const OWL_BOT_IGNORE = 'owlbot:ignore';
+export const OWL_BOT_COPY_COMMAND_LABEL = 'owlbot:copy-code';
 
 export const OWL_BOT_LABELS = [
   {
@@ -23,5 +24,11 @@ export const OWL_BOT_LABELS = [
   {
     name: OWL_BOT_IGNORE,
     description: 'instruct owl-bot to ignore a PR',
+  },
+  {
+    name: OWL_BOT_COPY_COMMAND_LABEL,
+    description:
+      'Instruct owl-bot to copy code from googleapis-gen.' +
+      '  The PR this label is applied to must have a copy tag.',
   },
 ];

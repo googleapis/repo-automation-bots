@@ -15,7 +15,6 @@
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import * as assert from 'assert';
 import sinon from 'sinon';
-import {sourceLinkFrom, sourceLinkLineFrom} from '../src/copy-code';
 import {core, RegenerateArgs} from '../src/core';
 import {newFakeCloudBuildClient} from './fake-cloud-build-client';
 import {
@@ -36,26 +35,10 @@ describe('triggerPostProcessBuild()', () => {
     gcpProjectId: 'test-project',
     buildTriggerId: '42',
     owner: 'test-owner',
-    prBody:
-      'Nice pull request.\n' + sourceLinkLineFrom(sourceLinkFrom('abc123')),
     prNumber: 5,
     repo: 'nodejs-stapler',
+    action: 'regenerate',
   };
-
-  it('creates a comment on the pull request when the pull request body is missing a source commit hash', async () => {
-    const issues = new FakeIssues();
-    const octokit = newFakeOctokit(undefined, issues);
-    await core.triggerRegeneratePullRequest(newFakeOctokitFactory(octokit), {
-      ...args,
-      prBody: 'Nice pull request',
-    });
-    assert.strictEqual(issues.comments.length, 1);
-    const comment = issues.comments[0];
-    assert.strictEqual(comment.owner, 'test-owner');
-    assert.strictEqual(comment.repo, 'nodejs-stapler');
-    assert.strictEqual(comment.issue_number, 5);
-    assert.match(comment.body, /.*missing.*hash.*/);
-  });
 
   it('creates a comment reporting failure', async () => {
     const issues = new FakeIssues();
@@ -106,13 +89,12 @@ describe('triggerPostProcessBuild()', () => {
             projectId: 'test-project',
             branchName: 'main',
             substitutions: {
+              _ACTION: 'regenerate',
               _GITHUB_TOKEN: 'b3',
               _PR: '5',
               _PR_BRANCH: 'test-branch',
               _PR_OWNER: 'test-owner',
               _REPOSITORY: 'nodejs-stapler',
-              _SOURCE_HASH: 'abc123',
-              _OWL_BOT_YAML_PATH: '.github/.OwlBot.yaml',
             },
           },
         },

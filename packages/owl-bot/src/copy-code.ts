@@ -335,6 +335,20 @@ async function findAndAppendPullRequest(
     return true; // No changes to push.
   }
 
+  // Did another instance of owl bot win the race to update this PR?
+  for (const yaml of copiedYamls) {
+    const found = await params.copyStateStore.findBuildForCopy(
+      params.destRepo,
+      yaml.copyTag
+    );
+    if (found) {
+      logger.info(
+        `Another instance of Owl Bot already pushed a new commit to ${pull.html_url}.`
+      );
+      return true; // No changes to push.
+    }
+  }
+
   // Push the changes to the pull request.
   const token = await params.octokitFactory.getGitHubShortLivedAccessToken();
   const pushUrl = params.destRepo.getCloneUrl(token);
@@ -527,24 +541,26 @@ command in a local clone of this repo:
   }
 }
 
+export type CopyCodeIntoPullRequestAction =
+  | 'regenerate' // Discard all current commits and regenerate.
+  | 'append'; // Copy code and into a new commit and append it to the PR.
+
 /**
- * Regenerates a pull request.
- * Uses `git push -f` to completely replace the existing contents of the branch.
+ * Appends or regenerates a pull request.
  *
- * This is quite complicated because the PR may have multiple open commits.
- * Regenerating the pull request will result in a single commit.  We need
- * to preserve the full history of all the commits.
- *
- * In time, this will completely replace copyCodeIntoPullRequest().
+ * Regenerating is quite complicated because the PR may have multiple open
+ * commits.  Regenerating the pull request will result in a single commit,
+ * but we need to preserve the full history of all the commits.
  *
  * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
  * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
  */
-export async function regeneratePullRequest(
+export async function copyCodeIntoPullRequest(
   sourceRepo: string,
   destRepo: GithubRepo,
   destBranch: string,
   octokitFactory: OctokitFactory,
+  action: CopyCodeIntoPullRequestAction = 'regenerate',
   logger = console
 ): Promise<void> {
   const workDir = tmp.dirSync().name;
@@ -598,7 +614,6 @@ export async function regeneratePullRequest(
   }
   const commitMsgFilePath = path.join(workDir, 'commit.txt');
   const commitMsg = commitMessages.join('\n\n');
-  fs.writeFileSync(commitMsgFilePath, commitMsg);
 
   // Find the corresponding pull request because we'll either have to update
   // its body or add a comment describing failure.
@@ -649,7 +664,20 @@ export async function regeneratePullRequest(
 
   const sourceRepoCommitHash = copyTags[0].h;
 
-  cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
+  if (action === 'regenerate') {
+    // Use the combined commit message.
+    fs.writeFileSync(commitMsgFilePath, commitMsg);
+    // Create a new branch that replaces the old branch.
+    cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
+  } else {
+    // Use a simple commit message.
+    fs.writeFileSync(
+      commitMsgFilePath,
+      `Owl Bot copied code from https://github.com/${sourceRepo}/commit/${sourceRepoCommitHash}`
+    );
+    // Check out the existing branch.
+    cmd(`git checkout -t origin/${destBranch}`, {cwd: destDir});
+  }
 
   const apiNames: string[] = [];
   const allSourcePaths = globGitRepo(sourceDir);
@@ -701,17 +729,19 @@ export async function regeneratePullRequest(
   cmd(`git remote set-url origin ${pushUrl}`, {cwd: destDir});
   cmd(`git push -f origin ${destBranch}`, {cwd: destDir});
 
-  // Update the PR body with the full commit history.
-  const {title, body} = resplit(commitMsg, WithRegenerateCheckbox.Yes);
+  if (action === 'regenerate') {
+    // Update the PR body with the full commit history.
+    const {title, body} = resplit(commitMsg, WithRegenerateCheckbox.Yes);
 
-  const apiList = abbreviateApiListForTitle(apiNames);
-  await octokit.pulls.update({
-    owner: destRepo.owner,
-    repo: destRepo.repo,
-    pull_number: pull.number,
-    title: insertApiName(title, apiList),
-    body,
-  });
+    const apiList = abbreviateApiListForTitle(apiNames);
+    await octokit.pulls.update({
+      owner: destRepo.owner,
+      repo: destRepo.repo,
+      pull_number: pull.number,
+      title: insertApiName(title, apiList),
+      body,
+    });
+  }
 }
 
 /**

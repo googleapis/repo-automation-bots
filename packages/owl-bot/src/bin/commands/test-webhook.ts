@@ -84,7 +84,10 @@ export const testWebhook: yargs.CommandModule<{}, Args> = {
           argv['app-id'],
           privateKey,
           argv.project,
-          argv.trigger,
+          {
+            regeneratePullRequest: argv.trigger,
+            runPostProcessor: argv.trigger,
+          },
           payload,
           octokit
         );

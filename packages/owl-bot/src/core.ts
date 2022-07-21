@@ -23,22 +23,11 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
-import {
-  OwlBotLock,
-  OWL_BOT_LOCK_PATH,
-  owlBotLockFrom,
-  DEFAULT_OWL_BOT_YAML_PATH,
-} from './config-files';
+import {OwlBotLock, OWL_BOT_LOCK_PATH, owlBotLockFrom} from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER} from './constants';
-import {
-  findCopyTags,
-  findSourceHash,
-  sourceLinkFrom,
-  sourceLinkLineFrom,
-  unpackCopyTag,
-} from './copy-code';
+import {CopyCodeIntoPullRequestAction} from './copy-code';
 import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 
 interface BuildArgs {
@@ -658,9 +647,9 @@ export interface RegenerateArgs {
   repo: string;
   branch: string;
   prNumber: number;
-  prBody: string;
   gcpProjectId: string;
   buildTriggerId: string;
+  action: CopyCodeIntoPullRequestAction;
 }
 
 export async function triggerRegeneratePullRequest(
@@ -689,45 +678,8 @@ export async function triggerRegeneratePullRequest(
     return _createComment(text);
   };
 
-  let sourceHash = '';
-  const yamlPaths = [];
   // The user checked the "Regenerate this pull request" box.
 
-  // First try to unpack the source commit hash and .OwlBot.yaml path from
-  // a Copy Tag.
-  const copyTagTexts = findCopyTags(args.prBody);
-  for (const text of copyTagTexts) {
-    try {
-      const copyTag = unpackCopyTag(text);
-      if (sourceHash && sourceHash !== copyTag.h) {
-        // We've seen all the copy tags for the one commit hash.
-        break;
-      }
-      sourceHash = copyTag.h;
-      yamlPaths.push(copyTag.p);
-      console.info(`Found Copy-Tag: ${copyTag}`);
-    } catch (e) {
-      await reportError(
-        `Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag ${text} is corrupt.\n${e}`
-      );
-      return;
-    }
-  }
-
-  // Older pull requests won't have a Copy-Tag, so use the commit hash
-  if (!sourceHash) {
-    sourceHash = findSourceHash(args.prBody);
-    yamlPaths.push(DEFAULT_OWL_BOT_YAML_PATH);
-  }
-  if (!sourceHash) {
-    // But there's no source hash to regenerate from.  Oh no!
-    const sourceLine = sourceLinkLineFrom(sourceLinkFrom('abc123'));
-    await reportError(`Owl Bot could not regenerate pull request ${args.prNumber} because the body is missing a source hash.
-
-A source hash in the source link looks like this:
-${sourceLine}`);
-    return;
-  }
   let buildName = '';
   try {
     const cb = core.getCloudBuildInstance();
@@ -745,8 +697,7 @@ ${sourceLine}`);
           _PR_BRANCH: args.branch,
           _PR_OWNER: args.owner,
           _REPOSITORY: args.repo,
-          _SOURCE_HASH: sourceHash,
-          _OWL_BOT_YAML_PATH: yamlPaths.join(','),
+          _ACTION: args.action,
         },
       },
     });
