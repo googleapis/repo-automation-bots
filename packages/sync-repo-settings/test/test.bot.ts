@@ -21,6 +21,7 @@ import {PullRequestOpenedEvent} from '@octokit/webhooks-types';
 import {promises as fs} from 'fs';
 import yaml from 'js-yaml';
 import * as botConfigModule from '@google-automations/bot-config-utils';
+import * as issueModule from '@google-automations/issue-utils';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
@@ -139,6 +140,7 @@ const sandbox = sinon.createSandbox();
 
 describe('Sync repo settings', () => {
   let getConfigStub: sinon.SinonStub;
+  let addIssueStub: sinon.SinonStub;
   beforeEach(() => {
     probot = createProbot({
       overrides: {
@@ -154,6 +156,7 @@ describe('Sync repo settings', () => {
     sandbox.stub(logger, 'info');
     sandbox.stub(logger, 'debug');
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
+    addIssueStub = sandbox.stub(issueModule, 'addOrUpdateIssue');
   });
 
   afterEach(() => {
@@ -518,32 +521,23 @@ describe('Sync repo settings', () => {
   it('should handle a malformed config yaml', async () => {
     const org = 'Codertocat';
     const repo = 'Hello-World';
-
+    addIssueStub.resolves({number: 123});
     getConfigStub.restore();
-    const scopes = [
-      await nockConfigFile('malformed'),
-      nockLanguagesList(org, repo, {kotlin: 1}),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-      nockDefaultBranch('Codertocat/Hello-World', 'main'),
-    ];
+    const scope = await nockConfigFile('malformed');
     await receive(org, repo);
-    scopes.forEach(s => s.done());
+    scope.done();
+    sinon.assert.calledOnce(addIssueStub);
   });
 
   it('should handle a invalid config yaml', async () => {
     const org = 'Codertocat';
     const repo = 'Hello-World';
 
+    addIssueStub.resolves({number: 123});
     getConfigStub.restore();
-    const scopes = [
-      await nockConfigFile('invalidYamlConfig'),
-      nockLanguagesList(org, repo, {kotlin: 1}),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-      nockDefaultBranch('Codertocat/Hello-World', 'main'),
-    ];
+    const scope = await nockConfigFile('invalidYamlConfig');
     await receive(org, repo);
-    scopes.forEach(s => s.done());
+    scope.done();
+    sinon.assert.calledOnce(addIssueStub);
   });
 });
