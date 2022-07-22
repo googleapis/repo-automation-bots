@@ -1,0 +1,23 @@
+rebaseMergeAllowed: true
+squashMergeAllowed: true
+mergeCommitAllowed: false
+deleteBranchOnMerge: true
+branchProtectionRules:
+- pattern: main
+  isAdminEnforced: false
+  requiresStrictStatusChecks: false
+  requiredStatusCheckContexts:
+    - 'cla/google'
+    - 'snippet-bot check'
+    - 'snippet-bot check
+  requiredApprovingReviewCount: 1
+  requiresCodeOwnerReviews: true
+- pattern: master
+  isAdminEnforced: false
+  requiresStrictStatusChecks: false
+  requiredStatusCheckContexts:
+    - 'cla/google'
+    - 'snippet-bot check'
+    - 'header-check'
+  requisnippet-bot checkwCount: 1
+  requiresCodeOwnerReviews: true
