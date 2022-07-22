@@ -33,6 +33,21 @@ nock.disableNetConnect();
 const org = 'googleapis';
 let probot: Probot;
 
+async function nockConfigFile(fixtureName: string) {
+  const content = await fs.readFile(`./test/fixtures/${fixtureName}.yaml`);
+  const base64Config = content.toString('base64');
+  const fileResponse = {
+    size: base64Config.length,
+    content: base64Config,
+    encoding: 'base64',
+  };
+  return nock('https://api.github.com')
+    .get(
+      '/repos/Codertocat/Hello-World/contents/.github%2Fsync-repo-settings.yaml'
+    )
+    .reply(200, fileResponse);
+}
+
 function nockLanguagesList(org: string, repo: string, data: {}) {
   return nock('https://api.github.com')
     .get(`/repos/${org}/${repo}/languages`)
@@ -497,6 +512,38 @@ describe('Sync repo settings', () => {
       payload,
       id: 'abc123',
     });
+    scopes.forEach(s => s.done());
+  });
+
+  it('should handle a malformed config yaml', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+
+    getConfigStub.restore();
+    const scopes = [
+      await nockConfigFile('malformed'),
+      nockLanguagesList(org, repo, {kotlin: 1}),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('Codertocat/Hello-World', 'main'),
+    ];
+    await receive(org, repo);
+    scopes.forEach(s => s.done());
+  });
+
+  it('should handle a invalid config yaml', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+
+    getConfigStub.restore();
+    const scopes = [
+      await nockConfigFile('invalidYamlConfig'),
+      nockLanguagesList(org, repo, {kotlin: 1}),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('Codertocat/Hello-World', 'main'),
+    ];
+    await receive(org, repo);
     scopes.forEach(s => s.done());
   });
 });
