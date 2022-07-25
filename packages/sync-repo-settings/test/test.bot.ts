@@ -21,6 +21,7 @@ import {PullRequestOpenedEvent} from '@octokit/webhooks-types';
 import {promises as fs} from 'fs';
 import yaml from 'js-yaml';
 import * as botConfigModule from '@google-automations/bot-config-utils';
+import * as issueModule from '@google-automations/issue-utils';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
@@ -32,6 +33,21 @@ nock.disableNetConnect();
 
 const org = 'googleapis';
 let probot: Probot;
+
+async function nockConfigFile(fixtureName: string) {
+  const content = await fs.readFile(`./test/fixtures/${fixtureName}.yaml`);
+  const base64Config = content.toString('base64');
+  const fileResponse = {
+    size: base64Config.length,
+    content: base64Config,
+    encoding: 'base64',
+  };
+  return nock('https://api.github.com')
+    .get(
+      '/repos/Codertocat/Hello-World/contents/.github%2Fsync-repo-settings.yaml'
+    )
+    .reply(200, fileResponse);
+}
 
 function nockLanguagesList(org: string, repo: string, data: {}) {
   return nock('https://api.github.com')
@@ -124,6 +140,7 @@ const sandbox = sinon.createSandbox();
 
 describe('Sync repo settings', () => {
   let getConfigStub: sinon.SinonStub;
+  let addIssueStub: sinon.SinonStub;
   beforeEach(() => {
     probot = createProbot({
       overrides: {
@@ -139,6 +156,7 @@ describe('Sync repo settings', () => {
     sandbox.stub(logger, 'info');
     sandbox.stub(logger, 'debug');
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
+    addIssueStub = sandbox.stub(issueModule, 'addOrUpdateIssue');
   });
 
   afterEach(() => {
@@ -498,5 +516,28 @@ describe('Sync repo settings', () => {
       id: 'abc123',
     });
     scopes.forEach(s => s.done());
+  });
+
+  it('should handle a malformed config yaml', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    addIssueStub.resolves({number: 123});
+    getConfigStub.restore();
+    const scope = await nockConfigFile('malformed');
+    await receive(org, repo);
+    scope.done();
+    sinon.assert.calledOnce(addIssueStub);
+  });
+
+  it('should handle a invalid config yaml', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+
+    addIssueStub.resolves({number: 123});
+    getConfigStub.restore();
+    const scope = await nockConfigFile('invalidYamlConfig');
+    await receive(org, repo);
+    scope.done();
+    sinon.assert.calledOnce(addIssueStub);
   });
 });

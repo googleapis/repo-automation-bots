@@ -14,13 +14,21 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {getContextLogger} from 'gcf-utils';
-import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {getContextLogger, GCFLogger} from 'gcf-utils';
+import {
+  ConfigChecker,
+  getConfig,
+  InvalidConfigurationFormat,
+} from '@google-automations/bot-config-utils';
+import {addOrUpdateIssue} from '@google-automations/issue-utils';
 
 import {SyncRepoSettings} from './sync-repo-settings';
 import {RepoConfig} from './types';
 import schema from './schema.json';
 import {CONFIG_FILE_NAME} from './config';
+import {YAMLException} from 'js-yaml';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
@@ -86,13 +94,26 @@ export function handler(app: Probot) {
     }
 
     const {owner, repo} = context.repo();
-    const config = await getConfig<RepoConfig>(
-      context.octokit,
-      owner,
-      repo,
-      CONFIG_FILE_NAME,
-      {fallbackToOrgConfig: false, schema: schema}
-    );
+
+    let config: RepoConfig | null;
+    try {
+      config = await getConfig<RepoConfig>(
+        context.octokit,
+        owner,
+        repo,
+        CONFIG_FILE_NAME,
+        {fallbackToOrgConfig: false, schema: schema}
+      );
+    } catch (e) {
+      return await handleConfigurationError(
+        e as Error,
+        context.octokit,
+        owner,
+        repo,
+        logger
+      );
+    }
+
     const repoSettings = new SyncRepoSettings(context.octokit, logger);
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
@@ -111,13 +132,24 @@ export function handler(app: Probot) {
       return;
     }
 
-    const config = await getConfig<RepoConfig>(
-      context.octokit,
-      owner,
-      repo,
-      CONFIG_FILE_NAME,
-      {fallbackToOrgConfig: false, schema: schema}
-    );
+    let config: RepoConfig | null;
+    try {
+      config = await getConfig<RepoConfig>(
+        context.octokit,
+        owner,
+        repo,
+        CONFIG_FILE_NAME,
+        {fallbackToOrgConfig: false, schema: schema}
+      );
+    } catch (e) {
+      return await handleConfigurationError(
+        e as Error,
+        context.octokit,
+        owner,
+        repo,
+        logger
+      );
+    }
 
     const repoSettings = new SyncRepoSettings(context.octokit, logger);
     await repoSettings.syncRepoSettings({
@@ -144,4 +176,44 @@ export function handler(app: Probot) {
       defaultBranch,
     });
   });
+}
+
+async function handleConfigurationError(
+  e: Error,
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  logger: GCFLogger
+) {
+  if (e instanceof InvalidConfigurationFormat) {
+    // The config does not match the defined schema -- open an issue
+    const issue = await addOrUpdateIssue(
+      octokit,
+      owner,
+      repo,
+      '[SyncRepoSettings bot] - Invalid config file',
+      `${e.message}\n\nSchema can be found at https://github.com/googleapis/repo-automation-bots/blob/main/packages/sync-repo-settings/src/schema.json`,
+      [],
+      logger
+    );
+    logger.warn(`${owner}/${repo} had invalid config: opened #${issue.number}`);
+    return;
+  } else if (e instanceof YAMLException) {
+    // The config has invalid yaml -- open an issue
+    const issue = await addOrUpdateIssue(
+      octokit,
+      owner,
+      repo,
+      '[SyncRepoSettings bot] - Invalid config file',
+      e.message,
+      [],
+      logger
+    );
+    logger.warn(
+      `${owner}/${repo} had malformed config: opened #${issue.number}`
+    );
+    return;
+  }
+  // some other kind of error, rethrow
+  throw e;
 }

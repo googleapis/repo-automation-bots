@@ -17,6 +17,5 @@ import {handler} from './bot';
 
 const bootstrap = new GCFBootstrapper();
 module.exports['sync_repo_settings'] = bootstrap.gcf(handler, {
-  background: true,
   logging: true,
 });
