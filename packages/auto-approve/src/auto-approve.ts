@@ -198,6 +198,7 @@ export function handler(app: Probot) {
     [
       'pull_request.opened',
       'pull_request.reopened',
+      'pull_request.edited',
       'pull_request.synchronize',
     ],
     async (context: Context<'pull_request'>) => {
