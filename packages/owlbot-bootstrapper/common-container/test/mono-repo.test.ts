@@ -191,6 +191,8 @@ describe('MonoRepo class', async () => {
       .get('/repos/googleapis/googleapis-gen/commits')
       .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
       .post(`/repos/googleapis/${FAKE_REPO_NAME}/pulls`)
+      .reply(201, {number: 1})
+      .post(`/repos/googleapis/${FAKE_REPO_NAME}/issues/1/labels`)
       .reply(201);
 
     monoRepo.repoName = FAKE_REPO_NAME;

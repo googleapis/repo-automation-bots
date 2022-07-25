@@ -19,7 +19,7 @@ import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG, REGENERATE_CHECKBOX_TEXT} from '../utils';
+import {ORG} from '../utils';
 import snapshot from 'snap-shot-it';
 import {Language} from '../interfaces';
 import sinon from 'sinon';
@@ -131,7 +131,7 @@ describe('common utils tests', async () => {
       'packages/google-cloud-kms/.github/.OwlBot.yaml'
     );
 
-    const expectation = `${REGENERATE_CHECKBOX_TEXT}\nCopy-Tag:${Buffer.from(
+    const expectation = `Copy-Tag:${Buffer.from(
       '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
     ).toString('base64')}`;
     assert(copyTagText, expectation);
@@ -144,7 +144,7 @@ describe('common utils tests', async () => {
         '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
       ).toString('base64')}`
     );
-    const expectation = `${REGENERATE_CHECKBOX_TEXT}\nSource-Link: https://googleapis-gen@6dcb09b5b57875f334f61aebed695e2e4193db5e\nCopy-Tag:${Buffer.from(
+    const expectation = `Source-Link: https://googleapis-gen@6dcb09b5b57875f334f61aebed695e2e4193db5e\nCopy-Tag:${Buffer.from(
       '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
     ).toString('base64')}`;
     assert(prText, expectation);

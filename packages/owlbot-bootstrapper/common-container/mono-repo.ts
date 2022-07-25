@@ -23,6 +23,7 @@ import {
   INTER_CONTAINER_VARS_FILE,
   getCopyTagText,
   getLatestShaGoogleapisGen,
+  addOwlBotLabel,
 } from './utils';
 import {logger} from 'gcf-utils';
 
@@ -131,7 +132,7 @@ export class MonoRepo {
       directoryPath,
       copyTagText
     );
-    await openAPR(
+    const prNumber = await openAPR(
       this.octokit,
       interContainerVars.branchName,
       this.repoName,
@@ -139,6 +140,7 @@ export class MonoRepo {
       latestSha,
       copyTagText
     );
+    await addOwlBotLabel(this.octokit, this.repoName, prNumber);
   }
 
   /**
