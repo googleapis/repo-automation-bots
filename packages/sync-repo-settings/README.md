@@ -27,6 +27,9 @@ branchProtectionRules:
 # Identifies the protection rule pattern. Name of the branch to be protected.
 # Defaults to `master`
 - pattern: master
+  # Will new commits pushed to matching branches dissmiss pull request review approvals.
+  # Defaults to `false`
+  dismissesStaleReviews: false
   # Can admins overwrite branch protection.
   # Defaults to `true`
   isAdminEnforced: true
@@ -42,6 +45,21 @@ branchProtectionRules:
   requiredStatusCheckContexts:
     - check1
     - check2
+  # Are commits required to be signed.
+  # Defaults to `false`
+  requiresCommitSignatures: false
+  # Are status checks required to update matching branches.
+  # Defaults to `true`
+  requiresStatusChecks: true
+  # Is pushing to matching branches restricted.
+  # Defaults to `false`
+  restrictPushes: false
+  # Is dismissal of pull request reviews restricted.
+  # Defaults to `false`
+  restrictsReviewDismissals: false
+  # Is linear history required for this branch.
+  # Defaults to `true`
+  requiresLinearHistory: true
 # List of explicit permissions to add (additive only)
 permissionRules:
     # Team slug to add to repository permissions
