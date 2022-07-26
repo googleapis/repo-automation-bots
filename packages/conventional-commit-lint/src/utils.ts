@@ -123,11 +123,11 @@ export async function scanPullRequest(
 
   if (result.valid === false) {
     lintError = true;
-    text += `:x: The following linting errors found:\n`;
+    text += ':x: The following linting errors found:\n';
     result.errors.forEach(error => {
       text += `* ${error.message}\n`;
     });
-    text += `for the following input:\n"*${result.input}*"\n\n`
+    text += `for the following input:\n"*${result.input}*"\n\n`;
 
     // And if there's only one commit and the commit message and the
     // PR title are not the same value, it's mostly because the PR
