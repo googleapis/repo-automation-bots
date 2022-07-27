@@ -8,7 +8,6 @@ exports['common utils tests opens a PR against the main branch 1'] = {
 exports[
   'common utils tests should open an issue on a given repo, and should not print any GH tokens 1'
 ] = {
-  title:
-    'Googleapis Bootstrapper failed creating google.cloud.kms.v1 for python',
+  title: 'Owlbot Bootstrapper failed creating google.cloud.kms.v1 for python',
   body: 'Check build number 1234 in myproject for more details:\n\nWe are missing this piece of critical info, you used ',
 };
