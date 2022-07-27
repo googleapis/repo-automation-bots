@@ -19,15 +19,22 @@ import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 import {failureChecker, TimeMethods} from '../src/failurechecker';
+import * as issueModule from '@google-automations/issue-utils';
 
 nock.disableNetConnect();
 
+const sandbox = sinon.createSandbox();
+
 describe('failurechecker', () => {
   let probot: Probot;
+  let addIssueStub: sinon.SinonStub;
 
   beforeEach(() => {
     // Later versions of probot seem to have problems dealing with fake sinon timers.
-    sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 20)));
+    sandbox
+      .stub(TimeMethods, 'Date')
+      .returns(new Date(Date.UTC(2020, 1, 1, 20)));
+    addIssueStub = sandbox.stub(issueModule, 'addOrUpdateIssue').resolves();
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -42,12 +49,12 @@ describe('failurechecker', () => {
 
   afterEach(() => {
     nock.cleanAll();
-    sinon.restore();
+    sandbox.restore();
   });
 
   it('opens an issue on GitHub if there exists a pending label > threshold', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -63,14 +70,12 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: '2020-01-30T13:33:48Z',
+          pull_request: {
+            merged_at: '2020-01-30T13:33:48Z',
+          },
+          labels: [{name: 'autorelease: pending'}],
         },
       ])
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: pending'}],
-      })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
@@ -78,18 +83,7 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {})
-      .post('/repos/googleapis/nodejs-foo/issues', body => {
-        snapshot(body);
-        return true;
-      })
-      .reply(200);
+      .reply(200, []);
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,7 +92,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -109,11 +103,13 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.calledOnce(addIssueStub);
+    snapshot(addIssueStub.getCall(0).args[4]);
   });
 
   it('opens an issue on GitHub if there exists a tagged label > threshold', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -133,29 +129,16 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: '2020-01-30T13:33:48Z',
+          pull_request: {
+            merged_at: '2020-01-30T13:33:48Z',
+          },
+          labels: [{name: 'autorelease: pending'}],
         },
       ])
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: pending'}],
-      })
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {})
-      .post('/repos/googleapis/nodejs-foo/issues', body => {
-        snapshot(body);
-        return true;
-      })
-      .reply(200);
+      .reply(200, []);
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,7 +147,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -175,11 +158,13 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.calledOnce(addIssueStub);
+    snapshot(addIssueStub.getCall(0).args[4]);
   });
 
   it('does not open issue for tagged label, when upstream repository of type "go-yoshi"', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -195,12 +180,6 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {})
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
       .reply(200, []);
 
     await probot.receive({
@@ -210,7 +189,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -221,11 +200,12 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 
   it('does not open issue for tagged label, when upstream repository of type "go"', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -241,12 +221,6 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {})
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
       .reply(200, []);
 
     await probot.receive({
@@ -256,7 +230,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -267,11 +241,12 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 
   it('does not open issue for tagged label if disabled in configuration', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -280,21 +255,7 @@ describe('failurechecker', () => {
             disableFailureChecker: true,
           })
         )
-      )
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
-      )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
-      )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {})
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, []);
+      );
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -303,7 +264,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -314,12 +275,13 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 
   it('does not open an issue if merged_at is < threshold', async () => {
     const date = new Date().toISOString();
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -343,14 +305,12 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: date,
+          pull_request: {
+            merged_at: date
+          },
+          labels: [{name: 'autorelease: pending'}],
         },
-      ])
-      .get('/rate_limit')
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, []);
+      ]);
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -359,7 +319,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -370,11 +330,12 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 
   it('does not open an issue if merged_at is over the max threshold', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -398,14 +359,12 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: '2019-12-25T13:33:48Z',
+          pull_request: {
+            merged_at: '2019-12-25T13:33:48Z',
+          },
+          labels: [{name: 'autorelease: pending'}],
         },
-      ])
-      .get('/rate_limit')
-      .reply(200, {})
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, []);
+      ]);
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -414,7 +373,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -425,11 +384,12 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 
   it('does not open an issue if a prior warning issue is still open', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -453,26 +413,12 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: '2020-01-30T13:33:48Z',
+          pull_request: {
+            merged_at: '2020-01-30T13:33:48Z',
+          },
+          labels: [{name: 'autorelease: pending'}],
         },
-      ])
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: pending'}],
-      })
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [
-        {
-          title: 'Warning: a recent release failed',
-          number: 44,
-          body: 'The following release PRs may have failed:\n\n* #33',
-        },
-      ])
-      .get('/rate_limit')
-      .reply(200, {});
+      ]);
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -481,7 +427,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -492,82 +438,16 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.calledOnce(addIssueStub);
+    snapshot(addIssueStub.getCall(0).args[4]);
   });
 
   it('does not run outside of working hours', async () => {
     // UTC 05:00 is outside of working hours:
-    sinon.restore();
-    sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 5)));
-
-    await probot.receive({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      name: 'schedule.repository' as any,
-      payload: {
-        repository: {
-          name: 'nodejs-foo',
-        },
-        organization: {
-          login: 'googleapis',
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-      id: 'abc123',
-    });
-  });
-
-  it('closes a PR once failing releases are handled', async () => {
-    const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
-      .reply(
-        200,
-        Buffer.from(
-          JSON.stringify({
-            releaseType: 'node',
-          })
-        )
-      )
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
-      )
-      .reply(200, [
-        {
-          number: 33,
-          updated_at: '2020-01-30T13:33:48Z',
-        },
-      ])
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [
-          {name: 'autorelease: failed'},
-          {name: 'autorelease: published'},
-        ],
-      })
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
-      )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
-      )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [
-        {
-          title: 'Warning: a recent release failed',
-          number: 44,
-        },
-      ])
-      .get('/rate_limit')
-      .reply(200, {})
-      .patch('/repos/googleapis/nodejs-foo/issues/44', body => {
-        snapshot(body);
-        return true;
-      })
-      .reply(200, []);
+    sandbox.restore();
+    sandbox
+      .stub(TimeMethods, 'Date')
+      .returns(new Date(Date.UTC(2020, 1, 1, 5)));
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -576,7 +456,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -586,12 +466,12 @@ describe('failurechecker', () => {
       } as any,
       id: 'abc123',
     });
-    requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 
   it('ignores a PR both failed and published', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -607,17 +487,12 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: '2020-01-30T13:33:48Z',
+          labels: [
+            {name: 'autorelease: failed'},
+            {name: 'autorelease: published'},
+          ],
         },
       ])
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [
-          {name: 'autorelease: failed'},
-          {name: 'autorelease: published'},
-        ],
-      })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
@@ -625,13 +500,7 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {});
+      .reply(200, []);
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -640,7 +509,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -651,11 +520,12 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 
   it('updates an issue with new failures', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -671,24 +541,20 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: '2020-01-30T13:33:48Z',
+          labels: [{name: 'autorelease: failed'}],
+          pull_request: {
+            merged_at: '2020-01-30T13:33:48Z',
+          }
         },
         {
           number: 34,
           updated_at: '2020-01-30T13:33:48Z',
+          labels: [{name: 'autorelease: failed'}],
+          pull_request: {
+            merged_at: '2020-01-30T13:33:48Z',
+          }
         },
       ])
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: failed'}],
-      })
-      .get('/repos/googleapis/nodejs-foo/pulls/34')
-      .reply(200, {
-        number: 34,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: failed'}],
-      })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
@@ -696,23 +562,6 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [
-        {
-          title: 'Warning: a recent release failed',
-          number: 44,
-          body: 'The following release PRs may have failed:\n\n* #33',
-        },
-      ])
-      .get('/rate_limit')
-      .reply(200, {})
-      .patch('/repos/googleapis/nodejs-foo/issues/44', body => {
-        snapshot(body);
-        return true;
-      })
       .reply(200, []);
 
     await probot.receive({
@@ -722,7 +571,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -733,11 +582,13 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.calledOnce(addIssueStub);
+    snapshot(addIssueStub.getCall(0).args[4]);
   });
 
   it('opens an issue with multiple failures', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -753,24 +604,20 @@ describe('failurechecker', () => {
         {
           number: 33,
           updated_at: '2020-01-30T13:33:48Z',
+          labels: [{name: 'autorelease: failed'}],
+          pull_request: {
+            merged_at: '2020-01-30T13:33:48Z',
+          }
         },
         {
           number: 34,
           updated_at: '2020-01-30T13:33:48Z',
+          labels: [{name: 'autorelease: failed'}],
+          pull_request: {
+            merged_at: '2020-01-30T13:33:48Z',
+          }
         },
       ])
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: failed'}],
-      })
-      .get('/repos/googleapis/nodejs-foo/pulls/34')
-      .reply(200, {
-        number: 34,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: failed'}],
-      })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
@@ -778,17 +625,6 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {})
-      .post('/repos/googleapis/nodejs-foo/issues', body => {
-        snapshot(body);
-        return true;
-      })
       .reply(200, []);
 
     await probot.receive({
@@ -798,7 +634,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -809,10 +645,12 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.calledOnce(addIssueStub);
+    snapshot(addIssueStub.getCall(0).args[4]);
   });
   it('does not open a failure issue if PR is missing appropriate labels', async () => {
     const requests = nock('https://api.github.com')
-      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
         200,
         Buffer.from(
@@ -837,19 +675,7 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
-      .reply(200, [])
-      .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
-      )
-      .reply(200, [])
-      .get('/rate_limit')
-      .reply(200, {})
-      .get('/repos/googleapis/nodejs-foo/pulls/33')
-      .reply(200, {
-        number: 33,
-        merged_at: '2020-01-30T13:33:48Z',
-        labels: [],
-      });
+      .reply(200, []);
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -858,7 +684,7 @@ describe('failurechecker', () => {
         repository: {
           name: 'nodejs-foo',
           owner: {
-            login: 'bcoe',
+            login: 'googleapis',
           },
         },
         organization: {
@@ -869,5 +695,6 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+    sinon.assert.notCalled(addIssueStub);
   });
 });
