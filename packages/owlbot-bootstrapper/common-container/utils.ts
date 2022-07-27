@@ -31,9 +31,9 @@ export const OWLBOT_LABEL = 'owlbot:copy-code';
  */
 export async function setConfig(directoryPath: string) {
   try {
-    cmd('git config --global user.name "Googleapis Bootstrapper"');
+    cmd('git config --global user.name "Owlbot Bootstrapper"');
     cmd(
-      'git config --global user.email "googleapis-bootstrapper[bot]@users.noreply.github.com"'
+      'git config --global user.email "owlbot-bootstrapper[bot]@users.noreply.github.com"'
     );
     cmd(
       `git config --global credential.helper 'store --file ${directoryPath}/.git-credentials'`
@@ -179,7 +179,7 @@ export async function openAnIssue(
     await octokit.rest.issues.create({
       owner: ORG,
       repo: repoName,
-      title: `Googleapis Bootstrapper failed creating ${apiName} for ${language}`,
+      title: `Owlbot Bootstrapper failed creating ${apiName} for ${language}`,
       body: `Check build number ${buildId} in ${projectId} for more details:\n\n${errorBody
         ?.toString()
         .replace(tokenRedaction, '')}`,
