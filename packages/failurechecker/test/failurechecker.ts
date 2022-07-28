@@ -306,7 +306,7 @@ describe('failurechecker', () => {
           number: 33,
           updated_at: date,
           pull_request: {
-            merged_at: date
+            merged_at: date,
           },
           labels: [{name: 'autorelease: pending'}],
         },
@@ -544,7 +544,7 @@ describe('failurechecker', () => {
           labels: [{name: 'autorelease: failed'}],
           pull_request: {
             merged_at: '2020-01-30T13:33:48Z',
-          }
+          },
         },
         {
           number: 34,
@@ -552,7 +552,7 @@ describe('failurechecker', () => {
           labels: [{name: 'autorelease: failed'}],
           pull_request: {
             merged_at: '2020-01-30T13:33:48Z',
-          }
+          },
         },
       ])
       .get(
@@ -607,7 +607,7 @@ describe('failurechecker', () => {
           labels: [{name: 'autorelease: failed'}],
           pull_request: {
             merged_at: '2020-01-30T13:33:48Z',
-          }
+          },
         },
         {
           number: 34,
@@ -615,7 +615,7 @@ describe('failurechecker', () => {
           labels: [{name: 'autorelease: failed'}],
           pull_request: {
             merged_at: '2020-01-30T13:33:48Z',
-          }
+          },
         },
       ])
       .get(

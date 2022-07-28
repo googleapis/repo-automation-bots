@@ -20,7 +20,12 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {logger as defaultLogger, getContextLogger, GCFLogger, logger} from 'gcf-utils';
+import {
+  logger as defaultLogger,
+  getContextLogger,
+  GCFLogger,
+  logger,
+} from 'gcf-utils';
 import {addOrUpdateIssue} from '@google-automations/issue-utils';
 
 const RELEASE_TYPE_NO_PUBLISH = new Set(['go-yoshi', 'go', 'simple']);
@@ -177,7 +182,7 @@ class FailureChecker {
         const updatedAt = new Date(issue.updated_at).getTime();
         if (now - updatedAt < WARNING_THRESHOLD) {
           // issue is too new to open an issue
-          logger.info(`PR #${issue.number} is too new.`)
+          logger.info(`PR #${issue.number} is too new.`);
           continue;
         }
         if (now - updatedAt > MAX_THRESHOLD) {
@@ -218,7 +223,7 @@ export function failureChecker(app: Probot) {
       ((await context.config(
         WELL_KNOWN_CONFIGURATION_FILE
       )) as ConfigurationOptions | null) || {};
-    
+
     if (configuration.disableFailureChecker) {
       return;
     }
