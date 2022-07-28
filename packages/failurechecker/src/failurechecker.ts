@@ -114,22 +114,29 @@ class FailureChecker {
     terminalStateLabel: string
   ): Promise<FailedRelease[]> {
     const failedReleases: FailedRelease[] = [];
+    // Look for releases explicitly marked failed - these are usually set by
+    // the release job
     for await (const releasePullRequest of this.pullRequestIterator(
       FAILED_LABEL
     )) {
-      if (!hasLabel(releasePullRequest, terminalStateLabel)) {
-        this.logger.info(
-          `found failure for ${this.owner}/${this.repo} pr = ${
-            releasePullRequest.number
-          } labels = ${releasePullRequest.labels.join(',')}`
-        );
-        failedReleases.push({
-          number: releasePullRequest.number,
-          reason: 'The release job failed -- check the build log.',
-        });
+      if (hasLabel(releasePullRequest, terminalStateLabel)) {
+        // release is marked as both failed and successful - we assume
+        // this job was retried and succeeded
+        continue;
       }
+      this.logger.info(
+        `found failure for ${this.owner}/${this.repo} pr = ${
+          releasePullRequest.number
+        } labels = ${releasePullRequest.labels.join(',')}`
+      );
+      failedReleases.push({
+        number: releasePullRequest.number,
+        reason: 'The release job failed -- check the build log.',
+      });
     }
 
+    // Look for in-progress releases - these usually failed to start the next
+    // step in the pipeline, or failed to report status back
     const inProcessLabels = new Set([TAGGED_LABEL, PENDING_LABEL]);
     inProcessLabels.delete(terminalStateLabel);
     for (const label of inProcessLabels.values()) {
@@ -141,12 +148,15 @@ class FailureChecker {
             } labels = ${releasePullRequest.labels.join(',')}`
           );
           if (hasLabel(releasePullRequest, TRIGGERED_LABEL)) {
+            // Our release job triggering mechanism has added the triggered label,
+            // but the next step failed to report success/failure state.
             failedReleases.push({
               number: releasePullRequest.number,
               reason:
                 'The release job was triggered, but has not reported back success.',
             });
           } else {
+            // The release job has not yet been triggered
             failedReleases.push({
               number: releasePullRequest.number,
               reason: `The release job is '${label}', but expected '${terminalStateLabel}'.`,
