@@ -86,6 +86,62 @@ export function listChangedSubmodules(prFiles: string[]): string[] {
   return directories;
 }
 
+interface ExecutionOutput {
+  output: string;
+  error?: Error;
+}
+export function eachSubmodule(
+  directories: string[],
+  executor: (dir: string) => ExecutionOutput
+): Record<string, ExecutionOutput> {
+  const output: Record<string, ExecutionOutput> = {};
+  for (const directory of directories) {
+    output[directory] = executor(directory);
+  }
+  return output;
+}
+
+function publish(
+  directory: string,
+  dryRun: boolean,
+  execSync: typeof childProcess.execSync,
+  rmSync: typeof fs.rmSync
+): ExecutionOutput {
+  const installCommand = stat(resolve(directory, 'package-lock.json'))
+    ? 'ci'
+    : 'i';
+  const output: string[] = [];
+  try {
+    output.push(
+      execSync(`npm ${installCommand} --registry=https://registry.npmjs.org`, {
+        cwd: directory,
+        stdio: 'inherit',
+        encoding: 'utf-8',
+      })
+    );
+    output.push(
+      execSync(`npm publish --access=public${dryRun ? ' --dry-run' : ''}`, {
+        cwd: directory,
+        stdio: 'inherit',
+        encoding: 'utf-8',
+      })
+    );
+    rmSync(join(directory, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
+  } catch (err) {
+    console.log(err);
+    return {
+      output: output.join('\n'),
+      error: err as Error,
+    };
+  }
+  return {
+    output: output.join('\n'),
+  };
+}
+
 export function publishSubmodules(
   directories: string[],
   dryRun: boolean,
@@ -95,27 +151,15 @@ export function publishSubmodules(
   console.log(`Directories to publish: ${directories}`);
   const execSync = execSyncOverride || childProcess.execSync;
   const rmSync = rmSyncOverride || fs.rmSync;
-  const errors = [];
-  for (const directory of directories) {
-    const installCommand = stat(resolve(directory, 'package-lock.json'))
-      ? 'ci'
-      : 'i';
-    try {
-      execSync(`npm ${installCommand} --registry=https://registry.npmjs.org`, {
-        cwd: directory,
-        stdio: 'inherit',
-      });
-      execSync(`npm publish --access=public${dryRun ? ' --dry-run' : ''}`, {
-        cwd: directory,
-        stdio: 'inherit',
-      });
-      rmSync(join(directory, 'node_modules'), {
-        recursive: true,
-        force: true,
-      });
-    } catch (err) {
-      console.log(err);
-      errors.push(err);
+  const output = eachSubmodule(directories, directory => {
+    return publish(directory, dryRun, execSync, rmSync);
+  });
+
+  // Collect any errors
+  const errors: Error[] = [];
+  for (const directory in output) {
+    if (output[directory].error) {
+      errors.push(output[directory].error!);
     }
   }
   return errors;
