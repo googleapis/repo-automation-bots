@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,23 +20,19 @@ import * as core from '../main';
 interface Args {
   prUrl: string;
   dryRun: boolean;
+  fooBar: string;
 }
-const command: yargs.CommandModule<{}, Args> = {
+
+function fooOptions(yargs: yargs.Argv): yargs.Argv {
+  return yargs
+    .option('foo-bar', {describe: 'foo bar'});
+}
+const publishCommand: yargs.CommandModule<{}, Args> = {
   command: '$0',
   describe: 'publish packages affected by a pull request',
   builder(yargs) {
-    return yargs
-      .option('pr-url', {
-        describe:
-          'the URL of the GH PR for submodules you wish to publish, e.g., https://github.com/googleapis/release-please/pull/707',
-        type: 'string',
-        demand: true,
-      })
-      .option('dry-run', {
-        describe: 'whether or not to publish in dry run',
-        type: 'boolean',
-        default: false,
-      });
+    const foo = fooOptions(yargs);
+    return foo;
   },
   async handler(argv) {
     const appIdPath = process.env.APP_ID_PATH;
@@ -68,7 +64,25 @@ const command: yargs.CommandModule<{}, Args> = {
 
 // Get testing repo that touches submodules that we would want to publish
 // Once we have the list, actually calling npm publish on those modules
-yargs
-  .parserConfiguration({'camel-case-expansion': true})
-  .command(command)
-  .parse();
+export const parser = yargs
+  .command(publishCommand)
+  .option('pr-url', {
+    describe:
+      'the URL of the GH PR for submodules you wish to publish, e.g., https://github.com/googleapis/release-please/pull/707',
+    type: 'string',
+    demand: true,
+  })
+  .option('dry-run', {
+    describe: 'whether or not to publish in dry run',
+    type: 'boolean',
+    default: false,
+  });
+
+// Only run parser if executed with node bin, this allows
+// for the parser to be easily tested:
+let argv: yargs.Arguments;
+if (require.main === module) {
+  (async () => {
+    argv = await parser.parseAsync();
+  })();
+}
