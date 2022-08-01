@@ -90,7 +90,10 @@ describe('CLI', () => {
     });
     it('uses executes a dry run', async () => {
       getOctokitStub.resolves(sandbox.spy());
-      getFilesStub.resolves(['packages/pkg1/package.json', 'packages/pkg1/package-lock.json']);
+      getFilesStub.resolves([
+        'packages/pkg1/package.json',
+        'packages/pkg1/package-lock.json',
+      ]);
       sandbox.stub(process, 'env').value({
         APP_ID_PATH: './test/fixtures/app-id',
         INSTALLATION_ID_PATH: './test/fixtures/installation-id',
