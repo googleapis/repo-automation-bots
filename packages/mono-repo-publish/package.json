@@ -5,10 +5,11 @@
   "main": "index.js",
   "bin": "bin/mono-repo-publish.js",
   "scripts": {
-    "test": "c8 --reporter html --reporter text mocha test/*",
-    "posttest": "semistandard",
-    "fix": "semistandard --fix",
-    "lint": "semistandard"
+    "compile": "tsc",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
+    "fix": "gts fix",
+    "lint": "gts check"
   },
   "files": [
     "src",
@@ -20,15 +21,24 @@
   "author": "Google LLC",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^18.6.3",
+    "@types/sinon": "^10.0.11",
     "c8": "^7.12.0",
+    "cross-env": "^7.0.3",
+    "gts": "^3.1.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
     "semistandard": "^16.0.1",
-    "sinon": "^14.0.0"
+    "sinon": "^14.0.0",
+    "typescript": "~4.7.4"
   },
   "dependencies": {
     "@octokit/auth-app": "^4.0.4",
     "@octokit/rest": "^19.0.3",
     "yargs": "^17.5.1"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
   }
 }
