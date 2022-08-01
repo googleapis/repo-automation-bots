@@ -115,15 +115,15 @@ function publish(
     output.push(
       execSync(`npm ${installCommand} --registry=https://registry.npmjs.org`, {
         cwd: directory,
-        stdio: 'inherit',
         encoding: 'utf-8',
+        stdio: 'inherit',
       })
     );
     output.push(
       execSync(`npm publish --access=public${dryRun ? ' --dry-run' : ''}`, {
         cwd: directory,
-        stdio: 'inherit',
         encoding: 'utf-8',
+        stdio: 'inherit',
       })
     );
     rmSync(join(directory, 'node_modules'), {
