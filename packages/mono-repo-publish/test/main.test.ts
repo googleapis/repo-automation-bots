@@ -101,7 +101,6 @@ describe('mono-repo publish', () => {
   });
 
   it('passes in --dry-run option', () => {
-    const execSync = (core.methodOverrides.execSyncOverride = sandbox.spy());
     core.publishSubmodules(['foo'], true);
     sandbox.assert.calledWith(
       execSync.firstCall,
