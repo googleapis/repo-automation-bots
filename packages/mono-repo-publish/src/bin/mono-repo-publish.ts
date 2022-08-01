@@ -18,21 +18,26 @@ import * as yargs from 'yargs';
 import * as core from '../main';
 
 interface Args {
-  prUrl: string;
-  dryRun: boolean;
-  fooBar: string;
+  'pr-url': string;
+  'dry-run': boolean;
 }
 
-function fooOptions(yargs: yargs.Argv): yargs.Argv {
-  return yargs
-    .option('foo-bar', {describe: 'foo bar'});
-}
 const publishCommand: yargs.CommandModule<{}, Args> = {
   command: '$0',
   describe: 'publish packages affected by a pull request',
   builder(yargs) {
-    const foo = fooOptions(yargs);
-    return foo;
+    return yargs
+      .option('pr-url', {
+        describe:
+          'the URL of the GH PR for submodules you wish to publish, e.g., https://github.com/googleapis/release-please/pull/707',
+        type: 'string',
+        demand: true,
+      })
+      .option('dry-run', {
+        describe: 'whether or not to publish in dry run',
+        type: 'boolean',
+        default: false,
+      });
   },
   async handler(argv) {
     const appIdPath = process.env.APP_ID_PATH;
@@ -44,7 +49,7 @@ const publishCommand: yargs.CommandModule<{}, Args> = {
         'Need to set all of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH'
       );
     }
-    const pr = core.parseURL(argv.prUrl);
+    const pr = core.parseURL(argv['pr-url']);
     const octokit = core.getOctokitInstance(
       appIdPath,
       privateKeyPath,
@@ -55,7 +60,7 @@ const publishCommand: yargs.CommandModule<{}, Args> = {
     }
     const files = await core.getsPRFiles(pr, octokit);
     const submodules = core.listChangedSubmodules(files);
-    const errors = core.publishSubmodules(submodules, argv.dryRun);
+    const errors = core.publishSubmodules(submodules, argv['dry-run']);
     if (errors.length) {
       throw Error('some publications failed, see logs');
     }
@@ -64,25 +69,12 @@ const publishCommand: yargs.CommandModule<{}, Args> = {
 
 // Get testing repo that touches submodules that we would want to publish
 // Once we have the list, actually calling npm publish on those modules
-export const parser = yargs
-  .command(publishCommand)
-  .option('pr-url', {
-    describe:
-      'the URL of the GH PR for submodules you wish to publish, e.g., https://github.com/googleapis/release-please/pull/707',
-    type: 'string',
-    demand: true,
-  })
-  .option('dry-run', {
-    describe: 'whether or not to publish in dry run',
-    type: 'boolean',
-    default: false,
-  });
+export const parser = yargs.command(publishCommand);
 
 // Only run parser if executed with node bin, this allows
 // for the parser to be easily tested:
-let argv: yargs.Arguments;
 if (require.main === module) {
   (async () => {
-    argv = await parser.parseAsync();
+    await parser.parseAsync();
   })();
 }
