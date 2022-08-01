@@ -24,6 +24,14 @@ interface PullRequest {
   number: number;
 }
 
+export const methodOverrides: {
+  execSyncOverride: typeof childProcess.execSync;
+  rmSyncOverride: typeof fs.rmSync;
+} = {
+  execSyncOverride: childProcess.execSync,
+  rmSyncOverride: fs.rmSync,
+};
+
 // TODO: this is a URL; split into owner, repo, and PR
 // const prNumber = process.env.AUTORELEASE_PR;
 // https://github.com/googleapis/releasetool/blob/master/releasetool/commands/publish_reporter.sh
@@ -142,17 +150,43 @@ function publish(
   };
 }
 
-export function publishSubmodules(
-  directories: string[],
-  dryRun: boolean,
-  execSyncOverride?: typeof childProcess.execSync,
-  rmSyncOverride?: typeof fs.rmSync
-) {
+export function publishSubmodules(directories: string[], dryRun: boolean) {
   console.log(`Directories to publish: ${directories}`);
-  const execSync = execSyncOverride || childProcess.execSync;
-  const rmSync = rmSyncOverride || fs.rmSync;
+  const execSync = methodOverrides.execSyncOverride || childProcess.execSync;
+  const rmSync = methodOverrides.rmSyncOverride || fs.rmSync;
   const output = eachSubmodule(directories, directory => {
     return publish(directory, dryRun, execSync, rmSync);
+  });
+
+  // Collect any errors
+  const errors: Error[] = [];
+  for (const directory in output) {
+    if (output[directory].error) {
+      errors.push(output[directory].error!);
+    }
+  }
+  return errors;
+}
+
+export function publishCustom(directories: string[], script: string) {
+  console.log(`Directories to publish: ${directories}`);
+  const execSync = methodOverrides.execSyncOverride || childProcess.execSync;
+  const output = eachSubmodule(directories, directory => {
+    try {
+      return {
+        output: execSync(script, {
+          cwd: directory,
+          encoding: 'utf-8',
+          stdio: 'inherit',
+        }),
+      };
+    } catch (err) {
+      console.error(err);
+      return {
+        output: '',
+        error: err as Error,
+      };
+    }
   });
 
   // Collect any errors
