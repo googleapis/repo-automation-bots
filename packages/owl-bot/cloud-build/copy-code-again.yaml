@@ -73,5 +73,5 @@ steps:
     env:
       - 'HOME=/workspace'
 
-# allow 40 minutes for the post-processor image to run
-timeout: '2400s'
+# allow 80 minutes for the post-processor image to run
+timeout: '4800s'
