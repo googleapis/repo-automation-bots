@@ -30,8 +30,14 @@ nock.disableNetConnect();
 // TODO: Add a system-test with a fixture directory with a few fake modules (and a fake PR) and confirm that
 // it tries to publish all the modules (end-to-end test)
 describe('mono-repo publish', () => {
+  let execSync: sinon.SinonStub;
+  let rmdirSync: sinon.SinonStub;
   afterEach(() => {
     sandbox.restore();
+  });
+  beforeEach(() => {
+    execSync = sandbox.stub(core.methodOverrides, 'execSyncOverride');
+    rmdirSync = sandbox.stub(core.methodOverrides, 'rmSyncOverride');
   });
 
   it('should parse owner, user, and number from the URL', () => {
@@ -83,8 +89,7 @@ describe('mono-repo publish', () => {
   });
 
   it('passes in the right arguments for npm publish', () => {
-    const execSync = sandbox.spy();
-    core.publishSubmodules(['foo'], false, execSync);
+    core.publishSubmodules(['foo'], false);
     sandbox.assert.calledWith(
       execSync.firstCall,
       'npm i --registry=https://registry.npmjs.org'
@@ -96,8 +101,7 @@ describe('mono-repo publish', () => {
   });
 
   it('passes in --dry-run option', () => {
-    const execSync = sandbox.spy();
-    core.publishSubmodules(['foo'], true, execSync);
+    core.publishSubmodules(['foo'], true);
     sandbox.assert.calledWith(
       execSync.firstCall,
       'npm i --registry=https://registry.npmjs.org'
@@ -111,9 +115,7 @@ describe('mono-repo publish', () => {
   // A node_modules folder existing in the root directory was preventing
   // google-api-nodejs-client from publishing.
   it('it removes node_modules after publish', () => {
-    const execSync = sandbox.spy();
-    const rmdirSync = sandbox.spy();
-    const errors = core.publishSubmodules(['foo'], true, execSync, rmdirSync);
+    const errors = core.publishSubmodules(['foo'], true);
     sandbox.assert.calledWith(
       execSync.firstCall,
       'npm i --registry=https://registry.npmjs.org'
@@ -130,8 +132,8 @@ describe('mono-repo publish', () => {
   });
 
   it('returns array of errors after attempting all publications', () => {
-    const execSync = sandbox.mock().throws(Error('publish fail'));
-    const errors = core.publishSubmodules(['foo'], true, execSync);
+    execSync.throws(Error('publish fail'));
+    const errors = core.publishSubmodules(['foo'], true);
     sandbox.assert.calledWith(
       execSync.firstCall,
       'npm i --registry=https://registry.npmjs.org'
@@ -140,8 +142,7 @@ describe('mono-repo publish', () => {
   });
 
   it('uses npm ci, if package-lock.json exists', () => {
-    const execSync = sandbox.spy();
-    core.publishSubmodules(['test/fixtures'], false, execSync);
+    core.publishSubmodules(['test/fixtures'], false);
     sandbox.assert.calledWith(
       execSync.firstCall,
       'npm ci --registry=https://registry.npmjs.org'

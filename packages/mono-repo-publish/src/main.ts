@@ -24,6 +24,14 @@ interface PullRequest {
   number: number;
 }
 
+export const methodOverrides: {
+  execSyncOverride: typeof childProcess.execSync;
+  rmSyncOverride: typeof fs.rmSync;
+} = {
+  execSyncOverride: childProcess.execSync,
+  rmSyncOverride: fs.rmSync,
+};
+
 // TODO: this is a URL; split into owner, repo, and PR
 // const prNumber = process.env.AUTORELEASE_PR;
 // https://github.com/googleapis/releasetool/blob/master/releasetool/commands/publish_reporter.sh
@@ -86,36 +94,106 @@ export function listChangedSubmodules(prFiles: string[]): string[] {
   return directories;
 }
 
-export function publishSubmodules(
+interface ExecutionOutput {
+  output: string;
+  error?: Error;
+}
+export function eachSubmodule(
   directories: string[],
-  dryRun: boolean,
-  execSyncOverride?: typeof childProcess.execSync,
-  rmSyncOverride?: typeof fs.rmSync
-) {
-  console.log(`Directories to publish: ${directories}`);
-  const execSync = execSyncOverride || childProcess.execSync;
-  const rmSync = rmSyncOverride || fs.rmSync;
-  const errors = [];
+  executor: (dir: string) => ExecutionOutput
+): Record<string, ExecutionOutput> {
+  const output: Record<string, ExecutionOutput> = {};
   for (const directory of directories) {
-    const installCommand = stat(resolve(directory, 'package-lock.json'))
-      ? 'ci'
-      : 'i';
-    try {
+    output[directory] = executor(directory);
+  }
+  return output;
+}
+
+function publish(
+  directory: string,
+  dryRun: boolean,
+  execSync: typeof childProcess.execSync,
+  rmSync: typeof fs.rmSync
+): ExecutionOutput {
+  const installCommand = stat(resolve(directory, 'package-lock.json'))
+    ? 'ci'
+    : 'i';
+  const output: string[] = [];
+  try {
+    output.push(
       execSync(`npm ${installCommand} --registry=https://registry.npmjs.org`, {
         cwd: directory,
+        encoding: 'utf-8',
         stdio: 'inherit',
-      });
+      })
+    );
+    output.push(
       execSync(`npm publish --access=public${dryRun ? ' --dry-run' : ''}`, {
         cwd: directory,
+        encoding: 'utf-8',
         stdio: 'inherit',
-      });
-      rmSync(join(directory, 'node_modules'), {
-        recursive: true,
-        force: true,
-      });
+      })
+    );
+    rmSync(join(directory, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
+  } catch (err) {
+    console.log(err);
+    return {
+      output: output.join('\n'),
+      error: err as Error,
+    };
+  }
+  return {
+    output: output.join('\n'),
+  };
+}
+
+export function publishSubmodules(directories: string[], dryRun: boolean) {
+  console.log(`Directories to publish: ${directories}`);
+  const execSync = methodOverrides.execSyncOverride || childProcess.execSync;
+  const rmSync = methodOverrides.rmSyncOverride || fs.rmSync;
+  const output = eachSubmodule(directories, directory => {
+    return publish(directory, dryRun, execSync, rmSync);
+  });
+
+  // Collect any errors
+  const errors: Error[] = [];
+  for (const directory in output) {
+    if (output[directory].error) {
+      errors.push(output[directory].error!);
+    }
+  }
+  return errors;
+}
+
+export function publishCustom(directories: string[], script: string) {
+  console.log(`Directories to publish: ${directories}`);
+  const execSync = methodOverrides.execSyncOverride || childProcess.execSync;
+  const output = eachSubmodule(directories, directory => {
+    try {
+      return {
+        output: execSync(script, {
+          cwd: directory,
+          encoding: 'utf-8',
+          stdio: 'inherit',
+        }),
+      };
     } catch (err) {
-      console.log(err);
-      errors.push(err);
+      console.error(err);
+      return {
+        output: '',
+        error: err as Error,
+      };
+    }
+  });
+
+  // Collect any errors
+  const errors: Error[] = [];
+  for (const directory in output) {
+    if (output[directory].error) {
+      errors.push(output[directory].error!);
     }
   }
   return errors;
