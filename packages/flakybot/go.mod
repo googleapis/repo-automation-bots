@@ -1,6 +1,6 @@
 module github.com/googleapis/repo-automation-bots/packages/flakybot
 
-go 1.18
+go 1.19
 
 require (
 	cloud.google.com/go/pubsub v1.23.1
