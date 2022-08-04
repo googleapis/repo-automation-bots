@@ -1,11 +1,11 @@
 module github.com/googleapis/repo-automation-bots/serverless-scheduler-proxy
 
-go 1.18
+go 1.19
 
 require (
 	cloud.google.com/go/secretmanager v1.5.0
 	github.com/google/uuid v1.3.0
-	google.golang.org/genproto v0.0.0-20220628213854-d9e0b6570c03
+	google.golang.org/genproto v0.0.0-20220802133213-ce4fa296bf78
 )
 
 require (
@@ -24,6 +24,6 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.86.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.47.0 // indirect
+	google.golang.org/grpc v1.48.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
