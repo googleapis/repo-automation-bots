@@ -1,7 +1,7 @@
 {
   "name": "header-checker-lint",
   "version": "1.2.0",
-  "description": "lint commit messages based on conventionalcommits.org",
+  "description": "lint headers for correct copyright information",
   "private": true,
   "author": "Google Inc.",
   "license": "Apache-2.0",
