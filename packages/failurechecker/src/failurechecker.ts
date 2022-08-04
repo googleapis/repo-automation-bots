@@ -136,7 +136,8 @@ class FailureChecker {
     }
 
     // Look for in-progress releases - these usually failed to start the next
-    // step in the pipeline, or failed to report status back
+    // step in the pipeline, or failed to report status back. We also ignore
+    // pull requests that are too new (see WARNING_THRESHOLD)
     const inProcessLabels = new Set([TAGGED_LABEL, PENDING_LABEL]);
     inProcessLabels.delete(terminalStateLabel);
     for (const label of inProcessLabels.values()) {
