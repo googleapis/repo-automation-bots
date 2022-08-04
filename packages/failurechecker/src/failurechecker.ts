@@ -17,15 +17,24 @@
 // check whether type bindings are already published.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, ProbotOctokit} from 'probot';
-import {logger as defaultLogger, getContextLogger, GCFLogger} from 'gcf-utils';
+import {Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {
+  logger as defaultLogger,
+  getContextLogger,
+  GCFLogger,
+  logger,
+} from 'gcf-utils';
+import {addOrUpdateIssue} from '@google-automations/issue-utils';
 
-type OctokitType = InstanceType<typeof ProbotOctokit>;
-
-// labels indicative of the fact that a release has not completed yet.
-const RELEASE_LABELS = ['autorelease: pending', 'autorelease: failed'];
-const RELEASE_TYPE_NO_PUBLISH = ['go-yoshi', 'go', 'simple'];
+const RELEASE_TYPE_NO_PUBLISH = new Set(['go-yoshi', 'go', 'simple']);
 const SUCCESSFUL_PUBLISH_LABEL = 'autorelease: published';
+const FAILED_LABEL = 'autorelease: failed';
+const TAGGED_LABEL = 'autorelease: tagged';
+const PENDING_LABEL = 'autorelease: pending';
+const TRIGGERED_LABEL = 'autorelease: triggered';
+const ISSUE_TITLE = 'Warning: a recent release failed';
 
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
@@ -51,148 +60,209 @@ export const TimeMethods = {
   },
 };
 
+interface ReleasePullRequest {
+  number: number;
+  labels: string[];
+  updatedAt: number;
+}
+
+interface FailedRelease {
+  number: number;
+  reason: string;
+}
+
+function hasLabel(
+  pullRequest: ReleasePullRequest,
+  labelToFind: string
+): boolean {
+  return !!pullRequest.labels.find(label => label === labelToFind);
+}
+
+function buildIssueBody(failures: FailedRelease[]): string {
+  const list = failures
+    .map(failure => `* #${failure.number} - ${failure.reason}`)
+    .join('\n');
+  return `The following release PRs may have failed:\n\n${list}`;
+}
+
+/**
+ * Helper class for encapsulating the discovery of failed releases.
+ */
+class FailureChecker {
+  private octokit: Octokit;
+  private owner: string;
+  private repo: string;
+  private logger: GCFLogger;
+  constructor(
+    octokit: Octokit,
+    owner: string,
+    repo: string,
+    logger: GCFLogger = defaultLogger
+  ) {
+    this.octokit = octokit;
+    this.owner = owner;
+    this.repo = repo;
+    this.logger = logger;
+  }
+
+  /**
+   * Return a list of failed releases with the reason they failed.
+   * @param {string} terminalStateLabel The expected final status label
+   * @returns {FailedRelease[]} Failed releases with the reason they failed.
+   */
+  async findFailedReleases(
+    terminalStateLabel: string
+  ): Promise<FailedRelease[]> {
+    const failedReleases: FailedRelease[] = [];
+    // Look for releases explicitly marked failed - these are usually set by
+    // the release job
+    for await (const releasePullRequest of this.pullRequestIterator(
+      FAILED_LABEL
+    )) {
+      if (hasLabel(releasePullRequest, terminalStateLabel)) {
+        // release is marked as both failed and successful - we assume
+        // this job was retried and succeeded
+        continue;
+      }
+      this.logger.info(
+        `found failure for ${this.owner}/${this.repo} pr = ${
+          releasePullRequest.number
+        } labels = ${releasePullRequest.labels.join(',')}`
+      );
+      failedReleases.push({
+        number: releasePullRequest.number,
+        reason: 'The release job failed -- check the build log.',
+      });
+    }
+
+    // Look for in-progress releases - these usually failed to start the next
+    // step in the pipeline, or failed to report status back. We also ignore
+    // pull requests that are too new (see WARNING_THRESHOLD)
+    const inProcessLabels = new Set([TAGGED_LABEL, PENDING_LABEL]);
+    inProcessLabels.delete(terminalStateLabel);
+    for (const label of inProcessLabels.values()) {
+      for await (const releasePullRequest of this.pullRequestIterator(label)) {
+        if (!hasLabel(releasePullRequest, terminalStateLabel)) {
+          this.logger.info(
+            `found failure for ${this.owner}/${this.repo} pr = ${
+              releasePullRequest.number
+            } labels = ${releasePullRequest.labels.join(',')}`
+          );
+          if (hasLabel(releasePullRequest, TRIGGERED_LABEL)) {
+            // Our release job triggering mechanism has added the triggered label,
+            // but the next step failed to report success/failure state.
+            failedReleases.push({
+              number: releasePullRequest.number,
+              reason:
+                'The release job was triggered, but has not reported back success.',
+            });
+          } else {
+            // The release job has not yet been triggered
+            failedReleases.push({
+              number: releasePullRequest.number,
+              reason: `The release job is '${label}', but expected '${terminalStateLabel}'.`,
+            });
+          }
+        }
+      }
+    }
+    return failedReleases;
+  }
+
+  /**
+   * Async iterator to iterate over closed pull requests with the provided
+   * label.
+   * @param {string} label Filter on pull requests with this label
+   * @yields {ReleasePullRequest}
+   */
+  private async *pullRequestIterator(label: string) {
+    const now = TimeMethods.Date().getTime();
+    for await (const response of this.octokit.paginate.iterator(
+      this.octokit.issues.listForRepo,
+      {
+        owner: this.owner,
+        repo: this.repo,
+        labels: label,
+        state: 'closed',
+        sort: 'updated',
+        direction: 'desc',
+        per_page: 16,
+      }
+    )) {
+      for (const issue of response.data) {
+        const updatedAt = new Date(issue.updated_at).getTime();
+        if (now - updatedAt < WARNING_THRESHOLD) {
+          // issue is too new to open an issue
+          logger.info(`PR #${issue.number} is too new.`);
+          continue;
+        }
+        if (now - updatedAt > MAX_THRESHOLD) {
+          // issue is too old to open an issue, stop iteration
+          break;
+        }
+        if (!issue.pull_request?.merged_at) {
+          // ignore non pull request issues and non-merged PRs
+          logger.info(`PR #${issue.number} is not a merged PR`);
+          continue;
+        }
+        const pullRequest: ReleasePullRequest = {
+          number: issue.number,
+          labels: issue.labels.map(label =>
+            typeof label === 'object' ? label.name! : label
+          ),
+          updatedAt,
+        };
+        yield pullRequest;
+      }
+    }
+  }
+}
+
 export function failureChecker(app: Probot) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     const logger = getContextLogger(context);
     const utcHour = TimeMethods.Date().getUTCHours();
-    const owner = context.payload.organization.login;
-    const repo = context.payload.repository.name;
+    const {owner, repo} = context.repo();
 
     // If we're outside of working hours, and we're not in a test context, skip this bot.
     if (utcHour > END_HOUR_UTC && utcHour < START_HOUR_UTC) {
       logger.info("skipping run, we're currently outside of working hours");
       return;
     }
-    // Some release types, such as go-yoshi, have no publish step so a release
-    // is considered successful once a tag has occurred:
     const configuration =
       ((await context.config(
         WELL_KNOWN_CONFIGURATION_FILE
       )) as ConfigurationOptions | null) || {};
-    const labels = [...RELEASE_LABELS];
-    if (
-      RELEASE_TYPE_NO_PUBLISH.indexOf('' + configuration.releaseType) === -1 &&
-      !configuration.disableFailureChecker
-    ) {
-      labels.push('autorelease: tagged');
-    }
 
-    const now = TimeMethods.Date().getTime();
-    const failed: number[] = [];
-    for (const label of labels) {
-      const results = (
-        await context.octokit.issues.listForRepo({
-          owner: context.payload.organization.login,
-          repo: context.payload.repository.name,
-          labels: label,
-          state: 'closed',
-          sort: 'updated',
-          direction: 'desc',
-          per_page: 16,
-        })
-      ).data;
-      for (const issue of results) {
-        const updatedTime = new Date(issue.updated_at).getTime();
-        if (
-          now - updatedTime > WARNING_THRESHOLD &&
-          now - updatedTime < MAX_THRESHOLD
-        ) {
-          // Check that the corresponding PR was actually merged,
-          // rather than closed:
-          const pr = (
-            await context.octokit.pulls.get({
-              owner,
-              repo,
-              pull_number: issue.number,
-            })
-          ).data;
-          if (
-            pr.merged_at &&
-            pr.labels.some(l => labels.includes(l.name!)) &&
-            !pr.labels.some(l => l.name === SUCCESSFUL_PUBLISH_LABEL)
-          ) {
-            logger.info(
-              `found failure for ${owner}/${repo} pr = ${
-                pr.number
-              } labels = ${labels.join(',')}`
-            );
-            failed.push(pr.number);
-          }
-        }
-      }
-    }
-
-    await manageWarningIssue(owner, repo, failed, context.octokit, logger);
-    logger.info(`it's alive! event for ${repo}`);
-  });
-
-  function buildIssueBody(prNumbers: number[]): string {
-    const list = prNumbers.map(prNumber => `* #${prNumber}`).join('\n');
-    return `The following release PRs may have failed:\n\n${list}`;
-  }
-
-  const ISSUE_TITLE = 'Warning: a recent release failed';
-  const LABELS = 'type: process';
-  async function manageWarningIssue(
-    owner: string,
-    repo: string,
-    prNumbers: number[],
-    github: OctokitType,
-    logger: GCFLogger = defaultLogger
-  ) {
-    const {data: issues} = await github.issues.listForRepo({
-      owner,
-      repo,
-      labels: LABELS,
-      per_page: 32,
-    });
-    const warningIssue = issues.find(issue => {
-      return issue.title.includes(ISSUE_TITLE);
-    });
-
-    // TODO: remove this probe once we have a better idea of how
-    // a cron effects our usage limits:
-    logger.info((await github.rateLimit.get()).data);
-
-    // existing issue and no failures - close the existing issue
-    if (prNumbers.length === 0) {
-      if (warningIssue) {
-        await github.issues.update({
-          owner,
-          repo,
-          issue_number: warningIssue.number,
-          state: 'closed',
-        });
-      }
+    if (configuration.disableFailureChecker) {
       return;
     }
 
-    const body = buildIssueBody(prNumbers);
+    const checker = new FailureChecker(context.octokit, owner, repo, logger);
 
-    if (warningIssue) {
-      if (warningIssue.body === body) {
-        // issue already up-to-date
-        logger.info(`a warning issue was already opened for prs ${prNumbers}`);
-        return;
-      }
+    // Some release types, such as go-yoshi, have no publish step so a release
+    // is considered successful once a tag has occurred:
+    const terminalStateLabel = RELEASE_TYPE_NO_PUBLISH.has(
+      configuration.releaseType || ''
+    )
+      ? TAGGED_LABEL
+      : SUCCESSFUL_PUBLISH_LABEL;
 
-      // Update the existing issue
-      await github.issues.update({
-        owner,
-        repo,
-        issue_number: warningIssue.number,
-        body,
-      });
+    const failures = await checker.findFailedReleases(terminalStateLabel);
+    if (failures.length === 0) {
       return;
     }
-    logger.info(`opening warning issue on ${repo} for PR #${prNumbers}`);
-    await github.issues.create({
+
+    const body = buildIssueBody(failures);
+    await addOrUpdateIssue(
+      context.octokit,
       owner,
       repo,
-      title: ISSUE_TITLE,
+      ISSUE_TITLE,
       body,
-      labels: LABELS.split(','),
-    });
-  }
+      ['type: process'],
+      logger
+    );
+  });
 }
