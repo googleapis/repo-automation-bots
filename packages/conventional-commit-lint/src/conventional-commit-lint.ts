@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {getConfigWithDefault, ConfigChecker} from '@google-automations/bot-config-utils';
+import {
+  getConfigWithDefault,
+  ConfigChecker,
+} from '@google-automations/bot-config-utils';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
@@ -47,19 +50,32 @@ export = (app: Probot) => {
         );
         return;
       }
-      const configChecker = new ConfigChecker<Configuration>(
-        schema,
-        CONFIGURATION_FILE
-      );
-      await configChecker.validateConfigChanges(
-        context.octokit,
-        owner,
-        repo,
-        context.payload.pull_request.head.sha,
-        context.payload.pull_request.number
-      );
+      // Create a failing check if an attempt is made to submit an invalid config file.
+      try {
+        const configChecker = new ConfigChecker<Configuration>(
+          schema,
+          CONFIGURATION_FILE
+        );
+        const valid = await configChecker.validateConfigChanges(
+          context.octokit,
+          owner,
+          repo,
+          context.payload.pull_request.head.sha,
+          context.payload.pull_request.number
+        );
+        if (valid === false) {
+          logger.warn(
+            `Invalid config file in PR ${context.payload.pull_request.number} for ${owner}/${repo}`
+          );
+          return;
+        }
+      } catch (e) {
+        const err = e as Error;
+        err.message = `Error validating configuration: ${err.message} ${owner}/${repo}`;
+        logger.error(err);
+      }
       // Conventional Commit Lint (unlike most automations) is opt-out, vs.,
-      // opt in. For this reason config is loa
+      // opt in. For this reason config is loaded with default values.
       let config: Configuration | undefined = undefined;
       try {
         config = await getConfigWithDefault<Configuration>(

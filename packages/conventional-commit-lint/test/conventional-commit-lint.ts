@@ -46,11 +46,18 @@ describe('ConventionalCommitLint', () => {
   const pr11 = require(resolve(fixturesPath, './pr11'));
 
   function stubGoodConfig() {
+    // Stub loading valid config from repository:
     const getConfigWithDefaultStub = sandbox.stub(
       configUtilsModule,
       'getConfigWithDefault'
     );
     getConfigWithDefaultStub.resolves(loadConfig('valid.yaml'));
+    // Stub a valid config update in the PR:
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(true);
   }
 
   beforeEach(() => {
@@ -66,12 +73,6 @@ describe('ConventionalCommitLint', () => {
       gcfUtilsModule,
       'addOrUpdateIssueComment'
     );
-    const validateConfigStub = sandbox.stub(
-      ConfigChecker.prototype,
-      'validateConfigChanges'
-    );
-    // We test the config schema compatibility in config-compatibility.ts
-    validateConfigStub.resolves();
   });
 
   afterEach(() => {
@@ -334,12 +335,22 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('should abort immediately if "enabled" is false', async () => {
+    // Stub logger (used in assertion):
     const loggerStub = sandbox.stub(logger, 'info');
+    // Stub loading configuration from repo:
     const getConfigWithDefaultStub = sandbox.stub(
       configUtilsModule,
       'getConfigWithDefault'
     );
     getConfigWithDefaultStub.resolves(loadConfig('enabled-false.yaml'));
+
+    // Stub a valid config update in the PR:
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(true);
+
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -348,6 +359,32 @@ describe('ConventionalCommitLint', () => {
     sandbox.assert.calledWith(
       loggerStub,
       sandbox.match(/.*linting not enabled.*/)
+    );
+  });
+
+  it('should abort immediately if PR contains update with bad bot configuration', async () => {
+    // Stub logger (used in assertion):
+    const loggerStub = sandbox.stub(logger, 'warn');
+    // Stub loading valid config from repository:
+    const getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
+    getConfigWithDefaultStub.resolves(loadConfig('valid.yaml'));
+    // Stub a valid config update in the PR:
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(false);
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*Invalid config file.*/)
     );
   });
 });
