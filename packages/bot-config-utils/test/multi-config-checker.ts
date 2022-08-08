@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -66,13 +67,14 @@ describe('MultiConfigChecker', () => {
       const checker = new MultiConfigChecker({
         '.github/foo.json': schema,
       });
-      await checker.validateConfigChanges(
+      const valid = await checker.validateConfigChanges(
         testOctokit,
         'testOwner',
         'testRepo',
         'def234',
         1234
       );
+      assert.strictEqual(valid, false);
       scope.done();
     });
     it('validates a single YAML config', async () => {
@@ -87,13 +89,14 @@ describe('MultiConfigChecker', () => {
       const checker = new MultiConfigChecker({
         '.github/bar.yml': schema,
       });
-      await checker.validateConfigChanges(
+      const valid = await checker.validateConfigChanges(
         testOctokit,
         'testOwner',
         'testRepo',
         'def234',
         1234
       );
+      assert.strictEqual(valid, false);
       scope.done();
     });
     it('validates multiple configs', async () => {
@@ -112,13 +115,34 @@ describe('MultiConfigChecker', () => {
         '.github/foo.json': schema,
         '.github/bar.yml': schema,
       });
-      await checker.validateConfigChanges(
+      const valid = await checker.validateConfigChanges(
         testOctokit,
         'testOwner',
         'testRepo',
         'def234',
         1234
       );
+      assert.strictEqual(valid, false);
+      scope.done();
+    });
+    it('handles valid config files', async () => {
+      scope = scope
+        .get('/repos/testOwner/testRepo/git/blobs/foosha')
+        .reply(200, createConfigResponse('config.json'))
+        .get('/repos/testOwner/testRepo/git/blobs/barsha')
+        .reply(200, createConfigResponse('config.yaml'));
+      const checker = new MultiConfigChecker({
+        '.github/bar.yml': schema,
+        '.github/foo.json': schema,
+      });
+      const valid = await checker.validateConfigChanges(
+        testOctokit,
+        'testOwner',
+        'testRepo',
+        'def234',
+        1234
+      );
+      assert.strictEqual(valid, true);
       scope.done();
     });
   });
@@ -142,13 +166,14 @@ describe('MultiConfigChecker', () => {
         '.github/foo.json': schema,
         '.github/bar.yml': schema,
       });
-      await checker.validateConfigChanges(
+      const valid = await checker.validateConfigChanges(
         testOctokit,
         'testOwner',
         'testRepo',
         'def234',
         1234
       );
+      assert.strictEqual(valid, true);
       scope.done();
     });
   });

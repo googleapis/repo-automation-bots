@@ -169,6 +169,8 @@ schema you provided. It will submit a failing status check if:
 - You are trying to add a broken config file, or the config file
   doesn't match the schema.
 
+`validateConfigChanges` resolves `false`, if the config file is invalid,
+and a failing check has been created.
 
 ## Fetch config from the PR head
 Probot's implementation of config always fetches the config from the
