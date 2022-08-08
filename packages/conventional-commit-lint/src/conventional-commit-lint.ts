@@ -86,7 +86,6 @@ export = (app: Probot) => {
           repo,
           CONFIGURATION_FILE,
           {},
-          {schema: schema}
         );
       } catch (e) {
         const err = e as Error;
