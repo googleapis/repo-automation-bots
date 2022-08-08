@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.3.0...mono-repo-publish-v1.4.1) (2022-08-08)
+
+
+### Features
+
+* add custom command for running arbitrary publish script ([#4099](https://github.com/googleapis/repo-automation-bots/issues/4099)) ([34b8777](https://github.com/googleapis/repo-automation-bots/commit/34b8777278f3071a0cdf5bfb671b3888263fae64))
+
+
+### Bug Fixes
+
+* need to compile as part of the prepare step ([0231454](https://github.com/googleapis/repo-automation-bots/commit/0231454de6697eaaf733a01f20fffdcd2f636a2b))
+
 ## [1.3.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.2...mono-repo-publish-v1.3.0) (2022-04-22)
 
 
