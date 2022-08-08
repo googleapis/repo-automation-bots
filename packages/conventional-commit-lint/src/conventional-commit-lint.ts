@@ -74,7 +74,7 @@ export = (app: Probot) => {
       } catch (e) {
         const err = e as Error;
         err.message = `Error validating configuration: ${err.message} ${owner}/${repo}`;
-        logger.error(err);
+        logger.warn(err);
       }
       // Conventional Commit Lint (unlike most automations) is opt-out, vs.,
       // opt in. For this reason config is loaded with default values.
@@ -91,7 +91,7 @@ export = (app: Probot) => {
       } catch (e) {
         const err = e as Error;
         err.message = `Error reading configuration: ${err.message} ${owner}/${repo}`;
-        logger.error(err);
+        logger.warn(err);
       }
 
       // Skip linting if it's explicitly turned off:
