@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.2.0...bot-config-utils-v5.0.0) (2022-08-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **bot-config-utils:** make validateConfigChanges resolve boolean for valid config (#4117)
+
+### Features
+
+* **bot-config-utils:** make validateConfigChanges resolve boolean for valid config ([#4117](https://github.com/googleapis/repo-automation-bots/issues/4117)) ([a9dc853](https://github.com/googleapis/repo-automation-bots/commit/a9dc8534898144167497eb66fa8a8229c6dd890f))
+
 ## [4.2.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.1.0...bot-config-utils-v4.2.0) (2022-08-08)
 
 
