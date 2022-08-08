@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {getConfigWithDefault} from '@google-automations/bot-config-utils';
+import {getConfigWithDefault, ConfigChecker} from '@google-automations/bot-config-utils';
+
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import {PullRequest} from '@octokit/webhooks-types';
@@ -46,7 +47,17 @@ export = (app: Probot) => {
         );
         return;
       }
-
+      const configChecker = new ConfigChecker<Configuration>(
+        schema,
+        CONFIGURATION_FILE
+      );
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        owner,
+        repo,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
       // Conventional Commit Lint (unlike most automations) is opt-out, vs.,
       // opt in. For this reason config is loa
       let config: Configuration | undefined = undefined;

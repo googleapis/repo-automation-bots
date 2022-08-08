@@ -15,6 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as configUtilsModule from '@google-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {logger} from 'gcf-utils';
 import {readFileSync} from 'fs';
 import {resolve} from 'path';
@@ -65,6 +66,12 @@ describe('ConventionalCommitLint', () => {
       gcfUtilsModule,
       'addOrUpdateIssueComment'
     );
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    // We test the config schema compatibility in config-compatibility.ts
+    validateConfigStub.resolves();
   });
 
   afterEach(() => {
