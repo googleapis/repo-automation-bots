@@ -12,6 +12,15 @@ npm install
 npm start
 ```
 
+## Configuration
+
+The following configuration settings can be set by creating a
+`.github/conventional-commit-lint.yaml` file:
+
+| Name         | Description                        | Default              |
+|--------------|------------------------------------|----------------------|
+| enabled      | Should commit linting be enabled?  | `boolean` = `true`   |
+
 ## Testing
 
 This bot uses [nock](https://www.npmjs.com/package/nock) for mocking requests

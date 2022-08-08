@@ -14,6 +14,10 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
+import * as configUtilsModule from '@google-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
+import {logger} from 'gcf-utils';
+import {readFileSync} from 'fs';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
@@ -22,18 +26,39 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as gcfUtilsModule from 'gcf-utils';
 import * as sinon from 'sinon';
+import yaml from 'js-yaml';
 
 import myProbotApp from '../src/conventional-commit-lint';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+function loadConfig(configFile: string) {
+  return yaml.load(
+    readFileSync(resolve(fixturesPath, 'config', configFile), 'utf-8')
+  );
+}
 
 describe('ConventionalCommitLint', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
   let addOrUpdateIssueCommentStub: sinon.SinonStub;
   const pr11 = require(resolve(fixturesPath, './pr11'));
+
+  function stubGoodConfig() {
+    // Stub loading valid config from repository:
+    const getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
+    getConfigWithDefaultStub.resolves(loadConfig('valid.yaml'));
+    // Stub a valid config update in the PR:
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(true);
+  }
 
   beforeEach(() => {
     probot = new Probot({
@@ -56,6 +81,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('sets a "failure" context on PR, if commits fail linting', async () => {
+    stubGoodConfig();
     addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithBadMessage = require(resolve(
       fixturesPath,
@@ -84,6 +110,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('adds a comment when the commit message and the PR title differ', async () => {
+    stubGoodConfig();
     addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithCorrectMessage = require(resolve(
       fixturesPath,
@@ -112,6 +139,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('sets a "success" context on PR, if commit lint succeeds', async () => {
+    stubGoodConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -134,6 +162,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('should handle a PR with no commits', async () => {
+    stubGoodConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -147,6 +176,7 @@ describe('ConventionalCommitLint', () => {
 
   describe('PR With Multiple Commits', () => {
     it('has a valid pull request title', async () => {
+      stubGoodConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_synchronize'
@@ -177,6 +207,7 @@ describe('ConventionalCommitLint', () => {
     });
 
     it('has an invalid pull request title', async () => {
+      stubGoodConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_synchronize_invalid_title'
@@ -207,6 +238,7 @@ describe('ConventionalCommitLint', () => {
     });
 
     it('has a valid title, invalid commit, automerge label', async () => {
+      stubGoodConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_automerge'
@@ -229,6 +261,7 @@ describe('ConventionalCommitLint', () => {
     });
 
     it('has a valid title, invalid commit, automerge enabled', async () => {
+      stubGoodConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_synchronize'
@@ -252,6 +285,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('sets a "success" context on PR with very long lines', async () => {
+    stubGoodConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -276,6 +310,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('sets a "success" context on PR, if subject contains a full stop', async () => {
+    stubGoodConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -297,5 +332,59 @@ describe('ConventionalCommitLint', () => {
 
     await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
+  });
+
+  it('should abort immediately if "enabled" is false', async () => {
+    // Stub logger (used in assertion):
+    const loggerStub = sandbox.stub(logger, 'info');
+    // Stub loading configuration from repo:
+    const getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
+    getConfigWithDefaultStub.resolves(loadConfig('enabled-false.yaml'));
+
+    // Stub a valid config update in the PR:
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(true);
+
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*linting not enabled.*/)
+    );
+  });
+
+  it('should abort immediately if PR contains update with bad bot configuration', async () => {
+    // Stub logger (used in assertion):
+    const loggerStub = sandbox.stub(logger, 'warn');
+    // Stub loading valid config from repository:
+    const getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
+    getConfigWithDefaultStub.resolves(loadConfig('valid.yaml'));
+    // Stub a valid config update in the PR:
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(false);
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*Invalid config file.*/)
+    );
   });
 });
