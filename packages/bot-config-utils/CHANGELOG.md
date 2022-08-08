@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.1.0...bot-config-utils-v4.2.0) (2022-08-08)
+
+
+### Features
+
+* **bot-config-utils:** resolve false on invalid config files ([#4116](https://github.com/googleapis/repo-automation-bots/issues/4116)) ([0c3641c](https://github.com/googleapis/repo-automation-bots/commit/0c3641ce4ff70dd82390be58ab4fe3b6cb51ae44))
+
 ## [4.1.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.0.2...bot-config-utils-v4.1.0) (2022-07-07)
 
 
