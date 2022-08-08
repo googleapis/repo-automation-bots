@@ -63,6 +63,8 @@ export = (app: Probot) => {
           context.payload.pull_request.head.sha,
           context.payload.pull_request.number
         );
+        // valid === false indicates that a failed check was created on the PR,
+        // we can return immediately in this case:
         if (valid === false) {
           logger.warn(
             `Invalid config file in PR ${context.payload.pull_request.number} for ${owner}/${repo}`
