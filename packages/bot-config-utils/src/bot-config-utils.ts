@@ -314,7 +314,7 @@ export class MultiConfigChecker {
    * @param {number} prNumber - The number of the PR.
    * @param {GCFLogger} logger - Optional. Logger for debug output.
    *
-   * @return {Promise<void>}
+   * @return {Promise<boolean>} Returns 'true' if config is valid, 'false' if invalid.
    */
   public async validateConfigChanges(
     octokit: Octokit,
@@ -323,7 +323,7 @@ export class MultiConfigChecker {
     commitSha: string,
     prNumber: number,
     logger: GCFLogger = defaultLogger
-  ): Promise<void> {
+  ): Promise<boolean> {
     const errorTextByFile: Record<string, string[]> = {};
     function addError(file: string, message: string) {
       if (!errorTextByFile[file]) {
@@ -390,7 +390,8 @@ export class MultiConfigChecker {
       }
     }
 
-    for (const file in errorTextByFile) {
+    const files = Object.keys(errorTextByFile);
+    for (const file of files) {
       const errorText = errorTextByFile[file].join('\n');
       const checkParams = {
         owner: owner,
@@ -406,6 +407,8 @@ export class MultiConfigChecker {
       };
       await octokit.checks.create(checkParams);
     }
+    // Return false, if config is invalid, true if valid:
+    return files.length > 0 ? false : true;
   }
 }
 
