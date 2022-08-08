@@ -231,7 +231,7 @@ export class ConfigChecker<ConfigType> {
    * @param {string} commitSha - The commit hash of the tip of the PR head.
    * @param {number} prNumber - The number of the PR.
    *
-   * @return {Promise<void>}
+   * @return {Promise<boolean>} Returns 'true' if config is valid, 'false' if invalid.
    */
   public async validateConfigChanges(
     octokit: Octokit,
@@ -240,8 +240,8 @@ export class ConfigChecker<ConfigType> {
     commitSha: string,
     prNumber: number,
     logger: GCFLogger = defaultLogger
-  ): Promise<void> {
-    await this.checker.validateConfigChanges(
+  ): Promise<boolean> {
+    return await this.checker.validateConfigChanges(
       octokit,
       owner,
       repo,
