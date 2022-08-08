@@ -85,7 +85,7 @@ export = (app: Probot) => {
           owner,
           repo,
           CONFIGURATION_FILE,
-          {},
+          {}
         );
       } catch (e) {
         const err = e as Error;
