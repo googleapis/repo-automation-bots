@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/secretmanager v1.5.0
 	github.com/google/uuid v1.3.0
-	google.golang.org/genproto v0.0.0-20220802133213-ce4fa296bf78
+	google.golang.org/genproto v0.0.0-20220808204814-fd01256a5276
 )
 
 require (
@@ -25,5 +25,5 @@ require (
 	google.golang.org/api v0.86.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.48.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 )
