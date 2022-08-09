@@ -16,6 +16,7 @@ import {
   getConfigWithDefault,
   ConfigChecker,
 } from '@google-automations/bot-config-utils';
+import {Configuration} from './types';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
@@ -27,9 +28,6 @@ import schema from './schema.json';
 import {scanPullRequest} from './utils';
 
 const CONFIGURATION_FILE = 'conventional-commit-lint.yaml';
-interface Configuration {
-  enabled?: boolean;
-}
 
 export = (app: Probot) => {
   app.on(
@@ -112,7 +110,8 @@ export = (app: Probot) => {
       await scanPullRequest(
         context,
         context.payload.pull_request as PullRequest,
-        logger
+        logger,
+        config
       );
     }
   );

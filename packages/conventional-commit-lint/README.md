@@ -17,9 +17,10 @@ npm start
 The following configuration settings can be set by creating a
 `.github/conventional-commit-lint.yaml` file:
 
-| Name         | Description                        | Default              |
-|--------------|------------------------------------|----------------------|
-| enabled      | Should commit linting be enabled?  | `boolean` = `true`   |
+| Name         | Description                                     | Default              |
+|--------------|-------------------------------------------------|----------------------|
+| enabled      | Should commit linting be enabled?               | `boolean` = `true`   |
+| titleCase    | Should commit description begin with a capital? | `boolean` = `true`   |
 
 ## Testing
 
@@ -49,4 +50,3 @@ For more, check out the [Contributing Guide](../../CONTRIBUTING.md).
 ## License
 
 Apache 2.0 © 2019 Google Inc.
-

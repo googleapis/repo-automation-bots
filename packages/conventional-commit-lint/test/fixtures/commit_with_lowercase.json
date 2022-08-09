@@ -17,7 +17,7 @@
         "email": "support@github.com",
         "date": "2011-04-14T16:00:49Z"
       },
-      "message": "feat: All bugs have been fixed.\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "message": "feat(foo): all bugs have been fixed",
       "tree": {
         "url": "https://api.github.com/repos/octocat/Hello-World/tree/6dcb09b5b57875f334f61aebed695e2e4193db5e",
         "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"

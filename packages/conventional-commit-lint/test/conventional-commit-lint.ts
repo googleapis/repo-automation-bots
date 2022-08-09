@@ -387,4 +387,66 @@ describe('ConventionalCommitLint', () => {
       sandbox.match(/.*Invalid config file.*/)
     );
   });
+
+  it('sets "failure" if commit is not title case', async () => {
+    stubGoodConfig();
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    const invalidCommits = [
+      ...require(resolve(fixturesPath, './commit_with_lowercase')),
+    ];
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, invalidCommits)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+  });
+
+  it('allows lack of title case, if titleCase is "false"', async () => {
+    // Stub loading valid config from repository:
+    const getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
+    getConfigWithDefaultStub.resolves(loadConfig('no-title-case.yaml'));
+    // Stub a valid config update in the PR:
+    const validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(true);
+
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    const invalidCommits = [
+      ...require(resolve(fixturesPath, './commit_with_lowercase')),
+    ];
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, invalidCommits)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+  });
 });

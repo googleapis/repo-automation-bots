@@ -5,7 +5,7 @@ exports['ConventionalCommitLint sets a "failure" context on PR, if commits fail 
   "output": {
     "title": "Commit message did not follow Conventional Commits",
     "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git commit --amend` and edit your message to match Conventional Commit guidelines.",
-    "text": ":x: The following linting errors found:\n* subject may not be empty\n* type may not be empty\nfor the following input:\n\"*fix all the bugs*\"\n\n"
+    "text": ":x: The following linting errors found:\n* subject may not be empty\n* type may not be empty\nfor the following input:\n\"*Fix all the bugs*\"\n\n"
   }
 }
 
@@ -57,11 +57,28 @@ exports['ConventionalCommitLint adds a comment when the commit message and the P
   "output": {
     "title": "Commit message did not follow Conventional Commits",
     "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git commit --amend` and edit your message to match Conventional Commit guidelines.",
-    "text": ":x: The following linting errors found:\n* subject may not be empty\n* type may not be empty\nfor the following input:\n\"*fix all the bugs*\"\n\n"
+    "text": ":x: The following linting errors found:\n* subject may not be empty\n* type may not be empty\nfor the following input:\n\"*Fix all the bugs*\"\n\n"
   }
 }
 
 exports['ConventionalCommitLint sets a "success" context on PR with very long lines 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
+
+exports['ConventionalCommitLint sets "failure" if commit is not title case 1'] = {
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+  "conclusion": "failure",
+  "name": "conventionalcommits.org",
+  "output": {
+    "title": "Commit message did not follow Conventional Commits",
+    "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git commit --amend` and edit your message to match Conventional Commit guidelines.",
+    "text": ":x: The following linting errors found:\n* subject must be sentence-case\nfor the following input:\n\"*feat(foo): all bugs have been fixed*\"\n\n"
+  }
+}
+
+exports['ConventionalCommitLint allows lack of title case, if titleCase is "false" 1'] = {
   "name": "conventionalcommits.org",
   "conclusion": "success",
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"

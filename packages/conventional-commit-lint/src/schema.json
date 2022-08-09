@@ -8,6 +8,10 @@
     "enabled": {
       "description": "Should the Conventional Commit Lint bot be enabled.",
       "type": "boolean"
+    },
+    "titleCase": {
+      "description": "Should title case be required for PR/commit descriptions.",
+      "type": "boolean"
     }
   }
 }

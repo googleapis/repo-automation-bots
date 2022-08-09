@@ -15,10 +15,10 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Context} from 'probot';
+import {Configuration} from './types';
 import {components} from '@octokit/openapi-types';
 import {PullRequest} from '@octokit/webhooks-types';
 
-//import {ILint} from '@commitlint/lint';
 import lint from '@commitlint/lint';
 
 import {addOrUpdateIssueComment, GCFLogger} from 'gcf-utils';
@@ -42,18 +42,11 @@ type Label = {
 
 const AUTOMERGE_LABEL = 'automerge';
 
-// modify rules slightly:
-// see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
-delete rules['type-enum'];
-delete rules['subject-full-stop'];
-rules['header-max-length'] = [2, 'always', Number.MAX_VALUE];
-rules['body-max-line-length'] = [2, 'always', Number.MAX_VALUE];
-rules['footer-max-line-length'] = [2, 'always', Number.MAX_VALUE];
-
 export async function scanPullRequest(
   context: Context<'pull_request'> | Context<'issue_comment'>,
   pull_request: PullRequest,
-  logger: GCFLogger
+  logger: GCFLogger,
+  config?: Configuration
 ) {
   // Fetch last 100 commits stored on a specific PR.
   const commitParams = context.repo({
@@ -119,7 +112,7 @@ export async function scanPullRequest(
   // https://github.com/conventional-changelog/commitlint/pull/767
   message = message.replace('!:', ':');
 
-  const result = await lint(message.toLowerCase(), rules);
+  const result = await lint(message, getRules(config));
 
   if (result.valid === false) {
     lintError = true;
@@ -202,4 +195,27 @@ export async function scanPullRequest(
   }
 
   await context.octokit.checks.create(checkParams);
+}
+
+/*
+ * Returns conventional commit rules modified to match guidelines
+ * for cloud.google.com/release-notes.
+ *
+ * @param {Configuration} config - linter config, as described in README.
+ *
+ * @return {Rules} commit lint rules definition.
+ */
+function getRules(config?: Configuration): typeof rules {
+  const r = {...rules};
+  // modify rules slightly:
+  // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
+  delete r['type-enum'];
+  delete r['subject-full-stop'];
+  r['header-max-length'] = [2, 'always', Number.MAX_VALUE];
+  r['body-max-line-length'] = [2, 'always', Number.MAX_VALUE];
+  r['footer-max-line-length'] = [2, 'always', Number.MAX_VALUE];
+  if (config?.titleCase !== false) {
+    r['subject-case'] = [2, 'always', 'sentence-case'];
+  }
+  return r;
 }
