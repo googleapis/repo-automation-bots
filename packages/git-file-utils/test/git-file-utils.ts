@@ -34,7 +34,7 @@ import {resolve} from 'path';
 import {
   BranchFileCache,
   FileNotFoundError,
-  RepositoryFileCache
+  RepositoryFileCache,
 } from '../src/git-file-utils';
 import * as assert from 'assert';
 
