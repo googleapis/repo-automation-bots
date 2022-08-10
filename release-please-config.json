@@ -10,6 +10,9 @@
     "packages/gcf-utils": {
       "release-type": "node"
     },
+    "packages/git-file-utils": {
+      "release-type": "node"
+    },
     "packages/issue-utils": {
       "release-type": "node"
     },
