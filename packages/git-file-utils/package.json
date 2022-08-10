@@ -1,0 +1,49 @@
+{
+  "name": "@google-automations/git-file-utils",
+  "version": "0.0.0",
+  "description": "Utilities for github file operation",
+  "scripts": {
+    "compile": "tsc -p .",
+    "pretest": "npm run compile",
+    "prepare": "npm run compile",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
+    "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "main": "./build/src/git-file-utils.js",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "dependencies": {
+    "@octokit/rest": "19.0.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.3",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^18.6.5",
+    "@types/sinon": "^10.0.13",
+    "c8": "^7.12.0",
+    "chai": "^4.3.6",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.0.1",
+    "gts": "^3.1.0",
+    "mocha": "^10.0.0",
+    "nock": "^13.2.9",
+    "sinon": "^14.0.0",
+    "snap-shot-it": "^7.9.6",
+    "typescript": "~4.7.4"
+  },
+  "engines": {
+    "node": ">= 14"
+  },
+  "keywords": [
+    "Git data API"
+  ],
+  "author": "Jeff Ching <chingor@google.com>",
+  "license": "Apache-2.0",
+  "files": [
+    "build/src"
+  ]
+}
