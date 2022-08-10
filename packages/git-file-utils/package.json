@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/git-file-utils",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Utilities for github file operation",
   "scripts": {
     "compile": "tsc -p .",
