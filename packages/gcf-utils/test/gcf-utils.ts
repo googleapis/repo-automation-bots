@@ -20,6 +20,7 @@ import {resolve} from 'path';
 import snapshot from 'snap-shot-it';
 import {Probot, ProbotOctokit} from 'probot';
 import {describe, beforeEach, afterEach, it} from 'mocha';
+import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 
 nock.disableNetConnect();
@@ -30,7 +31,8 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const app = (app: Probot) => {
   app.on('issues', async context => {
     await addOrUpdateIssueComment(
-      context.octokit,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      context.octokit as any as Octokit,
       context.payload.repository.owner.login,
       context.payload.repository.name,
       context.payload.issue.number,
