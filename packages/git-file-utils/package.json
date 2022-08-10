@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/git-file-utils",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Utilities for github file operation",
   "scripts": {
     "compile": "tsc -p .",
@@ -41,7 +41,7 @@
   "keywords": [
     "Git data API"
   ],
-  "author": "Takashi Matsuo <tmatsuo@google.com>",
+  "author": "Jeff Ching <chingor@google.com>",
   "license": "Apache-2.0",
   "files": [
     "build/src"
