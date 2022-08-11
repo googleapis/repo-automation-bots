@@ -165,7 +165,7 @@ async function getBotSecrets(): Promise<BotSecrets> {
   const functionName = process.env.GCF_SHORT_FUNCTION_NAME;
   const secretsClient = new SecretManagerV1.SecretManagerServiceClient();
   const [version] = await secretsClient.accessSecretVersion({
-    name: `projects/${projectId}/secrets/${functionName}/versions/latest`
+    name: `projects/${projectId}/secrets/${functionName}/versions/latest`,
   });
   // Extract the payload as a string.
   const payload = version?.payload?.data?.toString() || '';
@@ -197,21 +197,14 @@ export async function getAuthenticatedOctokit(
 ): Promise<Octokit> {
   const botSecrets = await getBotSecrets();
   if (installationId === null) {
-    return new Octokit({
-      authStragety: createAppAuth,
-      auth: {
-        appId: botSecrets.appId,
-        privateKey: botSecrets.privateKey,
-        clientSecret: botSecrets.secret,
-      },
-    });
+    throw Error('auth without installation id is not implemented yet')
   }
   return new Octokit({
-    authStragety: createAppAuth,
+    authStrategy: createAppAuth,
     auth: {
       appId: botSecrets.appId,
       privateKey: botSecrets.privateKey,
-      installationId: installationId
+      installationId: installationId,
     },
   });
 }

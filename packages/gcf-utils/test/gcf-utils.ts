@@ -14,7 +14,10 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import {addOrUpdateIssueComment, getAuthenticatedOctokit} from '../src/gcf-utils';
+import {
+  addOrUpdateIssueComment,
+  getAuthenticatedOctokit,
+} from '../src/gcf-utils';
 import * as gcfUtilsModule from '../src/gcf-utils';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
@@ -31,7 +34,9 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // Test app
 const app = (app: Probot) => {
   app.on('issues', async context => {
-    const octokit = await getAuthenticatedOctokit(context.payload.installation?.id);
+    const octokit = await getAuthenticatedOctokit(
+      context.payload.installation?.id
+    );
     await addOrUpdateIssueComment(
       octokit,
       context.payload.repository.owner.login,
@@ -59,7 +64,10 @@ describe('gcf-utils', () => {
         }),
       });
       probot.load(app);
-      getAuthenticatedOctokitStub = sandbox.stub(gcfUtilsModule, 'getAuthenticatedOctokit');
+      getAuthenticatedOctokitStub = sandbox.stub(
+        gcfUtilsModule,
+        'getAuthenticatedOctokit'
+      );
       getAuthenticatedOctokitStub.resolves(new Octokit());
     });
 
