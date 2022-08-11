@@ -14,14 +14,15 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import {addOrUpdateIssueComment} from '../src/gcf-utils';
-
+import {addOrUpdateIssueComment, getAuthenticatedOctokit} from '../src/gcf-utils';
+import * as gcfUtilsModule from '../src/gcf-utils';
+import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import snapshot from 'snap-shot-it';
 import {Probot, ProbotOctokit} from 'probot';
 import {describe, beforeEach, afterEach, it} from 'mocha';
-import {Octokit} from '@octokit/rest';
 import nock from 'nock';
+import * as sinon from 'sinon';
 
 nock.disableNetConnect();
 
@@ -30,9 +31,9 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // Test app
 const app = (app: Probot) => {
   app.on('issues', async context => {
+    const octokit = await getAuthenticatedOctokit(context.payload.installation?.id);
     await addOrUpdateIssueComment(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      context.octokit as any as Octokit,
+      octokit,
       context.payload.repository.owner.login,
       context.payload.repository.name,
       context.payload.issue.number,
@@ -45,6 +46,8 @@ const app = (app: Probot) => {
 
 describe('gcf-utils', () => {
   describe('addOrUpdateIssueComment', () => {
+    const sandbox = sinon.createSandbox();
+    let getAuthenticatedOctokitStub: sinon.SinonStub;
     let probot: Probot;
     beforeEach(() => {
       probot = new Probot({
@@ -56,10 +59,13 @@ describe('gcf-utils', () => {
         }),
       });
       probot.load(app);
+      getAuthenticatedOctokitStub = sandbox.stub(gcfUtilsModule, 'getAuthenticatedOctokit');
+      getAuthenticatedOctokitStub.resolves(new Octokit());
     });
 
     afterEach(() => {
       nock.cleanAll();
+      sandbox.restore();
     });
 
     it('creates a comment', async () => {

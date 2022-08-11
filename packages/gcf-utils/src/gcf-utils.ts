@@ -26,7 +26,7 @@ import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {v2 as CloudTasksV2} from '@google-cloud/tasks';
 import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
-// eslint-disable-next-line node/no-extraneous-import
+import {createAppAuth} from '@octokit/auth-app';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
@@ -149,6 +149,71 @@ export interface CronPayload {
     login: string;
   };
   cron_org: string;
+}
+
+export interface BotSecrets {
+  privateKey: string;
+  appId: string;
+  secret: string;
+}
+
+/**
+ * A helper for fetch secret from SecretManager.
+ */
+async function getBotSecrets(): Promise<BotSecrets> {
+  const projectId = process.env.PROJECT_ID;
+  const functionName = process.env.GCF_SHORT_FUNCTION_NAME;
+  const secretsClient = new SecretManagerV1.SecretManagerServiceClient();
+  const [version] = await secretsClient.accessSecretVersion({
+    name: `projects/${projectId}/secrets/${functionName}/versions/latest`
+  });
+  // Extract the payload as a string.
+  const payload = version?.payload?.data?.toString() || '';
+  if (payload === '') {
+    throw Error('did not retrieve a payload from SecretManager.');
+  }
+  const secrets = JSON.parse(payload);
+
+  if (Object.prototype.hasOwnProperty.call(secrets, 'cert')) {
+    secrets.privateKey = secrets.cert;
+    delete secrets.cert;
+  }
+  if (Object.prototype.hasOwnProperty.call(secrets, 'id')) {
+    secrets.appId = secrets.id;
+    delete secrets.id;
+  }
+  return {
+    privateKey: secrets.privateKey,
+    appId: secrets.appId,
+    secret: secrets.secret,
+  };
+}
+
+/**
+ * A helper for getting an Octokit instance authenticated as an App.
+ */
+export async function getAuthenticatedOctokit(
+  installationId: number | null
+): Promise<Octokit> {
+  const botSecrets = await getBotSecrets();
+  if (installationId === null) {
+    return new Octokit({
+      authStragety: createAppAuth,
+      auth: {
+        appId: botSecrets.appId,
+        privateKey: botSecrets.privateKey,
+        clientSecret: botSecrets.secret,
+      },
+    });
+  }
+  return new Octokit({
+    authStragety: createAppAuth,
+    auth: {
+      appId: botSecrets.appId,
+      privateKey: botSecrets.privateKey,
+      installationId: installationId
+    },
+  });
 }
 
 /**

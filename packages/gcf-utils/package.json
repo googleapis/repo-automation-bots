@@ -25,6 +25,7 @@
     "@google-cloud/tasks": "^3.0.0",
     "@googleapis/run": "^10.0.0",
     "@octokit/plugin-enterprise-compatibility": "2.0.1",
+    "@octokit/auth-app": "^4.0.4",
     "@octokit/rest": "^19.0.3",
     "@probot/octokit-plugin-config": "^1.1.6",
     "@types/bunyan": "^1.8.8",
