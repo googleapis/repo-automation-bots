@@ -197,7 +197,7 @@ export async function getAuthenticatedOctokit(
 ): Promise<Octokit> {
   const botSecrets = await getBotSecrets();
   if (installationId === null) {
-    throw Error('auth without installation id is not implemented yet')
+    throw Error('auth without installation id is not implemented yet');
   }
   return new Octokit({
     authStrategy: createAppAuth,
