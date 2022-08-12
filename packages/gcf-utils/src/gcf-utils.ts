@@ -26,7 +26,7 @@ import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {v2 as CloudTasksV2} from '@google-cloud/tasks';
 import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
-// eslint-disable-next-line node/no-extraneous-import
+import {createAppAuth} from '@octokit/auth-app';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
@@ -149,6 +149,73 @@ export interface CronPayload {
     login: string;
   };
   cron_org: string;
+}
+
+export interface BotSecrets {
+  privateKey: string;
+  appId: string;
+  webhookSecret: string;
+}
+
+/**
+ * A helper for fetch secret from SecretManager.
+ */
+export async function getBotSecrets(): Promise<BotSecrets> {
+  const projectId = process.env.PROJECT_ID;
+  const functionName = process.env.GCF_SHORT_FUNCTION_NAME;
+  const secretsClient = new SecretManagerV1.SecretManagerServiceClient();
+  const [version] = await secretsClient.accessSecretVersion({
+    name: `projects/${projectId}/secrets/${functionName}/versions/latest`,
+  });
+  // Extract the payload as a string.
+  const payload = version?.payload?.data?.toString() || '';
+  if (payload === '') {
+    throw Error('did not retrieve a payload from SecretManager.');
+  }
+  const secrets = JSON.parse(payload);
+
+  const privateKey = secrets.privateKey ?? secrets.cert;
+  const appId = secrets.appId ?? secrets.id;
+  const webhookSecret = secrets.webhookSecret ?? secrets.secret;
+  return {
+    privateKey: privateKey,
+    appId: appId,
+    webhookSecret: webhookSecret,
+  };
+}
+
+/**
+ * A helper for getting an Octokit instance authenticated as an App.
+ *
+ * Note that it only provides an Octokit instance with a JWT token
+ * when installationId is not provided. This Octokit only allows you
+ * to call limited APIs including listing installations.
+ *
+ * Github Apps should provide installationId whenever possible.
+ */
+export async function getAuthenticatedOctokit(
+  installationId: number | undefined
+): Promise<Octokit> {
+  const botSecrets = await getBotSecrets();
+  if (installationId === undefined || installationId === null) {
+    // Authenticate as a bot.
+    return new Octokit({
+      authStrategy: createAppAuth,
+      auth: {
+        appId: botSecrets.appId,
+        privateKey: botSecrets.privateKey,
+      },
+    });
+  }
+  // Authenticate as an installation.
+  return new Octokit({
+    authStrategy: createAppAuth,
+    auth: {
+      appId: botSecrets.appId,
+      privateKey: botSecrets.privateKey,
+      installationId: installationId,
+    },
+  });
 }
 
 /**
