@@ -194,33 +194,25 @@ async function getBotSecrets(): Promise<BotSecrets> {
  *
  * Note that it only provides an Octokit instance with a JWT token
  * when installationId is not provided. This Octokit only allows you
- * to call limited APIs including listing installations. Also, it
- * doesn't take care of token expiration, which means when the token
- * is expired, the Octokit instance will just stop working.
+ * to call limited APIs including listing installations.
  *
- * If we figure out how to take care of token expiration, we can
- * safely use this method from the code for cron fanout in the
- * bootstrapper class.
- *
- * On the other hand, when installationId is given, the created
- * Octokit instance will handle token renewal (as the docs says at
- * https://github.com/octokit/auth-app.js/#usage-with-octokit), so we
- * can safely use it in our apps.
+ * Github Apps should provide installationId whenever possible.
  */
 export async function getAuthenticatedOctokit(
   installationId: number | undefined
 ): Promise<Octokit> {
   const botSecrets = await getBotSecrets();
-  if (installationId === undefined) {
-    const auth = createAppAuth({
-      appId: botSecrets.appId,
-      privateKey: botSecrets.privateKey,
-    });
-    const appAuth = await auth({type: 'app'});
+  if (installationId === undefined || installationId === null) {
+    // Authenticate as a bot.
     return new Octokit({
-      auth: appAuth.token,
+      authStrategy: createAppAuth,
+      auth: {
+        appId: botSecrets.appId,
+        privateKey: botSecrets.privateKey,
+      },
     });
   }
+  // Authenticate as an installation.
   return new Octokit({
     authStrategy: createAppAuth,
     auth: {
