@@ -191,13 +191,31 @@ async function getBotSecrets(): Promise<BotSecrets> {
 
 /**
  * A helper for getting an Octokit instance authenticated as an App.
+ *
+ * Note that it only provides an Octokit instance with a JWT token
+ * when installationId is not provided. This Octokit only allows you
+ * to call list installations and other methods.
+ *
+ * I think when the token is expired, the Octokit instance will just
+ * stop working.
+ *
+ * On the other hand, when installationId is given, the created
+ * Octokit instance will handle token renewal (as the docs says at
+ * https://github.com/octokit/auth-app.js/#usage-with-octokit).
  */
 export async function getAuthenticatedOctokit(
-  installationId: number | null
+  installationId: number | undefined
 ): Promise<Octokit> {
   const botSecrets = await getBotSecrets();
-  if (installationId === null) {
-    throw Error('auth without installation id is not implemented yet');
+  if (installationId === undefined) {
+    const auth = createAppAuth({
+      appId: botSecrets.appId,
+      privateKey: botSecrets.privateKey,
+    });
+    const appAuth = await auth({type: "app"});
+    return new Octokit({
+      auth: appAuth.token,
+    });
   }
   return new Octokit({
     authStrategy: createAppAuth,
