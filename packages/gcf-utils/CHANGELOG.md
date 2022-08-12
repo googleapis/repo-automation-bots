@@ -87,6 +87,17 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.0.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.8.4...gcf-utils-v14.0.0) (2022-08-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gcf-utils:** update @octokit/rest to 19 (#4132)
+
+### Bug Fixes
+
+* **gcf-utils:** update @octokit/rest to 19 ([#4132](https://github.com/googleapis/repo-automation-bots/issues/4132)) ([a9335e0](https://github.com/googleapis/repo-automation-bots/commit/a9335e00cd72c0eab34f6776c0ec65fe1e68a6eb))
+
 ## [13.8.4](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.8.3...gcf-utils-v13.8.4) (2022-07-19)
 
 
