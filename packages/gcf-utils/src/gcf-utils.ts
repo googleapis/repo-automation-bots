@@ -212,7 +212,7 @@ export async function getAuthenticatedOctokit(
       appId: botSecrets.appId,
       privateKey: botSecrets.privateKey,
     });
-    const appAuth = await auth({type: "app"});
+    const appAuth = await auth({type: 'app'});
     return new Octokit({
       auth: appAuth.token,
     });
