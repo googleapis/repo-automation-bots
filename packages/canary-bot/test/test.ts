@@ -17,6 +17,7 @@ import * as gcfUtilsModule from 'gcf-utils';
 import {resolve} from 'path';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import {describe, it, afterEach, beforeEach} from 'mocha';
@@ -131,9 +132,7 @@ describe('canary-bot', () => {
           {title: 'A canary is not chirping', number: 6},
           {title: 'A canary is chirping', number: 5},
         ]),
-        nock('https://api.github.com')
-          .get('/app/installations')
-          .reply(200, [])
+        nock('https://api.github.com').get('/app/installations').reply(200, []),
       ];
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,7 +175,7 @@ describe('canary-bot', () => {
       getAuthenticatedOctokitStub.resolves(new Octokit());
       const scope = nock('https://api.github.com')
         .get('/app/installations')
-        .reply(200, [])
+        .reply(200, []);
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       sinon.assert.calledOnceWithExactly(
