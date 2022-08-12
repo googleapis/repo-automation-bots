@@ -17,6 +17,7 @@ import * as gcfUtilsModule from 'gcf-utils';
 import {resolve} from 'path';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import assert from 'assert';
@@ -36,6 +37,7 @@ describe('canary-bot', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
   let addOrUpdateIssueCommentStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(async () => {
     probot = createProbot({
@@ -51,6 +53,10 @@ describe('canary-bot', () => {
     addOrUpdateIssueCommentStub = sandbox.stub(
       gcfUtilsModule,
       'addOrUpdateIssueComment'
+    );
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
     );
   });
 
@@ -79,9 +85,12 @@ describe('canary-bot', () => {
       } as any);
     });
     it('creates an issue', async () => {
+      getAuthenticatedOctokitStub.resolves(new Octokit());
       const scopes = [
         listIssues('googleapis', 'repo-automation-bots', [{}]),
         nock('https://api.github.com')
+          .get('/app/installations')
+          .reply(200, [])
           .post('/repos/googleapis/repo-automation-bots/issues', body => {
             assert.strictEqual(body.title, 'A canary is chirping');
             return true;
@@ -116,11 +125,15 @@ describe('canary-bot', () => {
     });
 
     it('comments on a correct issue', async () => {
+      getAuthenticatedOctokitStub.resolves(new Octokit());
       const scopes = [
         listIssues('googleapis', 'repo-automation-bots', [
           {title: 'A canary is not chirping', number: 6},
           {title: 'A canary is chirping', number: 5},
         ]),
+        nock('https://api.github.com')
+          .get('/app/installations')
+          .reply(200, [])
       ];
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,17 +173,22 @@ describe('canary-bot', () => {
 
   describe('responds to events', () => {
     it('responds to issues', async () => {
+      getAuthenticatedOctokitStub.resolves(new Octokit());
+      const scope = nock('https://api.github.com')
+        .get('/app/installations')
+        .reply(200, [])
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       sinon.assert.calledOnceWithExactly(
         addOrUpdateIssueCommentStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'testOwner',
         'testRepo',
         5,
         1219791,
         sinon.match.string
       );
+      scope.done();
     });
 
     it('does not add a comment if the title is wrong', async () => {

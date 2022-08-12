@@ -29,7 +29,7 @@
   "dependencies": {
     "dayjs": "^1.11.3",
     "lru-cache": "^7.10.1",
-    "gcf-utils": "^13.8.1"
+    "gcf-utils": "^14.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
