@@ -154,13 +154,13 @@ export interface CronPayload {
 export interface BotSecrets {
   privateKey: string;
   appId: string;
-  secret: string;
+  webhookSecret: string;
 }
 
 /**
  * A helper for fetch secret from SecretManager.
  */
-async function getBotSecrets(): Promise<BotSecrets> {
+export async function getBotSecrets(): Promise<BotSecrets> {
   const projectId = process.env.PROJECT_ID;
   const functionName = process.env.GCF_SHORT_FUNCTION_NAME;
   const secretsClient = new SecretManagerV1.SecretManagerServiceClient();
@@ -174,18 +174,13 @@ async function getBotSecrets(): Promise<BotSecrets> {
   }
   const secrets = JSON.parse(payload);
 
-  if (Object.prototype.hasOwnProperty.call(secrets, 'cert')) {
-    secrets.privateKey = secrets.cert;
-    delete secrets.cert;
-  }
-  if (Object.prototype.hasOwnProperty.call(secrets, 'id')) {
-    secrets.appId = secrets.id;
-    delete secrets.id;
-  }
+  const privateKey = secrets.privateKey ?? secrets.cert;
+  const appId = secrets.appId ?? secrets.id;
+  const webhookSecret = secrets.webhookSecret ?? secrets.secret;
   return {
-    privateKey: secrets.privateKey,
-    appId: secrets.appId,
-    secret: secrets.secret,
+    privateKey: privateKey,
+    appId: appId,
+    webhookSecret: webhookSecret,
   };
 }
 
