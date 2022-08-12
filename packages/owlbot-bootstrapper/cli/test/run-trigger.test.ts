@@ -14,9 +14,10 @@
 
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import sinon, {SinonStubbedInstance} from 'sinon';
-import {assert} from 'console';
-import {runTrigger} from '../run-trigger';
+import assert, {AssertionError} from 'assert';
+import * as runTrigger from '../run-trigger';
 import {describe, it} from 'mocha';
+import {Helper} from '../helper';
 
 // Trigger ID in gcp
 const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
@@ -30,17 +31,29 @@ const LANGUAGE_CONTAINER = 'gcr.io/myproject/myimage:latest';
 const LANGUAGE = 'nodejs';
 
 describe('tests running build trigger', () => {
-  const cloudBuildClientStub = sinon.createStubInstance(
-    CloudBuildClient
-  ) as SinonStubbedInstance<CloudBuildClient> & CloudBuildClient;
+  let cloudBuildClientStub: SinonStubbedInstance<CloudBuildClient> &
+    CloudBuildClient;
+  let helperStub: SinonStubbedInstance<Helper> & Helper;
+  beforeEach(() => {
+    cloudBuildClientStub = sinon.createStubInstance(
+      CloudBuildClient
+    ) as SinonStubbedInstance<CloudBuildClient> & CloudBuildClient;
 
-  cloudBuildClientStub.runBuildTrigger.resolves([
-    {
-      promise: () => Promise.resolve(),
-    },
-  ]);
+    cloudBuildClientStub.runBuildTrigger.resolves([
+      {
+        promise: () => Promise.resolve(),
+      },
+    ]);
+
+    helperStub = sinon.createStubInstance(
+      Helper
+    ) as SinonStubbedInstance<Helper> & Helper;
+
+    helperStub.getFullLatestContainerName.resolves('container-name');
+  });
+
   it('it should get correct variable names', async () => {
-    await runTrigger(
+    await runTrigger.runTrigger(
       {
         projectId: PROJECT_ID,
         triggerId: TRIGGER_ID,
@@ -51,7 +64,8 @@ describe('tests running build trigger', () => {
         language: 'nodejs',
         languageContainer: LANGUAGE_CONTAINER,
       },
-      cloudBuildClientStub
+      cloudBuildClientStub,
+      helperStub
     );
 
     assert(
@@ -73,5 +87,60 @@ describe('tests running build trigger', () => {
         },
       })
     );
+    cloudBuildClientStub.runBuildTrigger.restore();
+  });
+
+  it('should get correct corresponding values', async () => {
+    await runTrigger.runTrigger(
+      {
+        projectId: PROJECT_ID,
+        triggerId: TRIGGER_ID,
+        installationId: INSTALLATION_ID,
+        apiId: API_ID,
+        language: 'nodejs',
+      },
+      cloudBuildClientStub,
+      helperStub
+    );
+
+    assert(helperStub.getFullLatestContainerName.calledOnce);
+
+    assert(
+      cloudBuildClientStub.runBuildTrigger.calledWith({
+        projectId: PROJECT_ID,
+        triggerId: TRIGGER_ID,
+        source: {
+          projectId: PROJECT_ID,
+          branchName: 'main',
+          substitutions: {
+            _API_ID: API_ID,
+            _REPO_TO_CLONE: '',
+            _LANGUAGE: LANGUAGE,
+            _INSTALLATION_ID: INSTALLATION_ID,
+            _CONTAINER: 'container-name',
+            _LANGUAGE_CONTAINER: '',
+            _PROJECT_ID: PROJECT_ID,
+          },
+        },
+      })
+    );
+  });
+
+  it('throws an error if a language container is not provided by default', async () => {
+    await runTrigger.runTrigger(
+      {
+        projectId: PROJECT_ID,
+        triggerId: TRIGGER_ID,
+        installationId: INSTALLATION_ID,
+        apiId: API_ID,
+        language: 'python',
+      },
+      cloudBuildClientStub,
+      helperStub
+    );
+
+    assert.rejects(async () => {
+      helperStub.getLanguageSpecificValues;
+    }, /No language-specific container specified./);
   });
 });

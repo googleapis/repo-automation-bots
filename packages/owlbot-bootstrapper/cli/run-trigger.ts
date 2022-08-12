@@ -16,19 +16,25 @@
 // It kicks off a trigger in cloud build.
 
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
+import {CliArgs} from './run-trigger-command';
+import {Helper} from './helper';
 
-interface CliArgs {
-  projectId: string;
-  triggerId?: string;
-  apiId: string;
-  repoToClone?: string;
-  language: string;
-  installationId: string;
-  container: string;
-  languageContainer: string;
-}
+const COMMON_CONTAINER_PREFIX =
+  'gcr.io/owlbot-bootstrap-prod/owlbot-bootstrapper';
 
-export async function runTrigger(argv: CliArgs, cb: CloudBuildClient) {
+export async function runTrigger(
+  argv: CliArgs,
+  cb: CloudBuildClient,
+  helper: Helper
+) {
+  let languageValues;
+  let commonContainer;
+  if (!argv.languageContainer) {
+    languageValues = await helper.getLanguageSpecificValues();
+    commonContainer = await helper.getFullLatestContainerName(
+      COMMON_CONTAINER_PREFIX
+    );
+  }
   const [resp] = await cb.runBuildTrigger({
     projectId: argv.projectId,
     triggerId: argv.triggerId,
@@ -37,11 +43,12 @@ export async function runTrigger(argv: CliArgs, cb: CloudBuildClient) {
       branchName: 'main',
       substitutions: {
         _API_ID: argv.apiId,
-        _REPO_TO_CLONE: argv.repoToClone ?? '',
+        _REPO_TO_CLONE: argv.repoToClone ?? languageValues?.repoToClone ?? '',
         _LANGUAGE: argv.language,
         _INSTALLATION_ID: argv.installationId,
-        _CONTAINER: argv.container,
-        _LANGUAGE_CONTAINER: argv.languageContainer,
+        _CONTAINER: argv.container ?? commonContainer ?? '',
+        _LANGUAGE_CONTAINER:
+          argv.languageContainer ?? languageValues?.languageContainer ?? '',
         _PROJECT_ID: argv.projectId,
       },
     },
