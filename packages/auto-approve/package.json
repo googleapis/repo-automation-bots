@@ -30,7 +30,7 @@
     "@google-cloud/secret-manager": "^4.0.0",
     "ajv": "^8.11.0",
     "dayjs": "^1.11.3",
-    "gcf-utils": "^13.8.1"
+    "gcf-utils": "^14.0.0"
   },
   "devDependencies": {
     "@octokit/rest": "^18.12.0",

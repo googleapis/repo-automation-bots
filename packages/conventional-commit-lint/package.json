@@ -34,7 +34,7 @@
     "@google-automations/bot-config-utils": "^5.0.0",
     "@octokit/openapi-types": "^12.1.0",
     "@octokit/webhooks-types": "^6.0.0",
-    "gcf-utils": "^13.8.1"
+    "gcf-utils": "^14.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",

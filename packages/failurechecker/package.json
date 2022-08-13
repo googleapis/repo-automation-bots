@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@google-automations/issue-utils": "^1.0.0",
-    "gcf-utils": "^13.8.1"
+    "gcf-utils": "^14.0.0"
   },
   "devDependencies": {
     "@octokit/types": "^6.35.0",
