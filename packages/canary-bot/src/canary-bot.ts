@@ -20,7 +20,11 @@ import {components} from '@octokit/openapi-types';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {resolve} from 'path';
-import {addOrUpdateIssueComment, getContextLogger} from 'gcf-utils';
+import {
+  addOrUpdateIssueComment,
+  getContextLogger,
+  getAuthenticatedOctokit,
+} from 'gcf-utils';
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -50,13 +54,13 @@ interface PubSubContext<T = any> {
   payload: T;
 }
 
-function getIssueBody(): string {
+function getIssueBody(addition = ''): string {
   const date = dayjs
     .tz(new Date(), 'America/Los_Angeles')
     .format('YYYY MM-DD HH:mm:ss');
   return (
     `The dependencies and their versions are: \n${versionDetails}\n` +
-    `at ${date}\n🐦`
+    `at ${date}\n🐦${addition}`
   );
 }
 
@@ -68,7 +72,12 @@ export = (app: Probot) => {
     if (repo !== myRepositoryName || owner !== myOrganizationName) {
       return;
     }
-    const body = getIssueBody();
+    // This is an Octokit instance with JWT. Make sure we can call
+    // `apps.listInstallations`.
+    const appOctokit = await getAuthenticatedOctokit(undefined);
+    const installations = await appOctokit.apps.listInstallations();
+    const addition = `This app has ${installations.data.length} installation(s).`;
+    const body = getIssueBody(addition);
     const options = context.octokit.issues.listForRepo.endpoint.merge({
       owner,
       repo,
@@ -84,7 +93,7 @@ export = (app: Probot) => {
     // Issue found
     if (issue) {
       await addOrUpdateIssueComment(
-        context.octokit,
+        await getAuthenticatedOctokit(context.payload.installation?.id),
         owner,
         repo,
         issue.number,
@@ -119,13 +128,18 @@ export = (app: Probot) => {
     const logger = getContextLogger(context);
     if (context.payload.issue.title.includes('canary-bot test')) {
       const {owner, repo} = context.repo();
+      // This is an Octokit instance with JWT. Make sure we can call
+      // `apps.listInstallations`.
+      const appOctokit = await getAuthenticatedOctokit(undefined);
+      const installations = await appOctokit.apps.listInstallations();
+      const addition = `This app has ${installations.data.length} installation(s).`;
       await addOrUpdateIssueComment(
-        context.octokit,
+        await getAuthenticatedOctokit(context.payload.installation?.id),
         owner,
         repo,
         context.payload.issue.number,
         context.payload.installation!.id,
-        getIssueBody()
+        getIssueBody(addition)
       );
     } else {
       logger.info(
