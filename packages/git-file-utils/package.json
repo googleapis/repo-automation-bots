@@ -17,7 +17,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@octokit/rest": "19.0.3"
+    "@octokit/rest": "19.0.4"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
