@@ -37,7 +37,6 @@
     "release-please": "^14.0.0"
   },
   "devDependencies": {
-    "@types/lru-cache": "^7.10.10",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.0.0",
     "@types/semver": "^7.3.10",
