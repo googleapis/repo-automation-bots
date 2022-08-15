@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.0.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.0.0...gcf-utils-v14.0.1) (2022-08-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v2.0.2 ([#4142](https://github.com/googleapis/repo-automation-bots/issues/4142)) ([0717a6c](https://github.com/googleapis/repo-automation-bots/commit/0717a6cefa4f06e8bb8feda01ce419b56f0f1b08))
+
 ## [14.0.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.8.4...gcf-utils-v14.0.0) (2022-08-12)
 
 
