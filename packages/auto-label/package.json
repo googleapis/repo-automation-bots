@@ -29,9 +29,9 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^6.0.0",
+    "@google-automations/label-utils": "^3.0.0",
     "@google-cloud/storage": "^6.1.0",
-    "gcf-utils": "^14.0.1",
-    "@google-automations/label-utils": "^3.0.0"
+    "gcf-utils": "^14.0.1"
   },
   "devDependencies": {
     "@octokit/types": "^7.0.0",
@@ -42,6 +42,7 @@
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
     "js-yaml": "^4.1.0",
+    "lru-cache": "^7.13.2",
     "mocha": "^10.0.0",
     "nock": "^13.2.7",
     "sinon": "^14.0.0",

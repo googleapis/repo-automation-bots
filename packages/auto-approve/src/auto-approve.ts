@@ -20,7 +20,7 @@ import {
   GCFLogger,
   getAuthenticatedOctokit,
   getContextLogger,
-  logger as defaultLogger
+  logger as defaultLogger,
 } from 'gcf-utils';
 import {checkPRAgainstConfig} from './check-pr';
 import {checkPRAgainstConfigV2} from './check-pr-v2';
@@ -229,7 +229,9 @@ export function handler(app: Probot) {
         return;
       }
 
-      const octokit = await getAuthenticatedOctokit(context.payload.installation!.id);
+      const octokit = await getAuthenticatedOctokit(
+        context.payload.installation!.id
+      );
 
       const PRFiles = await getChangedFiles(
         octokit,

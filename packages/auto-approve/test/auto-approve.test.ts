@@ -161,7 +161,10 @@ describe('auto-approve', () => {
       checkPRV2,
       'checkPRAgainstConfigV2'
     );
-    getAuthenticatedOctokitStub = sandbox.stub(gcfUtilsModule, 'getAuthenticatedOctokit');
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
     getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
