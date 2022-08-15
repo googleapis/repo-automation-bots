@@ -22,7 +22,7 @@
     "gcf-utils": "^14.0.0"
   },
   "devDependencies": {
-    "@octokit/types": "^6.41.0",
+    "@octokit/types": "^7.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.2",
     "@types/sinon": "^10.0.13",
