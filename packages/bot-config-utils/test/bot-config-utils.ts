@@ -22,6 +22,9 @@ import {describe, it, beforeEach} from 'mocha';
 import {Probot, ProbotOctokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+import {getAuthenticatedOctokit} from 'gcf-utils';
+import * as gcfUtilsModule from 'gcf-utils';
+import * as sinon from 'sinon';
 
 import {
   getConfig,
@@ -64,7 +67,7 @@ const app = (app: Probot) => {
         CONFIG_FILENAME
       );
       await configChecker.validateConfigChanges(
-        context.octokit,
+        await getAuthenticatedOctokit(context.payload.installation!.id),
         context.payload.pull_request.head.user.login,
         context.payload.repository.name,
         context.payload.pull_request.head.sha,
@@ -90,7 +93,7 @@ const app2 = (app: Probot) => {
         CONFIG_FILENAME_YML
       );
       await configChecker.validateConfigChanges(
-        context.octokit,
+        await getAuthenticatedOctokit(context.payload.installation!.id),
         context.payload.pull_request.head.user.login,
         context.payload.repository.name,
         context.payload.pull_request.head.sha,
@@ -116,7 +119,7 @@ const app3 = (app: Probot) => {
         [schema]
       );
       await configChecker.validateConfigChanges(
-        context.octokit,
+        await getAuthenticatedOctokit(context.payload.installation!.id),
         context.payload.pull_request.head.user.login,
         context.payload.repository.name,
         context.payload.pull_request.head.sha,
@@ -173,8 +176,11 @@ function fetchFilesInPR(configFile: string, fileName: string) {
     .reply(200, createConfigResponse(configFile));
 }
 
+let getAuthenticatedOctokitStub: sinon.SinonStub;
+
 describe('config test app with config.yml', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
@@ -184,12 +190,16 @@ describe('config test app with config.yml', () => {
       }),
     });
     probot.load(app2);
-  });
-  beforeEach(() => {
     nock.disableNetConnect();
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
   afterEach(() => {
     nock.cleanAll();
+    sandbox.restore();
   });
   describe('responds to PR', () => {
     it('creates a failing status check for a wrong file name', async () => {
@@ -211,6 +221,7 @@ describe('config test app with config.yml', () => {
 
 describe('config test app', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
@@ -223,9 +234,15 @@ describe('config test app', () => {
     // It always start from null.
     configFromConfigChecker = null;
     nock.disableNetConnect();
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
   afterEach(() => {
     nock.cleanAll();
+    sandbox.restore();
   });
   describe('responds to PR', () => {
     it('does not die upon 404 github api responses', async () => {
@@ -311,6 +328,7 @@ describe('config test app', () => {
 
 describe('config test app with multiple schema files', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
@@ -323,9 +341,15 @@ describe('config test app with multiple schema files', () => {
     // It always start from null.
     listConfigFromConfigChecker = null;
     nock.disableNetConnect();
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
   afterEach(() => {
     nock.cleanAll();
+    sandbox.restore();
   });
   describe('responds to PR', () => {
     it('does not creates a failing status check for a correct config', async () => {
