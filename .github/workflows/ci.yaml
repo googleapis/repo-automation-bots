@@ -30,7 +30,6 @@ jobs:
       fail-fast: false
       matrix:
         package: ${{fromJson(needs.changeFinder.outputs.nodePaths)}}
-        node: [ 14 ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
