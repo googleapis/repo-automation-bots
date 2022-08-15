@@ -23,7 +23,7 @@ import {Octokit} from '@octokit/rest';
 import {request} from '@octokit/request';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {getContextLogger, GCFLogger} from 'gcf-utils';
+import {getContextLogger, GCFLogger, getAuthenticatedOctokit} from 'gcf-utils';
 import {
   getConfig,
   MultiConfigChecker,
@@ -340,11 +340,14 @@ const handler = (app: Probot) => {
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoLanguage = context.payload.repository.language;
     const {owner, repo} = context.repo();
+    const octokit = await getAuthenticatedOctokit(
+      context.payload?.installation?.id
+    );
 
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
       repo,
-      context.octokit,
+      octokit,
       context.payload.repository.default_branch
     );
 
@@ -373,7 +376,7 @@ const handler = (app: Probot) => {
     const github = await buildGitHub(
       owner,
       repo,
-      context.octokit as GitHubAPI,
+      octokit as GitHubAPI,
       context.payload.repository.default_branch
     );
 
@@ -384,7 +387,7 @@ const handler = (app: Probot) => {
         repoLanguage,
         repoUrl,
         branchConfiguration,
-        context.octokit,
+        octokit,
         logger
       );
     }
@@ -397,11 +400,14 @@ const handler = (app: Probot) => {
     const repoUrl = context.payload.repository.full_name;
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
+    const octokit = await getAuthenticatedOctokit(
+      context.payload?.installation?.id
+    );
 
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
       repo,
-      context.octokit
+      octokit
     );
 
     // If no configuration is specified,
@@ -414,7 +420,7 @@ const handler = (app: Probot) => {
     // errors and continue. If this strategy becomes problematic, we
     // can create another scheduler job.
     try {
-      await syncLabels(context.octokit, owner, repo, RELEASE_PLEASE_LABELS);
+      await syncLabels(octokit, owner, repo, RELEASE_PLEASE_LABELS);
     } catch (e) {
       const err = e as Error;
       err.message = `Failed to sync the labels: ${err.message}`;
@@ -447,10 +453,13 @@ const handler = (app: Probot) => {
     const repo = context.payload.repository.name;
     const branch = context.payload.pull_request.base.ref;
     const repoLanguage = context.payload.repository.language;
+    const octokit = await getAuthenticatedOctokit(
+      context.payload?.installation?.id
+    );
 
     // remove the label
     try {
-      await context.octokit.issues.removeLabel({
+      await octokit.issues.removeLabel({
         name: FORCE_RUN_LABEL,
         issue_number: context.payload.pull_request.number,
         owner,
@@ -469,7 +478,7 @@ const handler = (app: Probot) => {
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
       repo,
-      context.octokit,
+      octokit,
       context.payload.repository.default_branch
     );
 
@@ -494,7 +503,7 @@ const handler = (app: Probot) => {
     const github = await buildGitHub(
       owner,
       repo,
-      context.octokit as GitHubAPI,
+      octokit as GitHubAPI,
       context.payload.repository.default_branch
     );
 
@@ -505,7 +514,7 @@ const handler = (app: Probot) => {
         repoLanguage,
         repoUrl,
         branchConfiguration,
-        context.octokit,
+        octokit,
         logger
       );
     }
@@ -515,8 +524,11 @@ const handler = (app: Probot) => {
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
+    const octokit = await getAuthenticatedOctokit(
+      context.payload?.installation?.id
+    );
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE
@@ -547,12 +559,15 @@ const handler = (app: Probot) => {
     const headOwner = context.payload.pull_request.head.repo.owner.login;
     const headRepo = context.payload.pull_request.head.repo.name;
     const headBranch = context.payload.pull_request.head.ref;
+    const octokit = await getAuthenticatedOctokit(
+      context.payload?.installation?.id
+    );
 
     const schemasByFile: Record<string, object> = {
       '.github/release-please.yml': schema,
     };
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       headOwner,
       headRepo,
       WELL_KNOWN_CONFIGURATION_FILE,
@@ -605,7 +620,7 @@ const handler = (app: Probot) => {
     const configChecker = new MultiConfigChecker(schemasByFile);
     const {owner, repo} = context.repo();
     await configChecker.validateConfigChanges(
-      context.octokit,
+      octokit,
       owner,
       repo,
       headSha,
@@ -618,8 +633,11 @@ const handler = (app: Probot) => {
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
+    const octokit = await getAuthenticatedOctokit(
+      context.payload?.installation?.id
+    );
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE
@@ -642,13 +660,13 @@ const handler = (app: Probot) => {
       })
     ) {
       await Promise.all([
-        context.octokit.issues.removeLabel(
+        octokit.issues.removeLabel(
           context.repo({
             issue_number: context.payload.pull_request.number,
             name: 'autorelease: pending',
           })
         ),
-        context.octokit.issues.addLabels(
+        octokit.issues.addLabels(
           context.repo({
             issue_number: context.payload.pull_request.number,
             labels: ['autorelease: closed'],
@@ -663,8 +681,11 @@ const handler = (app: Probot) => {
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
+    const octokit = await getAuthenticatedOctokit(
+      context.payload?.installation?.id
+    );
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE
@@ -682,13 +703,13 @@ const handler = (app: Probot) => {
       })
     ) {
       await Promise.all([
-        context.octokit.issues.removeLabel(
+        octokit.issues.removeLabel(
           context.repo({
             issue_number: context.payload.pull_request.number,
             name: 'autorelease: closed',
           })
         ),
-        context.octokit.issues.addLabels(
+        octokit.issues.addLabels(
           context.repo({
             issue_number: context.payload.pull_request.number,
             labels: ['autorelease: pending'],
