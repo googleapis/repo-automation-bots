@@ -15,6 +15,8 @@
 import {Storage} from '@google-cloud/storage';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, Context} from 'probot';
+/* eslint-disable-next-line node/no-extraneous-import */
+import {Octokit} from '@octokit/rest';
 import {GCFLogger, getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import * as helper from './helper';
 import {
@@ -467,9 +469,16 @@ export function handler(app: Probot) {
     const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-    const octokit = await getAuthenticatedOctokit(
-      context.payload.installation!.id
-    );
+
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const config = await getConfigWithDefault<Config>(
       octokit,
       owner,
@@ -544,9 +553,16 @@ export function handler(app: Probot) {
     const logger = getContextLogger(context);
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const octokit = await getAuthenticatedOctokit(
-      context.payload.installation!.id
-    );
+
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const config = await getConfigWithDefault<Config>(
       octokit,
       owner,

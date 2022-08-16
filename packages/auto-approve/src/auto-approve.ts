@@ -228,10 +228,17 @@ export function handler(app: Probot) {
         );
         return;
       }
-
-      const octokit = await getAuthenticatedOctokit(
-        context.payload.installation!.id
-      );
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
 
       const PRFiles = await getChangedFiles(
         octokit,
