@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.1.0",
-    "@google-automations/issue-utils": "^1.0.0",
+    "@google-automations/issue-utils": "^2.0.0",
     "extend": "^3.0.2",
     "gcf-utils": "^13.8.1",
     "js-yaml": "^4.1.0",
