@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.0.2",
-    "@google-automations/datastore-lock": "^3.2.0",
+    "@google-automations/datastore-lock": "^4.0.0",
     "@google-automations/label-utils": "^2.0.2",
     "@octokit/openapi-types": "^12.1.0",
     "@octokit/types": "^6.35.0",

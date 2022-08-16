@@ -65,7 +65,7 @@
     "uuid": "^8.3.2"
   },
   "dependencies": {
-    "@google-automations/datastore-lock": "^3.2.0",
+    "@google-automations/datastore-lock": "^4.0.0",
     "@google-automations/label-utils": "^2.0.0",
     "@google-cloud/cloudbuild": "^3.0.0",
     "@octokit/rest": "^18.12.0",
