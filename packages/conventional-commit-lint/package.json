@@ -31,7 +31,7 @@
   "dependencies": {
     "@commitlint/config-conventional": "^17.0.2",
     "@commitlint/lint": "^17.0.0",
-    "@google-automations/bot-config-utils": "^5.0.0",
+    "@google-automations/bot-config-utils": "^6.0.0",
     "@octokit/openapi-types": "^12.1.0",
     "@octokit/webhooks-types": "^6.0.0",
     "gcf-utils": "^13.8.1"
