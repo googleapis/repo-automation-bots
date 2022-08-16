@@ -16,7 +16,12 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {GCFLogger, getContextLogger, logger as defaultLogger} from 'gcf-utils';
+import {
+  GCFLogger,
+  getAuthenticatedOctokit,
+  getContextLogger,
+  logger as defaultLogger,
+} from 'gcf-utils';
 import {checkPRAgainstConfig} from './check-pr';
 import {checkPRAgainstConfigV2} from './check-pr-v2';
 import {
@@ -28,6 +33,7 @@ import {
 import {checkAutoApproveConfig, isConfigV2} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
+import {PullRequestEvent} from '@octokit/webhooks-types/schema';
 import {
   AutoApproveNotConfigured,
   Configuration,
@@ -100,6 +106,7 @@ export async function retryAddLabel(
     ) {
       numAttemptsRemaining--;
       await retryAddLabel(numAttemptsRemaining, owner, repo, prNumber, octokit);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } else if ((err as any).status === 412) {
       logger.error('Etag keeps changing; cannot add label successfully');
       throw err;
@@ -221,9 +228,20 @@ export function handler(app: Probot) {
         );
         return;
       }
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
 
       const PRFiles = await getChangedFiles(
-        context.octokit,
+        octokit,
         owner,
         repo,
         prNumber,
@@ -243,7 +261,7 @@ export function handler(app: Probot) {
       // and then check to see whether the incoming PR matches the config to
       // decide whether we can automerge
       const prConfig = await getBlobFromPRFiles(
-        context.octokit,
+        octokit,
         repoHeadOwner,
         repoHead,
         PRFiles,
@@ -262,7 +280,7 @@ export function handler(app: Probot) {
           owner,
           repo,
           prConfig,
-          context.octokit,
+          octokit,
           context.payload.pull_request.head.sha
         );
 
@@ -295,7 +313,7 @@ export function handler(app: Probot) {
             owner,
             repo,
             config,
-            context.octokit,
+            octokit,
             context.payload.pull_request.head.sha
           );
 
@@ -310,15 +328,15 @@ export function handler(app: Probot) {
             // Check to see whether the incoming PR matches the incoming PR
             isPRValid = await checkPRAgainstConfigV2(
               config,
-              context.payload,
-              context.octokit,
+              context.payload as PullRequestEvent,
+              octokit,
               logger
             );
           } else {
             isPRValid = await checkPRAgainstConfig(
               config,
-              context.payload,
-              context.octokit,
+              context.payload as PullRequestEvent,
+              octokit,
               logger
             );
           }
@@ -334,7 +352,7 @@ export function handler(app: Probot) {
             );
 
             const reviewsOnPr = cleanReviews(
-              await getReviewsCompleted(owner, repo, prNumber, context.octokit)
+              await getReviewsCompleted(owner, repo, prNumber, octokit)
             );
 
             const isApprovalNecessary = reviewsOnPr.find(

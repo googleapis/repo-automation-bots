@@ -15,7 +15,9 @@
 import {Storage} from '@google-cloud/storage';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, Context} from 'probot';
-import {GCFLogger, getContextLogger} from 'gcf-utils';
+/* eslint-disable-next-line node/no-extraneous-import */
+import {Octokit} from '@octokit/rest';
+import {GCFLogger, getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import * as helper from './helper';
 import {
   CONFIG_FILE_NAME,
@@ -467,8 +469,18 @@ export function handler(app: Probot) {
     const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
+
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const config = await getConfigWithDefault<Config>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIG_FILE_NAME,
@@ -484,12 +496,7 @@ export function handler(app: Probot) {
     // We run it here since the scheduler runs once in a while, so we dont
     // need to update labels on pull request change event
     if (config?.requestsize?.enabled) {
-      await syncLabels(
-        context.octokit,
-        owner,
-        repo,
-        helper.PULL_REQUEST_SIZE_LABELS
-      );
+      await syncLabels(octokit, owner, repo, helper.PULL_REQUEST_SIZE_LABELS);
     }
     // Update staleness labels on all pull requests in the repo
     updateStalenessLabel(context, owner, repo, config, logger);
@@ -546,8 +553,18 @@ export function handler(app: Probot) {
     const logger = getContextLogger(context);
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
+
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const config = await getConfigWithDefault<Config>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIG_FILE_NAME,
@@ -585,15 +602,18 @@ export function handler(app: Probot) {
     const repo = context.payload.repository.name;
     // First check the config schema for PR.
     const configChecker = new ConfigChecker<Config>(schema, CONFIG_FILE_NAME);
+    const octokit = await getAuthenticatedOctokit(
+      context.payload.installation!.id
+    );
     await configChecker.validateConfigChanges(
-      context.octokit,
+      octokit,
       owner,
       repo,
       context.payload.pull_request.head.sha,
       context.payload.pull_request.number
     );
     const config = await getConfigWithDefault<Config>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIG_FILE_NAME,
@@ -620,11 +640,14 @@ export function handler(app: Probot) {
       return;
     }
 
+    const octokit = await getAuthenticatedOctokit(
+      context.payload.installation!.id
+    );
     for await (const repository of repositories) {
       const [owner, repo] = repository.full_name.split('/');
 
       const config = await getConfigWithDefault<Config>(
-        context.octokit,
+        octokit,
         owner,
         repo,
         CONFIG_FILE_NAME,
