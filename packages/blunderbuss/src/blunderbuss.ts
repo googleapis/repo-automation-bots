@@ -14,6 +14,8 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {
   ConfigChecker,
@@ -31,9 +33,15 @@ export = (app: Probot) => {
   app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-    const octokit = await getAuthenticatedOctokit(
-      context.payload.installation.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+        ' We cannot authenticate Octokit.'
+      );
+    }
     await syncLabels(octokit, owner, repo, BLUNDERBUSS_LABELS);
   });
   app.on(
@@ -50,9 +58,16 @@ export = (app: Probot) => {
     async (context: Context<'issues'> | Context<'pull_request'>) => {
       const logger = getContextLogger(context);
       const {owner, repo} = context.repo();
-      const octokit = await getAuthenticatedOctokit(
-        context.payload.installation!.id
-      );
+
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+        );
+      }
       // First check the config schema for pull requests.
       if (!isIssue(context.payload as IssuesEvent | PullRequestEvent)) {
         if (
