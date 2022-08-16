@@ -67,10 +67,10 @@ export async function assign(
 ) {
   let issue: Issue | undefined;
   let pullRequest: PullRequest | undefined;
-  if (isIssue(context.payload)) {
-    issue = context.payload.issue;
+  if (isIssue(context.payload as IssuesEvent | PullRequestEvent)) {
+    issue = (context.payload as IssuesEvent).issue;
   } else {
-    pullRequest = context.payload.pull_request;
+    pullRequest = (context.payload as PullRequestEvent).pull_request;
   }
 
   const repoName = context.payload.repository.full_name;
