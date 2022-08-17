@@ -17,6 +17,7 @@
 import {Context} from 'probot';
 import {components} from '@octokit/openapi-types';
 import {PullRequest} from '@octokit/webhooks-types';
+import {Octokit} from '@octokit/rest';
 
 //import {ILint} from '@commitlint/lint';
 import lint from '@commitlint/lint';
@@ -53,7 +54,8 @@ rules['footer-max-line-length'] = [2, 'always', Number.MAX_VALUE];
 export async function scanPullRequest(
   context: Context<'pull_request'> | Context<'issue_comment'>,
   pull_request: PullRequest,
-  logger: GCFLogger
+  logger: GCFLogger,
+  octokit: Octokit
 ) {
   // Fetch last 100 commits stored on a specific PR.
   const commitParams = context.repo({
@@ -66,7 +68,7 @@ export async function scanPullRequest(
 
   let commits: PullsListCommitsResponseData;
   try {
-    commits = (await context.octokit.pulls.listCommits(commitParams)).data;
+    commits = (await octokit.pulls.listCommits(commitParams)).data;
   } catch (e) {
     const err = e as Error;
     logger.error(err);
@@ -90,8 +92,7 @@ export async function scanPullRequest(
 
   // Refreshing PR probably because we want to know the most updated data.
   try {
-    refreshed_pr = (await context.octokit.pulls.get(prParams))
-      .data as PullRequest;
+    refreshed_pr = (await octokit.pulls.get(prParams)).data as PullRequest;
   } catch (e) {
     const err = e as Error;
     logger.error(err);
@@ -154,7 +155,7 @@ export async function scanPullRequest(
         'https://conventionalcommits.org/';
       try {
         await addOrUpdateIssueComment(
-          context.octokit,
+          octokit,
           owner as string,
           repo,
           prNumber,
@@ -201,5 +202,5 @@ export async function scanPullRequest(
     });
   }
 
-  await context.octokit.checks.create(checkParams);
+  await octokit.checks.create(checkParams);
 }
