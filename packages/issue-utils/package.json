@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/issue-utils",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Utilities for github issues",
   "scripts": {
     "compile": "tsc -p .",
@@ -16,7 +16,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "gcf-utils": "^13.8.2"
+    "gcf-utils": "^14.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
@@ -26,6 +26,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.1",
     "gts": "^3.1.0",
+    "lru-cache": "^7.13.2",
     "mocha": "^10.0.0",
     "nock": "^13.2.7",
     "sinon": "^14.0.0",
@@ -33,7 +34,7 @@
     "typescript": "~4.7.4"
   },
   "engines": {
-    "node": ">= 12.18.2"
+    "node": ">= 14"
   },
   "keywords": [
     "github issues",

@@ -22,10 +22,13 @@ import fs from 'fs';
 import * as sinon from 'sinon';
 import snapshot from 'snap-shot-it';
 import {handler} from '../src/auto-label';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as helper from '../src/helper';
 import {GCFLogger} from 'gcf-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -68,6 +71,7 @@ describe('getConfigWithDefault', () => {
   let probot: Probot;
   let validateConfigStub: sinon.SinonStub;
   let autoLabelOnPRStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -86,6 +90,11 @@ describe('getConfigWithDefault', () => {
     );
     validateConfigStub.resolves();
     autoLabelOnPRStub = sandbox.stub(handler, 'autoLabelOnPR');
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {
@@ -105,7 +114,7 @@ describe('getConfigWithDefault', () => {
       scope.done();
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'testOwner',
         'testRepo',
         '19f6a66851125917fa07615dcbc0cd13dad56981',
@@ -133,7 +142,7 @@ describe('getConfigWithDefault', () => {
       scope.done();
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'testOwner',
         'testRepo',
         '19f6a66851125917fa07615dcbc0cd13dad56981',
@@ -166,6 +175,7 @@ describe('validateConfigChanges', () => {
   let probot: Probot;
   let getConfigWithDefaultStub: sinon.SinonStub;
   let autoLabelOnPRStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -184,6 +194,11 @@ describe('validateConfigChanges', () => {
     );
     getConfigWithDefaultStub.resolves(helper.DEFAULT_CONFIGS);
     autoLabelOnPRStub = sandbox.stub(handler, 'autoLabelOnPR');
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {

@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v2.0.2...label-utils-v3.0.0) (2022-08-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** use gcf-utils 14
+
+### Bug Fixes
+
+* **deps:** use gcf-utils 14 ([8b1c7f7](https://github.com/googleapis/repo-automation-bots/commit/8b1c7f7728180763752db6dfcb71ca69af0d002f))
+
 ### [2.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/label-utils-v2.0.1...label-utils-v2.0.2) (2021-09-10)
 
 

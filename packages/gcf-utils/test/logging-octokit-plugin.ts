@@ -364,7 +364,7 @@ describe('Logging-Octokit-Plugin', () => {
         issue_number: 99,
         owner: 'fooOwner',
         repo: 'barRepo',
-        assignee: 'bar',
+        assignees: ['bar'],
       })
       .catch(e => {
         // ignore HTTP Errors since Octokit is unauthenticated

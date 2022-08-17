@@ -30,13 +30,13 @@
     "@google-cloud/secret-manager": "^4.0.0",
     "ajv": "^8.11.0",
     "dayjs": "^1.11.3",
-    "gcf-utils": "^13.8.1"
+    "gcf-utils": "^14.0.1"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.12.0",
-    "@octokit/webhooks": "^10.0.0",
-    "@octokit/webhooks-definitions": "^3.62.6",
-    "@probot/octokit-plugin-config": "^1.1.5",
+    "@octokit/rest": "^19.0.4",
+    "@octokit/webhooks": "^10.1.3",
+    "@octokit/webhooks-definitions": "^3.67.3",
+    "@probot/octokit-plugin-config": "^1.1.6",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.0.0",
     "@types/sinon": "^10.0.11",
@@ -53,6 +53,6 @@
     "typescript": "~4.7.4"
   },
   "engines": {
-    "node": ">= 12.18.2"
+    "node": ">= 14"
   }
 }

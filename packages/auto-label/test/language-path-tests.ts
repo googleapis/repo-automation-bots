@@ -22,9 +22,12 @@ import * as assert from 'assert';
 import {resolve} from 'path';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {loadConfig} from './test-helper';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -36,6 +39,7 @@ describe('language-and-path-labeling', () => {
   let probot: Probot;
   let getConfigWithDefaultStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -56,6 +60,11 @@ describe('language-and-path-labeling', () => {
     );
     // We test the config schema compatibility in config-compatibility.ts
     validateConfigStub.resolves();
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {
