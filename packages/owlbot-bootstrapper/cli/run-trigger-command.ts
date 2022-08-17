@@ -15,7 +15,6 @@
 import yargs from 'yargs';
 import {runTrigger} from './run-trigger';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {Helper} from './helper';
 export interface CliArgs {
   projectId: string;
   triggerId: string;
@@ -25,6 +24,24 @@ export interface CliArgs {
   installationId: string;
   container?: string;
   languageContainer?: string;
+}
+
+const languageContainers = [
+  {
+    language: 'nodejs',
+    languageContainerInArtifactRegistry:
+      'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+    repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
+  },
+];
+
+export function getLanguageSpecificValues(language: string) {
+  for (const languageContainer of languageContainers) {
+    if (languageContainer.language === language) {
+      return languageContainer;
+    }
+  }
+  throw new Error('No language-specific container specified');
 }
 
 export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
@@ -75,7 +92,10 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
   },
   async handler(argv) {
     const cb = new CloudBuildClient();
-    const helper = new Helper(argv);
-    await runTrigger(argv, cb, helper);
+    let languageValues;
+    if (!argv.languageContainer) {
+      languageValues = getLanguageSpecificValues(argv.language);
+    }
+    await runTrigger(argv, cb, languageValues);
   },
 };

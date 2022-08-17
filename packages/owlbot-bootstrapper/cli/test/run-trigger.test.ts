@@ -14,10 +14,10 @@
 
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import sinon, {SinonStubbedInstance} from 'sinon';
-import assert, {AssertionError} from 'assert';
+import assert from 'assert';
 import * as runTrigger from '../run-trigger';
+import * as runTriggerCommand from '../run-trigger-command';
 import {describe, it} from 'mocha';
-import {Helper} from '../helper';
 
 // Trigger ID in gcp
 const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
@@ -33,7 +33,7 @@ const LANGUAGE = 'nodejs';
 describe('tests running build trigger', () => {
   let cloudBuildClientStub: SinonStubbedInstance<CloudBuildClient> &
     CloudBuildClient;
-  let helperStub: SinonStubbedInstance<Helper> & Helper;
+
   beforeEach(() => {
     cloudBuildClientStub = sinon.createStubInstance(
       CloudBuildClient
@@ -44,12 +44,10 @@ describe('tests running build trigger', () => {
         promise: () => Promise.resolve(),
       },
     ]);
+  });
 
-    helperStub = sinon.createStubInstance(
-      Helper
-    ) as SinonStubbedInstance<Helper> & Helper;
-
-    helperStub.getFullLatestContainerName.resolves('container-name');
+  afterEach(() => {
+    cloudBuildClientStub.runBuildTrigger.restore();
   });
 
   it('it should get correct variable names', async () => {
@@ -64,8 +62,7 @@ describe('tests running build trigger', () => {
         language: 'nodejs',
         languageContainer: LANGUAGE_CONTAINER,
       },
-      cloudBuildClientStub,
-      helperStub
+      cloudBuildClientStub
     );
 
     assert(
@@ -87,10 +84,9 @@ describe('tests running build trigger', () => {
         },
       })
     );
-    cloudBuildClientStub.runBuildTrigger.restore();
   });
 
-  it('should get correct corresponding values', async () => {
+  it('should get correct corresponding values if absent', async () => {
     await runTrigger.runTrigger(
       {
         projectId: PROJECT_ID,
@@ -100,10 +96,13 @@ describe('tests running build trigger', () => {
         language: 'nodejs',
       },
       cloudBuildClientStub,
-      helperStub
+      {
+        language: 'nodejs',
+        languageContainerInArtifactRegistry:
+          'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+        repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
+      }
     );
-
-    assert(helperStub.getFullLatestContainerName.calledOnce);
 
     assert(
       cloudBuildClientStub.runBuildTrigger.calledWith({
@@ -114,11 +113,13 @@ describe('tests running build trigger', () => {
           branchName: 'main',
           substitutions: {
             _API_ID: API_ID,
-            _REPO_TO_CLONE: '',
+            _REPO_TO_CLONE: 'git@github.com/googleapis/google-cloud-node.git',
             _LANGUAGE: LANGUAGE,
             _INSTALLATION_ID: INSTALLATION_ID,
-            _CONTAINER: 'container-name',
-            _LANGUAGE_CONTAINER: '',
+            _CONTAINER:
+              'us.gcr.io/owlbot-bootstrap-prod/owlbot-bootstrapper:latest',
+            _LANGUAGE_CONTAINER:
+              'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
             _PROJECT_ID: PROJECT_ID,
           },
         },
@@ -126,21 +127,21 @@ describe('tests running build trigger', () => {
     );
   });
 
-  it('throws an error if a language container is not provided by default', async () => {
-    await runTrigger.runTrigger(
-      {
-        projectId: PROJECT_ID,
-        triggerId: TRIGGER_ID,
-        installationId: INSTALLATION_ID,
-        apiId: API_ID,
-        language: 'python',
-      },
-      cloudBuildClientStub,
-      helperStub
-    );
+  it('throws an error if a language container is not provided by default', () => {
+    assert.throws(() => {
+      runTriggerCommand.getLanguageSpecificValues('python');
+    }, /Error: No language-specific container specified/);
+  });
 
-    assert.rejects(async () => {
-      helperStub.getLanguageSpecificValues;
-    }, /No language-specific container specified./);
+  it('returns the correct language specific values', () => {
+    assert.deepStrictEqual(
+      runTriggerCommand.getLanguageSpecificValues('nodejs'),
+      {
+        language: 'nodejs',
+        languageContainerInArtifactRegistry:
+          'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+        repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
+      }
+    );
   });
 });
