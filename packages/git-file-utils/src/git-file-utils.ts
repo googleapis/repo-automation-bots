@@ -88,7 +88,9 @@ export class RepositoryFileCache {
    * @param {string} filename The filename of the files to search for.
    * @param {string} branch The name of the branch to search on.
    * @param {string} pathPrefix If set, limit results to files that begin
-   *   with this path prefix.
+   *   with this path prefix. Also if set, returns the path relative to
+   *   the path prefix.
+   * @returns {string[]} Paths to the files (relative to path prefix)
    */
   async findFilesByFilename(
     filename: string,
@@ -106,7 +108,9 @@ export class RepositoryFileCache {
    *   files to search for. Example: `yaml`.
    * @param {string} branch The name of the branch to search on.
    * @param {string} pathPrefix If set, limit results to files that begin
-   *   with this path prefix.
+   *   with this path prefix. Also if set, returns the path relative to
+   *   the path prefix.
+   * @returns {string[]} Paths to the files (relative to path prefix)
    */
   async findFilesByExtension(
     extension: string,
@@ -201,7 +205,9 @@ export class BranchFileCache {
    *
    * @param {string} filename The filename of the files to search for.
    * @param {string} pathPrefix If set, limit results to files that begin
-   *   with this path prefix.
+   *   with this path prefix. Also if set, returns the path relative to
+   *   the path prefix.
+   * @returns {string[]} Paths to the files (relative to path prefix)
    */
   async findFilesByFilename(
     filename: string,
@@ -222,7 +228,9 @@ export class BranchFileCache {
    * @param {string} filename The file extension (excluding `.`) of the
    *   files to search for. Example: `yaml`.
    * @param {string} pathPrefix If set, limit results to files that begin
-   *   with this path prefix.
+   *   with this path prefix. Also if set, returns the path relative to
+   *   the path prefix.
+   * @returns {string[]} Paths to the files (relative to path prefix)
    */
   async findFilesByExtension(
     extension: string,
@@ -374,7 +382,7 @@ export class BranchFileCache {
   ): AsyncGenerator<TreeEntry, void, void> {
     const treeShas: TreeReference[] = [{ref}];
     let treeReference: TreeReference | undefined;
-    while ((treeReference = treeShas.pop())) {
+    while ((treeReference = treeShas.shift())) {
       const cachedTree = await this.getTree(treeReference.ref);
       for (const treeEntry of cachedTree.tree) {
         // paths are relative to the fetched directory, so normalize the path
@@ -383,7 +391,7 @@ export class BranchFileCache {
           : treeEntry.path!;
 
         // short-circuit iterator if we're in the wrong directory
-        if (pathPrefix && !path.startsWith(pathPrefix)) {
+        if (pathPrefix && path && !pathPrefix.startsWith(path) && !path.startsWith(pathPrefix)) {
           continue;
         }
 
