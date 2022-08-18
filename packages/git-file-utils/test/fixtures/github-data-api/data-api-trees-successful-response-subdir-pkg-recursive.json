@@ -1,0 +1,37 @@
+{
+  "sha": "cc64165cf5da91810ab7edc1143a47be42513c0a",
+  "url": "https://api.github.com/repos/testOwner/testRepo/git/trees/0ab7edc1143a47be42513c0acc64165cf5da9181",
+  "tree": [
+    {
+      "path": "a",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1143a47be42513c0acc64165cf5da91810ab7edc",
+      "url": "https://api.github.com/repos/testOwner/testRepo/git/trees/1143a47be42513c0acc64165cf5da91810ab7edc"
+    },
+    {
+      "path": "a/foo.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2f3d2c47bf49f81aca0df9ffc49524a213a2dc33",
+      "size": 1352120,
+      "url": "https://api.github.com/repos/testOwner/testRepo/git/blobs/2f3d2c47bf49f81aca0df9ffc49524a213a2dc33"
+    },
+    {
+      "path": "b",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0acc64165cf5da91810ab7edc1143a47be42513c",
+      "url": "https://api.github.com/repos/testOwner/testRepo/git/trees/0acc64165cf5da91810ab7edc1143a47be42513c"
+    },    
+    {
+      "path": "b/foo.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "47bf49f81aca0df9ffc49524a213a2dc332f3d2c",
+      "size": 1352120,
+      "url": "https://api.github.com/repos/testOwner/testRepo/git/blobs/47bf49f81aca0df9ffc49524a213a2dc332f3d2c"
+    }
+  ],
+  "truncated": false
+}
