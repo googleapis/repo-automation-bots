@@ -19,9 +19,11 @@ import {
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {PullRequest} from '@octokit/webhooks-types';
 
-import {getContextLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 
 import schema from './schema.json';
 import {scanPullRequest} from './utils';
@@ -43,6 +45,17 @@ export = (app: Probot) => {
     async context => {
       const {owner, repo} = context.repo();
       const logger = getContextLogger(context);
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       // Exit if the PR is closed.
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
@@ -57,7 +70,7 @@ export = (app: Probot) => {
           CONFIGURATION_FILE
         );
         const valid = await configChecker.validateConfigChanges(
-          context.octokit,
+          octokit,
           owner,
           repo,
           context.payload.pull_request.head.sha,
@@ -81,7 +94,7 @@ export = (app: Probot) => {
       let config: Configuration | undefined = undefined;
       try {
         config = await getConfigWithDefault<Configuration>(
-          context.octokit,
+          octokit,
           owner,
           repo,
           CONFIGURATION_FILE,
@@ -112,7 +125,8 @@ export = (app: Probot) => {
       await scanPullRequest(
         context,
         context.payload.pull_request as PullRequest,
-        logger
+        logger,
+        octokit
       );
     }
   );
