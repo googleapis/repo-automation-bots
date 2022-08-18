@@ -17,10 +17,13 @@
 import myProbotApp from '../src/do-not-merge';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
 import snapshot from 'snap-shot-it';
 import * as fs from 'fs';
+import * as sinon from 'sinon';
+import * as gcfUtilsModule from 'gcf-utils';
 
 nock.disableNetConnect();
 
@@ -41,6 +44,8 @@ function createConfigResponse(configFile: string) {
 
 describe('do-not-merge', () => {
   let probot: Probot;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
+  const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
     probot = createProbot({
@@ -53,6 +58,15 @@ describe('do-not-merge', () => {
       },
     });
     probot.load(myProbotApp);
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   describe('responds to events', () => {
