@@ -17,9 +17,7 @@ import {expect} from 'chai';
 import {describe, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
-import {
-  BranchFileCache,
-} from '../src/git-file-utils';
+import {BranchFileCache} from '../src/git-file-utils';
 
 nock.disableNetConnect();
 
