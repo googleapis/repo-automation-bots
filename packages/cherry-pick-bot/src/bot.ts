@@ -16,7 +16,9 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {getContextLogger} from 'gcf-utils';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import {getConfig} from '@google-automations/bot-config-utils';
 import {parseCherryPickComment, cherryPickAsPullRequest} from './cherry-pick';
 import {branchRequiresReviews} from './branch-protection';
@@ -38,8 +40,17 @@ export = (app: Probot) => {
   app.on(['issue_comment.created', 'issue_comment.edited'], async context => {
     const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfig = await getConfig<Configuration>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIGURATION_FILE_PATH
@@ -77,7 +88,7 @@ export = (app: Probot) => {
 
     let pullRequest: {sha: string | null; number: number; baseRef: string};
     try {
-      const {data: pullData} = await context.octokit.pulls.get(
+      const {data: pullData} = await octokit.pulls.get(
         context.repo({
           pull_number: context.payload.issue.number,
         })
@@ -106,25 +117,13 @@ export = (app: Probot) => {
     // If target branch requires review, ensure that the merged PR's branch also
     // required review
     if (
-      await branchRequiresReviews(
-        context.octokit,
-        owner,
-        repo,
-        targetBranch,
-        logger
-      )
+      await branchRequiresReviews(octokit, owner, repo, targetBranch, logger)
     ) {
       logger.info(
         `${targetBranch} branch requires review, checking ${baseBranch}`
       );
       if (
-        !(await branchRequiresReviews(
-          context.octokit,
-          owner,
-          repo,
-          baseBranch,
-          logger
-        ))
+        !(await branchRequiresReviews(octokit, owner, repo, baseBranch, logger))
       ) {
         logger.warn(`${baseBranch} does not require review, skipping.`);
         return;
@@ -132,7 +131,7 @@ export = (app: Probot) => {
     }
 
     await cherryPickAsPullRequest(
-      context.octokit,
+      octokit,
       owner,
       repo,
       [pullRequest.sha],
@@ -144,8 +143,17 @@ export = (app: Probot) => {
   app.on('pull_request.closed', async context => {
     const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfig = await getConfig<Configuration>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIGURATION_FILE_PATH
@@ -167,7 +175,7 @@ export = (app: Probot) => {
       return;
     }
 
-    const {data: comments} = await context.octokit.issues.listComments({
+    const {data: comments} = await octokit.issues.listComments({
       owner,
       repo,
       issue_number: context.payload.pull_request.number,
@@ -200,13 +208,7 @@ export = (app: Probot) => {
       // If target branch requires review, ensure that the merged PR's branch also
       // required review
       if (
-        await branchRequiresReviews(
-          context.octokit,
-          owner,
-          repo,
-          targetBranch,
-          logger
-        )
+        await branchRequiresReviews(octokit, owner, repo, targetBranch, logger)
       ) {
         const baseBranch = context.payload.pull_request.base.ref;
         logger.info(
@@ -214,7 +216,7 @@ export = (app: Probot) => {
         );
         if (
           !(await branchRequiresReviews(
-            context.octokit,
+            octokit,
             owner,
             repo,
             baseBranch,
@@ -227,7 +229,7 @@ export = (app: Probot) => {
       }
 
       await cherryPickAsPullRequest(
-        context.octokit,
+        octokit,
         owner,
         repo,
         [context.payload.pull_request.merge_commit_sha],
