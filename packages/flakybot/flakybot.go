@@ -16,8 +16,9 @@
 // Pub/Sub.
 //
 // You can run it locally by running:
-//   go build
-//   ./flakybot -repo=my-org/my-repo -installation_id=123 -project=my-project
+//
+//	go build
+//	./flakybot -repo=my-org/my-repo -installation_id=123 -project=my-project
 package main
 
 import (
