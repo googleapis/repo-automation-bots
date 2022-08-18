@@ -15,7 +15,8 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Probot, Context} from 'probot';
-import {getContextLogger} from 'gcf-utils';
+import {Octokit} from '@octokit/rest';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import {
   ConfigChecker,
   getConfigWithDefault,
@@ -50,6 +51,17 @@ export = (app: Probot) => {
     ],
     async (context: Context<'pull_request'>) => {
       const logger = getContextLogger(context);
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
           `The pull request ${context.payload.pull_request.url} is closed, exiting.`
@@ -68,7 +80,7 @@ export = (app: Probot) => {
       let config = DEFAULT_CONFIGURATION;
       try {
         config = await getConfigWithDefault<ConfigurationOptions>(
-          context.octokit,
+          octokit,
           owner,
           repo,
           CONFIGURATION_FILE_PATH,
@@ -89,7 +101,7 @@ export = (app: Probot) => {
           logger.info(
             `Updating check on ${context.payload.pull_request.url} to success`
           );
-          await context.octokit.checks.update({
+          await octokit.checks.update({
             conclusion: 'success',
             check_run_id: existingCheck.id,
             owner,
@@ -97,7 +109,7 @@ export = (app: Probot) => {
             output: SUCCESS_OUTPUT,
           });
         } else if (config.alwaysCreateStatusCheck) {
-          await context.octokit.checks.create({
+          await octokit.checks.create({
             conclusion: 'success',
             name: CHECK_NAME,
             owner,
@@ -114,7 +126,7 @@ export = (app: Probot) => {
           logger.info(
             `Updating check on ${context.payload.pull_request.url} to failure`
           );
-          await context.octokit.checks.update({
+          await octokit.checks.update({
             conclusion: 'failure',
             check_run_id: existingCheck.id,
             owner,
@@ -133,7 +145,7 @@ export = (app: Probot) => {
       logger.info(
         `Creating failed check on ${context.payload.pull_request.url}`
       );
-      await context.octokit.checks.create({
+      await octokit.checks.create({
         conclusion: 'failure',
         name: CHECK_NAME,
         owner,
@@ -154,6 +166,17 @@ export = (app: Probot) => {
     ],
     async context => {
       const logger = getContextLogger(context);
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       // Exit if the PR is closed.
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
@@ -181,7 +204,7 @@ export = (app: Probot) => {
         CONFIGURATION_FILE_PATH
       );
       await configChecker.validateConfigChanges(
-        context.octokit,
+        octokit,
         owner,
         repo,
         context.payload.pull_request.head.sha,
