@@ -340,9 +340,15 @@ const handler = (app: Probot) => {
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoLanguage = context.payload.repository.language;
     const {owner, repo} = context.repo();
-    const octokit = await getAuthenticatedOctokit(
-      context.payload?.installation?.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
 
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
@@ -400,9 +406,15 @@ const handler = (app: Probot) => {
     const repoUrl = context.payload.repository.full_name;
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-    const octokit = await getAuthenticatedOctokit(
-      context.payload?.installation?.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
 
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
@@ -453,9 +465,15 @@ const handler = (app: Probot) => {
     const repo = context.payload.repository.name;
     const branch = context.payload.pull_request.base.ref;
     const repoLanguage = context.payload.repository.language;
-    const octokit = await getAuthenticatedOctokit(
-      context.payload?.installation?.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
 
     // remove the label
     try {
@@ -524,9 +542,15 @@ const handler = (app: Probot) => {
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
-    const octokit = await getAuthenticatedOctokit(
-      context.payload?.installation?.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
       octokit,
       owner,
@@ -559,9 +583,15 @@ const handler = (app: Probot) => {
     const headOwner = context.payload.pull_request.head.repo.owner.login;
     const headRepo = context.payload.pull_request.head.repo.name;
     const headBranch = context.payload.pull_request.head.ref;
-    const octokit = await getAuthenticatedOctokit(
-      context.payload?.installation?.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
 
     const schemasByFile: Record<string, object> = {
       '.github/release-please.yml': schema,
@@ -633,9 +663,15 @@ const handler = (app: Probot) => {
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
-    const octokit = await getAuthenticatedOctokit(
-      context.payload?.installation?.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
       octokit,
       owner,
@@ -681,9 +717,15 @@ const handler = (app: Probot) => {
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
-    const octokit = await getAuthenticatedOctokit(
-      context.payload?.installation?.id
-    );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
       octokit,
       owner,
