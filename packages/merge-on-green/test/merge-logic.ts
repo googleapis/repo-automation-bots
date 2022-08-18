@@ -26,6 +26,7 @@ import {
   getLatestCommit,
 } from '../src/merge-logic';
 import {logger} from 'gcf-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
@@ -153,6 +154,7 @@ function getPR(
 describe('merge-logic', () => {
   let probot: Probot;
   let loggerStub: SinonStub;
+  let getAuthenticatedOctokitStub: SinonStub;
 
   beforeEach(() => {
     loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
@@ -170,6 +172,11 @@ describe('merge-logic', () => {
     probot.load(handler);
     // TODO(sofisl): Remove once metrics have been collected (06/15/21)
     sandbox.stub(Math, 'random').returns(0.1);
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {
