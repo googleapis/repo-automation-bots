@@ -261,7 +261,6 @@ export class BranchFileCache {
     // try to use the entire git tree if it's not too big
     const treeEntries = await this.getFullTree();
     if (treeEntries) {
-      // logger.debug(`Using full tree to find ${path}`);
       const found = treeEntries.find(entry => entry.path === path);
       if (found?.sha) {
         return await this.fetchContents(found.sha, found);

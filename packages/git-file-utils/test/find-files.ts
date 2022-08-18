@@ -262,7 +262,7 @@ describe('BranchFileCache', () => {
         req.done();
       });
 
-      it('finds multiple files and strips prefix', async () => {
+      it('finds and strips prefix', async () => {
         const req = nock('https://api.github.com')
           .get(
             '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
