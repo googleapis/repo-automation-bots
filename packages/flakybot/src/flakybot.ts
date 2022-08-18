@@ -29,7 +29,7 @@ import {DatastoreLock} from '@google-automations/datastore-lock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
-import {getContextLogger, GCFLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger, GCFLogger} from 'gcf-utils';
 import {
   getConfigWithDefault,
   ConfigChecker,
@@ -150,7 +150,16 @@ export function flakybot(app: Probot) {
   app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-    await syncLabels(context.octokit, owner, repo, FLAKYBOT_LABELS);
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
+    await syncLabels(octokit, owner, repo, FLAKYBOT_LABELS);
   });
   app.on(
     [
@@ -162,8 +171,19 @@ export function flakybot(app: Probot) {
     async context => {
       const configChecker = new ConfigChecker<Config>(schema, CONFIG_FILENAME);
       const {owner, repo} = context.repo();
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       await configChecker.validateConfigChanges(
-        context.octokit,
+        octokit,
         owner,
         repo,
         context.payload.pull_request.head.sha,
