@@ -13,9 +13,12 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Context, Probot, ProbotOctokit} from 'probot';
+import {Context, Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {
   addOrUpdateIssueComment,
+  getAuthenticatedOctokit,
   getContextLogger,
   GCFLogger,
   logger,
@@ -34,8 +37,6 @@ import {
   Configuration,
 } from './config';
 import schema from './config-schema.json';
-
-type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 interface File {
   content: string | undefined;
@@ -85,7 +86,7 @@ function isFile(file: File | unknown): file is File {
  * @param manifest The specified ExternalManifest file
  */
 async function readExternalManifest(
-  github: OctokitType,
+  github: Octokit,
   manifest: ExternalManifest,
   owner: string,
   repo: string,
@@ -119,7 +120,7 @@ async function readExternalManifest(
  */
 export async function getFileList(
   config: Configuration,
-  github: OctokitType,
+  github: Octokit,
   owner: string,
   repo: string
 ): Promise<GeneratedFile[]> {
@@ -155,7 +156,7 @@ export async function getFileList(
  * @param pullNumber Pull request number
  */
 export async function getPullRequestFiles(
-  github: OctokitType,
+  github: Octokit,
   owner: string,
   repo: string,
   pullNumber: number
@@ -189,7 +190,8 @@ async function mainLogic(
   context: Context<'pull_request'>,
   config: Configuration,
   owner: string,
-  repo: string
+  repo: string,
+  octokit: Octokit
 ) {
   const logger = getContextLogger(context);
   const pullNumber = context.payload.pull_request.number;
@@ -206,12 +208,7 @@ async function mainLogic(
   }
 
   // Read the list of templated files
-  const templatedFiles = await getFileList(
-    config,
-    context.octokit,
-    owner,
-    repo
-  );
+  const templatedFiles = await getFileList(config, octokit, owner, repo);
 
   if (!templatedFiles.length) {
     logger.warn(
@@ -227,7 +224,7 @@ async function mainLogic(
 
   // Fetch the list of touched files in this pull request
   const pullRequestFiles = await getPullRequestFiles(
-    context.octokit,
+    octokit,
     owner,
     repo,
     pullNumber
@@ -252,7 +249,7 @@ async function mainLogic(
     const body = buildCommentMessage(touchedTemplates);
 
     await addOrUpdateIssueComment(
-      context.octokit,
+      octokit,
       owner,
       repo,
       pullNumber,
@@ -275,8 +272,17 @@ export function handler(app: Probot) {
       schema,
       CONFIGURATION_FILE_PATH
     );
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     await configChecker.validateConfigChanges(
-      context.octokit,
+      octokit,
       owner,
       repo,
       context.payload.pull_request.head.sha,
@@ -285,7 +291,7 @@ export function handler(app: Probot) {
     let config: Configuration = {};
     try {
       config = await getConfigWithDefault<Configuration>(
-        context.octokit,
+        octokit,
         owner,
         repo,
         CONFIGURATION_FILE_PATH,
@@ -298,6 +304,6 @@ export function handler(app: Probot) {
       logger.error(err);
       return;
     }
-    await mainLogic(context, config, owner, repo);
+    await mainLogic(context, config, owner, repo, octokit);
   });
 }
