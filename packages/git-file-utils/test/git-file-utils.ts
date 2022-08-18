@@ -141,7 +141,7 @@ describe('BranchFileCache', () => {
           ))
         )
         .get(
-          '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a'
+          '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
         )
         .reply(
           200,
@@ -151,7 +151,7 @@ describe('BranchFileCache', () => {
           ))
         )
         .get(
-          '/repos/testOwner/testRepo/git/trees/1143a47be42513c0acc64165cf5da91810ab7edc'
+          '/repos/testOwner/testRepo/git/trees/1143a47be42513c0acc64165cf5da91810ab7edc?recursive=true'
         )
         .reply(
           200,
@@ -161,7 +161,7 @@ describe('BranchFileCache', () => {
           ))
         )
         .get(
-          '/repos/testOwner/testRepo/git/trees/0acc64165cf5da91810ab7edc1143a47be42513c'
+          '/repos/testOwner/testRepo/git/trees/0acc64165cf5da91810ab7edc1143a47be42513c?recursive=true'
         )
         .reply(
           200,
@@ -221,7 +221,7 @@ describe('BranchFileCache', () => {
           ))
         )
         .get(
-          '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a'
+          '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
         )
         .reply(
           200,
@@ -231,7 +231,7 @@ describe('BranchFileCache', () => {
           ))
         )
         .get(
-          '/repos/testOwner/testRepo/git/trees/1143a47be42513c0acc64165cf5da91810ab7edc'
+          '/repos/testOwner/testRepo/git/trees/1143a47be42513c0acc64165cf5da91810ab7edc?recursive=true'
         )
         .reply(
           200,
