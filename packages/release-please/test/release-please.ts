@@ -28,11 +28,13 @@ import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
 import * as errorHandlingModule from '@google-automations/issue-utils';
+import {Octokit} from '@octokit/rest';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -64,6 +66,9 @@ describe('ReleasePleaseBot', () => {
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     createPullRequestsStub = sandbox.stub(Runner, 'createPullRequests');
     createReleasesStub = sandbox.stub(Runner, 'createReleases');
+    sandbox
+      .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({auth: 'faketoken'}));
   });
 
   afterEach(() => {
