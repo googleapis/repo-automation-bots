@@ -21,6 +21,8 @@ import {readFileSync} from 'fs';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
@@ -43,6 +45,7 @@ describe('ConventionalCommitLint', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
   let addOrUpdateIssueCommentStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
   const pr11 = require(resolve(fixturesPath, './pr11'));
 
   function stubGoodConfig() {
@@ -73,6 +76,11 @@ describe('ConventionalCommitLint', () => {
       gcfUtilsModule,
       'addOrUpdateIssueComment'
     );
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {

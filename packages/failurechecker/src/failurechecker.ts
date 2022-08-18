@@ -21,6 +21,7 @@ import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {
+  getAuthenticatedOctokit,
   logger as defaultLogger,
   getContextLogger,
   GCFLogger,
@@ -239,7 +240,16 @@ export function failureChecker(app: Probot) {
       return;
     }
 
-    const checker = new FailureChecker(context.octokit, owner, repo, logger);
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
+    const checker = new FailureChecker(octokit, owner, repo, logger);
 
     // Some release types, such as go-yoshi, have no publish step so a release
     // is considered successful once a tag has occurred:
@@ -256,7 +266,7 @@ export function failureChecker(app: Probot) {
 
     const body = buildIssueBody(failures);
     await addOrUpdateIssue(
-      context.octokit,
+      octokit,
       owner,
       repo,
       ISSUE_TITLE,

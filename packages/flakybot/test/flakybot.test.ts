@@ -16,6 +16,8 @@ import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {Probot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -25,6 +27,7 @@ import * as sinon from 'sinon';
 
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import * as labelUtilsModule from '@google-automations/label-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {flakybot, DEFAULT_CONFIG, CONFIG_FILENAME} from '../src/flakybot';
 import {FLAKYBOT_LABELS} from '../src/labels';
@@ -111,6 +114,7 @@ describe('flakybot', () => {
   let datastoreLockAcquireStub: sinon.SinonStub;
   let datastoreLockReleaseStub: sinon.SinonStub;
   let getConfigWithDefaultStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
@@ -120,6 +124,11 @@ describe('flakybot', () => {
       }),
     });
     probot.load(flakybot);
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {
@@ -168,13 +177,14 @@ describe('flakybot', () => {
           organization: {
             login: 'googleapis',
           },
+          installation: {id: 123},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
       });
       sinon.assert.calledOnceWithExactly(
         syncLabelsStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'googleapis',
         'testRepo',
         sinon.match.array.deepEquals(FLAKYBOT_LABELS)
