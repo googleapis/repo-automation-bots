@@ -345,7 +345,7 @@ const handler = (app: Probot) => {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
       throw new Error(
-        `Installation ID not provided in ${context.payload.action} event.` +
+        'Installation ID not provided in push event payload.' +
           ' We cannot authenticate Octokit.'
       );
     }
