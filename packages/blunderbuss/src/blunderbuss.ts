@@ -14,6 +14,8 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {
   ConfigChecker,
@@ -23,14 +25,24 @@ import {syncLabels} from '@google-automations/label-utils';
 import schema from './config-schema.json';
 import {CONFIGURATION_FILE_PATH, Configuration} from './config';
 import {BLUNDERBUSS_LABELS, assign, isIssue} from './utils';
-import {getContextLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
+import {IssuesEvent, PullRequestEvent} from '@octokit/webhooks-types/schema';
 
 export = (app: Probot) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-    await syncLabels(context.octokit, owner, repo, BLUNDERBUSS_LABELS);
+    let octokit: Octokit;
+    if (context.payload.installation && context.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
+    await syncLabels(octokit, owner, repo, BLUNDERBUSS_LABELS);
   });
   app.on(
     [
@@ -46,10 +58,22 @@ export = (app: Probot) => {
     async (context: Context<'issues'> | Context<'pull_request'>) => {
       const logger = getContextLogger(context);
       const {owner, repo} = context.repo();
+
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       // First check the config schema for pull requests.
-      if (!isIssue(context.payload)) {
+      if (!isIssue(context.payload as IssuesEvent | PullRequestEvent)) {
         if (
-          context.payload.pull_request &&
+          (context.payload as PullRequestEvent).pull_request &&
           (context.payload.action === 'opened' ||
             context.payload.action === 'reopened' ||
             context.payload.action === 'synchronize')
@@ -60,11 +84,11 @@ export = (app: Probot) => {
           );
           const {owner, repo} = context.repo();
           await configChecker.validateConfigChanges(
-            context.octokit,
+            octokit,
             owner,
             repo,
-            context.payload.pull_request.head.sha,
-            context.payload.pull_request.number
+            (context.payload as PullRequestEvent).pull_request.head.sha,
+            (context.payload as PullRequestEvent).pull_request.number
           );
         }
         // For the blunderbuss main logic, synchronize event is irrelevant.
@@ -77,7 +101,7 @@ export = (app: Probot) => {
         // Reading the config requires access to code permissions, which are not
         // always available for private repositories.
         config = await getConfigWithDefault<Configuration>(
-          context.octokit,
+          octokit,
           owner,
           repo,
           CONFIGURATION_FILE_PATH,
@@ -94,12 +118,12 @@ export = (app: Probot) => {
       let url: string;
       let user: string;
 
-      if (isIssue(context.payload)) {
-        url = context.payload.issue.url;
-        user = context.payload.issue.user.login;
+      if (isIssue(context.payload as IssuesEvent | PullRequestEvent)) {
+        url = (context.payload as IssuesEvent).issue.url;
+        user = (context.payload as IssuesEvent).issue.user.login;
       } else {
-        url = context.payload.pull_request.url;
-        user = context.payload.pull_request.user.login;
+        url = (context.payload as PullRequestEvent).pull_request.url;
+        user = (context.payload as PullRequestEvent).pull_request.user.login;
       }
 
       if (config.ignore_authors?.includes(user)) {

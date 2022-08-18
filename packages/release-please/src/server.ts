@@ -12,22 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
 import {GCFBootstrapper} from 'gcf-utils';
+import {api} from './release-please';
 
 const bootstrap = new GCFBootstrapper({
-  taskTargetEnvironment: 'functions',
+  taskTargetEnvironment: 'run',
+  taskTargetName: 'release-please-backend',
 });
-
-// We only need to deploy gcf-utils in the frontend server because
-// only thing it does is to enqueue a task for the release-please
-// backend. Thus we deploy a dummy empty bot code.
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const appFn = (app: Probot) => {};
-
-const server = bootstrap.server(appFn);
+const server = bootstrap.server(api.handler);
 const port = process.env.PORT ?? 8080;
 
 server
