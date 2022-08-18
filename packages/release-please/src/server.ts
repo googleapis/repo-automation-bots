@@ -17,6 +17,7 @@ import {api} from './release-please';
 
 const bootstrap = new GCFBootstrapper({
   taskTargetEnvironment: 'run',
+  taskTargetName: 'release-please-backend',
 });
 const server = bootstrap.server(api.handler);
 const port = process.env.PORT ?? 8080;
