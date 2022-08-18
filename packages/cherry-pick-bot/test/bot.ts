@@ -16,9 +16,12 @@ import myProbotApp from '../src/bot';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
+import * as gcfUtilsModule from 'gcf-utils';
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import * as cherryPickModule from '../src/cherry-pick';
 import * as branchProtectionModule from '../src/branch-protection';
@@ -31,6 +34,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 describe('cherry-pick-bot', () => {
   let probot: Probot;
   let cherryPickPullRequestStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -48,6 +52,11 @@ describe('cherry-pick-bot', () => {
       cherryPickModule,
       'cherryPickAsPullRequest'
     );
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {
@@ -164,7 +173,7 @@ describe('cherry-pick-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/Codertocat/Hello-World/pulls/1')
-        .reply(404);
+        .reply(404, 'Pull request not found');
 
       sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
       cherryPickPullRequestStub.resolves({

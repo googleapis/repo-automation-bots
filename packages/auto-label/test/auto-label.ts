@@ -24,6 +24,8 @@ import fs from 'fs';
 import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {
   DEFAULT_CONFIGS,
   autoDetectLabel,
@@ -32,6 +34,7 @@ import {
 } from '../src/helper';
 import {loadConfig} from './test-helper';
 import {logger} from 'gcf-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 nock.disableNetConnect();
@@ -57,6 +60,7 @@ describe('auto-label', () => {
   let repoStub: sinon.SinonStub;
   let getConfigWithDefaultStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -80,6 +84,11 @@ describe('auto-label', () => {
       ConfigChecker.prototype,
       'validateConfigChanges'
     );
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
     // We test the config schema compatibility in config-compatibility.ts
     validateConfigStub.resolves();
     sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
@@ -281,7 +290,7 @@ describe('auto-label', () => {
       ghRequests.done();
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'testOwner',
         'notThere',
         '19f6a66851125917fa07615dcbc0cd13dad56981',
@@ -502,6 +511,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -543,6 +553,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -575,6 +586,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -615,6 +627,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo-samples', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -655,6 +668,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -695,6 +709,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -732,6 +747,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -783,6 +799,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -842,6 +859,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -889,6 +907,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -927,6 +946,7 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
+          installation: {id: 12345},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',

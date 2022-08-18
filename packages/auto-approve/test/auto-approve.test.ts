@@ -34,6 +34,7 @@ import {
 } from '../src/interfaces';
 import * as fs from 'fs';
 import {logger} from 'gcf-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -138,6 +139,7 @@ describe('auto-approve', () => {
   let checkAutoApproveStub: SinonStub;
   let getSecretStub: SinonStub;
   let checkPRAgainstConfigV2Stub: SinonStub;
+  let getAuthenticatedOctokitStub: SinonStub;
 
   const sandbox = sinon.createSandbox();
 
@@ -159,6 +161,11 @@ describe('auto-approve', () => {
       checkPRV2,
       'checkPRAgainstConfigV2'
     );
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {

@@ -24,6 +24,8 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Context, Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import yaml from 'js-yaml';
@@ -31,6 +33,7 @@ import * as fs from 'fs';
 import * as sinon from 'sinon';
 import * as assert from 'assert';
 import {GCFLogger} from 'gcf-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 
 nock.disableNetConnect();
 
@@ -54,6 +57,7 @@ describe('Blunderbuss', () => {
   let getConfigWithDefaultStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
   let syncLabelsStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   const sandbox = sinon.createSandbox();
 
@@ -83,6 +87,11 @@ describe('Blunderbuss', () => {
     syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
     datastoreLockAcquireStub.resolves(true);
     datastoreLockReleaseStub.resolves(true);
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
     // Sleep does nothing.
     sleepStub.resolves();
   });
@@ -107,13 +116,16 @@ describe('Blunderbuss', () => {
           organization: {
             login: 'googleapis',
           },
+          installation: {
+            id: '123',
+          },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
       });
       sinon.assert.calledOnceWithExactly(
         syncLabelsStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'googleapis',
         'testRepo',
         sinon.match.array.deepEquals(utilsModule.BLUNDERBUSS_LABELS)
@@ -143,7 +155,7 @@ describe('Blunderbuss', () => {
       requests.done();
       sinon.assert.calledOnceWithExactly(
         getConfigWithDefaultStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'testOwner',
         'testRepo',
         CONFIGURATION_FILE_PATH,
@@ -174,7 +186,7 @@ describe('Blunderbuss', () => {
       requests.done();
       sinon.assert.calledOnceWithExactly(
         getConfigWithDefaultStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'testOwner',
         'testRepo',
         CONFIGURATION_FILE_PATH,
@@ -478,7 +490,7 @@ describe('Blunderbuss', () => {
       requests.done();
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'testOwner',
         'testRepo',
         'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
@@ -721,6 +733,7 @@ describe('Blunderbuss getConfigWithDefault', () => {
   let sleepStub: sinon.SinonStub;
   let assignStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   const sandbox = sinon.createSandbox();
 
@@ -746,6 +759,11 @@ describe('Blunderbuss getConfigWithDefault', () => {
     );
     datastoreLockAcquireStub.resolves(true);
     datastoreLockReleaseStub.resolves(true);
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
     // Sleep does nothing.
     sleepStub.resolves();
   });
@@ -773,7 +791,7 @@ describe('Blunderbuss getConfigWithDefault', () => {
 
     sinon.assert.calledOnceWithExactly(
       validateConfigStub,
-      sinon.match.instanceOf(ProbotOctokit),
+      sinon.match.instanceOf(Octokit),
       'testOwner',
       'testRepo',
       'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
@@ -807,7 +825,7 @@ describe('Blunderbuss getConfigWithDefault', () => {
 
     sinon.assert.calledOnceWithExactly(
       validateConfigStub,
-      sinon.match.instanceOf(ProbotOctokit),
+      sinon.match.instanceOf(Octokit),
       'testOwner',
       'testRepo',
       'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
@@ -850,6 +868,7 @@ describe('Blunderbuss validateConfigChanges', () => {
   let sleepStub: sinon.SinonStub;
   let assignStub: sinon.SinonStub;
   let getConfigWithDefaultStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   const sandbox = sinon.createSandbox();
 
@@ -877,6 +896,11 @@ describe('Blunderbuss validateConfigChanges', () => {
     datastoreLockReleaseStub.resolves(true);
     getConfigWithDefaultStub.resolves({});
     assignStub.resolves();
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
     // Sleep does nothing.
     sleepStub.resolves();
   });
