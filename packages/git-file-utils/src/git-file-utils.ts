@@ -214,7 +214,10 @@ export class BranchFileCache {
     pathPrefix?: string
   ): Promise<string[]> {
     const files: string[] = [];
-    for await (const treeEntry of this.treeEntryIterator(this.branch, pathPrefix)) {
+    for await (const treeEntry of this.treeEntryIterator(
+      this.branch,
+      pathPrefix
+    )) {
       if (basename(treeEntry.path!) === filename) {
         files.push(treeEntry.path!);
       }
@@ -237,8 +240,11 @@ export class BranchFileCache {
     pathPrefix?: string
   ): Promise<string[]> {
     const files: string[] = [];
-    for await (const treeEntry of this.treeEntryIterator(this.branch, pathPrefix)) {
-      if (extname(treeEntry.path!) === extension) {
+    for await (const treeEntry of this.treeEntryIterator(
+      this.branch,
+      pathPrefix
+    )) {
+      if (extname(treeEntry.path!) === `.${extension}`) {
         files.push(treeEntry.path!);
       }
     }
@@ -378,7 +384,7 @@ export class BranchFileCache {
    */
   private async *treeEntryIterator(
     ref: string,
-    pathPrefix?: string,
+    pathPrefix?: string
   ): AsyncGenerator<TreeEntry, void, void> {
     const treeShas: TreeReference[] = [{ref}];
     let treeReference: TreeReference | undefined;
@@ -391,7 +397,12 @@ export class BranchFileCache {
           : treeEntry.path!;
 
         // short-circuit iterator if we're in the wrong directory
-        if (pathPrefix && path && !pathPrefix.startsWith(path) && !path.startsWith(pathPrefix)) {
+        if (
+          pathPrefix &&
+          path &&
+          !pathPrefix.startsWith(path) &&
+          !path.startsWith(pathPrefix)
+        ) {
           continue;
         }
 
