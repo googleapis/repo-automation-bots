@@ -151,7 +151,7 @@ export function flakybot(app: Probot) {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     let octokit: Octokit;
-    if (context.payload.installation && context.payload.installation.id) {
+    if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
       throw new Error(
