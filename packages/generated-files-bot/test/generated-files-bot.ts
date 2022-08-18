@@ -15,6 +15,8 @@
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
@@ -24,6 +26,7 @@ import * as sinon from 'sinon';
 import {describe, it, beforeEach} from 'mocha';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 import {
   parseManifest,
   getFileList,
@@ -51,10 +54,21 @@ function loadConfig(configFile: string) {
 }
 
 describe('generated-files-bot', () => {
+  const sandbox = sinon.createSandbox();
   let requests: nock.Scope;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
     requests = nock('https://api.github.com');
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   describe('parseManifest', () => {
@@ -97,12 +111,7 @@ describe('generated-files-bot', () => {
           },
         ],
       };
-      const list = await getFileList(
-        config,
-        new ProbotOctokit(),
-        'owner',
-        'repo'
-      );
+      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
       assert.deepStrictEqual(list, [
         {path: 'file1.txt'},
         {path: 'file2.txt'},
@@ -135,12 +144,7 @@ describe('generated-files-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(
-        config,
-        new ProbotOctokit(),
-        'owner',
-        'repo'
-      );
+      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
       assert.deepStrictEqual(list, [
         {path: 'value1'},
         {path: 'value2'},
@@ -174,12 +178,7 @@ describe('generated-files-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(
-        config,
-        new ProbotOctokit(),
-        'owner',
-        'repo'
-      );
+      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
       assert.deepStrictEqual(list, [
         {path: 'file1.txt'},
         {path: 'value1'},
@@ -204,12 +203,7 @@ describe('generated-files-bot', () => {
         .reply(404, {
           content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(
-        config,
-        new ProbotOctokit(),
-        'owner',
-        'repo'
-      );
+      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
       assert.deepStrictEqual(list, []);
       requests.done();
     });
@@ -226,7 +220,7 @@ describe('generated-files-bot', () => {
         ]);
 
       const list = await getPullRequestFiles(
-        new ProbotOctokit(),
+        new Octokit(),
         'owner',
         'repo',
         1234
@@ -305,7 +299,7 @@ describe('generated-files-bot', () => {
         requests.done();
         sinon.assert.calledOnceWithExactly(
           getConfigWithDefaultStub,
-          sinon.match.instanceOf(ProbotOctokit),
+          sinon.match.instanceOf(Octokit),
           'testOwner',
           'testRepo',
           CONFIGURATION_FILE_PATH,
@@ -314,7 +308,7 @@ describe('generated-files-bot', () => {
         );
         sinon.assert.calledOnceWithExactly(
           validateConfigStub,
-          sinon.match.instanceOf(ProbotOctokit),
+          sinon.match.instanceOf(Octokit),
           'testOwner',
           'testRepo',
           'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
@@ -487,6 +481,7 @@ function fetchFilesInPR(configFile: string) {
 describe('validateConfigChanges', () => {
   let probot: Probot;
   let getConfigWithDefaultStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
   const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
@@ -505,6 +500,11 @@ describe('validateConfigChanges', () => {
       'getConfigWithDefault'
     );
     getConfigWithDefaultStub.resolves({});
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
   afterEach(() => {
