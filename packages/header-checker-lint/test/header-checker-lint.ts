@@ -15,6 +15,8 @@
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 // eslint-disable-next-line node/no-extraneous-import
 import {
@@ -26,7 +28,7 @@ import {describe, it, beforeEach, before} from 'mocha';
 import * as sinon from 'sinon';
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
-
+import * as gcfUtilsModule from 'gcf-utils';
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/header-checker-lint';
 import schema from '../src/config-schema.json';
@@ -55,6 +57,7 @@ describe('HeaderCheckerLint', () => {
     let getConfigStub: sinon.SinonStub;
     let validateConfigStub: sinon.SinonStub;
     let checkerGetConfigStub: sinon.SinonStub;
+    let getAuthenticatedOctokitStub: sinon.SinonStub;
 
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './pull_request_opened'));
@@ -64,7 +67,12 @@ describe('HeaderCheckerLint', () => {
         'validateConfigChanges'
       );
       checkerGetConfigStub = sandbox.stub(ConfigChecker.prototype, 'getConfig');
-      validateConfigStub.resolves(undefined);
+      validateConfigStub.resolves(true);
+      getAuthenticatedOctokitStub = sandbox.stub(
+        gcfUtilsModule,
+        'getAuthenticatedOctokit'
+      );
+      getAuthenticatedOctokitStub.resolves(new Octokit());
     });
 
     afterEach(() => {
@@ -100,7 +108,7 @@ describe('HeaderCheckerLint', () => {
       // These asserts are just enough for once.
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'chingor13',
         'google-auth-library-java',
         WELL_KNOWN_CONFIGURATION_FILE,
@@ -108,7 +116,7 @@ describe('HeaderCheckerLint', () => {
       );
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'chingor13',
         'google-auth-library-java',
         '87139750cdcf551e8fe8d90c129527a4f358321c',
@@ -366,6 +374,7 @@ describe('HeaderCheckerLint', () => {
     const sandbox = sinon.createSandbox();
     let getConfigStub: sinon.SinonStub;
     let validateConfigStub: sinon.SinonStub;
+    let getAuthenticatedOctokitStub: sinon.SinonStub;
     before(() => {
       payload = require(resolve(fixturesPath, './pull_request_synchronized'));
     });
@@ -376,7 +385,12 @@ describe('HeaderCheckerLint', () => {
         ConfigChecker.prototype,
         'validateConfigChanges'
       );
-      validateConfigStub.resolves(undefined);
+      validateConfigStub.resolves(true);
+      getAuthenticatedOctokitStub = sandbox.stub(
+        gcfUtilsModule,
+        'getAuthenticatedOctokit'
+      );
+      getAuthenticatedOctokitStub.resolves(new Octokit());
     });
 
     afterEach(() => {
