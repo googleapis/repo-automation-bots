@@ -23,6 +23,7 @@ import nock from 'nock';
 import assert from 'assert';
 import snapshot from 'snap-shot-it';
 import {getConfig} from '@google-automations/bot-config-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 import {
   ConfigurationOptions,
   DEFAULT_CONFIGURATION,
@@ -33,6 +34,7 @@ const myProbotApp = api.handler;
 
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+const sandbox = sinon.createSandbox();
 
 const OWNER = 'testOwner';
 const REPO = 'testRepo';
@@ -96,10 +98,14 @@ describe('release-please bot', () => {
       },
     });
     probot.load(myProbotApp);
+    sandbox
+      .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({auth: 'faketoken'}));
   });
 
   afterEach(() => {
     nock.cleanAll();
+    sandbox.restore();
   });
 
   describe('config schema check on PRs', () => {
