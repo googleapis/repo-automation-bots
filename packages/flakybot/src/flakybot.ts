@@ -172,7 +172,7 @@ export function flakybot(app: Probot) {
       const configChecker = new ConfigChecker<Config>(schema, CONFIG_FILENAME);
       const {owner, repo} = context.repo();
       let octokit: Octokit;
-      if (context.payload.installation && context.payload.installation.id) {
+      if (context.payload.installation?.id) {
         octokit = await getAuthenticatedOctokit(
           context.payload.installation.id
         );
