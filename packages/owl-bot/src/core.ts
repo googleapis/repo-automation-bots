@@ -24,7 +24,7 @@ import {Octokit} from '@octokit/rest';
 import {RequestError} from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
 import {OwlBotLock, OWL_BOT_LOCK_PATH, owlBotLockFrom} from './config-files';
-import {OctokitFactory, OctokitType} from './octokit-util';
+import {OctokitFactory} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER} from './constants';
 import {CopyCodeIntoPullRequestAction} from './copy-code';
@@ -87,7 +87,7 @@ export const OWL_BOT_COPY = 'owl-bot-copy';
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
-  octokit?: OctokitType
+  octokit?: Octokit
 ): Promise<BuildResponse | null> {
   const token = await core.getGitHubShortLivedAccessToken(
     args.privateKey,
@@ -225,7 +225,7 @@ export async function getHeadCommit(
   owner: string,
   repo: string,
   pr: number,
-  octokit: OctokitType
+  octokit: Octokit
 ): Promise<Commit | undefined> {
   let headCommit: Commit | undefined = undefined;
   for await (const {data: commits} of octokit.paginate.iterator(
@@ -242,7 +242,7 @@ export async function getHeadCommit(
   return headCommit;
 }
 
-export async function createCheck(args: CheckArgs, octokit?: OctokitType) {
+export async function createCheck(args: CheckArgs, octokit?: Octokit) {
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit({
       privateKey: args.privateKey,
@@ -317,11 +317,11 @@ export function getAccessTokenURL(installation: number) {
   return `https://api.github.com/app/installations/${installation}/access_tokens`;
 }
 
-let cachedOctokit: OctokitType;
+let cachedOctokit: Octokit;
 export async function getAuthenticatedOctokit(
   auth: string | AuthArgs,
   cache = true
-): Promise<OctokitType> {
+): Promise<Octokit> {
   if (cache && cachedOctokit) return cachedOctokit;
   let tokenString: string;
   if (auth instanceof Object) {
@@ -351,12 +351,12 @@ function getCloudBuildInstance() {
  *
  * @param {string} repoFull - repo in org/repo format.
  * @param {number} pullNumber - pull request to base branch on.
- * @param {OctokitType} octokit - authenticated instance of Octokit.
+ * @param {Octokit} octokit - authenticated instance of Octokit.
  */
 export async function fetchOwlBotLock(
   repoFull: string,
   pullNumber: number,
-  octokit: OctokitType
+  octokit: Octokit
 ): Promise<string | undefined> {
   const [owner, repo] = repoFull.split('/');
   const {data: prData} = await octokit.pulls.get({
@@ -395,14 +395,14 @@ ${configString}`);
  * @param repo the rep name; ex: "nodejs-vision"
  * @param path the file path within the repo; ex: ".github/.OwlBot.lock.yaml"
  * @param ref the commit hash
- * @param {OctokitType} octokit - authenticated instance of Octokit.
+ * @param {Octokit} octokit - authenticated instance of Octokit.
  */
 export async function getFileContent(
   owner: string,
   repo: string,
   path: string,
   ref: string,
-  octokit: OctokitType
+  octokit: Octokit
 ): Promise<string | undefined> {
   try {
     const data = (
@@ -467,7 +467,7 @@ export async function getFilesModifiedBySha(
  */
 export async function* commitsIterator(
   repoFull: string,
-  octokit: OctokitType,
+  octokit: Octokit,
   per_page = 25
 ) {
   const [owner, repo] = repoFull.split('/');

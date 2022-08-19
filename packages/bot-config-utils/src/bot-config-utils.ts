@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import yaml from 'js-yaml';
 import path from 'path';
 import {RequestError} from '@octokit/types';
@@ -112,6 +113,7 @@ function validateObject<ConfigType>(
   options: ValidateConfigOptions
 ): ValidateConfigResult<ConfigType> {
   const ajv = new Ajv();
+  addFormats(ajv);
   if (options.additionalSchemas) {
     for (const schema of options.additionalSchemas) {
       ajv.addSchema(schema);

@@ -309,11 +309,14 @@ async function findAndAppendPullRequest(
     console.error(`Error parsing ${yamlPath}: ${e}`);
     await octokit.pulls.createReviewComment({
       repo: params.destRepo.repo,
-      owner: params.destRepo.repo,
+      owner: params.destRepo.owner,
       pull_number: pull.number,
       body: `Error parsing ${yamlPath}.  Triggered by ${sourceLinkFrom(
         params.sourceRepoCommitHash
       )}:\n${e}`,
+      commit_id: pull.head.sha,
+      path: yamlPath,
+      line: 1, // We don't know where the problem is, so choosing the first line.
     });
     const copyTag = copyTagFrom(yamlPath, params.sourceRepoCommitHash);
     await params.copyStateStore.recordBuildForCopy(
@@ -636,11 +639,25 @@ export async function copyCodeIntoPullRequest(
   // report the error on the log and in a comment on the pull request.
   const reportError = async (error: string) => {
     logger.error(`Error in ${pull.html_url}:\n${error}`);
-    await octokit.pulls.createReviewComment({
-      owner: destRepo.owner,
+
+    // First get the file list and choose the first file.
+    const filesInPR = await octokit.pulls.listFiles({
       repo: destRepo.repo,
+      owner: destRepo.owner,
+      pull_number: pull.number,
+    });
+    if (filesInPR.data.length < 1) {
+      logger.error("There's no file to add a review comment, skipping");
+      return;
+    }
+    await octokit.pulls.createReviewComment({
+      repo: destRepo.repo,
+      owner: destRepo.owner,
       pull_number: pull.number,
       body: error,
+      commit_id: pull.head.sha,
+      path: filesInPR.data[0].filename, // Choosing the first file in the PR.
+      line: 1, // We don't know where the problem is, choosing the first line.
     });
   };
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 import {OwlBotLock, OWL_BOT_LOCK_PATH} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
@@ -19,11 +20,7 @@ import {core} from './core';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints, RequestError} from '@octokit/types';
-import {
-  OctokitType,
-  createIssueIfTitleDoesntExist,
-  OctokitFactory,
-} from './octokit-util';
+import {createIssueIfTitleDoesntExist, OctokitFactory} from './octokit-util';
 import {
   GithubRepo,
   githubRepo,
@@ -160,7 +157,7 @@ export async function triggerOneBuildForUpdatingLock(
  * Iterates through all the paginated responses to collect the full list.
  */
 async function listReposInOrg(
-  octokit: OctokitType,
+  octokit: Octokit,
   githubOrg: string
 ): Promise<ListReposResponse['data']> {
   const result: ListReposResponse['data'] = [];
@@ -255,7 +252,7 @@ export async function scanGithubForConfigs(
 export async function refreshConfigs(
   configsStore: ConfigsStore,
   configs: Configs | undefined,
-  octokit: OctokitType,
+  octokit: Octokit,
   githubRepo: GithubRepo,
   defaultBranch: string,
   installationId: number

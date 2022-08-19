@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.0.0...bot-config-utils-v6.1.0) (2022-08-19)
+
+
+### Features
+
+* bot-config-utils can validate JSONSchema formats ([#4173](https://github.com/googleapis/repo-automation-bots/issues/4173)) ([024da5c](https://github.com/googleapis/repo-automation-bots/commit/024da5cc4983e7f9dc2dfcedee207ee09f344ab8))
+
 ## [6.0.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v5.0.0...bot-config-utils-v6.0.0) (2022-08-15)
 
 

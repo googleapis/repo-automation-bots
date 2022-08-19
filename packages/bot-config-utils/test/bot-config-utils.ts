@@ -34,6 +34,7 @@ import {
 } from '../src/bot-config-utils';
 import schema from './test-config-schema.json';
 import listSchema from './test-config-use-external-id.json';
+import formatSchema from './test-config-formats.json';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -126,6 +127,32 @@ const app3 = (app: Probot) => {
         context.payload.pull_request.number
       );
       listConfigFromConfigChecker = configChecker.getConfig();
+    }
+  );
+};
+
+// Test app with format schemas.
+const app4 = (app: Probot) => {
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+    ],
+    async context => {
+      const configChecker = new ConfigChecker<TestConfig>(
+        formatSchema,
+        CONFIG_FILENAME
+      );
+      await configChecker.validateConfigChanges(
+        await getAuthenticatedOctokit(context.payload.installation!.id),
+        context.payload.pull_request.head.user.login,
+        context.payload.repository.name,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
+      configFromConfigChecker = configChecker.getConfig();
     }
   );
 };
@@ -375,6 +402,71 @@ describe('config test app with multiple schema files', () => {
 
       const scopes = [
         fetchFilesInPR('config.yaml', CONFIG_FILENAME),
+        createCheck(),
+      ];
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      for (const scope of scopes) {
+        scope.done();
+      }
+      assert.strictEqual(configFromConfigChecker, null);
+    });
+  });
+});
+
+describe('config test app with formatted schemas', () => {
+  let probot: Probot;
+  const sandbox = sinon.createSandbox();
+  beforeEach(() => {
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retru: {enabled: false},
+        throttle: {enabled: false},
+      }),
+    });
+    probot.load(app4);
+    // It always start from null.
+    configFromConfigChecker = null;
+    nock.disableNetConnect();
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
+  });
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
+  });
+  describe('responds to PR', () => {
+    it('does not creates a failing status check for a correct config', async () => {
+      const payload = require(resolve(fixturesPath, 'pr_event'));
+
+      const scopes = [fetchFilesInPR('formats.yaml', CONFIG_FILENAME)];
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      for (const scope of scopes) {
+        scope.done();
+      }
+      assert.strictEqual(
+        configFromConfigChecker?.testConfig,
+        'https://google.com/'
+      );
+    });
+    it('creates a failing status check for a wrong config', async () => {
+      const payload = require(resolve(fixturesPath, 'pr_event'));
+
+      const scopes = [
+        fetchFilesInPR('formats-wrong.yaml', CONFIG_FILENAME),
         createCheck(),
       ];
 

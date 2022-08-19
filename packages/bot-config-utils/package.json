@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/bot-config-utils",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "Utilities for github bot config",
   "scripts": {
     "compile": "tsc -p .",
@@ -18,8 +18,9 @@
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
     "ajv": "^8.11.0",
-    "js-yaml": "^4.1.0",
-    "gcf-utils": "^14.0.0"
+    "ajv-formats": "^2.1.1",
+    "gcf-utils": "^14.0.0",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@octokit/types": "^6.41.0",
