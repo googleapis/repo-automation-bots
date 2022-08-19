@@ -15,16 +15,33 @@
 import yargs from 'yargs';
 import {runTrigger} from './run-trigger';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-
-interface CliArgs {
+export interface CliArgs {
   projectId: string;
   triggerId: string;
   apiId: string;
   repoToClone?: string;
   language: string;
   installationId: string;
-  container: string;
-  languageContainer: string;
+  container?: string;
+  languageContainer?: string;
+}
+
+const languageContainers = [
+  {
+    language: 'nodejs',
+    languageContainerInArtifactRegistry:
+      'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+    repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
+  },
+];
+
+export function getLanguageSpecificValues(language: string) {
+  for (const languageContainer of languageContainers) {
+    if (languageContainer.language === language) {
+      return languageContainer;
+    }
+  }
+  throw new Error('No language-specific container specified');
 }
 
 export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
@@ -35,12 +52,12 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('projectId', {
         describe: 'project ID which contains the build file',
         type: 'string',
-        demand: true,
+        default: 'owlbot-bootstrap-prod',
       })
       .option('triggerId', {
         describe: 'trigger of build to run',
         type: 'string',
-        demand: true,
+        default: 'owlbot-bootstrapper-trigger',
       })
       .option('apiId', {
         describe: 'api ID to generate a library for',
@@ -60,21 +77,25 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('installationId', {
         describe: 'Github app installation ID',
         type: 'string',
-        demand: true,
+        default: '25330619',
       })
       .option('container', {
         describe: 'common container image',
         type: 'string',
-        demand: true,
+        demand: false,
       })
       .option('languageContainer', {
         describe: 'language-specific container image',
         type: 'string',
-        demand: true,
+        demand: false,
       });
   },
   async handler(argv) {
     const cb = new CloudBuildClient();
-    await runTrigger(argv, cb);
+    let languageValues;
+    if (!argv.languageContainer) {
+      languageValues = getLanguageSpecificValues(argv.language);
+    }
+    await runTrigger(argv, cb, languageValues);
   },
 };
