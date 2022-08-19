@@ -14,7 +14,9 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import {getContextLogger} from 'gcf-utils';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import {getPolicy} from './policy';
 import {exportToBigQuery} from './export';
 import {getChanger} from './changer';
@@ -34,8 +36,16 @@ export function policyBot(app: Probot) {
       logger.info(`skipping run for ${repo}`);
       return;
     }
-
-    const policy = getPolicy(context.octokit, logger);
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
+    const policy = getPolicy(octokit, logger);
     const repoMetadata = await policy.getRepo(repo);
 
     // Skip archived or private repositories
@@ -58,7 +68,7 @@ export function policyBot(app: Probot) {
 
     // open, close, or update a corresponding GitHub issue
     try {
-      await openIssue(context.octokit, result);
+      await openIssue(octokit, result);
     } catch (e) {
       const err = e as Error;
       err.message = `Error opening GitHub issue: ${err.message}`;
@@ -69,7 +79,7 @@ export function policyBot(app: Probot) {
     // causes any errors.  Otherwise, the entire function is retried, and the
     // result is recorded twice.
     try {
-      const changer = getChanger(context.octokit, repoMetadata, logger);
+      const changer = getChanger(octokit, repoMetadata, logger);
       await changer.submitFixes(result);
     } catch (e) {
       const err = e as Error;

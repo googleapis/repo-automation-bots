@@ -367,16 +367,14 @@ describe('policy', () => {
       .reply(502);
 
     // we've already individually tested all of these functions, so stub them
-    const stubs = [
-      sinon.stub(policy, 'hasRenovate').resolves(true),
-      sinon.stub(policy, 'hasLicense').resolves(true),
-      sinon.stub(policy, 'hasCodeOfConduct').resolves(true),
-      sinon.stub(policy, 'hasContributing').resolves(true),
-      sinon.stub(policy, 'hasCodeOwners').resolves(true),
-      sinon.stub(policy, 'hasBranchProtection').resolves(true),
-      sinon.stub(policy, 'hasMergeCommitsDisabled').resolves(true),
-      sinon.stub(policy, 'hasMainDefault').resolves(true),
-    ];
+    sinon.stub(policy, 'hasRenovate').resolves(true);
+    sinon.stub(policy, 'hasLicense').resolves(true);
+    sinon.stub(policy, 'hasCodeOfConduct').resolves(true);
+    sinon.stub(policy, 'hasContributing').resolves(true);
+    sinon.stub(policy, 'hasCodeOwners').resolves(true);
+    sinon.stub(policy, 'hasBranchProtection').resolves(true);
+    sinon.stub(policy, 'hasMergeCommitsDisabled').resolves(true);
+    sinon.stub(policy, 'hasMainDefault').resolves(true);
     await assert.rejects(policy.checkRepoPolicy(repo), /received 502 fetching/);
     getSecurityMd.done();
   });
