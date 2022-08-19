@@ -21,7 +21,7 @@ import {Octokit} from '@octokit/rest';
 import {Datastore} from '@google-cloud/datastore';
 import {syncLabels} from '@google-automations/label-utils';
 import {mergeOnGreen} from './merge-logic';
-import {getContextLogger, GCFLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger, GCFLogger} from 'gcf-utils';
 import {
   MERGE_ON_GREEN_LABEL,
   MERGE_ON_GREEN_LABEL_SECURE,
@@ -386,14 +386,10 @@ handler.addPR = async function addPR(
 /**
  * Cleans up the Datastore table for invalid PRs (merged, closed, etc)
  * @param watchedPRs array of watched PRs
- * @param app the current application being called
- * @param context the context of the webhook payload
  * @returns void
  */
 handler.cleanDatastoreTable = async function cleanDatastoreTable(
   watchedPRs: DatastorePR[],
-  app: Probot,
-  context: Context,
   logger: GCFLogger
 ) {
   while (watchedPRs.length) {
@@ -401,9 +397,11 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
     await Promise.all(
       work.map(async wp => {
         logger.info(`checking ${wp.url}, ${wp.installationId} for cleanup`);
-        const github = wp.installationId
-          ? await app.auth(wp.installationId)
-          : context.octokit;
+        if (!wp.installationId) {
+          logger.warn(`installationId is not provided for ${wp.url}, skipping`);
+          return;
+        }
+        const octokit = await getAuthenticatedOctokit(wp.installationId);
         await handler.checkIfPRIsInvalid(
           wp.owner,
           wp.repo,
@@ -411,7 +409,7 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
           wp.label,
           wp.reactionId,
           wp.url,
-          github,
+          octokit,
           logger
         );
       })
@@ -422,8 +420,8 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
 /**
  * Calls the main MOG logic, either deletes or keeps that PR in the Datastore table
  * @param watchedPRs array of watched PRs
- * @param app the current application being called
- * @param context the context of the webhook payload
+ * @param octokit An authenticated octokit instance
+ * @param logger A logger instance
  * @returns void
  */
 handler.checkPRMergeability = async function checkPRMergeability(
@@ -579,7 +577,7 @@ export function handler(app: Probot) {
 
     logger.info('Starting clean up job');
     const watchedPRs = await handler.listPRs();
-    await handler.cleanDatastoreTable(watchedPRs, app, context, logger);
+    await handler.cleanDatastoreTable(watchedPRs, logger);
   });
 
   // This scheduled job looks for PRs that have an applicable label
@@ -603,12 +601,21 @@ export function handler(app: Probot) {
       return;
     }
 
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.installation event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const installationId = context.payload.installation.id;
     logger.info(`Looking for hanging PRs for installation: ${installationId}`);
     // we cannot search in an org without the bot installation ID, so we need
     // to divide up the cron jobs based on org
     await handler.scanForMissingPullRequests(
-      context.octokit,
+      octokit,
       context.payload.cron_org,
       logger
     );
@@ -624,16 +631,21 @@ export function handler(app: Probot) {
       return;
     }
 
-    const installationId = context.payload.installation.id;
-    if (!installationId) {
-      logger.warn('no installation id');
-      return;
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.installation event.' +
+          ' We cannot authenticate Octokit.'
+      );
     }
+    const installationId = context.payload.installation?.id;
 
     logger.info(`Starting merge checks for installation: ${installationId}`);
     const watchedPRs = await handler.listPRs(installationId);
     const start = Date.now();
-    await handler.checkPRMergeability(watchedPRs, context.octokit, logger);
+    await handler.checkPRMergeability(watchedPRs, octokit, logger);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
 
@@ -647,8 +659,17 @@ export function handler(app: Probot) {
     }
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     logger.info(`Starting label sync for ${owner}/${repo}`);
-    await syncLabels(context.octokit, owner, repo, MERGE_ON_GREEN_LABELS);
+    await syncLabels(octokit, owner, repo, MERGE_ON_GREEN_LABELS);
   });
 
   app.on('pull_request.labeled', async context => {
@@ -659,6 +680,15 @@ export function handler(app: Probot) {
     const repo = context.payload.repository.name;
     const installationId = context.payload.installation?.id;
 
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in pull_request.labeled event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     // Limit functionality to an allowlist
     if (
       !handler.allowlist.find(
@@ -697,7 +727,7 @@ export function handler(app: Probot) {
         installationId,
       },
       context.payload.pull_request.html_url,
-      context.octokit,
+      octokit,
       logger
     );
   });
@@ -708,6 +738,15 @@ export function handler(app: Probot) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
 
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in pull_request.unlabeled event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     // check to see if the label is on the PR
     const label = context.payload.pull_request.labels.find(
       (label: Label) =>
@@ -738,7 +777,7 @@ export function handler(app: Probot) {
         prNumber,
         watchedPullRequest.label,
         watchedPullRequest.reactionId,
-        (await app.auth(watchedPullRequest.installationId)) ?? context.octokit
+        octokit
       );
     }
   });
@@ -749,6 +788,15 @@ export function handler(app: Probot) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
 
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in pull_request.closed event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     // Check to see if the PR exists in the table before trying to delete. We also
     // need to do this to get the reaction id to remove the reaction when MOG is finished.
     const watchedPullRequest: DatastorePR = await handler.getPR(
@@ -763,7 +811,7 @@ export function handler(app: Probot) {
         prNumber,
         watchedPullRequest.label,
         watchedPullRequest.reactionId,
-        context.octokit
+        octokit
       );
     }
   });

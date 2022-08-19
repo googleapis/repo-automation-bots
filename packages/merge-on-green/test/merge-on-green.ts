@@ -25,6 +25,7 @@ import assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import * as labelUtilsModule from '@google-automations/label-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 
 const testingOctokitInstance = new Octokit({auth: 'abc123'});
 const sandbox = sinon.createSandbox();
@@ -111,9 +112,15 @@ function getRepoInstallation() {
 describe('merge-on-green wrapper logic', () => {
   let probot: Probot;
   let loggerStub: SinonStub;
+  let getAuthenticatedOctokitStub: SinonStub;
 
   beforeEach(() => {
     loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -233,6 +240,8 @@ describe('merge-on-green wrapper logic', () => {
               label: 'automerge',
               author: 'testOwner',
               reactionId: 1,
+              url: 'https://github.com/testOwner/testRepo/pull/1',
+              installationId: 1234,
             },
           ],
         ]);
@@ -498,6 +507,7 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
+            installation: {id: 1234},
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
           id: 'abc123',
@@ -533,9 +543,7 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
-            installation: {
-              id: 'abc123',
-            },
+            installation: {id: 1234},
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
           id: 'abc123',
@@ -596,6 +604,7 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
+            installation: {id: 1234},
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
           id: 'abc123',
@@ -648,6 +657,7 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
+            installation: {id: 1234},
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
           id: 'abc123',
@@ -688,6 +698,7 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
+            installation: {id: 1234},
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
           id: 'abc123',
@@ -854,6 +865,7 @@ describe('merge-on-green wrapper logic', () => {
           },
           cron_org: 'Codertocat',
           syncLabels: true,
+          installation: {id: 1234},
         };
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -864,7 +876,7 @@ describe('merge-on-green wrapper logic', () => {
         });
         sinon.assert.calledOnceWithExactly(
           syncLabelsStub,
-          sinon.match.instanceOf(ProbotOctokit),
+          sinon.match.instanceOf(Octokit),
           'Codertocat',
           'Hello-World',
           sinon.match.array.deepEquals(MERGE_ON_GREEN_LABELS)
