@@ -27,7 +27,6 @@ import {mkdirSync, writeFileSync} from 'fs';
 import * as protos from '@google-cloud/cloudbuild/build/protos/protos';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
-import {OctokitType} from '../src/octokit-util';
 import {OwlBotLock} from '../src/config-files';
 
 nock.disableNetConnect();
@@ -57,7 +56,7 @@ function initSandbox(prData: unknown) {
 async function getOwlBotLock(
   repoFull: string,
   pullNumber: number,
-  octokit: OctokitType
+  octokit: Octokit
 ): Promise<OwlBotLock | undefined> {
   const lockText = await core.fetchOwlBotLock(repoFull, pullNumber, octokit);
   return undefined === lockText ? undefined : core.parseOwlBotLock(lockText);

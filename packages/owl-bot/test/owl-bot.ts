@@ -27,15 +27,15 @@ import {logger} from 'gcf-utils';
 import {owlbot} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {
-  PullRequestEditedEvent,
-  PullRequestOpenedEvent,
-} from '@octokit/webhooks-types';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {PullRequestEditedEvent} from '@octokit/webhooks-types';
 import * as sinon from 'sinon';
 import nock from 'nock';
 import {Configs} from '../src/configs-store';
 import {OWL_BOT_LOCK_PATH} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 import {FirestoreConfigsStore} from '../src/database';
 import {REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
 
@@ -67,6 +67,11 @@ describe('OwlBot', () => {
     sandbox.replace(owlbot, 'acquireLock', async () => {
       return fakeDatastoreLock;
     });
+    const getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
     await probot.load((app: Probot) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       owlbot.OwlBot('abc123', app, sandbox.stub() as any);
@@ -92,13 +97,14 @@ describe('OwlBot', () => {
             login: 'googleapis',
           },
           syncLabels: true,
+          installation: {id: 1234},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
       });
       sinon.assert.calledOnceWithExactly(
         syncLabelsStub,
-        sinon.match.instanceOf(ProbotOctokit),
+        sinon.match.instanceOf(Octokit),
         'googleapis',
         'testRepo',
         OWL_BOT_LABELS
@@ -122,6 +128,7 @@ describe('OwlBot', () => {
             login: 'testOrg',
           },
           syncLabels: true,
+          installation: {id: 1234},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -358,7 +365,9 @@ describe('OwlBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestOpenedEvent,
+        // Somehow there's a compile error with PullRequestOpenedEvent.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -861,7 +870,7 @@ describe('OwlBot', () => {
 
       assert.ok(callArgs[0] instanceof FirestoreConfigsStore);
       assert.strictEqual(callArgs[1], customConfig);
-      assert.ok(callArgs[2] instanceof ProbotOctokit);
+      assert.ok(callArgs[2] instanceof Octokit);
       assert.strictEqual(
         callArgs[3].toString(),
         payload.organization.login + '/' + payload.repository.name
@@ -1675,6 +1684,9 @@ describe('locking behavior', () => {
       CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST:
         'aef1e540-d401-4b85-8127-b72b5993c20e',
     });
+    sandbox
+      .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+      .resolves(new Octokit());
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -1973,6 +1985,14 @@ function pullRequestEditedEventFrom(
 }
 
 describe('userCheckedRegenerateBox()', () => {
+  beforeEach(() => {
+    sandbox
+      .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+      .resolves(new Octokit());
+  });
+  afterEach(() => {
+    sandbox.restore();
+  });
   it('does nothing with empty bodies', () => {
     const payload = pullRequestEditedEventFrom();
     assert.ok(

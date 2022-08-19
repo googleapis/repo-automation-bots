@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Octokit} from '@octokit/rest';
 import {newCmd} from './cmd';
 import {Logger} from './logger';
-import {OctokitType} from './octokit-util';
 
 // Limits imposed by Github.
 export const MAX_TITLE_LENGTH = 255;
@@ -116,7 +116,7 @@ export async function createPullRequestFromLastCommit(
   branch: string,
   pushUrl: string,
   labels: string[],
-  octokit: OctokitType,
+  octokit: Octokit,
   withRegenerateCheckbox = WithRegenerateCheckbox.No,
   apiName = '',
   forceFlag: Force = Force.No,

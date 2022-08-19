@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Octokit} from '@octokit/rest';
 import {ConfigsStore, OwlBotYamlAndPath} from './configs-store';
-import {OctokitType, OctokitFactory} from './octokit-util';
+import {OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import {
   copyCodeAndAppendOrCreatePullRequest,
@@ -103,7 +104,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     .filter(x => x);
 
   const todoStack: Todo[] = [];
-  let octokit: null | OctokitType = null;
+  let octokit: null | Octokit = null;
 
   // Search the commit history for commits that still need to be copied
   // to destination repos.

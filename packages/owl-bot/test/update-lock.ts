@@ -17,12 +17,13 @@ import * as assert from 'assert';
 import tmp from 'tmp';
 import {makeDirTree} from './dir-tree';
 import {makeAbcRepo} from './make-repos';
+import {Octokit} from '@octokit/rest';
 import {newCmd} from '../src/cmd';
 import {
   createPullRequestForLockUpdate,
   shouldCreatePullRequestForLockUpdate,
 } from '../src/update-lock';
-import {OctokitFactory, OctokitType} from '../src/octokit-util';
+import {OctokitFactory} from '../src/octokit-util';
 import {githubRepoFromOwnerSlashName} from '../src/github-repo';
 import {Force, WithRegenerateCheckbox} from '../src/create-pr';
 
@@ -60,7 +61,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
     const factory: OctokitFactory = {
       getGitHubShortLivedAccessToken: () => Promise.resolve('b4'),
       getShortLivedOctokit: () =>
-        Promise.resolve({fake: true} as unknown as OctokitType),
+        Promise.resolve({fake: true} as unknown as Octokit),
     };
 
     await createPullRequestForLockUpdate(

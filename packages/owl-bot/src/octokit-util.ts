@@ -14,18 +14,12 @@
 
 import {Octokit} from '@octokit/rest';
 // Conflicting linters think the next line is extraneous or necessary.
-// eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {promisify} from 'util';
 import {readFile} from 'fs';
 import {core} from './core';
 import {GCFLogger} from 'gcf-utils/build/src/logging/gcf-logger';
 
 const readFileAsync = promisify(readFile);
-
-export type OctokitType =
-  | InstanceType<typeof Octokit>
-  | InstanceType<typeof ProbotOctokit>;
 
 export interface OctokitParams {
   'pem-path'?: string;
@@ -55,7 +49,7 @@ export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
 /**
  * Creates an authenticated instance of octokit.
  */
-export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
+export async function octokitFrom(argv: OctokitParams): Promise<Octokit> {
   const token = await octokitTokenFrom(argv);
   return await core.getAuthenticatedOctokit(token, false);
 }
@@ -65,7 +59,7 @@ export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
  */
 export interface OctokitFactory {
   getGitHubShortLivedAccessToken(): Promise<string>;
-  getShortLivedOctokit(token?: string): Promise<OctokitType>;
+  getShortLivedOctokit(token?: string): Promise<Octokit>;
 }
 
 /**
@@ -74,7 +68,7 @@ export interface OctokitFactory {
  */
 export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
   let lastOctokitTimestamp = 0;
-  let lastOctokit: OctokitType | null = null;
+  let lastOctokit: Octokit | null = null;
   return {
     getGitHubShortLivedAccessToken() {
       return octokitTokenFrom(params);
@@ -117,7 +111,7 @@ export function octokitFactoryFromToken(token: string): OctokitFactory {
  * @returns Promise<boolean>
  */
 export async function createIssueIfTitleDoesntExist(
-  octokit: OctokitType,
+  octokit: Octokit,
   owner: string,
   repo: string,
   title: string,
