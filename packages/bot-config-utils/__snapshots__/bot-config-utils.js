@@ -62,3 +62,16 @@ exports[
     text: '[\n    {\n        "instancePath": "",\n        "schemaPath": "#/type",\n        "keyword": "type",\n        "params": {\n            "type": "array"\n        },\n        "message": "must be array"\n    }\n]',
   },
 };
+
+exports[
+  'config test app with formatted schemas responds to PR creates a failing status check for a wrong config 1'
+] = {
+  name: 'test config schema',
+  conclusion: 'failure',
+  head_sha: 'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
+  output: {
+    title: 'Config schema error',
+    summary: 'An error found in the config file',
+    text: '[\n    {\n        "instancePath": "/testConfig",\n        "schemaPath": "#/properties/testConfig/format",\n        "keyword": "format",\n        "params": {\n            "format": "uri-reference"\n        },\n        "message": "must match format \\"uri-reference\\""\n    }\n]',
+  },
+};
