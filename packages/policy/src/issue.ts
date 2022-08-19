@@ -33,7 +33,9 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
 - [${result.hasRenovateConfig ? 'x' : ' '}] Renovate bot is enabled
 - [${result.hasMergeCommitsDisabled ? 'x' : ' '}] Merge commits disabled
 - [${result.hasCodeowners ? 'x' : ' '}] There is a CODEOWNERS file
-- [${result.hasValidLicense ? 'x' : ' '}] There is a valid LICENSE.md
+- [${
+    result.hasValidLicense ? 'x' : ' '
+  }] GitHub [detects a valid LICENSE.md](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository#detecting-a-license)
 - [${result.hasCodeOfConduct ? 'x' : ' '}] There is a CODE_OF_CONDUCT.md
 - [${result.hasContributing ? 'x' : ' '}] There is a CONTRIBUTING.md
 - [${result.hasSecurityPolicy ? 'x' : ' '}] There is a SECURITY.md
