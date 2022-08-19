@@ -21,7 +21,12 @@ import {
 import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
-import {logger as defaultLogger, getContextLogger, GCFLogger} from 'gcf-utils';
+import {
+  logger as defaultLogger,
+  getAuthenticatedOctokit,
+  getContextLogger,
+  GCFLogger,
+} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {core, RegenerateArgs, parseOwlBotLock} from './core';
 import {Octokit} from '@octokit/rest';
@@ -126,13 +131,22 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     logger.info(
       `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
     );
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     await owlbot.handlePullRequestLabeled(
       appId,
       privateKey,
       project,
       triggers,
-      context.payload,
-      context.octokit,
+      context.payload as PullRequestLabeledEvent,
+      octokit,
       logger
     );
   });
@@ -142,7 +156,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     const regenerate = userCheckedRegenerateBox(
       project,
       triggers.regeneratePullRequest,
-      context.payload
+      context.payload as PullRequestEditedEvent
     );
     if (regenerate) {
       const installationId = context.payload.installation?.id;
@@ -187,6 +201,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       if (!installation) {
         throw Error(`no installation token found for ${head}`);
       }
+      const octokit = await getAuthenticatedOctokit(installation);
 
       // If the pull request is from a fork, the label "owlbot:run" must be
       // added by a maintainer to trigger the post processor.
@@ -222,7 +237,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
           defaultBranch,
           sha: context.payload.pull_request.head.sha,
         },
-        context.octokit,
+        octokit,
         logger
       );
     }
@@ -266,6 +281,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       logger.error(`Missing install id (${installationId}) or org (${org})`);
       return;
     }
+    const octokit = await getAuthenticatedOctokit(installationId);
 
     if (shouldIgnoreRepo(context.payload.repository.full_name)) {
       logger.info(
@@ -281,7 +297,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     await refreshConfigs(
       configStore,
       configs,
-      context.octokit,
+      octokit,
       githubRepo(org, context.payload.repository.name),
       context.payload.repository.default_branch ?? 'master',
       installationId
@@ -300,8 +316,19 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       // syncing labels
       const owner = context.payload.organization.login;
       const repo = context.payload.repository.name;
+      let octokit: Octokit;
+      if (context.payload.installation?.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          'Installation ID not provided in schedule.repository event.' +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       if (ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
-        await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
+        await syncLabels(octokit, owner, repo, OWL_BOT_LABELS);
       } else {
         logger.info(
           `Ignoring ${owner}/${repo} because it's in the wrong organization.`
