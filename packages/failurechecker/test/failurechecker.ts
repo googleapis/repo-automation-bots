@@ -14,12 +14,15 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 import {failureChecker, TimeMethods} from '../src/failurechecker';
 import * as issueModule from '@google-automations/issue-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 
 nock.disableNetConnect();
 
@@ -28,6 +31,7 @@ const sandbox = sinon.createSandbox();
 describe('failurechecker', () => {
   let probot: Probot;
   let addIssueStub: sinon.SinonStub;
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
     // Later versions of probot seem to have problems dealing with fake sinon timers.
@@ -35,6 +39,11 @@ describe('failurechecker', () => {
       .stub(TimeMethods, 'Date')
       .returns(new Date(Date.UTC(2020, 1, 1, 20)));
     addIssueStub = sandbox.stub(issueModule, 'addOrUpdateIssue').resolves();
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+    getAuthenticatedOctokitStub.resolves(new Octokit());
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -98,6 +107,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -153,6 +163,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -195,6 +206,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -236,6 +248,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -270,6 +283,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -325,6 +339,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -379,6 +394,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -433,6 +449,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -462,6 +479,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -515,6 +533,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -577,6 +596,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -640,6 +660,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -690,6 +711,7 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
+        installation: {id: 123},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',

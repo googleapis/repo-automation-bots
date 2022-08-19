@@ -4,11 +4,14 @@
   "description": "Bootstraps the initial files on new APIs to generate libraries",
   "private": true,
   "author": "Google LLC.",
+  "main": "./build/cli.js",
+  "bin": {
+    "bootstrapper": "./build/cli.js"
+  },
   "license": "Apache-2.0",
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
-  "main": "build/src/app.js",
   "keywords": [
     "probot",
     "github",

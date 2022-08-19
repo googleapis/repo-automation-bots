@@ -16,19 +16,20 @@
 // It kicks off a trigger in cloud build.
 
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
+import {CliArgs} from './run-trigger-command';
 
-interface CliArgs {
-  projectId: string;
-  triggerId?: string;
-  apiId: string;
-  repoToClone?: string;
-  language: string;
-  installationId: string;
-  container: string;
-  languageContainer: string;
-}
+const COMMON_CONTAINER =
+  'us.gcr.io/owlbot-bootstrap-prod/owlbot-bootstrapper:latest';
 
-export async function runTrigger(argv: CliArgs, cb: CloudBuildClient) {
+export async function runTrigger(
+  argv: CliArgs,
+  cb: CloudBuildClient,
+  languageValues?: {
+    repoToClone: string;
+    language: string;
+    languageContainerInArtifactRegistry: string;
+  }
+) {
   const [resp] = await cb.runBuildTrigger({
     projectId: argv.projectId,
     triggerId: argv.triggerId,
@@ -37,11 +38,14 @@ export async function runTrigger(argv: CliArgs, cb: CloudBuildClient) {
       branchName: 'main',
       substitutions: {
         _API_ID: argv.apiId,
-        _REPO_TO_CLONE: argv.repoToClone ?? '',
+        _REPO_TO_CLONE: argv.repoToClone ?? languageValues?.repoToClone ?? '',
         _LANGUAGE: argv.language,
         _INSTALLATION_ID: argv.installationId,
-        _CONTAINER: argv.container,
-        _LANGUAGE_CONTAINER: argv.languageContainer,
+        _CONTAINER: argv.container ?? COMMON_CONTAINER ?? '',
+        _LANGUAGE_CONTAINER:
+          argv.languageContainer ??
+          languageValues?.languageContainerInArtifactRegistry ??
+          '',
         _PROJECT_ID: argv.projectId,
       },
     },

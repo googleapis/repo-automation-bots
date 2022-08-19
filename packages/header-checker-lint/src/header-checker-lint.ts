@@ -14,12 +14,14 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {LicenseType, detectLicenseHeader} from './header-parser';
 import {ConfigurationOptions, WELL_KNOWN_CONFIGURATION_FILE} from './config';
 import * as minimatch from 'minimatch';
 import {getConfig, ConfigChecker} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
-import {getContextLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 
 type Conclusion =
   | 'success'
@@ -83,8 +85,20 @@ export = (app: Probot) => {
         WELL_KNOWN_CONFIGURATION_FILE
       );
       const logger = getContextLogger(context);
+
+      let octokit: Octokit;
+      if (context.payload.installation && context.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${context.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       await configChecker.validateConfigChanges(
-        context.octokit,
+        octokit,
         owner,
         repo,
         context.payload.pull_request.head.sha,
@@ -95,7 +109,7 @@ export = (app: Probot) => {
       if (remoteConfiguration === null) {
         try {
           remoteConfiguration = await getConfig<ConfigurationOptions>(
-            context.octokit,
+            octokit,
             owner,
             repo,
             WELL_KNOWN_CONFIGURATION_FILE,
@@ -120,8 +134,8 @@ export = (app: Probot) => {
       const pullRequestCommitSha = context.payload.pull_request.head.sha;
 
       try {
-        const files = await context.octokit.paginate(
-          context.octokit.pulls.listFiles,
+        const files = await octokit.paginate(
+          octokit.pulls.listFiles,
           listFilesParams
         );
 
@@ -147,7 +161,7 @@ export = (app: Probot) => {
             continue;
           }
 
-          const blob = await context.octokit.git.getBlob(
+          const blob = await octokit.git.getBlob(
             context.repo({
               file_sha: file.sha,
             })
@@ -222,7 +236,7 @@ export = (app: Probot) => {
 
         // post the status of commit linting to the PR, using:
         // https://developer.github.com/v3/checks/
-        await context.octokit.checks.create(checkParams);
+        await octokit.checks.create(checkParams);
       } catch (e) {
         const err = e as Error;
         logger.error(err);
