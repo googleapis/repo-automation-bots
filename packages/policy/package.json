@@ -29,30 +29,30 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/bigquery": "^6.0.0",
-    "code-suggester": "^3.0.0",
-    "gaxios": "^5.0.0",
-    "gcf-utils": "^13.8.0",
-    "lru-cache": "^7.10.1",
+    "@google-cloud/bigquery": "^6.0.2",
+    "code-suggester": "^4.0.1",
+    "gaxios": "^5.0.1",
+    "gcf-utils": "^14.0.1",
+    "lru-cache": "^7.14.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^16.3.3",
-    "@types/sinon": "^10.0.2",
-    "@types/uuid": "^8.3.1",
-    "c8": "^7.7.3",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "18.7.6",
+    "@types/sinon": "^10.0.13",
+    "@types/uuid": "^8.3.4",
+    "c8": "^7.12.0",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
     "meow": "^9.0.0",
-    "mocha": "^9.0.2",
-    "nock": "^13.1.1",
+    "mocha": "^10.0.0",
+    "nock": "^13.2.9",
     "sinon": "^14.0.0",
-    "smee-client": "^1.2.2",
-    "typescript": "~4.7.0"
+    "smee-client": "^1.2.3",
+    "typescript": "~4.7.4"
   },
   "optionalDependencies": { "fsevents": "*" },
   "engines": {
-    "node": ">= 12.18.2"
+    "node": ">= 14"
   }
 }
