@@ -21,6 +21,7 @@ import sinon from 'sinon';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import {logger} from 'gcf-utils';
+import * as gcfUtilsModule from 'gcf-utils';
 import * as policy from '../src/policy';
 import * as bq from '../src/export';
 import * as changer from '../src/changer';
@@ -31,6 +32,7 @@ nock.disableNetConnect();
 
 describe('bot', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
     probot = createProbot({
@@ -43,11 +45,14 @@ describe('bot', () => {
       },
     });
     probot.load(policyBot);
+    sandbox
+      .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+      .resolves(new Octokit());
   });
 
   afterEach(() => {
     nock.cleanAll();
-    sinon.restore();
+    sandbox.restore();
   });
 
   it('should skip runs on non-approved orgs', async () => {
@@ -67,6 +72,7 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -84,14 +90,14 @@ describe('bot', () => {
     const fakeResult = {} as policy.PolicyResult;
     const p = new policy.Policy(new Octokit(), console);
     const c = new changer.Changer(new Octokit(), fakeRepo);
-    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const getChangerStub = sinon.stub(changer, 'getChanger').returns(c);
-    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
-    const checkPolicyStub = sinon
+    const getPolicyStub = sandbox.stub(policy, 'getPolicy').returns(p);
+    const getChangerStub = sandbox.stub(changer, 'getChanger').returns(c);
+    const getRepoStub = sandbox.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sandbox
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
-    const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-    const submitFixesStub = sinon.stub(c, 'submitFixes').resolves();
+    const exportStub = sandbox.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sandbox.stub(c, 'submitFixes').resolves();
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,6 +113,7 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -129,14 +136,14 @@ describe('bot', () => {
     const fakeResult = {} as policy.PolicyResult;
     const p = new policy.Policy(new Octokit(), console);
     const c = new changer.Changer(new Octokit(), fakeRepo);
-    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const getChangerStub = sinon.stub(changer, 'getChanger').returns(c);
-    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
-    const checkPolicyStub = sinon
+    const getPolicyStub = sandbox.stub(policy, 'getPolicy').returns(p);
+    const getChangerStub = sandbox.stub(changer, 'getChanger').returns(c);
+    const getRepoStub = sandbox.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sandbox
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
-    const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-    const submitFixesStub = sinon.stub(c, 'submitFixes').resolves();
+    const exportStub = sandbox.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sandbox.stub(c, 'submitFixes').resolves();
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,6 +159,7 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -172,9 +180,9 @@ describe('bot', () => {
       full_name: 'googleapis/nodejs-storage',
     } as policy.GitHubRepo;
     const p = new policy.Policy(new Octokit(), console);
-    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
-    const checkPolicyStub = sinon
+    const getPolicyStub = sandbox.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sandbox.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sandbox
       .stub(p, 'checkRepoPolicy')
       .throws(Error('reading file failed'));
     await assert.rejects(
@@ -192,6 +200,7 @@ describe('bot', () => {
             login: org,
           },
           cron_org: org,
+          installation: {id: 1234},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -208,8 +217,8 @@ describe('bot', () => {
     const org = 'googleapis';
     const fakeRepo = {archived: true} as policy.GitHubRepo;
     const p = new policy.Policy(new Octokit(), console);
-    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    const getPolicyStub = sandbox.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sandbox.stub(p, 'getRepo').resolves(fakeRepo);
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       name: 'schedule.repository' as any,
@@ -224,6 +233,7 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -237,8 +247,8 @@ describe('bot', () => {
     const org = 'googleapis';
     const fakeRepo = {private: true} as policy.GitHubRepo;
     const p = new policy.Policy(new Octokit(), console);
-    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    const getPolicyStub = sandbox.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sandbox.stub(p, 'getRepo').resolves(fakeRepo);
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       name: 'schedule.repository' as any,
@@ -253,6 +263,7 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -266,8 +277,8 @@ describe('bot', () => {
     const org = 'GoogleCloudPlatform';
     const fakeRepo = {} as policy.GitHubRepo;
     const p = new policy.Policy(new Octokit(), console);
-    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    const getPolicyStub = sandbox.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sandbox.stub(p, 'getRepo').resolves(fakeRepo);
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       name: 'schedule.repository' as any,
@@ -282,6 +293,7 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -299,16 +311,16 @@ describe('bot', () => {
     const fakeResult = {} as policy.PolicyResult;
     const p = new policy.Policy(new Octokit(), console);
     const c = new changer.Changer(new Octokit(), fakeRepo);
-    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const getChangerStub = sinon.stub(changer, 'getChanger').returns(c);
-    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
-    const checkPolicyStub = sinon
+    const getPolicyStub = sandbox.stub(policy, 'getPolicy').returns(p);
+    const getChangerStub = sandbox.stub(changer, 'getChanger').returns(c);
+    const getRepoStub = sandbox.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sandbox
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
-    const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-    const submitFixesStub = sinon.stub(c, 'submitFixes').throws();
-    const openIssueStub = sinon.stub(gh, 'openIssue').resolves();
-    const errStub = sinon.stub(logger, 'error');
+    const exportStub = sandbox.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sandbox.stub(c, 'submitFixes').throws();
+    const openIssueStub = sandbox.stub(gh, 'openIssue').resolves();
+    const errStub = sandbox.stub(logger, 'error');
 
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -324,6 +336,7 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
