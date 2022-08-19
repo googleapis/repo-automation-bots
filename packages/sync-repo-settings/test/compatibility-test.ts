@@ -29,6 +29,7 @@ import {handler} from '../src/bot';
 import {CONFIG_FILE_NAME} from '../src/config';
 import {RepoConfig} from '../src/types';
 import schema from '../src/schema.json';
+import * as gcfUtils from 'gcf-utils';
 
 nock.disableNetConnect();
 
@@ -85,6 +86,7 @@ describe('Sync repo settings', () => {
       },
     });
     probot.load(handler);
+    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
   });
   afterEach(() => {
     sandbox.restore();

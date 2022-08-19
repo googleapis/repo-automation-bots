@@ -17,6 +17,8 @@ import {resolve} from 'path';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {PullRequestOpenedEvent} from '@octokit/webhooks-types';
 import {promises as fs} from 'fs';
 import yaml from 'js-yaml';
@@ -25,6 +27,7 @@ import * as issueModule from '@google-automations/issue-utils';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
+import * as gcfUtils from 'gcf-utils';
 
 import {handler} from '../src/bot';
 import {CONFIG_FILE_NAME} from '../src/config';
@@ -122,6 +125,7 @@ async function receive(org: string, repo: string, cronOrg?: string) {
         login: org,
       },
       cron_org: cronOrg || org,
+      installation: {id: 1234},
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any,
     id: 'abc123',
@@ -157,6 +161,7 @@ describe('Sync repo settings', () => {
     sandbox.stub(logger, 'debug');
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     addIssueStub = sandbox.stub(issueModule, 'addOrUpdateIssue');
+    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
   });
 
   afterEach(() => {
@@ -302,6 +307,7 @@ describe('Sync repo settings', () => {
             sha: headSha,
           },
         },
+        installation: {id: 1234},
       } as PullRequestOpenedEvent,
       id: 'abc123',
     });
@@ -357,6 +363,7 @@ describe('Sync repo settings', () => {
             sha: headSha,
           },
         },
+        installation: {id: 1234},
       } as PullRequestOpenedEvent,
       id: 'abc123',
     });
@@ -411,6 +418,7 @@ describe('Sync repo settings', () => {
             sha: headSha,
           },
         },
+        installation: {id: 1234},
       } as PullRequestOpenedEvent,
       id: 'abc123',
     });
@@ -435,6 +443,7 @@ describe('Sync repo settings', () => {
           login: org,
         },
         commits: [],
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -459,6 +468,7 @@ describe('Sync repo settings', () => {
           login: org,
         },
         commits: [],
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',
@@ -493,6 +503,7 @@ describe('Sync repo settings', () => {
             added: [`.github/${CONFIG_FILE_NAME}`],
           },
         ],
+        installation: {id: 1234},
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       id: 'abc123',

@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {getContextLogger, GCFLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger, GCFLogger} from 'gcf-utils';
 import {
   ConfigChecker,
   getConfig,
@@ -42,13 +42,24 @@ export function handler(app: Probot) {
       'pull_request.synchronize',
     ],
     async (context: Context<'pull_request'>) => {
+      let octokit: Octokit;
+      if (context.payload.installation?.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          'Installation ID not provided in pull_request event.' +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       const configChecker = new ConfigChecker<RepoConfig>(
         schema,
         CONFIG_FILE_NAME
       );
       const {owner, repo} = context.repo();
       await configChecker.validateConfigChanges(
-        context.octokit,
+        octokit,
         owner,
         repo,
         context.payload.pull_request.head.sha,
@@ -63,6 +74,15 @@ export function handler(app: Probot) {
    * If so, run the settings sync for that repo.
    */
   app.on('push', async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in push event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const logger = getContextLogger(context);
     const branch = context.payload.ref;
     const defaultBranch = context.payload.repository.default_branch;
@@ -98,7 +118,7 @@ export function handler(app: Probot) {
     let config: RepoConfig | null;
     try {
       config = await getConfig<RepoConfig>(
-        context.octokit,
+        octokit,
         owner,
         repo,
         CONFIG_FILE_NAME,
@@ -107,14 +127,14 @@ export function handler(app: Probot) {
     } catch (e) {
       return await handleConfigurationError(
         e as Error,
-        context.octokit,
+        octokit,
         owner,
         repo,
         logger
       );
     }
 
-    const repoSettings = new SyncRepoSettings(context.octokit, logger);
+    const repoSettings = new SyncRepoSettings(octokit, logger);
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
@@ -124,6 +144,15 @@ export function handler(app: Probot) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on(['schedule.repository' as any], async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const logger = getContextLogger(context);
     logger.info(`running for org ${context.payload.cron_org}`);
     const {owner, repo} = context.repo();
@@ -135,7 +164,7 @@ export function handler(app: Probot) {
     let config: RepoConfig | null;
     try {
       config = await getConfig<RepoConfig>(
-        context.octokit,
+        octokit,
         owner,
         repo,
         CONFIG_FILE_NAME,
@@ -144,14 +173,14 @@ export function handler(app: Probot) {
     } catch (e) {
       return await handleConfigurationError(
         e as Error,
-        context.octokit,
+        octokit,
         owner,
         repo,
         logger
       );
     }
 
-    const repoSettings = new SyncRepoSettings(context.octokit, logger);
+    const repoSettings = new SyncRepoSettings(octokit, logger);
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
@@ -159,17 +188,26 @@ export function handler(app: Probot) {
   });
 
   app.on('repository.transferred', async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in repository.transferred event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const logger = getContextLogger(context);
     const {owner, repo} = context.repo();
     const defaultBranch = context.payload.repository.default_branch;
     const config = await getConfig<RepoConfig>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIG_FILE_NAME,
       {fallbackToOrgConfig: false, schema: schema}
     );
-    const repoSettings = new SyncRepoSettings(context.octokit, logger);
+    const repoSettings = new SyncRepoSettings(octokit, logger);
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
