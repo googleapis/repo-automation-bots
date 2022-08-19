@@ -14,9 +14,10 @@
 
 import * as assert from 'assert';
 import {describe, it} from 'mocha';
+import {Octokit} from '@octokit/rest';
 import {scanGoogleapisGenAndCreatePullRequests} from '../src/scan-googleapis-gen-and-create-pull-requests';
 import * as cc from '../src/copy-code';
-import {OctokitFactory, OctokitType} from '../src/octokit-util';
+import {OctokitFactory} from '../src/octokit-util';
 import {DEFAULT_OWL_BOT_YAML_PATH, OwlBotYaml} from '../src/config-files';
 import * as fs from 'fs';
 import path from 'path';
@@ -48,8 +49,8 @@ function factory(octokit: any): OctokitFactory {
     getGitHubShortLivedAccessToken(): Promise<string> {
       return Promise.resolve('fake-token');
     },
-    getShortLivedOctokit(): Promise<OctokitType> {
-      return Promise.resolve(octokit as OctokitType);
+    getShortLivedOctokit(): Promise<Octokit> {
+      return Promise.resolve(octokit as Octokit);
     },
   };
 }
@@ -544,7 +545,7 @@ describe('regenerate pull requests', function () {
   let destRepo!: GithubRepo;
   let pulls!: FakePulls;
   let issues!: FakeIssues;
-  let octokit!: OctokitType;
+  let octokit!: Octokit;
   let factory!: OctokitFactory;
   let commitMessage1 = '';
   let commitMessage2 = '';

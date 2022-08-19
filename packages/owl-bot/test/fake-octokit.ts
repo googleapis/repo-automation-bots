@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {OctokitFactory, OctokitType} from '../src/octokit-util';
+import {OctokitFactory} from '../src/octokit-util';
+
+import {Octokit} from '@octokit/rest';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -86,7 +88,7 @@ export function newFakeOctokit(
   issues?: FakeIssues,
   default_branch = 'main',
   deadRefs: unknown[] = []
-): OctokitType {
+): Octokit {
   return {
     pulls: pulls ?? new FakePulls(),
     issues: issues ?? new FakeIssues(),
@@ -104,11 +106,11 @@ export function newFakeOctokit(
         deadRefs.push(deadRef);
       },
     },
-  } as unknown as OctokitType;
+  } as unknown as Octokit;
 }
 
 export function newFakeOctokitFactory(
-  octokit?: OctokitType,
+  octokit?: Octokit,
   token = 'b3'
 ): OctokitFactory {
   const factory: OctokitFactory = {
