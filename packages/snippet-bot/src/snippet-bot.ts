@@ -16,7 +16,8 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Probot, Context} from 'probot';
-import {PullRequest} from '@octokit/webhooks-definitions/schema';
+import {Octokit} from '@octokit/rest';
+import {PullRequest} from '@octokit/webhooks-types/schema';
 import {RequestError} from '@octokit/types';
 import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
@@ -47,7 +48,12 @@ import schema from './config-schema.json';
 
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {addOrUpdateIssueComment, getContextLogger, GCFLogger} from 'gcf-utils';
+import {
+  addOrUpdateIssueComment,
+  getContextLogger,
+  GCFLogger,
+  getAuthenticatedOctokit,
+} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
 import tar from 'tar';
@@ -100,6 +106,13 @@ async function fullScan(
   logger: GCFLogger
 ) {
   const installationId = context.payload.installation?.id;
+  if (installationId === undefined) {
+    throw new Error(
+      `Installation ID not provided in ${context.payload.action} event.` +
+        ' We cannot authenticate Octokit.'
+    );
+  }
+  const octokit = await getAuthenticatedOctokit(installationId);
   const commentMark = `<!-- probot comment [${installationId}]-->`;
   const owner = context.payload.repository.owner.login;
   const repo = context.payload.repository.name;
@@ -181,7 +194,7 @@ async function fullScan(
     if (mismatchedTags) {
       bodyDetail = failureMessages.join('\n');
     }
-    await context.octokit.issues.update({
+    await octokit.issues.update({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
@@ -198,7 +211,7 @@ ${bodyDetail}`
     const err = e as Error;
     err.message = `Failed to scan files: ${err.message}`;
     logger.error(err);
-    await context.octokit.issues.update({
+    await octokit.issues.update({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
@@ -222,18 +235,25 @@ async function scanPullRequest(
   refreshing = false
 ) {
   const installationId = context.payload.installation?.id;
+  if (installationId === undefined) {
+    throw new Error(
+      `Installation ID not provided in ${context.payload.action} event.` +
+        ' We cannot authenticate Octokit.'
+    );
+  }
+  const octokit = await getAuthenticatedOctokit(installationId);
   const owner = context.payload.repository.owner.login;
   const repo = context.payload.repository.name;
 
   const aggregator = new CheckAggregator(
-    context.octokit,
+    octokit,
     'snippet-bot check',
     configuration.aggregateChecks()
   );
 
   // Parse the PR diff and recognize added/deleted region tags.
   const result = await parseRegionTagsInPullRequest(
-    context.octokit,
+    octokit,
     pull_request.diff_url,
     pull_request.base.repo.owner.login,
     pull_request.base.repo.name,
@@ -263,7 +283,7 @@ async function scanPullRequest(
       continue;
     }
     try {
-      const blob = await context.octokit.repos.getContent({
+      const blob = await octokit.repos.getContent({
         owner: pull_request.head.repo.owner.login,
         repo: pull_request.head.repo.name,
         path: file,
@@ -576,7 +596,7 @@ ${REFRESH_UI}
   // changes, so we pass `onlyUpdate` flag.
   const onlyUpdate = result.changes.length === 0;
   await addOrUpdateIssueComment(
-    context.octokit,
+    octokit,
     owner,
     repo,
     prNumber,
@@ -647,11 +667,20 @@ function getCommentMark(installationId: number | undefined): string {
 export = (app: Probot) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const configOptions = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIGURATION_FILE_PATH,
@@ -661,9 +690,18 @@ export = (app: Probot) => {
       logger.info(`snippet-bot is not configured for ${owner}/${repo}.`);
       return;
     }
-    await syncLabels(context.octokit, owner, repo, SNIPPET_BOT_LABELS);
+    await syncLabels(octokit, owner, repo, SNIPPET_BOT_LABELS);
   });
   app.on('issue_comment.edited', async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in issue_comment.edited event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const logger = getContextLogger(context);
     const commentMark = getCommentMark(context.payload.installation?.id);
 
@@ -679,7 +717,7 @@ export = (app: Probot) => {
 
     const {owner, repo} = context.repo();
     const configOptions = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIGURATION_FILE_PATH,
@@ -696,7 +734,7 @@ export = (app: Probot) => {
     });
     logger.info({config: configuration});
     const prNumber = context.payload.issue.number;
-    const prResponse = await context.octokit.pulls.get({
+    const prResponse = await octokit.pulls.get({
       owner: owner,
       repo: repo,
       pull_number: prNumber,
@@ -715,11 +753,20 @@ export = (app: Probot) => {
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in issues event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const configOptions = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIGURATION_FILE_PATH,
@@ -739,11 +786,20 @@ export = (app: Probot) => {
   });
 
   app.on('pull_request.labeled', async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in pull_request.labeled event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const logger = getContextLogger(context);
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     const configOptions = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       CONFIGURATION_FILE_PATH,
@@ -774,9 +830,7 @@ export = (app: Probot) => {
     }
     // Remove the label and proceed.
     try {
-      await context.octokit.issues.removeLabel(
-        context.issue({name: REFRESH_LABEL})
-      );
+      await octokit.issues.removeLabel(context.issue({name: REFRESH_LABEL}));
     } catch (e) {
       const err = e as RequestError;
       // Ignoring 404 errors.
@@ -805,6 +859,17 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
+      let octokit: Octokit;
+      if (context.payload.installation?.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          'Installation ID not provided in pull_request event.' +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       const logger = getContextLogger(context);
       // Exit if the PR is closed.
       if (context.payload.pull_request.state === 'closed') {
@@ -834,7 +899,7 @@ export = (app: Probot) => {
         CONFIGURATION_FILE_PATH
       );
       await configChecker.validateConfigChanges(
-        context.octokit,
+        octokit,
         owner,
         repo,
         context.payload.pull_request.head.sha,
@@ -842,7 +907,7 @@ export = (app: Probot) => {
       );
 
       const configOptions = await getConfig<ConfigurationOptions>(
-        context.octokit,
+        octokit,
         owner,
         repo,
         CONFIGURATION_FILE_PATH,

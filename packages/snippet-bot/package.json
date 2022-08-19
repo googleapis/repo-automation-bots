@@ -28,38 +28,38 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^4.0.0",
-    "@google-automations/label-utils": "^2.0.0",
-    "@google-cloud/storage": "^6.0.0",
-    "gcf-utils": "^13.8.1",
-    "lru-cache": "^7.10.1",
-    "minimatch": "^5.0.0",
-    "node-fetch": "^2.6.1",
+    "@google-automations/bot-config-utils": "^6.1.0",
+    "@google-automations/label-utils": "^3.0.0",
+    "@google-cloud/storage": "^6.4.1",
+    "gcf-utils": "^14.0.1",
+    "lru-cache": "^7.14.0",
+    "minimatch": "^5.1.0",
+    "node-fetch": "^2.6.7",
     "parse-diff": "^0.9.0",
-    "tar": "^6.1.0",
-    "tmp-promise": "^3.0.2"
+    "tar": "^6.1.11",
+    "tmp-promise": "^3.0.3"
   },
   "devDependencies": {
     "@types/minimatch": "^3.0.5",
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^16.3.3",
-    "@types/node-fetch": "^2.5.11",
-    "@types/sinon": "^10.0.2",
-    "@types/tar": "^6.0.0",
-    "@types/tmp": "^0.2.1",
-    "@octokit/webhooks-definitions": "^3.67.3",
-    "c8": "^7.7.3",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "18.7.6",
+    "@types/node-fetch": "^2.6.2",
+    "@types/sinon": "^10.0.13",
+    "@types/tar": "^6.1.2",
+    "@types/tmp": "^0.2.3",
+    "@octokit/webhooks-types": "^6.3.6",
+    "c8": "^7.12.0",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
-    "mocha": "^9.0.2",
-    "nock": "^13.1.1",
+    "mocha": "^10.0.0",
+    "nock": "^13.2.9",
     "sinon": "^14.0.0",
-    "smee-client": "^1.2.2",
+    "smee-client": "^1.2.3",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.7.0"
+    "typescript": "~4.7.4"
   },
   "optionalDependencies": { "fsevents": "*" },
   "engines": {
-    "node": ">= 12.18.2"
+    "node": ">= 14"
   }
 }
