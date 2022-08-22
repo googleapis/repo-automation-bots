@@ -14,7 +14,8 @@
 
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
-import {getContextLogger} from 'gcf-utils';
+import {Octokit} from '@octokit/rest';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import * as fileIterator from './file-iterator';
 import {Validate, ValidationResult} from './validate';
 import {IssueOpener} from './issue-opener';
@@ -29,14 +30,23 @@ export function handler(app: Probot) {
     const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const iterator = new fileIterator.FileIterator(
       owner,
       repo,
-      context.octokit,
+      octokit,
       logger
     );
     const results: Array<ValidationResult> = [];
-    const validate = new Validate(context.octokit);
+    const validate = new Validate(octokit);
     for await (const [path, metadata] of iterator.repoMetadata()) {
       const result = await validate.validate(path, metadata);
       if (result.status === 'error') {
@@ -50,7 +60,7 @@ export function handler(app: Probot) {
         `${results.length} validation errors found for ${owner}/${repo}`
       );
     }
-    const opener = new IssueOpener(owner, repo, context.octokit, logger);
+    const opener = new IssueOpener(owner, repo, octokit, logger);
     await opener.open(results);
   });
 

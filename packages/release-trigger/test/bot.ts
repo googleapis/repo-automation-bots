@@ -16,6 +16,7 @@
 import myProbotApp from '../src/bot';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
@@ -79,6 +80,7 @@ describe('bot', () => {
     sandbox.replace(releaseTriggerModule, 'ALLOWED_ORGANIZATIONS', [
       'Codertocat',
     ]);
+    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
   });
 
   afterEach(() => {

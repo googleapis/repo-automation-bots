@@ -37,6 +37,7 @@ export const exec = function (
   command: string,
   token: string
 ): Promise<{stdout: string; stderr: string; error?: Error}> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return new Promise((resolve, _reject) => {
     child_process.exec(
       command,

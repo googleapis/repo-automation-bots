@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {OctokitType} from './utils/octokit-util';
+import {Octokit} from '@octokit/rest';
 import {Storage} from '@google-cloud/storage';
 import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 
@@ -38,7 +38,7 @@ const COMMIT_CACHE_BUCKET = 'github_commit_cache';
 // use this to iterate over individual .repo-metadata.json files.
 // This approach is used for the benefit of mono-repos.
 export class FileIterator {
-  octokit: OctokitType;
+  octokit: Octokit;
   owner: string;
   repo: string;
   storage: Storage;
@@ -47,7 +47,7 @@ export class FileIterator {
   constructor(
     owner: string,
     repo: string,
-    octokit: OctokitType,
+    octokit: Octokit,
     logger: GCFLogger = defaultLogger
   ) {
     this.octokit = octokit;

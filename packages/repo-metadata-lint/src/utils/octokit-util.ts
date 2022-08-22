@@ -14,17 +14,11 @@
 
 import {Octokit} from '@octokit/rest';
 // Conflicting linters think the next line is extraneous or necessary.
-// eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import fs from 'fs';
 import {request} from 'gaxios';
 import {sign} from 'jsonwebtoken';
 
 const {readFile} = fs.promises;
-
-export type OctokitType =
-  | InstanceType<typeof Octokit>
-  | InstanceType<typeof ProbotOctokit>;
 
 export interface OctokitParams {
   'pem-path'?: string;
@@ -67,7 +61,7 @@ export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
 /**
  * Creates an authenticated instance of octokit.
  */
-export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
+export async function octokitFrom(argv: OctokitParams): Promise<Octokit> {
   const token = await octokitTokenFrom(argv);
   return await getAuthenticatedOctokit(token, false);
 }
@@ -77,7 +71,7 @@ export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
  */
 export interface OctokitFactory {
   getGitHubShortLivedAccessToken(): Promise<string>;
-  getShortLivedOctokit(token?: string): Promise<OctokitType>;
+  getShortLivedOctokit(token?: string): Promise<Octokit>;
 }
 
 /**
@@ -86,7 +80,7 @@ export interface OctokitFactory {
  */
 export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
   let lastOctokitTimestamp = 0;
-  let lastOctokit: OctokitType | null = null;
+  let lastOctokit: Octokit | null = null;
   return {
     getGitHubShortLivedAccessToken() {
       return octokitTokenFrom(params);
@@ -157,11 +151,11 @@ export function getAccessTokenURL(installation: number) {
   return `https://api.github.com/app/installations/${installation}/access_tokens`;
 }
 
-let cachedOctokit: OctokitType;
+let cachedOctokit: Octokit;
 export async function getAuthenticatedOctokit(
   auth: string | AuthArgs,
   cache = true
-): Promise<OctokitType> {
+): Promise<Octokit> {
   if (cache && cachedOctokit) return cachedOctokit;
   let tokenString: string;
   if (auth instanceof Object) {

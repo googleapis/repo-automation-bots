@@ -16,7 +16,7 @@
 import Ajv from 'ajv';
 import schema from './repo-metadata-schema.json';
 import * as fileIterator from './file-iterator';
-import {OctokitType} from './utils/octokit-util';
+import {Octokit} from '@octokit/rest';
 
 export interface ValidationResult {
   status: 'success' | 'error';
@@ -36,9 +36,9 @@ const GOOGLEAPIS_REPO = 'googleapis';
 
 // Apply validation logic to .repo-metadata.json.
 export class Validate {
-  octokit: OctokitType;
+  octokit: Octokit;
   cachedApiIndex?: string;
-  constructor(octokit: OctokitType) {
+  constructor(octokit: Octokit) {
     this.octokit = octokit;
   }
   async validate(path: string, repoMetadataContent: string) {
