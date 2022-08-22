@@ -30,6 +30,7 @@ import * as fs from 'fs';
 import yaml from 'js-yaml';
 import {logger} from 'gcf-utils';
 import * as botConfigModule from '@google-automations/bot-config-utils';
+import * as gcfUtils from 'gcf-utils';
 
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/trusted-contribution';
@@ -68,6 +69,7 @@ describe('TrustedContributionTestRunner', () => {
       botConfigModule.ConfigChecker.prototype,
       'validateConfigChanges'
     );
+    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
   });
 
   afterEach(() => {
@@ -111,13 +113,14 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
         requests.done();
         sinon.assert.calledOnceWithExactly(
           getConfigStub,
-          sinon.match.instanceOf(ProbotOctokit),
+          sinon.match.instanceOf(Octokit),
           'chingor13',
           'google-auth-library-java',
           WELL_KNOWN_CONFIGURATION_FILE,
@@ -125,7 +128,7 @@ describe('TrustedContributionTestRunner', () => {
         );
         sinon.assert.calledOnceWithExactly(
           validateConfigStub,
-          sinon.match.instanceOf(ProbotOctokit),
+          sinon.match.instanceOf(Octokit),
           'chingor13',
           'google-auth-library-java',
           'testsha',
@@ -153,6 +156,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -192,6 +196,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -218,6 +223,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -251,6 +257,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -300,6 +307,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -326,6 +334,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -365,6 +374,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -407,6 +417,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -449,6 +460,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -475,6 +487,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -520,6 +533,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -546,6 +560,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -588,6 +603,7 @@ describe('TrustedContributionTestRunner', () => {
             sender: {
               login: 'bcoe',
             },
+            installation: {id: 1234},
           } as PullRequestSynchronizeEvent,
           id: 'abc123',
         });
@@ -614,6 +630,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestSynchronizeEvent,
           id: 'abc123',
         });
@@ -648,6 +665,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -674,6 +692,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestOpenedEvent,
           id: 'abc123',
         });
@@ -702,6 +721,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestSynchronizeEvent,
           id: 'abc123',
         });
@@ -728,6 +748,7 @@ describe('TrustedContributionTestRunner', () => {
                 login: 'chingor13',
               },
             },
+            installation: {id: 1234},
           } as PullRequestSynchronizeEvent,
           id: 'abc123',
         });
@@ -776,6 +797,7 @@ describe('TrustedContributionTestRunner', () => {
             login: 'chingor13',
           },
         },
+        installation: {id: 1234},
       } as PullRequestOpenedEvent,
       id: 'abc123',
     });
@@ -812,6 +834,7 @@ describe('TrustedContributionTestRunner', () => {
             login: 'chingor13',
           },
         },
+        installation: {id: 1234},
       } as PullRequestOpenedEvent,
       id: 'abc123',
     });
@@ -860,6 +883,7 @@ describe('TrustedContributionTestRunner', () => {
               login: 'chingor13',
             },
           },
+          installation: {id: 1234},
         } as PullRequestOpenedEvent,
         id: 'abc123',
       });
@@ -902,6 +926,7 @@ describe('TrustedContributionTestRunner', () => {
           sender: {
             login: 'bcoe',
           },
+          installation: {id: 1234},
         } as PullRequestLabeledEvent,
         id: 'abc123',
       });
@@ -942,6 +967,7 @@ describe('TrustedContributionTestRunner', () => {
           sender: {
             login: 'bcoe',
           },
+          installation: {id: 1234},
         } as PullRequestLabeledEvent,
         id: 'abc123',
       });
@@ -982,6 +1008,7 @@ describe('TrustedContributionTestRunner', () => {
           sender: {
             login: 'bcoe',
           },
+          installation: {id: 1234},
         } as PullRequestLabeledEvent,
         id: 'abc123',
       });

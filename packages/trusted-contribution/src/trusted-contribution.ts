@@ -16,7 +16,7 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {getContextLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {
   Annotation,
@@ -25,7 +25,7 @@ import {
 } from './config';
 import schema from './config-schema.json';
 import {
-  getAuthenticatedOctokit,
+  getAuthenticatedOctokit as getOctokitFromSecretName,
   SECRET_NAME_FOR_COMMENT_PERMISSION,
 } from './utils';
 
@@ -53,13 +53,6 @@ function isTrustedContribution(
 }
 
 export = (app: Probot) => {
-  app.on(['pull_request'], async context => {
-    const logger = getContextLogger(context);
-    logger.info(
-      `repo = ${context.payload.repository.name} PR = ${context.payload.pull_request.number} action = ${context.payload.action}`
-    );
-  });
-
   // Track estimate of how often a kokoro:run or kokoro:force-run label is being added manually:
   app.on(['pull_request.labeled'], async context => {
     const logger = getContextLogger(context);
@@ -95,6 +88,17 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
+      let octokit: Octokit;
+      if (context.payload.installation?.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          'Installation ID not provided in pull_request event.' +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       const logger = getContextLogger(context);
       const {owner, repo} = context.repo();
       const configChecker = new ConfigChecker<ConfigurationOptions>(
@@ -102,7 +106,7 @@ export = (app: Probot) => {
         WELL_KNOWN_CONFIGURATION_FILE
       );
       await configChecker.validateConfigChanges(
-        context.octokit,
+        octokit,
         owner,
         repo,
         context.payload.pull_request.head.sha,
@@ -115,7 +119,7 @@ export = (app: Probot) => {
       // errors when fetching the config.
       try {
         remoteConfiguration = await getConfig<ConfigurationOptions>(
-          context.octokit,
+          octokit,
           owner,
           repo,
           WELL_KNOWN_CONFIGURATION_FILE,
@@ -151,7 +155,7 @@ export = (app: Probot) => {
         // Only adds owlbot:run if repository appears to be configured for OwlBot:
         let hasOwlBotConfig = false;
         try {
-          await context.octokit.rest.repos.getContent({
+          await octokit.rest.repos.getContent({
             owner,
             repo,
             path: OWLBOT_CONFIG_PATH,
@@ -175,7 +179,7 @@ export = (app: Probot) => {
 
         const annotations =
           remoteConfiguration.annotations || defaultAnnotations;
-        let octokit: Octokit | null = null;
+        let octokitForComment: Octokit | null = null;
         for (const annotation of annotations) {
           if (annotation.type === 'label') {
             const issuesAddLabelsParams = context.repo({
@@ -184,19 +188,19 @@ export = (app: Probot) => {
                 ? annotation.text
                 : [annotation.text],
             });
-            await context.octokit.issues.addLabels(issuesAddLabelsParams);
+            await octokit.issues.addLabels(issuesAddLabelsParams);
             logger.metric('trusted_contribution.labeled', {
               url: context.payload.pull_request.url,
             });
           } else if (annotation.type === 'comment') {
             // Use personal access token from the secret manager.
-            if (octokit === null) {
-              octokit = await getAuthenticatedOctokit(
+            if (octokitForComment === null) {
+              octokitForComment = await getOctokitFromSecretName(
                 process.env.PROJECT_ID || '',
                 SECRET_NAME_FOR_COMMENT_PERMISSION
               );
             }
-            await octokit.issues.createComment({
+            await octokitForComment.issues.createComment({
               issue_number: context.payload.pull_request.number,
               body: String(annotation.text),
               owner: context.repo().owner,

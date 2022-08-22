@@ -14,6 +14,8 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
 import * as fs from 'fs';
@@ -21,6 +23,7 @@ import sinon from 'sinon';
 import nock from 'nock';
 import snapshot from 'snap-shot-it';
 import * as botConfigModule from '@google-automations/bot-config-utils';
+import * as gcfUtils from 'gcf-utils';
 
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/trusted-contribution';
@@ -77,6 +80,7 @@ describe('trusted-contribution bot', () => {
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     // This test is only for config validation.
     getConfigStub.resolves({disabled: true});
+    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
   });
 
   afterEach(() => {
