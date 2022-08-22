@@ -205,7 +205,7 @@ export class SyncRepoSettings {
 
   /**
    * Ensure the correct teams are added to the repository
-   * @param repos List of repos to iterate.
+   * @param repo The target repo
    */
   async updateRepoTeams(repo: string, rules: PermissionRule[]) {
     const logger = this.logger;
@@ -257,7 +257,7 @@ export class SyncRepoSettings {
 
   /**
    * Update the main repository options
-   * @param repos List of repos to iterate.
+   * @param repo The target repo
    */
   async updateRepoOptions(repo: string, config: RepoConfig) {
     const logger = this.logger;
