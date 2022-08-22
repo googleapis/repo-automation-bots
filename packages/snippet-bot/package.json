@@ -42,7 +42,7 @@
   "devDependencies": {
     "@types/minimatch": "^3.0.5",
     "@types/mocha": "^9.1.1",
-    "@types/node": "18.7.6",
+    "@types/node": "^18.7.9",
     "@types/node-fetch": "^2.6.2",
     "@types/sinon": "^10.0.13",
     "@types/tar": "^6.1.2",
