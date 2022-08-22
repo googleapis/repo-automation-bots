@@ -16,7 +16,12 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {getContextLogger, GCFLogger, addOrUpdateIssueComment} from 'gcf-utils';
+import {
+  getAuthenticatedOctokit,
+  getContextLogger,
+  GCFLogger,
+  addOrUpdateIssueComment,
+} from 'gcf-utils';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
@@ -167,9 +172,17 @@ export = (app: Probot) => {
       logger.info(`release-trigger not allowed for owner: ${owner}`);
       return;
     }
-
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in release.published event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE,
@@ -192,10 +205,10 @@ export = (app: Probot) => {
     // few seconds to let it tag the release PR
     await delay(10_000);
 
-    const releasePullRequests = await findPendingReleasePullRequests(
-      context.octokit,
-      {owner: repository.owner.login, repo: repository.name}
-    );
+    const releasePullRequests = await findPendingReleasePullRequests(octokit, {
+      owner: repository.owner.login,
+      repo: repository.name,
+    });
     const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };
@@ -215,7 +228,7 @@ export = (app: Probot) => {
       }
 
       await doTriggerWithLock(
-        context.octokit,
+        octokit,
         pullRequest,
         token,
         logger,
@@ -237,9 +250,17 @@ export = (app: Probot) => {
       logger.info(`release-trigger not allowed for owner: ${owner}`);
       return;
     }
-
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in pull_request.labeled event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE,
@@ -263,7 +284,7 @@ export = (app: Probot) => {
       logger.info(`ignoring non-published label: ${label}`);
       return;
     }
-    await cleanupPublished(context.octokit, {
+    await cleanupPublished(octokit, {
       owner,
       repo,
       number: context.payload.pull_request.number,
@@ -283,9 +304,17 @@ export = (app: Probot) => {
       logger.info(`release-trigger not allowed for owner: ${owner}`);
       return;
     }
-
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in pull_request.unlabeled event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE,
@@ -323,7 +352,7 @@ export = (app: Probot) => {
       token: string;
     };
     await doTriggerWithLock(
-      context.octokit,
+      octokit,
       context.payload.pull_request,
       token,
       logger,
@@ -340,13 +369,21 @@ export = (app: Probot) => {
       logger.info(`release-trigger not allowed for owner: ${owner}`);
       return;
     }
-
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${context.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const configChecker = new ConfigChecker<ConfigurationOptions>(
       schema,
       WELL_KNOWN_CONFIGURATION_FILE
     );
     await configChecker.validateConfigChanges(
-      context.octokit,
+      octokit,
       owner,
       repo,
       context.payload.pull_request.head.sha,
@@ -366,9 +403,17 @@ export = (app: Probot) => {
       logger.info(`release-trigger not allowed for owner: ${owner}`);
       return;
     }
-
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+      octokit,
       owner,
       repo,
       WELL_KNOWN_CONFIGURATION_FILE,
@@ -387,10 +432,10 @@ export = (app: Probot) => {
       return;
     }
 
-    const releasePullRequests = await findPendingReleasePullRequests(
-      context.octokit,
-      {owner: repository.owner.login, repo: repository.name}
-    );
+    const releasePullRequests = await findPendingReleasePullRequests(octokit, {
+      owner: repository.owner.login,
+      repo: repository.name,
+    });
     const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };
@@ -405,7 +450,7 @@ export = (app: Probot) => {
       }
 
       await doTriggerWithLock(
-        context.octokit,
+        octokit,
         pullRequest,
         token,
         logger,

@@ -14,11 +14,13 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 import * as sinon from 'sinon';
 import {handler} from '../src/repo-metadata-lint';
 import {logger} from 'gcf-utils';
+import * as gcfUtils from 'gcf-utils';
 import * as fileIterator from '../src/file-iterator';
 import {assert} from 'console';
 
@@ -46,6 +48,7 @@ describe('repo-metadata-lint', () => {
       }),
     });
     probot.load(handler);
+    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
   });
 
   afterEach(() => {
@@ -70,6 +73,7 @@ describe('repo-metadata-lint', () => {
           organization: {login: 'foo-org'},
           repository: {name: 'foo-repo', owner: {login: 'bar-login'}},
           cron_org: 'foo-org',
+          installation: {id: 1234},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -100,6 +104,7 @@ describe('repo-metadata-lint', () => {
           organization: {login: 'foo-org'},
           repository: {name: 'foo-repo', owner: {login: 'bar-login'}},
           cron_org: 'foo-org',
+          installation: {id: 1234},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',

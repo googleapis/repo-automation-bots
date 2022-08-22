@@ -15,7 +15,7 @@
 
 import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {ErrorMessageText} from './error-message-text';
-import {OctokitType} from './utils/octokit-util';
+import {Octokit} from '@octokit/rest';
 import {ValidationResult} from './validate';
 
 const LINT_LABEL = 'repo-metadata: lint';
@@ -23,14 +23,14 @@ const ISSUE_LABELS = [LINT_LABEL, 'type: process'];
 
 // Given a validation result open a tracking issue on GitHub.
 export class IssueOpener {
-  octokit: OctokitType;
+  octokit: Octokit;
   owner: string;
   repo: string;
   logger: GCFLogger;
   constructor(
     owner: string,
     repo: string,
-    octokit: OctokitType,
+    octokit: Octokit,
     logger: GCFLogger = defaultLogger
   ) {
     this.octokit = octokit;
