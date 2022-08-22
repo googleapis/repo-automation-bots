@@ -25,6 +25,7 @@ const bootstrap = new GCFBootstrapper({
 // it does is to enqueue a task for the backend. Thus we deploy a dummy
 // empty bot code.
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const appFn = (_app: Probot) => {};
 
 const server = bootstrap.server(appFn);

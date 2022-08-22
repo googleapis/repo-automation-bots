@@ -15,8 +15,7 @@
 import {describe, it, afterEach} from 'mocha';
 import nock from 'nock';
 import {IssueOpener} from '../src/issue-opener';
-// eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
@@ -27,6 +26,11 @@ nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
 describe('open-issue', () => {
+  const OctokitFactory = Octokit.defaults({
+    retry: {enabled: false},
+    throttle: {enabled: false},
+  });
+  const octokit = new OctokitFactory();
   afterEach(() => {
     nock.cleanAll();
     sandbox.restore();
@@ -35,11 +39,6 @@ describe('open-issue', () => {
   describe('schedule.repository', () => {
     it('does not open an issue if open issues already exists with same list of errors', async () => {
       const infoStub = sandbox.stub(logger, 'info');
-      const Octokit = ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      });
-      const octokit = new Octokit();
       const opener = new IssueOpener('bcoe', 'foo', octokit);
       const results: ValidationResult[] = [
         {
@@ -59,11 +58,6 @@ describe('open-issue', () => {
 
     it('does not open issue if no error results provided', async () => {
       const infoStub = sandbox.stub(logger, 'info');
-      const Octokit = ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      });
-      const octokit = new Octokit();
       const opener = new IssueOpener('bcoe', 'foo', octokit);
       const results: ValidationResult[] = [];
       const lookupIssues = nock('https://api.github.com')
@@ -76,11 +70,6 @@ describe('open-issue', () => {
 
     it('closes existing issue if no errors still exist', async () => {
       const infoStub = sandbox.stub(logger, 'info');
-      const Octokit = ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      });
-      const octokit = new Octokit();
       const opener = new IssueOpener('bcoe', 'foo', octokit);
       const oldResults: ValidationResult[] = [
         {
@@ -105,11 +94,6 @@ describe('open-issue', () => {
     });
 
     it('updates an issue if errors have changed', async () => {
-      const Octokit = ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      });
-      const octokit = new Octokit();
       const opener = new IssueOpener('bcoe', 'foo', octokit);
       const oldResults: ValidationResult[] = [
         {
@@ -140,11 +124,6 @@ describe('open-issue', () => {
     });
 
     it('opens issue for a single validation error', async () => {
-      const Octokit = ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      });
-      const octokit = new Octokit();
       const opener = new IssueOpener('bcoe', 'foo', octokit);
       const openIssue = nock('https://api.github.com')
         .get('/repos/bcoe/foo/issues?labels=repo-metadata%3A%20lint')
@@ -166,11 +145,6 @@ describe('open-issue', () => {
     });
 
     it('opens issue for a multiple validation errors', async () => {
-      const Octokit = ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      });
-      const octokit = new Octokit();
       const opener = new IssueOpener('bcoe', 'foo', octokit);
       const openIssue = nock('https://api.github.com')
         .get('/repos/bcoe/foo/issues?labels=repo-metadata%3A%20lint')

@@ -15,19 +15,18 @@
 import {describe, it, afterEach} from 'mocha';
 import assert from 'assert';
 import {Validate} from '../src/validate';
-// eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import {readFileSync} from 'fs';
 import * as fileIterator from '../src/file-iterator';
 import * as sinon from 'sinon';
 
 const apiIndex = readFileSync('./test/fixtures/api-index-v1.json');
 const sandbox = sinon.createSandbox();
-const Octokit = ProbotOctokit.defaults({
+const OctokitFactory = Octokit.defaults({
   retry: {enabled: false},
   throttle: {enabled: false},
 });
-const octokit = new Octokit();
+const octokit = new OctokitFactory();
 
 function mockValidApiShortNames() {
   const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
