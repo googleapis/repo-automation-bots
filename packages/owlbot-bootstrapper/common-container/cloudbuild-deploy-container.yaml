@@ -29,10 +29,10 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/owlbot-bootstrapper"
       - "-t"
-      - "us-docker.pkg.dev/owlbot-bootstrap-prod/gcr.io/owlbot-bootstrapper"
+      - "us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/owlbot-bootstrapper"
       - "."
 
   - name: gcr.io/cloud-builders/docker
     id: "push-docker"
     waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/owlbot-bootstrapper", "us-docker.pkg.dev/owlbot-bootstrap-prod/gcr.io/owlbot-bootstrapper"]
+    args: ["push", "gcr.io/$PROJECT_ID/owlbot-bootstrapper", "us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/owlbot-bootstrapper"]
