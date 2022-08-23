@@ -28,4 +28,4 @@ jobs:
         with:
           title: Link Checker Report
           content-filepath: ./lychee/out.md
-          labels: type: docs, priority: p2
+          labels: 'type: docs, priority: p2'
