@@ -300,7 +300,7 @@ fi
 if [ -f "${failure_summary}" ]; then
     log_red "Showing the failures"
     cat "${failure_summary}"
-    echo "Consider using ${failure_details} for filing the issue."
+    cat "${failure_details}"
 fi
 
 log_yellow "All the logs are stored in ${tmpdir}"
