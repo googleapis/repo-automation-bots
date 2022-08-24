@@ -301,6 +301,7 @@ if [ -f "${failure_summary}" ]; then
     log_red "Showing the failures"
     cat "${failure_summary}"
     cat "${failure_details}"
+    exit 1
 fi
 
 log_yellow "All the logs are stored in ${tmpdir}"
