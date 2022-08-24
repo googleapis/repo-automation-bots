@@ -161,21 +161,21 @@ try_update() {
 	return 1
     fi
 
-    log_yellow "Running 'npm audit fix' ${with_ncu} in ${package}"
+    log_yellow "Running 'npm audit fix --force' ${with_ncu} in ${package}"
     if [ -z "${with_ncu}" ]; then
 	logfile="${tmpdir}/${package}-npm-audit-fix.log"
     else
 	logfile="${tmpdir}/${package}-npm-audit-fix-with-ncu.log"
     fi
-    if ! npm audit fix --no-color > "${logfile}"; then
+    if ! npm audit fix --force --no-color > "${logfile}"; then
 	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm audit fix' ${with_ncu} failed" >> "${failure_summary}"
+	echo "- [ ] ${package}: 'npm audit fix --force' ${with_ncu} failed" >> "${failure_summary}"
 
 	# For copy paste into the issue.
 	dump_details "${package}" "${logfile}"
 
 	# display failure
-	log_red "${package}: 'npm audit fix' ${with_ncu} failed"
+	log_red "${package}: 'npm audit fix --force' ${with_ncu} failed"
 	git restore .
 	return 1
     fi
