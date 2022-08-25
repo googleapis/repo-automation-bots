@@ -27,19 +27,19 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "dayjs": "^1.11.3",
-    "lru-cache": "^7.10.1",
-    "gcf-utils": "^14.0.0"
+    "dayjs": "^1.11.5",
+    "gcf-utils": "^14.0.1",
+    "lru-cache": "^7.14.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.0.0",
-    "@types/sinon": "^10.0.11",
-    "c8": "^7.11.3",
+    "@types/node": "^18.7.13",
+    "@types/sinon": "^10.0.13",
+    "c8": "^7.12.0",
     "cross-env": "^7.0.3",
-    "gts": "^3.1.0",
+    "gts": "^4.0.0",
     "mocha": "^10.0.0",
-    "nock": "^13.2.7",
+    "nock": "^13.2.9",
     "sinon": "^14.0.0",
     "smee-client": "^1.2.3",
     "typescript": "~4.7.4"
