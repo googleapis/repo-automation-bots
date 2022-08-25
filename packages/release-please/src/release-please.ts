@@ -40,6 +40,7 @@ import {
   setLogger,
   manifestSchema,
   configSchema,
+  Logger,
 } from 'release-please';
 import schema from './config-schema.json';
 import {
@@ -170,7 +171,8 @@ async function buildGitHub(
   owner: string,
   repo: string,
   octokit: GitHubAPI,
-  defaultBranch?: string
+  defaultBranch?: string,
+  logger?: Logger
 ): Promise<GitHub> {
   return await GitHub.create({
     owner,
@@ -181,6 +183,7 @@ async function buildGitHub(
       request: octokit.request,
       graphql: octokit.graphql,
     },
+    logger,
   });
 }
 
@@ -196,7 +199,10 @@ async function buildManifest(
       github,
       configuration.branch,
       configuration.manifestConfig,
-      configuration.manifestFile
+      configuration.manifestFile,
+      {
+        logger,
+      }
     );
   }
 
@@ -383,7 +389,8 @@ const handler = (app: Probot) => {
       owner,
       repo,
       octokit as GitHubAPI,
-      context.payload.repository.default_branch
+      context.payload.repository.default_branch,
+      logger
     );
 
     for (const branchConfiguration of branchConfigurations) {
@@ -522,7 +529,8 @@ const handler = (app: Probot) => {
       owner,
       repo,
       octokit as GitHubAPI,
-      context.payload.repository.default_branch
+      context.payload.repository.default_branch,
+      logger
     );
 
     for (const branchConfiguration of branchConfigurations) {
