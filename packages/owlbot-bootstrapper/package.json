@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@google-cloud/cloudbuild": "^3.1.0",
-    "@google-cloud/secret-manager": "^4.0.0",
+    "@google-cloud/secret-manager": "^4.1.0",
     "@octokit/auth-app": "^4.0.5",
     "@octokit/rest": "^19.0.4",
     "@types/yargs": "^17.0.11",
@@ -41,12 +41,12 @@
   "devDependencies": {
     "@types/jwt-encode": "^1.0.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.9",
+    "@types/node": "^18.7.13",
     "@types/node-fetch": "^2.6.2",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
-    "gts": "^3.1.0",
+    "gts": "^4.0.0",
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
