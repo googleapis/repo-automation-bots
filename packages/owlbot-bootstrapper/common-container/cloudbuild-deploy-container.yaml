@@ -29,6 +29,6 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/owlbot-bootstrapper"
       - "-t"
-      - "us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/owlbot-bootstrapper"
+      - "us-docker.pkg.dev/$PROJECT_ID/owlbot-bootstrapper-images/owlbot-bootstrapper"
       - "."
 images: ["gcr.io/$PROJECT_ID/owlbot-bootstrapper", "us-docker.pkg.dev/$PROJECT_ID/owlbot-bootstrapper-images/owlbot-bootstrapper"]
