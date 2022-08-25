@@ -40,7 +40,7 @@
     "tmp-promise": "^3.0.3"
   },
   "devDependencies": {
-    "@types/minimatch": "^3.0.5",
+    "@types/minimatch": "^5.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.9",
     "@types/node-fetch": "^2.6.2",
