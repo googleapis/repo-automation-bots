@@ -31,18 +31,18 @@
   "dependencies": {
     "@commitlint/config-conventional": "^17.0.3",
     "@commitlint/lint": "^17.0.3",
-    "@google-automations/bot-config-utils": "^6.0.0",
-    "@octokit/openapi-types": "^13.1.0",
-    "@octokit/webhooks-types": "^6.3.5",
+    "@google-automations/bot-config-utils": "^6.1.0",
+    "@octokit/openapi-types": "^13.4.0",
+    "@octokit/webhooks-types": "^6.3.6",
     "gcf-utils": "^14.0.1"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.9",
+    "@types/node": "^18.7.13",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
-    "gts": "^3.1.0",
+    "gts": "^4.0.0",
     "js-yaml": "^4.1.0",
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
