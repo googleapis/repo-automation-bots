@@ -22,21 +22,21 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.6.3",
-    "@types/sinon": "^10.0.11",
-    "@types/yargs": "^17.0.10",
+    "@types/node": "^18.7.13",
+    "@types/sinon": "^10.0.13",
+    "@types/yargs": "^17.0.11",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
-    "gts": "^3.1.0",
+    "gts": "^4.0.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
     "semistandard": "^16.0.1",
     "sinon": "^14.0.0",
-    "typescript": "^4.6.4"
+    "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@octokit/auth-app": "^4.0.4",
-    "@octokit/rest": "^19.0.3",
+    "@octokit/auth-app": "^4.0.5",
+    "@octokit/rest": "^19.0.4",
     "yargs": "^17.5.1"
   },
   "engines": {
