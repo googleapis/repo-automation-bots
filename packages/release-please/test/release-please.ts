@@ -660,7 +660,10 @@ describe('ReleasePleaseBot', () => {
           sinon.match.instanceOf(GitHub),
           'master',
           'path/to/config.json',
-          'path/to/manifest.json'
+          'path/to/manifest.json',
+          sinon.match({
+            logger: sinon.match.object,
+          })
         );
       });
     });
