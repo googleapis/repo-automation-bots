@@ -17,7 +17,7 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
 import fs from 'fs';
-import https from 'https';
+import {https} from 'follow-redirects';
 
 import {RegionTagLocation} from './region-tag-parser';
 import {Violation} from './violations';

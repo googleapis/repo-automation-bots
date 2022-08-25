@@ -31,6 +31,7 @@
     "@google-automations/bot-config-utils": "^6.1.0",
     "@google-automations/label-utils": "^3.0.0",
     "@google-cloud/storage": "^6.4.1",
+    "follow-redirects": "^1.15.1",
     "gcf-utils": "^14.0.1",
     "lru-cache": "^7.14.0",
     "minimatch": "^5.1.0",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@octokit/webhooks-types": "^6.3.6",
+    "@types/follow-redirects": "^1.14.1",
     "@types/minimatch": "^5.1.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.13",
