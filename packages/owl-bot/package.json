@@ -46,7 +46,7 @@
     "@types/glob": "^7.2.0",
     "@types/js-yaml": "^4.0.5",
     "@types/jsonwebtoken": "^8.5.8",
-    "@types/minimatch": "^3.0.5",
+    "@types/minimatch": "^5.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.9",
     "@types/node-fetch": "^2.6.2",
