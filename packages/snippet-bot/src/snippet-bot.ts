@@ -36,6 +36,7 @@ import {
   formatViolations,
   formatMatchingViolation,
   isFile,
+  downloadFile,
 } from './utils';
 import {invalidateCache} from './snippets';
 import {
@@ -54,15 +55,10 @@ import {
   GCFLogger,
   getAuthenticatedOctokit,
 } from 'gcf-utils';
-import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
 import tar from 'tar';
-import util from 'util';
-import fs from 'fs';
 import {promises as pfs} from 'fs';
 import path from 'path';
-
-const streamPipeline = util.promisify(require('stream').pipeline);
 
 // Solely for avoid using `any` type.
 interface Label {
@@ -76,14 +72,6 @@ const REFRESH_STRING = '- [x] Refresh this comment';
 
 // Github issue comment API has a limit of 65536 characters.
 const MAX_CHARS_IN_COMMENT = 64000;
-
-async function downloadFile(url: string, file: string) {
-  const response = await fetch(url);
-  if (response.ok) {
-    return streamPipeline(response.body, fs.createWriteStream(file));
-  }
-  throw new Error(`unexpected response ${response.statusText}`);
-}
 
 async function getFiles(dir: string, allFiles: string[]) {
   const files = (await pfs.readdir(dir)).map(f => path.join(dir, f));

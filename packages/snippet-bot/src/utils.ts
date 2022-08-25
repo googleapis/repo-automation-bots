@@ -16,6 +16,8 @@
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
+import fs from 'fs';
+import https from 'https';
 
 import {RegionTagLocation} from './region-tag-parser';
 import {Violation} from './violations';
@@ -201,4 +203,34 @@ export class CheckAggregator {
       return;
     }
   }
+}
+
+/**
+ * Downloads from the given url into the given file.
+ */
+export async function downloadFile(url: string, file: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, response => {
+        response.on('data', chunk => {
+          fs.appendFileSync(file, chunk);
+        });
+        response.on('end', () => {
+          if (
+            response &&
+            response.statusCode &&
+            (response.statusCode < 200 || response.statusCode >= 300)
+          ) {
+            reject(
+              new Error(`HTTP error, status code: ${response.statusCode}`)
+            );
+          } else {
+            resolve();
+          }
+        });
+      })
+      .on('error', err => {
+        reject(new Error(err.message));
+      });
+  });
 }
