@@ -59,6 +59,15 @@ describe('formatBody', () => {
       )
     );
   });
+  it('should add contents to an empty body', () => {
+    const result = formatBody(undefined as unknown as string, commentMark, addition);
+    assert(result.includes(addition));
+    assert(
+      result.includes(
+        'https://github.com/googleapis/repo-automation-bots/issues'
+      )
+    );
+  });
 });
 
 describe('formatExpandable', () => {
