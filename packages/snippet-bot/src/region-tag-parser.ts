@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Violation} from './violations';
-import {isFile} from './utils';
-
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 import parseDiff from 'parse-diff';
-import fetch from 'node-fetch';
+import {isFile, downloadFile} from './utils';
+import tmp from 'tmp-promise';
+import fs from 'fs';
+
 import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
+
+import {Violation} from './violations';
 
 /**
  * The result for unmatched region tag checks.
@@ -83,8 +85,17 @@ export async function parseRegionTagsInPullRequest(
     deleted: 0,
     files: files,
   };
-  const response = await fetch(diffUrl);
-  const diff = await response.text();
+  const tmpObj = tmp.fileSync();
+  let diff: string;
+  try {
+    await downloadFile(diffUrl, tmpObj.name);
+    diff = fs.readFileSync(tmpObj.name, 'utf8');
+  } catch (e) {
+    const err = e as Error;
+    throw new Error(`Failed to download the diff: ${err.message}`);
+  } finally {
+    tmpObj.removeCallback();
+  }
   const diffResult = parseDiff(diff);
   for (const file of diffResult) {
     if (file.to !== undefined && file.to !== '/dev/null') {

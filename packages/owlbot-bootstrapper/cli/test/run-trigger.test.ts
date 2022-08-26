@@ -23,8 +23,8 @@ import {describe, it} from 'mocha';
 const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
 // Installation ID for owlbot-bootstrapper on googleapis/
 const INSTALLATION_ID = '123456';
-const PROJECT_ID = 'owlbot-bootstrapper-prod';
-const COMMON_CONTAINER_IMAGE = `gcr.io/${PROJECT_ID}/owlbot-bootstrapper:latest`;
+const PROJECT_ID = 'owlbot-bootstrap-prod';
+const COMMON_CONTAINER_IMAGE = `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`;
 const API_ID = 'google.cloud.kms.v1';
 const REPO_TO_CLONE = 'github.com/soficodes/nodejs-kms.git';
 const LANGUAGE_CONTAINER = 'gcr.io/myproject/myimage:latest';
@@ -98,8 +98,7 @@ describe('tests running build trigger', () => {
       cloudBuildClientStub,
       {
         language: 'nodejs',
-        languageContainerInArtifactRegistry:
-          'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+        languageContainerInArtifactRegistry: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
         repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
       }
     );
@@ -116,10 +115,8 @@ describe('tests running build trigger', () => {
             _REPO_TO_CLONE: 'git@github.com/googleapis/google-cloud-node.git',
             _LANGUAGE: LANGUAGE,
             _INSTALLATION_ID: INSTALLATION_ID,
-            _CONTAINER:
-              'us.gcr.io/owlbot-bootstrap-prod/owlbot-bootstrapper:latest',
-            _LANGUAGE_CONTAINER:
-              'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+            _CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`,
+            _LANGUAGE_CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
             _PROJECT_ID: PROJECT_ID,
           },
         },
@@ -139,7 +136,7 @@ describe('tests running build trigger', () => {
       {
         language: 'nodejs',
         languageContainerInArtifactRegistry:
-          'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+          'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/node-bootstrapper:latest',
         repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
       }
     );

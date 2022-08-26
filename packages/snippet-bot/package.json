@@ -31,26 +31,26 @@
     "@google-automations/bot-config-utils": "^6.1.0",
     "@google-automations/label-utils": "^3.0.0",
     "@google-cloud/storage": "^6.4.1",
+    "follow-redirects": "^1.15.1",
     "gcf-utils": "^14.0.1",
     "lru-cache": "^7.14.0",
     "minimatch": "^5.1.0",
-    "node-fetch": "^2.6.7",
     "parse-diff": "^0.9.0",
     "tar": "^6.1.11",
     "tmp-promise": "^3.0.3"
   },
   "devDependencies": {
-    "@types/minimatch": "^5.0.0",
+    "@octokit/webhooks-types": "^6.3.6",
+    "@types/follow-redirects": "^1.14.1",
+    "@types/minimatch": "^5.1.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.9",
-    "@types/node-fetch": "^2.6.2",
+    "@types/node": "^18.7.13",
     "@types/sinon": "^10.0.13",
     "@types/tar": "^6.1.2",
     "@types/tmp": "^0.2.3",
-    "@octokit/webhooks-types": "^6.3.6",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
-    "gts": "^3.1.0",
+    "gts": "^4.0.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
     "sinon": "^14.0.0",
@@ -58,7 +58,9 @@
     "snap-shot-it": "^7.9.6",
     "typescript": "~4.7.4"
   },
-  "optionalDependencies": { "fsevents": "*" },
+  "optionalDependencies": {
+    "fsevents": "*"
+  },
   "engines": {
     "node": ">= 14"
   }

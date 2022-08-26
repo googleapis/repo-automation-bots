@@ -34,6 +34,7 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import {describe, it, beforeEach, afterEach} from 'mocha';
+import * as assert from 'assert';
 import * as sinon from 'sinon';
 import {GCFLogger} from 'gcf-utils';
 import * as gcfUtils from 'gcf-utils';
@@ -211,7 +212,7 @@ describe('snippet-bot config validation', () => {
 
     const diffRequests = nock('https://github.com')
       .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-      .reply(404, {});
+      .reply(200, '');
 
     await probot.receive({
       name: 'pull_request',
@@ -241,7 +242,7 @@ describe('snippet-bot config validation', () => {
 
     const diffRequests = nock('https://github.com')
       .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-      .reply(404, {});
+      .reply(200, '');
 
     await probot.receive({
       name: 'pull_request',
@@ -312,7 +313,7 @@ describe('snippet-bot bot-config-utils integration', () => {
         .reply(200),
       nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(404, {}),
+        .reply(200, ''),
     ];
 
     await probot.receive({
@@ -390,13 +391,48 @@ describe('snippet-bot', () => {
 
       const diffRequests = nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(404, {});
+        .reply(200, '');
 
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
+
+      diffRequests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
+      );
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
+        14
+      );
+    });
+
+    it('throws an error when diff is not found', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(404, '');
+
+      await assert.rejects(async () => {
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+      }, Error);
 
       diffRequests.done();
       sinon.assert.calledOnceWithExactly(
@@ -644,7 +680,7 @@ describe('snippet-bot', () => {
           // For removing the label.
           '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
-        .reply(404)
+        .reply(404, 'Not Found')
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
@@ -1406,7 +1442,7 @@ describe('snippet-bot', () => {
 
       const tarBallRequests = nock('https://github.com')
         .get('/tmatsuo/python-docs-samples/tarball/master')
-        .reply(403, 'Error');
+        .reply(403, 'Forbidden');
 
       await probot.receive({
         name: 'issues',
