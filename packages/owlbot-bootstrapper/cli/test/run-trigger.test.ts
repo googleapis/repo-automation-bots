@@ -103,6 +103,7 @@ describe('tests running build trigger', () => {
       }
     );
 
+
     assert(
       cloudBuildClientStub.runBuildTrigger.calledWith({
         projectId: PROJECT_ID,
