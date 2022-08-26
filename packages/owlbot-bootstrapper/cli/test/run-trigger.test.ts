@@ -98,8 +98,7 @@ describe('tests running build trigger', () => {
       cloudBuildClientStub,
       {
         language: 'nodejs',
-        languageContainerInArtifactRegistry:
-          'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+        languageContainerInArtifactRegistry: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
         repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
       }
     );
@@ -116,10 +115,8 @@ describe('tests running build trigger', () => {
             _REPO_TO_CLONE: 'git@github.com/googleapis/google-cloud-node.git',
             _LANGUAGE: LANGUAGE,
             _INSTALLATION_ID: INSTALLATION_ID,
-            _CONTAINER:
-              'us.gcr.io/owlbot-bootstrap-prod/owlbot-bootstrapper:latest',
-            _LANGUAGE_CONTAINER:
-              'us.gcr.io/owlbot-bootstrap-prod/node-bootstrapper:latest',
+            _CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`,
+            _LANGUAGE_CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
             _PROJECT_ID: PROJECT_ID,
           },
         },
