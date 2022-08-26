@@ -23,7 +23,7 @@ import {describe, it} from 'mocha';
 const TRIGGER_ID = 'owlbot-bootstrapper-trigger';
 // Installation ID for owlbot-bootstrapper on googleapis/
 const INSTALLATION_ID = '123456';
-const PROJECT_ID = 'owlbot-bootstrapper-prod';
+const PROJECT_ID = 'owlbot-bootstrap-prod';
 const COMMON_CONTAINER_IMAGE = `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`;
 const API_ID = 'google.cloud.kms.v1';
 const REPO_TO_CLONE = 'github.com/soficodes/nodejs-kms.git';
