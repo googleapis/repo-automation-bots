@@ -15,7 +15,7 @@
 // Minimally implements the docker protocol defined here:
 // https://docs.docker.com/registry/spec/api
 
-import fetch from 'node-fetch';
+import {https} from 'follow-redirects';
 
 interface Manifest {
   config: {
@@ -46,9 +46,41 @@ export async function fetchConfig(
   );
   const manifestUri = `https://${host}/v2/${image}/manifests/${digest}`;
   console.info(`fetching ${manifestUri}`);
-  const manifest = (await (await fetch(manifestUri)).json()) as Manifest;
+  const manifest = JSON.parse(await fetchURL(manifestUri)) as Manifest;
   const configDigest: string = manifest.config.digest;
   const configUri = `https://${host}/v2/${image}/blobs/${configDigest}`;
   console.info(`fetching ${configUri}`);
-  return (await (await fetch(configUri)).json()) as Config;
+  return JSON.parse(await fetchURL(configUri)) as Config;
+}
+
+/**
+ * Fetches a given URL and return a string.
+ *
+ * @param url It needs to be an https URL.
+ */
+async function fetchURL(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    https.get(url, response => {
+      let chunks: any[] = [];
+      response.on('data', chunk => {
+        chunks.push(chunk);
+      });
+      response.on('end', () => {
+        if (
+          response &&
+          response.statusCode &&
+          (response.statusCode < 200 || response.statusCode >= 300)
+        ) {
+          reject(
+            new Error(`HTTP error, status code: ${response.statusCode}`)
+          );
+        } else {
+          resolve(Buffer.concat(chunks).toString('utf-8'));
+        }
+
+      });
+    }).on("error", (err) => {
+      reject(err);
+    });
+  });
 }
