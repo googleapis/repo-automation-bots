@@ -19,7 +19,7 @@ import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {CliArgs} from './run-trigger-command';
 
 const COMMON_CONTAINER =
-  'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/node-bootstrapper:latest';
+  'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/owlbot-bootstrapper:latest';
 
 export async function runTrigger(
   argv: CliArgs,
