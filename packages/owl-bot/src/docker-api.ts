@@ -60,27 +60,29 @@ export async function fetchConfig(
  */
 async function fetchURL(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    https.get(url, response => {
-      let chunks: any[] = [];
-      response.on('data', chunk => {
-        chunks.push(chunk);
+    https
+      .get(url, response => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const chunks: any[] = [];
+        response.on('data', chunk => {
+          chunks.push(chunk);
+        });
+        response.on('end', () => {
+          if (
+            response &&
+            response.statusCode &&
+            (response.statusCode < 200 || response.statusCode >= 300)
+          ) {
+            reject(
+              new Error(`HTTP error, status code: ${response.statusCode}`)
+            );
+          } else {
+            resolve(Buffer.concat(chunks).toString('utf-8'));
+          }
+        });
+      })
+      .on('error', err => {
+        reject(err);
       });
-      response.on('end', () => {
-        if (
-          response &&
-          response.statusCode &&
-          (response.statusCode < 200 || response.statusCode >= 300)
-        ) {
-          reject(
-            new Error(`HTTP error, status code: ${response.statusCode}`)
-          );
-        } else {
-          resolve(Buffer.concat(chunks).toString('utf-8'));
-        }
-
-      });
-    }).on("error", (err) => {
-      reject(err);
-    });
   });
 }

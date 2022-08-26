@@ -25,9 +25,10 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('fetchConfig', () => {
   const image = 'cloud-devrel-public-resources/owlbot-nodejs';
-  const digest = 'sha256:bbb8dd6576ac58830a07fc17e9511ae898be44f2219d3344449b125df9854441';
+  const digest =
+    'sha256:bbb8dd6576ac58830a07fc17e9511ae898be44f2219d3344449b125df9854441';
   const manifests = require(resolve(fixturesPath, './manifests.json'));
-  const expectedConfig = {'created': '12345678'}
+  const expectedConfig = {created: '12345678'};
 
   afterEach(() => {
     nock.cleanAll();
@@ -36,7 +37,9 @@ describe('fetchConfig', () => {
     const requests = nock('https://gcr.io')
       .get(`/v2/${image}/manifests/${digest}`)
       .reply(200, manifests)
-      .get(`/v2/${image}/blobs/sha256:4bc583e11b520f05e2b11a86ee067eb814910e046f75c5df2f8598d14b8a22c0`)
+      .get(
+        `/v2/${image}/blobs/sha256:4bc583e11b520f05e2b11a86ee067eb814910e046f75c5df2f8598d14b8a22c0`
+      )
       .reply(200, expectedConfig);
 
     const config = await fetchConfig(`gcr.io/${image}`, digest);
