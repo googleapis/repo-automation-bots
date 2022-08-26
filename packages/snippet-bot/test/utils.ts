@@ -60,7 +60,11 @@ describe('formatBody', () => {
     );
   });
   it('should add contents to an empty body', () => {
-    const result = formatBody(undefined as unknown as string, commentMark, addition);
+    const result = formatBody(
+      undefined as unknown as string,
+      commentMark,
+      addition
+    );
     assert(result.includes(addition));
     assert(
       result.includes(
