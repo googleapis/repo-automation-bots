@@ -54,6 +54,7 @@ export const formatBody = (
   addition: string
 ): string => {
   // First cut off if we already have the commentMark.
+  originalBody = originalBody ? originalBody : '';
   const markIndex = originalBody.indexOf(commentMark);
   if (markIndex >= 0) {
     originalBody = originalBody.substr(0, markIndex);
