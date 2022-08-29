@@ -71,6 +71,8 @@ describe('formatBody', () => {
         'https://github.com/googleapis/repo-automation-bots/issues'
       )
     );
+    // It should start with the commentMark.
+    assert(result.indexOf(commentMark) === 0);
   });
 });
 
