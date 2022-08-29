@@ -86,7 +86,12 @@ export = (app: Probot) => {
       `${context.payload.comment.user.login} requested cherry-pick to branch ${targetBranch}`
     );
 
-    let pullRequest: {sha: string | null; number: number; baseRef: string};
+    let pullRequest: {
+      sha: string | null;
+      number: number;
+      baseRef: string;
+      isMerged: boolean;
+    };
     try {
       const {data: pullData} = await octokit.pulls.get(
         context.repo({
@@ -97,6 +102,7 @@ export = (app: Probot) => {
         sha: pullData.merge_commit_sha,
         number: pullData.number,
         baseRef: pullData.base.ref,
+        isMerged: pullData.merged,
       };
     } catch (e) {
       if (e instanceof RequestError && e.status === 404) {
@@ -106,7 +112,7 @@ export = (app: Probot) => {
       throw e;
     }
 
-    if (!pullRequest.sha) {
+    if (!pullRequest.isMerged) {
       logger.warn(
         `pull request ${pullRequest.number} is not merged, skipping.`
       );
@@ -134,7 +140,7 @@ export = (app: Probot) => {
       octokit,
       owner,
       repo,
-      [pullRequest.sha],
+      [pullRequest.sha!],
       targetBranch,
       logger
     );
