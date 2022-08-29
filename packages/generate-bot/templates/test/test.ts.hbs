@@ -59,7 +59,7 @@ describe('{{programName}}', () => {
         .reply(200, config);
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -73,7 +73,7 @@ describe('{{programName}}', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2F{{programName}}.yml')
         .reply(200, config);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
   });
