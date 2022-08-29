@@ -73,7 +73,11 @@ describe('cherry-pick-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/Codertocat/Hello-World/pulls/1')
-        .reply(200, {merge_commit_sha: 'abc123', base: {ref: 'main'}});
+        .reply(200, {
+          merge_commit_sha: 'abc123',
+          base: {ref: 'main'},
+          merged: true,
+        });
 
       sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
       sandbox
@@ -227,6 +231,33 @@ describe('cherry-pick-bot', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/Codertocat/Hello-World/pulls/1')
         .reply(200, {merge_commit_sha: null, base: {ref: 'main'}});
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+
+      await probot.receive({
+        name: 'issue_comment',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.notCalled(cherryPickPullRequestStub);
+      requests.done();
+    });
+
+    it('ignores unmerged pull request with sha', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_comment_created_command'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1')
+        .reply(200, {
+          merge_commit_sha: 'abc123',
+          base: {ref: 'main'},
+          merged: false,
+        });
 
       sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
 
