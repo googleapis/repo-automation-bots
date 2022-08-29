@@ -32,7 +32,7 @@
     "nock": "^13.2.9",
     "semistandard": "^16.0.1",
     "sinon": "^14.0.0",
-    "typescript": "^4.7.4"
+    "typescript": "^4.8.2"
   },
   "dependencies": {
     "@octokit/auth-app": "^4.0.5",
