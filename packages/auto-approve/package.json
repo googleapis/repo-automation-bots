@@ -38,7 +38,7 @@
     "@octokit/webhooks-definitions": "^3.67.3",
     "@probot/octokit-plugin-config": "^1.1.6",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.13",
+    "@types/node": "^18.7.14",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
