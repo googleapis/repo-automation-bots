@@ -116,6 +116,30 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
+      it('should enable sentence-case for allow listed orgs', async () => {
+        getConfigStub.resolves(loadConfig('valid.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('releaseType', 'java-yoshi'),
+          sinon.match.has(
+            'plugins',
+            sinon.match.array.deepEquals([
+              {type: 'sentence-case', specialWords: ['gRPC', 'npm']},
+            ])
+          ),
+          undefined
+        );
+      });
+
       it('should handle GitHub releases, if configured', async () => {
         getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
         await probot.receive(
