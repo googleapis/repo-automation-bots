@@ -297,7 +297,7 @@ async function runBranchConfigurationWithConfigurationHandling(
 
 // TODO: Allow this functionality to be enabled via an
 // org level config in a .github repository:
-const ORG_SENTENCE_CASE_ENABLED = new Set<string>(['chingor13']);
+const ORG_SENTENCE_CASE_ENABLED = new Set<string>(['chingor13', 'bcoe']);
 function isSentenceCaseEnabled(repoUrl: string) {
   const [org] = repoUrl.split('/');
   return ORG_SENTENCE_CASE_ENABLED.has(org);
