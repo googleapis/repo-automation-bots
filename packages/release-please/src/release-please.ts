@@ -41,6 +41,7 @@ import {
   manifestSchema,
   configSchema,
   Logger,
+  PluginType,
 } from 'release-please';
 import schema from './config-schema.json';
 import {
@@ -191,7 +192,8 @@ async function buildManifest(
   github: GitHub,
   repoLanguage: string | null,
   configuration: BranchConfiguration,
-  logger: GCFLogger
+  logger: GCFLogger,
+  plugins: Array<PluginType>
 ): Promise<Manifest> {
   if (configuration.manifest) {
     logger.info('building from manifest file');
@@ -233,6 +235,7 @@ async function buildManifest(
     manifestPath: configuration.manifestFile,
     labels: configuration.releaseLabels,
     releaseLabels: configuration.releaseLabel?.split(','),
+    plugins,
   };
   return await Manifest.fromConfig(
     github,
@@ -292,6 +295,14 @@ async function runBranchConfigurationWithConfigurationHandling(
   }
 }
 
+// TODO: Allow this functionality to be enabled via an
+// org level config in a .github repository:
+const ORG_SENTENCE_CASE_ENABLED = new Set<string>(['chingor13', 'googleapis']);
+function isSentenceCaseEnabled(repoUrl: string) {
+  const [org] = repoUrl.split('/');
+  return ORG_SENTENCE_CASE_ENABLED.has(org);
+}
+
 async function runBranchConfiguration(
   github: GitHub,
   repoLanguage: string | null,
@@ -300,11 +311,15 @@ async function runBranchConfiguration(
   octokit: Octokit,
   logger: GCFLogger
 ) {
+  const plugins: Array<PluginType> = [
+    ...(isSentenceCaseEnabled(repoUrl) ? [{type: 'sentence-case'}] : []),
+  ];
   let manifest = await buildManifest(
     github,
     repoLanguage,
     branchConfiguration,
-    logger
+    logger,
+    plugins
   );
 
   // release-please can handle creating a release on GitHub, we opt not to do
@@ -321,7 +336,8 @@ async function runBranchConfiguration(
           github,
           repoLanguage,
           branchConfiguration,
-          logger
+          logger,
+          plugins
         );
       }
     } catch (e) {
