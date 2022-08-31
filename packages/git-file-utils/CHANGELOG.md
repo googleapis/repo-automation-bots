@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.1.0...git-file-utils-v1.2.0) (2022-08-31)
+
+
+### Features
+
+* add ability to find files by glob ([#4299](https://github.com/googleapis/repo-automation-bots/issues/4299)) ([cd58819](https://github.com/googleapis/repo-automation-bots/commit/cd588194e6b28d97632bca1215d6af03b07e3797))
+
 ## [1.1.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.0.0...git-file-utils-v1.1.0) (2022-08-18)
 
 
