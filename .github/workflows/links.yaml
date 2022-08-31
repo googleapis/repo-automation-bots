@@ -1,7 +1,7 @@
 permissions:
   contents: read
   issues: write
-  
+
 name: Links
 
 on:
@@ -14,11 +14,11 @@ jobs:
   linkChecker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3
 
       - name: Link Checker
         id: lychee
-        uses: lycheeverse/lychee-action@4a5af7cd2958a2282cefbd9c10f63bdb89982d76
+        uses: lycheeverse/lychee-action@4a5af7cd2958a2282cefbd9c10f63bdb89982d76 # tag=v1.5.1
         with:
           args: --exclude '(http://devrel/.*|https://github.com/googleapis/googleapis-gen)' --max-concurrency 3 --exclude-mail --exclude-all-private './**/README.md'
         env:
@@ -26,7 +26,7 @@ jobs:
 
       - name: Create Issue From File
         if: steps.lychee.outputs.exit_code != 0
-        uses: peter-evans/create-issue-from-file@99b87c35610e986ad2034a7b0518a9b3ebea541b
+        uses: peter-evans/create-issue-from-file@99b87c35610e986ad2034a7b0518a9b3ebea541b # tag=v4.0.0
         with:
           title: Link Checker Report
           content-filepath: ./lychee/out.md

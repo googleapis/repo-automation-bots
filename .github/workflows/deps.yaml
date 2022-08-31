@@ -10,10 +10,10 @@ jobs:
     outputs:
       nodePaths: ${{ steps.interrogate.outputs.nodePaths }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3
         with:
           node-version: 14
       - id: interrogate
@@ -27,14 +27,14 @@ jobs:
       matrix:
         package: ${{fromJson(needs.findPackages.outputs.nodePaths)}}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3
+      - uses: actions/setup-node@2fddd8803e2f5c9604345a0b591c3020ee971a93 # tag=v3
         with:
           node-version: ${{ matrix.node }}
       - run: npm i -g npm-check-updates
       - run: echo ./packages/${{ matrix.package }}
       - run: ./scripts/update-dependencies.sh packages/${{ matrix.package }}
-      - uses: googleapis/code-suggester@v4
+      - uses: googleapis/code-suggester@212b0804e41c4f89edfefba37e1c39cdb9856e36 # tag=v4
         env:
           ACCESS_TOKEN: ${{ secrets.YOSHI_CODE_BOT_TOKEN }}
         with:
