@@ -132,7 +132,9 @@ describe('ReleasePleaseBot', () => {
           sinon.match.has('releaseType', 'java-yoshi'),
           sinon.match.has(
             'plugins',
-            sinon.match.array.deepEquals([{type: 'sentence-case'}])
+            sinon.match.array.deepEquals([
+              {type: 'sentence-case', specialWords: ['gRPC', 'npm']},
+            ])
           ),
           undefined
         );

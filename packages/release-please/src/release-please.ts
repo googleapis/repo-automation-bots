@@ -312,7 +312,14 @@ async function runBranchConfiguration(
   logger: GCFLogger
 ) {
   const plugins: Array<PluginType> = [
-    ...(isSentenceCaseEnabled(repoUrl) ? [{type: 'sentence-case'}] : []),
+    ...(isSentenceCaseEnabled(repoUrl)
+      ? [
+          {
+            type: 'sentence-case',
+            specialWords: ['gRPC', 'npm'],
+          },
+        ]
+      : []),
   ];
   let manifest = await buildManifest(
     github,
