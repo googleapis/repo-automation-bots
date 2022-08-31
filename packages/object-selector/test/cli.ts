@@ -57,7 +57,10 @@ describe('cli', () => {
       .reply(200, [{name: 'repo1'}])
       .get('/orgs/GoogleCloudPlatform/repos')
       .reply(200, [{name: 'repo2'}]);
-    await cli.parser().exitProcess(false).parse('dump -f test.json --github-token=token');
+    await cli
+      .parser()
+      .exitProcess(false)
+      .parse('dump -f test.json --github-token=token');
     sinon.assert.calledOnceWithExactly(
       writeFileSyncStub,
       'test.json',
