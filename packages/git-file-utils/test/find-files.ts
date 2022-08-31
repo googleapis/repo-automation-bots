@@ -617,4 +617,302 @@ describe('BranchFileCache', () => {
       });
     });
   });
+
+  describe('findFilesByGlob', () => {
+    describe('with small repository', () => {
+      let req: nock.Scope;
+      beforeEach(() => {
+        req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-recursive'
+            ))
+          );
+      });
+      it('finds multiple files', async () => {
+        const files = await cache.findFilesByGlob('**/*.json');
+        expect(files).lengthOf(3);
+        expect(files).to.eql([
+          'pkg/a/foo.json',
+          'pkg/b/foo.json',
+          'package.json',
+        ]);
+        req.done();
+      });
+
+      it('finds multiple files and strips prefix', async () => {
+        const files = await cache.findFilesByGlob('**/*.json', 'pkg');
+        expect(files).lengthOf(2);
+        expect(files).to.eql(['a/foo.json', 'b/foo.json']);
+        req.done();
+      });
+
+      it('finds multiple files filtered by prefix', async () => {
+        const files = await cache.findFilesByGlob('**/*.json', 'pkg/b');
+        expect(files).lengthOf(1);
+        expect(files).to.eql(['foo.json']);
+        req.done();
+      });
+    });
+    describe('with large repository', () => {
+      it('finds multiple files', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-truncated'
+            ))
+          )
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-recursive'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/0ab7edc1143a47be42513c0acc64165cf5da9181?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-subdir1'
+            ))
+          );
+        const files = await cache.findFilesByGlob('**/*.json');
+        expect(files).lengthOf(4);
+        expect(files).to.eql([
+          'package-lock.json',
+          'package.json',
+          'pkg/a/foo.json',
+          'pkg/b/foo.json',
+        ]);
+        req.done();
+      });
+
+      it('finds multiple files recursively with truncated trees', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-truncated'
+            ))
+          )
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-truncated'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/0ab7edc1143a47be42513c0acc64165cf5da9181?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-subdir1'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/1143a47be42513c0acc64165cf5da91810ab7edc?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-a'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/0acc64165cf5da91810ab7edc1143a47be42513c?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-b'
+            ))
+          );
+        const files = await cache.findFilesByGlob('**/*.json');
+        expect(files).lengthOf(4);
+        expect(files).to.eql([
+          'package-lock.json',
+          'package.json',
+          'pkg/a/foo.json',
+          'pkg/b/foo.json',
+        ]);
+        req.done();
+      });
+
+      it('finds multiple files and strips prefix', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-truncated'
+            ))
+          )
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-truncated'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/1143a47be42513c0acc64165cf5da91810ab7edc?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-a'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/0acc64165cf5da91810ab7edc1143a47be42513c?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-b'
+            ))
+          );
+        const files = await cache.findFilesByGlob('**/*.json', 'pkg');
+        expect(files).lengthOf(2);
+        expect(files).to.eql(['a/foo.json', 'b/foo.json']);
+        req.done();
+      });
+
+      it('finds multiple files and strips prefix', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-truncated'
+            ))
+          )
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-truncated'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg'
+            ))
+          )
+          .get(
+            '/repos/testOwner/testRepo/git/trees/0acc64165cf5da91810ab7edc1143a47be42513c?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-b'
+            ))
+          );
+        const files = await cache.findFilesByGlob('**/*.json', 'pkg/b');
+        expect(files).lengthOf(1);
+        expect(files).to.eql(['foo.json']);
+        req.done();
+      });
+    });
+  });
 });
