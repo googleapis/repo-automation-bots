@@ -14,6 +14,7 @@
 
 import {Octokit} from '@octokit/rest';
 import {basename, extname} from 'path';
+import {Minimatch} from 'minimatch';
 
 export const DEFAULT_FILE_MODE = '100644';
 
@@ -119,6 +120,25 @@ export class RepositoryFileCache {
   ): Promise<string[]> {
     const fileCache = this.getBranchFileCache(branch);
     return await fileCache.findFilesByExtension(extension, pathPrefix);
+  }
+
+  /**
+   * Find all files matching a given glob.
+   *
+   * @param {string} glob The glob to match.
+   * @param {string} branch The name of the branch to search on.
+   * @param {string} pathPrefix If set, limit results to files that begin
+   *   with this path prefix. Also if set, returns the path relative to
+   *   the path prefix.
+   * @returns {string[]} Paths to the files (relative to path prefix)
+   */
+  async findFilesByGlob(
+    glob: string,
+    branch: string,
+    pathPrefix?: string
+  ): Promise<string[]> {
+    const fileCache = this.getBranchFileCache(branch);
+    return await fileCache.findFilesByGlob(glob, pathPrefix);
   }
 
   /**
@@ -245,6 +265,29 @@ export class BranchFileCache {
       pathPrefix
     )) {
       if (extname(treeEntry.path!) === `.${extension}`) {
+        files.push(treeEntry.path!);
+      }
+    }
+    return stripPrefix(files, pathPrefix);
+  }
+
+  /**
+   * Find all files matching a given glob.
+   *
+   * @param {string} glob The glob to match.
+   * @param {string} pathPrefix If set, limit results to files that begin
+   *   with this path prefix. Also if set, returns the path relative to
+   *   the path prefix.
+   * @returns {string[]} Paths to the files (relative to path prefix)
+   */
+  async findFilesByGlob(glob: string, pathPrefix?: string): Promise<string[]> {
+    const files: string[] = [];
+    const mm = new Minimatch(glob);
+    for await (const treeEntry of this.treeEntryIterator(
+      this.branch,
+      pathPrefix
+    )) {
+      if (mm.match(treeEntry.path!)) {
         files.push(treeEntry.path!);
       }
     }
