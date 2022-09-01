@@ -18,32 +18,31 @@
 
 import {parseRegionTagsInPullRequest} from '../src/region-tag-parser';
 
+import {FileNotFoundError, RepositoryFileCache} from '@google-automations/git-file-utils';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import * as fs from 'fs';
 import assert from 'assert';
 import {describe, it} from 'mocha';
 import nock from 'nock';
+import * as sinon from 'sinon';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 nock.disableNetConnect();
 
-function createFileResponse(fileName: string) {
-  const contents = fs.readFileSync(resolve(fixturesPath, fileName));
-  const base64Contents = contents.toString('base64');
-  return {
-    sha: '',
-    node_id: '',
-    size: base64Contents.length,
-    url: '',
-    content: base64Contents,
-    encoding: 'base64',
-  };
-}
-
 describe('region-tag-parser', () => {
   const octokit = new Octokit({auth: '123'});
+  const sandbox = sinon.createSandbox();
+  let getFileContentsStub: sinon.SinonStub;
+
+  beforeEach(() => {
+    getFileContentsStub = sandbox.stub(
+      RepositoryFileCache.prototype, 'getFileContents');
+  });
+  afterEach(() => {
+    sandbox.restore();
+  });
   describe('parses a diff', () => {
     it('returns a correct result', async () => {
       const diff = fs.readFileSync(resolve(fixturesPath, 'diff.txt'), 'utf8');
@@ -56,9 +55,11 @@ describe('region-tag-parser', () => {
         'owner',
         'repo',
         'sha',
+        'ref',
         'headOwner',
         'headRepo',
-        'headSha'
+        'headSha',
+        'headRef'
       );
       assert.strictEqual(3, result.added);
       assert.strictEqual(3, result.deleted);
@@ -76,17 +77,16 @@ describe('region-tag-parser', () => {
         resolve(fixturesPath, 'diff-rename.txt'),
         'utf8'
       );
+      const beforeContent = fs.readFileSync(
+        resolve(fixturesPath, 'beforeFile.txt'), 'utf8');
+      const afterContent = fs.readFileSync(
+        resolve(fixturesPath, 'afterFile.txt'), 'utf8');
+      getFileContentsStub.onCall(0).resolves({parsedContent: beforeContent});
+      getFileContentsStub.onCall(1).resolves({parsedContent: afterContent});
+      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/ListGcsBuckets.java', 'ref');
+      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java', 'headRef');
       const scopes = [
         nock('https://example.com').get('/diff.txt').reply(200, diff),
-        nock('https://api.github.com')
-          .get(
-            '/repos/owner/repo/contents/storage%2Fs3-sdk%2Fsrc%2Fmain%2Fjava%2FListGcsBuckets.java?ref=sha'
-          )
-          .reply(200, createFileResponse('beforeFile.txt'))
-          .get(
-            '/repos/headOwner/headRepo/contents/storage%2Fs3-sdk%2Fsrc%2Fmain%2Fjava%2Fstorage%2Fs3sdk%2FListGcsBuckets.java?ref=headSha'
-          )
-          .reply(200, createFileResponse('afterFile.txt')),
       ];
 
       const result = await parseRegionTagsInPullRequest(
@@ -95,9 +95,11 @@ describe('region-tag-parser', () => {
         'owner',
         'repo',
         'sha',
+        'ref',
         'headOwner',
         'headRepo',
-        'headSha'
+        'headSha',
+        'headRef'
       );
       for (const scope of scopes) {
         scope.done();
@@ -145,17 +147,15 @@ describe('region-tag-parser', () => {
         resolve(fixturesPath, 'diff-rename.txt'),
         'utf8'
       );
+      const beforeContent = fs.readFileSync(
+        resolve(fixturesPath, 'beforeFile.txt'), 'utf8');
+      getFileContentsStub.onCall(0).resolves({parsedContent: beforeContent});
+      const e = new FileNotFoundError('File not found');
+      getFileContentsStub.onCall(1).rejects(e);
+      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/ListGcsBuckets.java', 'ref');
+      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java', 'headRef');
       const scopes = [
         nock('https://example.com').get('/diff.txt').reply(200, diff),
-        nock('https://api.github.com')
-          .get(
-            '/repos/owner/repo/contents/storage%2Fs3-sdk%2Fsrc%2Fmain%2Fjava%2FListGcsBuckets.java?ref=sha'
-          )
-          .reply(200, createFileResponse('beforeFile.txt'))
-          .get(
-            '/repos/headOwner/headRepo/contents/storage%2Fs3-sdk%2Fsrc%2Fmain%2Fjava%2Fstorage%2Fs3sdk%2FListGcsBuckets.java?ref=headSha'
-          )
-          .reply(400, 'File too big'),
       ];
 
       const result = await parseRegionTagsInPullRequest(
@@ -164,9 +164,11 @@ describe('region-tag-parser', () => {
         'owner',
         'repo',
         'sha',
+        'ref',
         'headOwner',
         'headRepo',
-        'headSha'
+        'headSha',
+        'headRef'
       );
       for (const scope of scopes) {
         scope.done();
