@@ -1,0 +1,4 @@
+# ncu configuration file
+reject:
+  - "google-auth-library"
+  - "@google-cloud/secret-manager"

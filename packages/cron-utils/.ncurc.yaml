@@ -1,0 +1,3 @@
+# ncu configuration file
+reject:
+  - "google-auth-library"
