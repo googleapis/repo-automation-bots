@@ -1,0 +1,6 @@
+# ncu configuration file
+reject:
+  - "google-auth-library"
+  - "yargs"
+  - "@types/yargs"
+  - "into-stream"
