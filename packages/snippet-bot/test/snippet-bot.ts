@@ -380,7 +380,9 @@ describe('snippet-bot', () => {
     validateConfigStub.resolves(undefined);
     sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
     getFileContentsStub = sandbox.stub(
-      RepositoryFileCache.prototype, 'getFileContents');
+      RepositoryFileCache.prototype,
+      'getFileContents'
+    );
   });
 
   afterEach(() => {

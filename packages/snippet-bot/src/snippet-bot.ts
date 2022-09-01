@@ -35,7 +35,6 @@ import {
   formatRegionTag,
   formatViolations,
   formatMatchingViolation,
-  isFile,
   downloadFile,
 } from './utils';
 import {invalidateCache} from './snippets';
@@ -50,7 +49,7 @@ import schema from './config-schema.json';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {
   FileNotFoundError,
-  RepositoryFileCache
+  RepositoryFileCache,
 } from '@google-automations/git-file-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {
@@ -101,7 +100,7 @@ async function fullScan(
   if (installationId === undefined) {
     throw new Error(
       `Installation ID not provided in ${context.payload.action} event.` +
-      ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
     );
   }
   const octokit = await getAuthenticatedOctokit(installationId);
@@ -230,7 +229,7 @@ async function scanPullRequest(
   if (installationId === undefined) {
     throw new Error(
       `Installation ID not provided in ${context.payload.action} event.` +
-      ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
     );
   }
   const octokit = await getAuthenticatedOctokit(installationId);
@@ -270,12 +269,10 @@ async function scanPullRequest(
   // Keep track of start tags in all the files.
   const parseResults = new Map<string, ParseResult>();
 
-  const cache = new RepositoryFileCache(
-    octokit,
-    {
-      owner: pull_request.head.repo.owner.login,
-      repo: pull_request.head.repo.name,
-    });
+  const cache = new RepositoryFileCache(octokit, {
+    owner: pull_request.head.repo.owner.login,
+    repo: pull_request.head.repo.name,
+  });
   // If we found any new files, verify they all have matching region tags.
   for (const file of result.files) {
     if (configuration.ignoredFile(file)) {
@@ -303,9 +300,7 @@ async function scanPullRequest(
       }
     } catch (e) {
       if (e instanceof FileNotFoundError) {
-        logger.info(
-          `ignoring 404 errors upon fetching ${file}: ${e.message}`
-        );
+        logger.info(`ignoring 404 errors upon fetching ${file}: ${e.message}`);
       } else {
         throw e;
       }
@@ -660,7 +655,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in schedule.repository event.' +
-        ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -686,7 +681,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in issue_comment.edited event.' +
-        ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -746,7 +741,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in issues event.' +
-        ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -779,7 +774,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in pull_request.labeled event.' +
-        ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -854,7 +849,7 @@ export = (app: Probot) => {
       } else {
         throw new Error(
           'Installation ID not provided in pull_request event.' +
-          ' We cannot authenticate Octokit.'
+            ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);

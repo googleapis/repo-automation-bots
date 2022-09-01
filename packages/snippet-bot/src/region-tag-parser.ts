@@ -24,7 +24,6 @@ import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
 import {Violation} from './violations';
 
-
 /**
  * The result for unmatched region tag checks.
  *
@@ -81,8 +80,14 @@ export async function parseRegionTagsInPullRequest(
   headRef: string,
   logger: GCFLogger = defaultLogger
 ): Promise<ChangesInPullRequest> {
-  const cacheHead = new RepositoryFileCache(octokit, {owner: headOwner, repo: headRepo});
-  const cacheBase = new RepositoryFileCache(octokit, {owner: owner, repo: repo});
+  const cacheHead = new RepositoryFileCache(octokit, {
+    owner: headOwner,
+    repo: headRepo,
+  });
+  const cacheBase = new RepositoryFileCache(octokit, {
+    owner: owner,
+    repo: repo,
+  });
   const changes: RegionTagLocation[] = [];
   const files: string[] = [];
   const ret = {
@@ -118,7 +123,8 @@ export async function parseRegionTagsInPullRequest(
       // no need to understand the diffs.
       try {
         const contentsBeforeRename = await cacheBase.getFileContents(
-          file.from, ref
+          file.from,
+          ref
         );
         console.log(`beforeFile: ${JSON.stringify(contentsBeforeRename)}`);
         const linesBeforeRename =
@@ -139,7 +145,9 @@ export async function parseRegionTagsInPullRequest(
           }
         }
         const contentsAfterRename = await cacheHead.getFileContents(
-          file.to, headRef);
+          file.to,
+          headRef
+        );
         console.log(`afterFile: ${JSON.stringify(contentsAfterRename)}`);
         const linesAfterRename = contentsAfterRename.parsedContent.split('\n');
         for (let i = 0; i < linesAfterRename.length; i++) {

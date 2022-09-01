@@ -18,7 +18,10 @@
 
 import {parseRegionTagsInPullRequest} from '../src/region-tag-parser';
 
-import {FileNotFoundError, RepositoryFileCache} from '@google-automations/git-file-utils';
+import {
+  FileNotFoundError,
+  RepositoryFileCache,
+} from '@google-automations/git-file-utils';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import * as fs from 'fs';
@@ -38,7 +41,9 @@ describe('region-tag-parser', () => {
 
   beforeEach(() => {
     getFileContentsStub = sandbox.stub(
-      RepositoryFileCache.prototype, 'getFileContents');
+      RepositoryFileCache.prototype,
+      'getFileContents'
+    );
   });
   afterEach(() => {
     sandbox.restore();
@@ -78,13 +83,23 @@ describe('region-tag-parser', () => {
         'utf8'
       );
       const beforeContent = fs.readFileSync(
-        resolve(fixturesPath, 'beforeFile.txt'), 'utf8');
+        resolve(fixturesPath, 'beforeFile.txt'),
+        'utf8'
+      );
       const afterContent = fs.readFileSync(
-        resolve(fixturesPath, 'afterFile.txt'), 'utf8');
+        resolve(fixturesPath, 'afterFile.txt'),
+        'utf8'
+      );
       getFileContentsStub.onCall(0).resolves({parsedContent: beforeContent});
       getFileContentsStub.onCall(1).resolves({parsedContent: afterContent});
-      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/ListGcsBuckets.java', 'ref');
-      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java', 'headRef');
+      getFileContentsStub.calledWithExactly(
+        'storage/s3-sdk/src/main/java/ListGcsBuckets.java',
+        'ref'
+      );
+      getFileContentsStub.calledWithExactly(
+        'storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java',
+        'headRef'
+      );
       const scopes = [
         nock('https://example.com').get('/diff.txt').reply(200, diff),
       ];
@@ -148,12 +163,20 @@ describe('region-tag-parser', () => {
         'utf8'
       );
       const beforeContent = fs.readFileSync(
-        resolve(fixturesPath, 'beforeFile.txt'), 'utf8');
+        resolve(fixturesPath, 'beforeFile.txt'),
+        'utf8'
+      );
       getFileContentsStub.onCall(0).resolves({parsedContent: beforeContent});
       const e = new FileNotFoundError('File not found');
       getFileContentsStub.onCall(1).rejects(e);
-      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/ListGcsBuckets.java', 'ref');
-      getFileContentsStub.calledWithExactly('storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java', 'headRef');
+      getFileContentsStub.calledWithExactly(
+        'storage/s3-sdk/src/main/java/ListGcsBuckets.java',
+        'ref'
+      );
+      getFileContentsStub.calledWithExactly(
+        'storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java',
+        'headRef'
+      );
       const scopes = [
         nock('https://example.com').get('/diff.txt').reply(200, diff),
       ];
