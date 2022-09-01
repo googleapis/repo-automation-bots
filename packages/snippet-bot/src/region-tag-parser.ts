@@ -126,7 +126,6 @@ export async function parseRegionTagsInPullRequest(
           file.from,
           ref
         );
-        console.log(`beforeFile: ${JSON.stringify(contentsBeforeRename)}`);
         const linesBeforeRename =
           contentsBeforeRename.parsedContent.split('\n');
         for (let i = 0; i < linesBeforeRename.length; i++) {
@@ -148,7 +147,6 @@ export async function parseRegionTagsInPullRequest(
           file.to,
           headRef
         );
-        console.log(`afterFile: ${JSON.stringify(contentsAfterRename)}`);
         const linesAfterRename = contentsAfterRename.parsedContent.split('\n');
         for (let i = 0; i < linesAfterRename.length; i++) {
           const startMatch = linesAfterRename[i].match(START_TAG_REGEX);
