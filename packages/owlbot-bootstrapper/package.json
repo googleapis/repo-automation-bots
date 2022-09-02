@@ -27,7 +27,7 @@
     "@google-cloud/secret-manager": "^4.1.1",
     "@octokit/auth-app": "^4.0.5",
     "@octokit/rest": "^19.0.4",
-    "@types/yargs": "^17.0.11",
+    "@types/yargs": "^17.0.12",
     "fs": "0.0.1-security",
     "gaxios": "^5.0.1",
     "gcf-utils": "^14.0.1",
@@ -41,7 +41,7 @@
   "devDependencies": {
     "@types/jwt-encode": "^1.0.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.13",
+    "@types/node": "^18.7.14",
     "@types/node-fetch": "^2.6.2",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
