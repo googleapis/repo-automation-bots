@@ -15,11 +15,12 @@
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 import parseDiff from 'parse-diff';
-import {isFile, downloadFile} from './utils';
+import {downloadFile} from './utils';
 import tmp from 'tmp-promise';
 import fs from 'fs';
 
 import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
+import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
 import {Violation} from './violations';
 
@@ -72,11 +73,21 @@ export async function parseRegionTagsInPullRequest(
   owner: string,
   repo: string,
   sha: string,
+  ref: string,
   headOwner: string,
   headRepo: string,
   headSha: string,
+  headRef: string,
   logger: GCFLogger = defaultLogger
 ): Promise<ChangesInPullRequest> {
+  const cacheHead = new RepositoryFileCache(octokit, {
+    owner: headOwner,
+    repo: headRepo,
+  });
+  const cacheBase = new RepositoryFileCache(octokit, {
+    owner: owner,
+    repo: repo,
+  });
   const changes: RegionTagLocation[] = [];
   const files: string[] = [];
   const ret = {
@@ -111,21 +122,12 @@ export async function parseRegionTagsInPullRequest(
       // For the case of renaming the file, we scan the files directly,
       // no need to understand the diffs.
       try {
-        const blobBeforeRename = await octokit.repos.getContent({
-          owner: owner,
-          repo: repo,
-          path: file.from,
-          ref: sha,
-        });
-        if (!isFile(blobBeforeRename.data)) {
-          continue;
-        }
-        const fileContentsBeforeRename = Buffer.from(
-          blobBeforeRename.data.content,
-          'base64'
-        ).toString('utf8');
-
-        const linesBeforeRename = fileContentsBeforeRename.split('\n');
+        const contentsBeforeRename = await cacheBase.getFileContents(
+          file.from,
+          ref
+        );
+        const linesBeforeRename =
+          contentsBeforeRename.parsedContent.split('\n');
         for (let i = 0; i < linesBeforeRename.length; i++) {
           const startMatch = linesBeforeRename[i].match(START_TAG_REGEX);
           if (startMatch) {
@@ -141,21 +143,11 @@ export async function parseRegionTagsInPullRequest(
             });
           }
         }
-        const blobAfterRename = await octokit.repos.getContent({
-          owner: headOwner,
-          repo: headRepo,
-          path: file.to,
-          ref: headSha,
-        });
-        if (!isFile(blobAfterRename.data)) {
-          continue;
-        }
-        const fileContentsAfterRename = Buffer.from(
-          blobAfterRename.data.content,
-          'base64'
-        ).toString('utf8');
-
-        const linesAfterRename = fileContentsAfterRename.split('\n');
+        const contentsAfterRename = await cacheHead.getFileContents(
+          file.to,
+          headRef
+        );
+        const linesAfterRename = contentsAfterRename.parsedContent.split('\n');
         for (let i = 0; i < linesAfterRename.length; i++) {
           const startMatch = linesAfterRename[i].match(START_TAG_REGEX);
           if (startMatch) {
@@ -173,8 +165,6 @@ export async function parseRegionTagsInPullRequest(
         }
       } catch (e) {
         const err = e as Error;
-        // See: https://github.com/googleapis/repo-automation-bots/issues/2246
-        // TODO(#2703): Migrate to Git Data API.
         err.message =
           'Skipping the diff entry because it failed to read the' +
           ` file: ${err.message}`;

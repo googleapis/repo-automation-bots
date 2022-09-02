@@ -38,6 +38,7 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import {GCFLogger} from 'gcf-utils';
 import * as gcfUtils from 'gcf-utils';
+import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
 nock.disableNetConnect();
 
@@ -350,6 +351,7 @@ describe('snippet-bot', () => {
   let invalidateCacheStub: sinon.SinonStub;
   let getConfigStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
+  let getFileContentsStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -377,6 +379,10 @@ describe('snippet-bot', () => {
     );
     validateConfigStub.resolves(undefined);
     sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
+    getFileContentsStub = sandbox.stub(
+      RepositoryFileCache.prototype,
+      'getFileContents'
+    );
   });
 
   afterEach(() => {
@@ -480,12 +486,12 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -558,6 +564,10 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event_label_added'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .delete(
@@ -565,10 +575,6 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
         .reply(200)
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -674,6 +680,10 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event_label_added'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .delete(
@@ -681,10 +691,6 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
         .reply(404, 'Not Found')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -735,12 +741,12 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './blob_no_region_tags'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .get(
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
@@ -1076,12 +1082,12 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -1149,12 +1155,12 @@ describe('snippet-bot', () => {
       );
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -1227,12 +1233,12 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .get(
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
@@ -1286,12 +1292,12 @@ describe('snippet-bot', () => {
         './pr_event_no_prefix_req'
       ));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -1351,12 +1357,12 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
+      const content = Buffer.from(blob.content, 'base64').toString('utf8');
+
+      getFileContentsStub.resolves({parsedContent: content});
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;

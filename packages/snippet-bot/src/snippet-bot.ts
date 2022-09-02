@@ -35,7 +35,6 @@ import {
   formatRegionTag,
   formatViolations,
   formatMatchingViolation,
-  isFile,
   downloadFile,
 } from './utils';
 import {invalidateCache} from './snippets';
@@ -48,6 +47,10 @@ import {
 import schema from './config-schema.json';
 
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {
+  FileNotFoundError,
+  RepositoryFileCache,
+} from '@google-automations/git-file-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {
   addOrUpdateIssueComment,
@@ -246,9 +249,11 @@ async function scanPullRequest(
     pull_request.base.repo.owner.login,
     pull_request.base.repo.name,
     pull_request.base.sha,
+    pull_request.base.ref,
     pull_request.head.repo.owner.login,
     pull_request.head.repo.name,
     pull_request.head.sha,
+    pull_request.head.ref,
     logger
   );
 
@@ -264,6 +269,10 @@ async function scanPullRequest(
   // Keep track of start tags in all the files.
   const parseResults = new Map<string, ParseResult>();
 
+  const cache = new RepositoryFileCache(octokit, {
+    owner: pull_request.head.repo.owner.login,
+    repo: pull_request.head.repo.name,
+  });
   // If we found any new files, verify they all have matching region tags.
   for (const file of result.files) {
     if (configuration.ignoredFile(file)) {
@@ -271,20 +280,9 @@ async function scanPullRequest(
       continue;
     }
     try {
-      const blob = await octokit.repos.getContent({
-        owner: pull_request.head.repo.owner.login,
-        repo: pull_request.head.repo.name,
-        path: file,
-        ref: pull_request.head.sha,
-      });
-      if (!isFile(blob.data)) {
-        continue;
-      }
-      const fileContents = Buffer.from(blob.data.content, 'base64').toString(
-        'utf8'
-      );
+      const contents = await cache.getFileContents(file, pull_request.head.ref);
       const parseResult = parseRegionTags(
-        fileContents,
+        contents.parsedContent,
         file,
         owner,
         repo,
@@ -301,14 +299,10 @@ async function scanPullRequest(
         tagsFound = true;
       }
     } catch (e) {
-      const err = e as RequestError & Error;
-      // Ignoring 403/404 errors.
-      if (err.status === 403 || err.status === 404) {
-        logger.info(
-          `ignoring 403/404 errors upon fetching ${file}: ${err.message}`
-        );
+      if (e instanceof FileNotFoundError) {
+        logger.info(`ignoring 404 errors upon fetching ${file}: ${e.message}`);
       } else {
-        throw err;
+        throw e;
       }
     }
   }
