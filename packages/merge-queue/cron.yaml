@@ -1,0 +1,7 @@
+cron:
+  - name: merge-queue-sync-label
+    schedule: 0 4 * * *
+    description: merge-queue syncing labels
+    params:
+      cron_type: "repository"
+      syncLabels: true
