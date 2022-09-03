@@ -13,8 +13,11 @@
 // limitations under the License.
 
 import crypto from 'crypto';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {RequestError} from '@octokit/types';
 import {
   addOrUpdateIssueComment,
@@ -31,7 +34,7 @@ import {
   ADD_LABEL,
   ADDED_LABEL,
   REMOVED_LABEL,
-  MERGE_QUEUE_LABELS
+  MERGE_QUEUE_LABELS,
 } from './labels';
 
 const MERGE_QUEUE_CALLBACK = 'merge-queue-callback';
@@ -56,13 +59,13 @@ function buildRepositoryDetails(repoFullName: string) {
 function createTaskBody(
   body: object,
   installationId: number,
-  repoFullName: string,
+  repoFullName: string
 ) {
   return {
     ...body,
     ...buildRepositoryDetails(repoFullName),
-    installation: {id: installationId}
-  }
+    installation: {id: installationId},
+  };
 }
 
 // Solely for avoid using `any` type.
@@ -100,11 +103,13 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
     app.on(['pull_request.labeled'], async context => {
       let octokit: Octokit;
       if (context.payload.installation?.id) {
-        octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
       } else {
         throw new Error(
           'Installation ID not provided in pull_request.labeled event.' +
-          ' We cannot authenticate Octokit.'
+            ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
@@ -141,18 +146,19 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         if (queueEntity === undefined) {
           queueEntity = {
             repoFullName: repoFullName,
-            pullRequests: []
-          }
+            pullRequests: [],
+          };
         }
-        if (!queueEntity.pullRequests.includes(
-          context.payload.pull_request.number)) {
+        if (
+          !queueEntity.pullRequests.includes(
+            context.payload.pull_request.number
+          )
+        ) {
           queueEntity.pullRequests.push(context.payload.pull_request.number);
-          transaction.save(
-            {
-              key: queueKey,
-              data: queueEntity
-            }
-          );
+          transaction.save({
+            key: queueKey,
+            data: queueEntity,
+          });
         }
         await transaction.commit();
       } catch (e) {
@@ -185,14 +191,17 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         logger
       );
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     app.on('schedule.repository' as any, async context => {
       let octokit: Octokit;
       if (context.payload.installation?.id) {
-        octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
       } else {
         throw new Error(
           'Installation ID not provided in schedule.repository event.' +
-          ' We cannot authenticate Octokit.'
+            ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
@@ -207,12 +216,15 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         const queueKey = createQueueKey(datastore, repoFullName);
         const prNumber = context.payload.pr_number;
 
-        logger.info(`task received for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`);
+        logger.info(
+          `task received for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`
+        );
 
-        let queueEntity: Queue;
-        queueEntity = (await datastore.get(queueKey))[0];
+        const queueEntity: Queue = (await datastore.get(queueKey))[0];
         if (queueEntity === undefined) {
-          throw new Error(`Failed to get queueEntity for ${repoFullName}, prNumber: ${prNumber}`);
+          throw new Error(
+            `Failed to get queueEntity for ${repoFullName}, prNumber: ${prNumber}`
+          );
         }
 
         if (queueEntity.pullRequests.length === 0) {
@@ -220,7 +232,9 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         }
 
         if (!queueEntity.pullRequests.includes(prNumber)) {
-          logger.info(`${repoFullName}, prNumber: ${prNumber} is not in the queue.`)
+          logger.info(
+            `${repoFullName}, prNumber: ${prNumber} is not in the queue.`
+          );
           return;
         }
 
@@ -234,7 +248,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             prNumber,
             context.payload.installation.id,
             `This pr is at ${currentPosition + 1} / ` +
-            `${queueEntity.pullRequests.length} in the queue.`
+              `${queueEntity.pullRequests.length} in the queue.`
           );
           // Then enqueue another task.
           await enqueueTask(
@@ -256,9 +270,15 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           context.payload.installation.id,
           "This pr is at top of the queue, I'm on it."
         );
-        const response = await octokit.pulls.get({owner: owner, repo: repo, pull_number: prNumber});
+        const response = await octokit.pulls.get({
+          owner: owner,
+          repo: repo,
+          pull_number: prNumber,
+        });
 
-        logger.info(`mergeable: ${response.data.mergeable}, mergeable_state: ${response.data.mergeable_state}, merged: ${response.data.merged}  for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`)
+        logger.info(
+          `mergeable: ${response.data.mergeable}, mergeable_state: ${response.data.mergeable_state}, merged: ${response.data.merged}  for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`
+        );
 
         if (response.data.merged === true) {
           await removePRFromQueue(
@@ -279,7 +299,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             repo,
             prNumber,
             context.payload.installation.id,
-            "The PR seems to have merge conflicts. Removing from the queue."
+            'The PR seems to have merge conflicts. Removing from the queue.'
           );
           await removePRFromQueue(
             datastore,
@@ -293,30 +313,30 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
 
         // TODO: Make the OK state configurable.
         // `unstable` means there's a failing test which is not mandatory.
-        if (response.data.mergeable
-          && (response.data.mergeable_state.toLowerCase() === 'clean'
-            || response.data.mergeable_state.toLowerCase() === 'unstable')) {
-          const mergeResult = await octokit.pulls.merge(
-            {
-              owner: owner,
-              repo: repo,
-              pull_number: prNumber,
-              commit_title: `${response.data.title} (#${prNumber})`,
-              commit_message: response.data.body || '',
-              merge_method: 'squash',
-            }
+        if (
+          response.data.mergeable &&
+          (response.data.mergeable_state.toLowerCase() === 'clean' ||
+            response.data.mergeable_state.toLowerCase() === 'unstable')
+        ) {
+          const mergeResult = await octokit.pulls.merge({
+            owner: owner,
+            repo: repo,
+            pull_number: prNumber,
+            commit_title: `${response.data.title} (#${prNumber})`,
+            commit_message: response.data.body || '',
+            merge_method: 'squash',
+          });
+          logger.info(
+            `Merged: ${mergeResult.data.merged}, repo: ${repoFullName}, prNumber: ${prNumber}`
           );
-          logger.info(`Merged: ${mergeResult.data.merged}, repo: ${repoFullName}, prNumber: ${prNumber}`);
         }
 
         if (response.data.mergeable_state.toLowerCase() === 'behind') {
-          const updateResult = await octokit.pulls.updateBranch(
-            {
-              owner: owner,
-              repo: repo,
-              pull_number: prNumber,
-            }
-          );
+          const updateResult = await octokit.pulls.updateBranch({
+            owner: owner,
+            repo: repo,
+            pull_number: prNumber,
+          });
           logger.info(`Updated with the message: ${updateResult.data.message}`);
         }
 
@@ -328,7 +348,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             repo,
             prNumber,
             context.payload.installation.id,
-            "The PR has not become mergeable after 1 hour, removing from the queue."
+            'The PR has not become mergeable after 1 hour, removing from the queue.'
           );
           await removePRFromQueue(
             datastore,
@@ -351,7 +371,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         return;
       }
     });
-  }
+  };
 }
 
 async function updatePRForRemoval(
@@ -360,18 +380,16 @@ async function updatePRForRemoval(
   repo: string,
   prNumber: number,
   installationId: number,
-  reason: string,
+  reason: string
 ) {
   // Change the label
   try {
-    await octokit.issues.removeLabel(
-      {
-        owner: owner,
-        repo: repo,
-        issue_number: prNumber,
-        name: ADDED_LABEL
-      }
-    );
+    await octokit.issues.removeLabel({
+      owner: owner,
+      repo: repo,
+      issue_number: prNumber,
+      name: ADDED_LABEL,
+    });
   } catch (e) {
     const err = e as RequestError;
     // Ignoring 404 errors.
@@ -379,14 +397,12 @@ async function updatePRForRemoval(
       throw err;
     }
   }
-  await octokit.issues.addLabels(
-    {
-      owner: owner,
-      repo: repo,
-      issue_number: prNumber,
-      labels: [REMOVED_LABEL]
-    }
-  );
+  await octokit.issues.addLabels({
+    owner: owner,
+    repo: repo,
+    issue_number: prNumber,
+    labels: [REMOVED_LABEL],
+  });
   await addOrUpdateIssueComment(
     octokit,
     owner,
@@ -402,7 +418,7 @@ async function enqueueTask(
   repoFullName: string,
   installationId: number,
   prNumber: number,
-  logger: GCFLogger,
+  logger: GCFLogger
 ) {
   const body = createTaskBody(
     {
@@ -450,12 +466,10 @@ async function removePRFromQueue(
     if (pos !== -1) {
       queueEntity.pullRequests.splice(pos, 1);
     }
-    transaction.save(
-      {
-        key: queueKey,
-        data: queueEntity
-      }
-    );
+    transaction.save({
+      key: queueKey,
+      data: queueEntity,
+    });
     await transaction.commit();
   } catch (e) {
     const err = e as Error;

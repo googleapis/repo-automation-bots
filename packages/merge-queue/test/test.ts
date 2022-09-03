@@ -37,13 +37,12 @@ describe('merge-queue', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
-      }
+      },
     });
     probot.load(createAppFn(bootstrap));
   });
 
   describe('responds to events', () => {
-    it('works', () => {
-    });
+    it('works', () => {});
   });
 });

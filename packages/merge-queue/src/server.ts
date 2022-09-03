@@ -20,15 +20,14 @@ const bootstrap = new GCFBootstrapper({
   taskTargetName: 'merge-queue-backend',
 });
 
-const server = bootstrap.server(
-  createAppFn(bootstrap),
-  {
-    maxRetries: 10,
-    maxCronRetries: 10,
-  });
+const server = bootstrap.server(createAppFn(bootstrap), {
+  maxRetries: 10,
+  maxCronRetries: 10,
+});
 const port = process.env.PORT ?? 8080;
 
-server.listen(port, () => {
-  console.log(`Listening on port ${port}`);
-})
+server
+  .listen(port, () => {
+    console.log(`Listening on port ${port}`);
+  })
   .setTimeout(0); // Disable automatic timeout on incoming connections.
