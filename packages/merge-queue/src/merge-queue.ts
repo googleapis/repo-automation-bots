@@ -12,104 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import crypto from 'crypto';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
-/* eslint-disable-next-line node/no-extraneous-import */
-import {RequestError} from '@octokit/types';
 import {
   addOrUpdateIssueComment,
   getContextLogger,
   getAuthenticatedOctokit,
   GCFBootstrapper,
-  GCFLogger,
 } from 'gcf-utils';
-import {Datastore, Key} from '@google-cloud/datastore';
-import {DatastoreLock} from '@google-automations/datastore-lock';
+import {Datastore} from '@google-cloud/datastore';
 import {syncLabels} from '@google-automations/label-utils';
 
+import {CallbackPayload, Queue} from './types';
+
 import {
-  ADD_LABEL,
-  ADDED_LABEL,
-  REMOVED_LABEL,
-  MERGE_QUEUE_LABELS,
-} from './labels';
+  addPRToQueue,
+  changeLabel,
+  enqueueTask,
+  getQueue,
+  removePRFromQueue,
+  updatePRForRemoval,
+  MERGE_QUEUE_CALLBACK,
+} from './utils';
 
-const MERGE_QUEUE_CALLBACK = 'merge-queue-callback';
-
-export interface CallbackCorePayload {
-  task_type: string;
-  pr_number: number;
-  merge_effort_started_at?: string;
-}
-
-export interface CallbackPayload extends CallbackCorePayload {
-  repository: {
-    name: string;
-    full_name: string;
-    owner: {
-      login: string;
-      name: string;
-    };
-  };
-  organization: {
-    login: string;
-  };
-  installation: {
-    id: number;
-  };
-}
-
-function buildRepositoryDetails(repoFullName: string) {
-  const [orgName, repoName] = repoFullName.split('/');
-  return {
-    repository: {
-      name: repoName,
-      full_name: repoFullName,
-      owner: {
-        login: orgName,
-        name: orgName,
-      },
-    },
-    organization: {
-      login: orgName,
-    },
-  };
-}
-
-function createTaskBody(
-  body: CallbackCorePayload,
-  installationId: number,
-  repoFullName: string
-): CallbackPayload {
-  return {
-    ...body,
-    ...buildRepositoryDetails(repoFullName),
-    installation: {id: installationId},
-  };
-}
+import {ADD_LABEL, ADDED_LABEL, MERGE_QUEUE_LABELS} from './labels';
 
 // Solely for avoid using `any` type.
 interface Label {
   name: string;
-}
-
-export interface Queue {
-  repoFullName: string; // e.g. "googleapis/repo-automation-bots"
-  pullRequests: number[];
-}
-
-function createQueueKey(datastore: Datastore, repoFullName: string): Key {
-  const hash = crypto.createHash('sha1');
-  hash.update(repoFullName);
-  return datastore.key(['MergeQueue:Queue', hash.digest('hex')]);
-}
-
-// return a random number between -5 to 5
-function jitter(): number {
-  return Math.floor(Math.random() * 11) - 5;
 }
 
 /**
@@ -132,11 +64,15 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
       } else {
         throw new Error(
           'Installation ID not provided in pull_request.labeled event.' +
-            ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
+      const installationId = context.payload.installation?.id;
       const repoFullName = context.payload.repository.full_name;
+      const owner = context.payload.repository.owner.login;
+      const repo = context.payload.repository.name;
+      const prNumber = context.payload.pull_request.number;
 
       // Only proceeds if ADD_LABEL is added.
       if (context.payload.pull_request.labels === undefined) {
@@ -152,68 +88,21 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         return;
       }
 
-      const lock = new DatastoreLock('merge-queue', repoFullName);
-      const queueKey = createQueueKey(datastore, repoFullName);
-      let queueEntity: Queue;
-      try {
-        await lock.acquire();
-      } catch (e) {
-        const err = e as Error;
-        logger.error(`Failed to acquire a lock: ${err.message}`);
-        throw err;
-      }
-      const transaction = datastore.transaction();
-      try {
-        await transaction.run();
-        queueEntity = (await transaction.get(queueKey))[0];
-        if (queueEntity === undefined) {
-          queueEntity = {
-            repoFullName: repoFullName,
-            pullRequests: [],
-          };
-        }
-        if (
-          !queueEntity.pullRequests.includes(
-            context.payload.pull_request.number
-          )
-        ) {
-          queueEntity.pullRequests.push(context.payload.pull_request.number);
-          transaction.save({
-            key: queueKey,
-            data: queueEntity,
-          });
-        }
-        await transaction.commit();
-      } catch (e) {
-        const err = e as Error;
-        logger.error(`Failed to fetch data from datastore: ${err.message}`);
-        await transaction.rollback();
-        throw err;
-      } finally {
-        await lock.release();
-      }
+      await addPRToQueue(datastore, repoFullName, prNumber, logger);
 
       // Change the label
-      try {
-        await octokit.issues.removeLabel(context.issue({name: ADD_LABEL}));
-      } catch (e) {
-        const err = e as RequestError;
-        // Ignoring 404 errors.
-        if (err.status !== 404) {
-          throw err;
-        }
-      }
-      await octokit.issues.addLabels(context.issue({labels: [ADDED_LABEL]}));
+      await changeLabel(octokit, owner, repo, prNumber, ADD_LABEL, ADDED_LABEL);
 
       // Then enqueue another task.
       await enqueueTask(
         bootstrap,
         repoFullName,
-        context.payload.installation?.id,
-        context.payload.pull_request.number,
+        installationId,
+        prNumber,
         logger
       );
     });
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     app.on('schedule.repository' as any, async context => {
       let octokit: Octokit;
@@ -223,11 +112,11 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
       } else {
         throw new Error(
           'Installation ID not provided in schedule.repository event.' +
-            ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
-      const owner = context.payload.organization.login;
+      const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       if (context.payload.syncLabels === true) {
         await syncLabels(octokit, owner, repo, MERGE_QUEUE_LABELS);
@@ -236,7 +125,6 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
       if (context.payload.task_type === MERGE_QUEUE_CALLBACK) {
         const payload = context.payload as CallbackPayload;
         const repoFullName = payload.repository.full_name;
-        const queueKey = createQueueKey(datastore, repoFullName);
         const prNumber = payload.pr_number;
         let mergeEffortStartedAt = payload.merge_effort_started_at;
 
@@ -244,27 +132,27 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           `task received for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`
         );
 
-        const queueEntity: Queue = (await datastore.get(queueKey))[0];
-        if (queueEntity === undefined) {
+        const q: Queue | undefined = await getQueue(datastore, repoFullName);
+        if (q === undefined) {
           throw new Error(
             `Failed to get queueEntity for ${repoFullName}, prNumber: ${prNumber}`
           );
         }
 
-        if (queueEntity.pullRequests.length === 0) {
+        if (q.pullRequests.length === 0) {
           return;
         }
 
-        if (!queueEntity.pullRequests.includes(prNumber)) {
+        if (!q.pullRequests.includes(prNumber)) {
           logger.info(
             `${repoFullName}, prNumber: ${prNumber} is not in the queue.`
           );
           return;
         }
 
-        if (queueEntity.pullRequests[0] !== prNumber) {
+        if (q.pullRequests[0] !== prNumber) {
           // This pull request is not at the top of the queue.
-          const currentPosition = queueEntity.pullRequests.indexOf(prNumber);
+          const currentPosition = q.pullRequests.indexOf(prNumber);
           await addOrUpdateIssueComment(
             octokit,
             owner,
@@ -272,7 +160,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             prNumber,
             installationId,
             `This pr is at ${currentPosition + 1} / ` +
-              `${queueEntity.pullRequests.length} in the queue.`
+            `${q.pullRequests.length} in the queue.`
           );
           // Then enqueue another task.
           await enqueueTask(
@@ -312,13 +200,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         );
 
         if (pr.merged === true) {
-          await removePRFromQueue(
-            datastore,
-            queueKey,
-            repoFullName,
-            prNumber,
-            logger
-          );
+          await removePRFromQueue(datastore, repoFullName, prNumber, logger);
           return;
         }
 
@@ -332,13 +214,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             installationId,
             'The PR seems to have merge conflicts. Removing from the queue.'
           );
-          await removePRFromQueue(
-            datastore,
-            queueKey,
-            repoFullName,
-            prNumber,
-            logger
-          );
+          await removePRFromQueue(datastore, repoFullName, prNumber, logger);
           return;
         }
 
@@ -363,7 +239,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           );
         }
 
-        // We need to update the branch.
+        // If the branch is behind, we need to update the branch.
         if (pr.mergeable_state.toLowerCase() === 'behind') {
           const updateResult = await octokit.pulls.updateBranch({
             owner: owner,
@@ -383,13 +259,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             installationId,
             'The PR has not become mergeable after 1 hour, removing from the queue.'
           );
-          await removePRFromQueue(
-            datastore,
-            queueKey,
-            repoFullName,
-            prNumber,
-            logger
-          );
+          await removePRFromQueue(datastore, repoFullName, prNumber, logger);
           return;
         }
 
@@ -406,112 +276,4 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
       }
     });
   };
-}
-
-async function updatePRForRemoval(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  prNumber: number,
-  installationId: number,
-  reason: string
-) {
-  // Change the label
-  try {
-    await octokit.issues.removeLabel({
-      owner: owner,
-      repo: repo,
-      issue_number: prNumber,
-      name: ADDED_LABEL,
-    });
-  } catch (e) {
-    const err = e as RequestError;
-    // Ignoring 404 errors.
-    if (err.status !== 404) {
-      throw err;
-    }
-  }
-  await octokit.issues.addLabels({
-    owner: owner,
-    repo: repo,
-    issue_number: prNumber,
-    labels: [REMOVED_LABEL],
-  });
-  await addOrUpdateIssueComment(
-    octokit,
-    owner,
-    repo,
-    prNumber,
-    installationId,
-    reason
-  );
-}
-
-async function enqueueTask(
-  bootstrap: GCFBootstrapper,
-  repoFullName: string,
-  installationId: number,
-  prNumber: number,
-  logger: GCFLogger,
-  mergeEffortStartedAt: string | undefined = undefined
-) {
-  const core: CallbackCorePayload = {
-    task_type: MERGE_QUEUE_CALLBACK,
-    pr_number: prNumber,
-  };
-  if (mergeEffortStartedAt) {
-    core.merge_effort_started_at = mergeEffortStartedAt;
-  }
-  const body = createTaskBody(core, installationId, repoFullName);
-  try {
-    await bootstrap.enqueueTask(
-      {id: '', body: JSON.stringify(body), name: 'schedule.repository'},
-      logger,
-      /* delayInSeconds */ 60 + jitter()
-    );
-  } catch (e) {
-    const err = e as Error;
-    logger.error(`failed to enqueue a task: ${err.message}`);
-    throw err;
-  }
-}
-
-async function removePRFromQueue(
-  datastore: Datastore,
-  queueKey: Key,
-  repoFullName: string,
-  prNumber: number,
-  logger: GCFLogger
-) {
-  const lock = new DatastoreLock('merge-queue', repoFullName);
-  let queueEntity: Queue;
-  try {
-    await lock.acquire();
-  } catch (e) {
-    const err = e as Error;
-    logger.error(`Failed to acquire a lock: ${err.message}`);
-    throw err;
-  }
-
-  const transaction = datastore.transaction();
-  try {
-    await transaction.run();
-    queueEntity = (await transaction.get(queueKey))[0];
-    const pos = queueEntity.pullRequests.indexOf(prNumber);
-    if (pos !== -1) {
-      queueEntity.pullRequests.splice(pos, 1);
-    }
-    transaction.save({
-      key: queueKey,
-      data: queueEntity,
-    });
-    await transaction.commit();
-  } catch (e) {
-    const err = e as Error;
-    logger.error(`Failed to update data in datastore: ${err.message}`);
-    await transaction.rollback();
-    throw err;
-  } finally {
-    await lock.release();
-  }
 }
