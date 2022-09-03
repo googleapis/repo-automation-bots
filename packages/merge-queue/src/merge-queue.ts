@@ -39,6 +39,29 @@ import {
 
 const MERGE_QUEUE_CALLBACK = 'merge-queue-callback';
 
+export interface CallbackCorePayload {
+  task_type: string;
+  pr_number: number;
+  merge_effort_started_at?: string;
+}
+
+export interface CallbackPayload extends CallbackCorePayload {
+  repository: {
+    name: string;
+    full_name: string;
+    owner: {
+      login: string;
+      name: string;
+    };
+  };
+  organization: {
+    login: string;
+  };
+  installation: {
+    id: number;
+  };
+}
+
 function buildRepositoryDetails(repoFullName: string) {
   const [orgName, repoName] = repoFullName.split('/');
   return {
@@ -57,10 +80,10 @@ function buildRepositoryDetails(repoFullName: string) {
 }
 
 function createTaskBody(
-  body: object,
+  body: CallbackCorePayload,
   installationId: number,
   repoFullName: string
-) {
+): CallbackPayload {
   return {
     ...body,
     ...buildRepositoryDetails(repoFullName),
@@ -194,10 +217,9 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     app.on('schedule.repository' as any, async context => {
       let octokit: Octokit;
-      if (context.payload.installation?.id) {
-        octokit = await getAuthenticatedOctokit(
-          context.payload.installation.id
-        );
+      const installationId = context.payload.installation?.id;
+      if (installationId) {
+        octokit = await getAuthenticatedOctokit(installationId);
       } else {
         throw new Error(
           'Installation ID not provided in schedule.repository event.' +
@@ -212,9 +234,11 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         return;
       }
       if (context.payload.task_type === MERGE_QUEUE_CALLBACK) {
-        const repoFullName = context.payload.repository.full_name;
+        const payload = context.payload as CallbackPayload;
+        const repoFullName = payload.repository.full_name;
         const queueKey = createQueueKey(datastore, repoFullName);
-        const prNumber = context.payload.pr_number;
+        const prNumber = payload.pr_number;
+        let mergeEffortStartedAt = payload.merge_effort_started_at;
 
         logger.info(
           `task received for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`
@@ -246,7 +270,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             owner,
             repo,
             prNumber,
-            context.payload.installation.id,
+            installationId,
             `This pr is at ${currentPosition + 1} / ` +
               `${queueEntity.pullRequests.length} in the queue.`
           );
@@ -254,7 +278,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           await enqueueTask(
             bootstrap,
             repoFullName,
-            context.payload.installation?.id,
+            installationId,
             prNumber,
             logger
           );
@@ -262,25 +286,32 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         }
 
         // This pull request is at the top of the queue.
-        await addOrUpdateIssueComment(
-          octokit,
-          owner,
-          repo,
-          prNumber,
-          context.payload.installation.id,
-          "This pr is at top of the queue, I'm on it."
-        );
+        if (mergeEffortStartedAt === undefined) {
+          await addOrUpdateIssueComment(
+            octokit,
+            owner,
+            repo,
+            prNumber,
+            installationId,
+            "This pr is at top of the queue, I'm on it."
+          );
+        }
         const response = await octokit.pulls.get({
           owner: owner,
           repo: repo,
           pull_number: prNumber,
         });
+        const pr = response.data;
+        if (mergeEffortStartedAt === undefined) {
+          // preserve the time we started the effort
+          mergeEffortStartedAt = pr.updated_at;
+        }
 
         logger.info(
-          `mergeable: ${response.data.mergeable}, mergeable_state: ${response.data.mergeable_state}, merged: ${response.data.merged}  for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`
+          `mergeable: ${pr.mergeable}, mergeable_state: ${pr.mergeable_state}, merged: ${pr.merged}  for owner: ${owner}, repo: ${repo}, prNumber: ${prNumber}`
         );
 
-        if (response.data.merged === true) {
+        if (pr.merged === true) {
           await removePRFromQueue(
             datastore,
             queueKey,
@@ -292,13 +323,13 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         }
 
         // `dirty` means there's merge conflict
-        if (response.data.mergeable_state.toLowerCase() === 'dirty') {
+        if (pr.mergeable_state.toLowerCase() === 'dirty') {
           await updatePRForRemoval(
             octokit,
             owner,
             repo,
             prNumber,
-            context.payload.installation.id,
+            installationId,
             'The PR seems to have merge conflicts. Removing from the queue.'
           );
           await removePRFromQueue(
@@ -311,27 +342,29 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           return;
         }
 
+        // If the PR is mergeable, let's merge.
         // TODO: Make the OK state configurable.
         // `unstable` means there's a failing test which is not mandatory.
         if (
-          response.data.mergeable &&
-          (response.data.mergeable_state.toLowerCase() === 'clean' ||
-            response.data.mergeable_state.toLowerCase() === 'unstable')
+          pr.mergeable &&
+          (pr.mergeable_state.toLowerCase() === 'clean' ||
+            pr.mergeable_state.toLowerCase() === 'unstable')
         ) {
           const mergeResult = await octokit.pulls.merge({
             owner: owner,
             repo: repo,
             pull_number: prNumber,
-            commit_title: `${response.data.title} (#${prNumber})`,
-            commit_message: response.data.body || '',
+            commit_title: `${pr.title} (#${prNumber})`,
+            commit_message: pr.body || '',
             merge_method: 'squash',
           });
           logger.info(
-            `Merged: ${mergeResult.data.merged}, repo: ${repoFullName}, prNumber: ${prNumber}`
+            `Merge result: ${mergeResult.data.merged}, repo: ${repoFullName}, prNumber: ${prNumber}`
           );
         }
 
-        if (response.data.mergeable_state.toLowerCase() === 'behind') {
+        // We need to update the branch.
+        if (pr.mergeable_state.toLowerCase() === 'behind') {
           const updateResult = await octokit.pulls.updateBranch({
             owner: owner,
             repo: repo,
@@ -340,14 +373,14 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           logger.info(`Updated with the message: ${updateResult.data.message}`);
         }
 
-        // TODO: configurable timeout.
-        if (hoursOld(response.data.updated_at) > 1) {
+        // Timeout. TODO: configurable timeout.
+        if (mergeEffortStartedAt && hoursOld(mergeEffortStartedAt) > 1) {
           await updatePRForRemoval(
             octokit,
             owner,
             repo,
             prNumber,
-            context.payload.installation.id,
+            installationId,
             'The PR has not become mergeable after 1 hour, removing from the queue.'
           );
           await removePRFromQueue(
@@ -364,9 +397,10 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         await enqueueTask(
           bootstrap,
           repoFullName,
-          context.payload.installation?.id,
+          installationId,
           prNumber,
-          logger
+          logger,
+          mergeEffortStartedAt
         );
         return;
       }
@@ -418,16 +452,17 @@ async function enqueueTask(
   repoFullName: string,
   installationId: number,
   prNumber: number,
-  logger: GCFLogger
+  logger: GCFLogger,
+  mergeEffortStartedAt: string | undefined = undefined
 ) {
-  const body = createTaskBody(
-    {
-      task_type: MERGE_QUEUE_CALLBACK,
-      pr_number: prNumber,
-    },
-    installationId,
-    repoFullName
-  );
+  const core: CallbackCorePayload = {
+    task_type: MERGE_QUEUE_CALLBACK,
+    pr_number: prNumber,
+  };
+  if (mergeEffortStartedAt) {
+    core.merge_effort_started_at = mergeEffortStartedAt;
+  }
+  const body = createTaskBody(core, installationId, repoFullName);
   try {
     await bootstrap.enqueueTask(
       {id: '', body: JSON.stringify(body), name: 'schedule.repository'},
