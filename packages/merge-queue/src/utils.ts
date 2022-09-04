@@ -101,36 +101,6 @@ export async function addPRToQueue(
   return queueEntity;
 }
 
-export async function changeLabel(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  from: string,
-  to: string
-) {
-  try {
-    await octokit.issues.removeLabel({
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      name: from,
-    });
-  } catch (e) {
-    const err = e as RequestError;
-    // Ignoring 404 errors.
-    if (err.status !== 404) {
-      throw err;
-    }
-  }
-  await octokit.issues.addLabels({
-    owner: owner,
-    repo: repo,
-    issue_number: issueNumber,
-    labels: [to],
-  });
-}
-
 export async function getQueue(
   datastore: Datastore,
   repoFullName: string
@@ -166,6 +136,36 @@ export async function removePRFromQueue(
     await transaction.rollback();
     throw err;
   }
+}
+
+export async function changeLabel(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  from: string,
+  to: string
+) {
+  try {
+    await octokit.issues.removeLabel({
+      owner: owner,
+      repo: repo,
+      issue_number: issueNumber,
+      name: from,
+    });
+  } catch (e) {
+    const err = e as RequestError;
+    // Ignoring 404 errors.
+    if (err.status !== 404) {
+      throw err;
+    }
+  }
+  await octokit.issues.addLabels({
+    owner: owner,
+    repo: repo,
+    issue_number: issueNumber,
+    labels: [to],
+  });
 }
 
 export async function updatePRForRemoval(

@@ -64,7 +64,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
       } else {
         throw new Error(
           'Installation ID not provided in pull_request.labeled event.' +
-          ' We cannot authenticate Octokit.'
+            ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
@@ -112,7 +112,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
       } else {
         throw new Error(
           'Installation ID not provided in schedule.repository event.' +
-          ' We cannot authenticate Octokit.'
+            ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
@@ -160,7 +160,7 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
             prNumber,
             installationId,
             `This pr is at ${currentPosition + 1} / ` +
-            `${q.pullRequests.length} in the queue.`
+              `${q.pullRequests.length} in the queue.`
           );
           // Then enqueue another task.
           await enqueueTask(
@@ -237,20 +237,16 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           logger.info(
             `Merge result: ${mergeResult.data.merged}, repo: ${repoFullName}, prNumber: ${prNumber}`
           );
-        }
-
-        // If the branch is behind, we need to update the branch.
-        if (pr.mergeable_state.toLowerCase() === 'behind') {
+        } else if (pr.mergeable_state.toLowerCase() === 'behind') {
+          // If the branch is behind, we need to update the branch.
           const updateResult = await octokit.pulls.updateBranch({
             owner: owner,
             repo: repo,
             pull_number: prNumber,
           });
           logger.info(`Updated with the message: ${updateResult.data.message}`);
-        }
-
-        // Timeout. TODO: configurable timeout.
-        if (mergeEffortStartedAt && hoursOld(mergeEffortStartedAt) > 1) {
+        } else if (mergeEffortStartedAt && hoursOld(mergeEffortStartedAt) > 1) {
+          // Timeout. TODO: configurable timeout.
           await updatePRForRemoval(
             octokit,
             owner,
