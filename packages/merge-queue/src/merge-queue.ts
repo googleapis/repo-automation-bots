@@ -101,6 +101,9 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
         prNumber,
         logger
       );
+      logger.metric('merge_queue.added', {
+        repo: `${owner}/${repo}`,
+      });
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -237,6 +240,11 @@ export function createAppFn(bootstrap: GCFBootstrapper) {
           logger.info(
             `Merge result: ${mergeResult.data.merged}, repo: ${repoFullName}, prNumber: ${prNumber}`
           );
+          if (mergeResult.data.merged) {
+            logger.metric('merge_queue.merged', {
+              repo: `${owner}/${repo}`,
+            });
+          }
         } else if (pr.mergeable_state.toLowerCase() === 'behind') {
           // If the branch is behind, we need to update the branch.
           const updateResult = await octokit.pulls.updateBranch({

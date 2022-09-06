@@ -407,7 +407,7 @@ describe('merge-queue bot', () => {
           commit_message: '',
           merge_method: 'squash',
         })
-        .reply(200, 'ok');
+        .reply(200, {merged: true});
 
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
