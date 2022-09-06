@@ -37,9 +37,9 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
     "@types/jsonpath": "^0.2.0",
-    "@types/minimatch": "^5.1.0",
+    "@types/minimatch": "^5.1.2",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.13",
+    "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
