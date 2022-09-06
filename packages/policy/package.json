@@ -34,7 +34,7 @@
     "gaxios": "^5.0.1",
     "gcf-utils": "^14.0.1",
     "lru-cache": "^7.14.0",
-    "uuid": "^8.3.2"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
