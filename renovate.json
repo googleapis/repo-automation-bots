@@ -19,9 +19,22 @@
     {
       "packageNames": ["google.golang.org/genproto"],
       "schedule": "after 7pm on monday"
+    },
+    {
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
     }
   ],
   "lockFileMaintenance": {
     "enabled": true
   }
+  "additionalBranchPrefix": "{{parentDir}}-"
+  
 }
