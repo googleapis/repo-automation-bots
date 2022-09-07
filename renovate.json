@@ -30,6 +30,18 @@
       ],
       "groupName": "all non-major dependencies",
       "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchPackagePatterns": [
+        "@octokit/*"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "groupName": "all octokit dependencies",
+      "groupSlug": "octokit-all"
     }
   ],
   "lockFileMaintenance": {
