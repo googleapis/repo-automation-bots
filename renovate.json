@@ -2,9 +2,9 @@
   "extends": [
     "config:base",
     "docker:disable",
-    ":disableDependencyDashboard",
     "helpers:pinGitHubActionDigests"
   ],
+  "dependencyDashboard": true,
   "pinVersions": false,
   "rebaseStalePrs": true,
   "schedule": [
@@ -28,7 +28,8 @@
         "major"
       ],
       "groupName": "octokit major dependencies",
-      "groupSlug": "octokit-major-patch"
+      "groupSlug": "octokit-major-patch",
+      "stabilityDays": 30
     },
     {
       "matchPackagePatterns": [
@@ -39,7 +40,8 @@
         "patch"
       ],
       "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch"
+      "groupSlug": "all-minor-patch",
+      "stabilityDays": 30
     }
   ],
   "lockFileMaintenance": {
