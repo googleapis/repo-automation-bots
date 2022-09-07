@@ -34,11 +34,11 @@
     "@octokit/rest": "^19.0.4",
     "@octokit/webhooks": "^10.1.5",
     "gcf-utils": "^14.0.1",
-    "release-please": "^14.3.0"
+    "release-please": "^14.3.1"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.13",
+    "@types/node": "^18.7.15",
     "@types/semver": "^7.3.12",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
