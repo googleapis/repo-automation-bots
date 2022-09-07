@@ -25,12 +25,10 @@
         "@octokit/*"
       ],
       "matchUpdateTypes": [
-        "major",
-        "minor",
-        "patch"
+        "major"
       ],
-      "groupName": "all octokit dependencies",
-      "groupSlug": "octokit-all"
+      "groupName": "octokit major dependencies",
+      "groupSlug": "octokit-major-patch"
     },
     {
       "matchPackagePatterns": [
