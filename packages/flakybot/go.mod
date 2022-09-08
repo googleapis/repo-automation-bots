@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	cloud.google.com/go/pubsub v1.25.1
-	github.com/google/go-cmp v0.5.8
-	google.golang.org/api v0.94.0
+	github.com/google/go-cmp v0.5.9
+	google.golang.org/api v0.95.0
 )
 
 require (

@@ -2,9 +2,9 @@
   "extends": [
     "config:base",
     "docker:disable",
-    ":disableDependencyDashboard",
     "helpers:pinGitHubActionDigests"
   ],
+  "dependencyDashboard": true,
   "pinVersions": false,
   "rebaseStalePrs": true,
   "schedule": [
@@ -19,9 +19,34 @@
     {
       "packageNames": ["google.golang.org/genproto"],
       "schedule": "after 7pm on monday"
+    },
+    {
+      "matchPackagePatterns": [
+        "@octokit/*"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": "octokit major dependencies",
+      "groupSlug": "octokit-major-patch",
+      "stabilityDays": 30
+    },
+    {
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch",
+      "stabilityDays": 30
     }
   ],
   "lockFileMaintenance": {
     "enabled": true
-  }
+  },
+  "additionalBranchPrefix": "{{parentDir}}-",
+  "commitMessageAction": "[{{parentDir}}] update"
 }
