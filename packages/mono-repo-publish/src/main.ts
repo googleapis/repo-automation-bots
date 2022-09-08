@@ -17,6 +17,7 @@ import {createAppAuth} from '@octokit/auth-app';
 import * as fs from 'fs';
 import {dirname, join, resolve} from 'path';
 import * as childProcess from 'child_process';
+import * as mm from 'minimatch';
 
 interface PullRequest {
   owner: string;
@@ -84,14 +85,21 @@ export async function getsPRFiles(
 }
 
 // list out the submodules that were changed
-export function listChangedSubmodules(prFiles: string[]): string[] {
+export function listChangedSubmodules(
+  prFiles: string[],
+  excludeGlobs: string[] = []
+): string[] {
+  const globs = excludeGlobs.map(glob => new mm.Minimatch(glob));
   // Only checking for package.jsons in submodules that were changed
   // Not checking the top-level package.json
-  const files = prFiles.filter(file =>
+  let files = prFiles.filter(file =>
     file.match(/\/package\.json$|^package\.json$/)
   );
-  const directories = files.map(x => dirname(x));
-  return directories;
+  for (const glob of globs) {
+    files = files.filter(file => !glob.match(file));
+  }
+  const directories = new Set(files.map(x => dirname(x)));
+  return Array.from(directories);
 }
 
 interface ExecutionOutput {
