@@ -34,6 +34,7 @@ const ALLOWED_COMMENTER_ASSOCIATIONS = new Set([
 
 interface Configuration {
   enabled?: boolean;
+  preservePullRequestTitle?: boolean;
 }
 
 export = (app: Probot) => {
@@ -91,6 +92,7 @@ export = (app: Probot) => {
       number: number;
       baseRef: string;
       isMerged: boolean;
+      title: string;
     };
     try {
       const {data: pullData} = await octokit.pulls.get(
@@ -103,6 +105,7 @@ export = (app: Probot) => {
         number: pullData.number,
         baseRef: pullData.base.ref,
         isMerged: pullData.merged,
+        title: pullData.title,
       };
     } catch (e) {
       if (e instanceof RequestError && e.status === 404) {
@@ -142,6 +145,7 @@ export = (app: Probot) => {
       repo,
       [pullRequest.sha!],
       targetBranch,
+      remoteConfig.preservePullRequestTitle ? pullRequest.title : undefined,
       logger
     );
   });
@@ -240,6 +244,7 @@ export = (app: Probot) => {
         repo,
         [context.payload.pull_request.merge_commit_sha],
         targetBranch,
+        remoteConfig.preservePullRequestTitle ? context.payload.pull_request.title : undefined,
         logger
       );
     }
