@@ -55,9 +55,7 @@ describe('JavaApiaryCodegen', () => {
     assert.deepStrictEqual(rule.incomingPR, expectation.incomingPR);
     assert.deepStrictEqual(rule.classRule, expectation.classRule);
     assert.deepStrictEqual(rule.octokit, octokit);
-    assert.ok(
-      'Regenerate sqladmin client'.match(rule.classRule.titleRegex)
-    );
+    assert.ok('Regenerate sqladmin client'.match(rule.classRule.titleRegex));
     assert.ok(
       'chore: regenerate sqladmin client'.match(rule.classRule.titleRegex)
     );
