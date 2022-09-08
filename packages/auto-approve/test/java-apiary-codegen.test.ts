@@ -47,7 +47,7 @@ describe('JavaApiaryCodegen', () => {
       },
       classRule: {
         author: 'yoshi-code-bot',
-        titleRegex: /^Regenerate .* client$/,
+        titleRegex: /^(chore:\s)?[Rr]egenerate .* client$/,
       },
       octokit,
     };
@@ -55,6 +55,8 @@ describe('JavaApiaryCodegen', () => {
     assert.deepStrictEqual(rule.incomingPR, expectation.incomingPR);
     assert.deepStrictEqual(rule.classRule, expectation.classRule);
     assert.deepStrictEqual(rule.octokit, octokit);
+    assert.ok("Regenerate sqladmin client".match(rule.classRule.titleRegex));
+    assert.ok("chore: regenerate sqladmin client".match(rule.classRule.titleRegex));
   });
 
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
