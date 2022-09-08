@@ -531,25 +531,5 @@ describe('cherry-pick-bot', () => {
       sinon.assert.notCalled(cherryPickPullRequestStub);
       requests.done();
     });
-
-    it('ignores closed pull request', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_closed'
-      ));
-
-      sandbox
-        .stub(botConfigUtilsModule, 'getConfig')
-        .resolves({enabled: true, preservePullRequestTitle: true});
-
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
-      });
-
-      sinon.assert.notCalled(cherryPickPullRequestStub);
-    });
   });
 });

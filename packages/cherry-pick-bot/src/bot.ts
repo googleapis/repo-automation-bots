@@ -145,7 +145,9 @@ export = (app: Probot) => {
       repo,
       [pullRequest.sha!],
       targetBranch,
-      remoteConfig.preservePullRequestTitle ? pullRequest.title : undefined,
+      remoteConfig.preservePullRequestTitle
+        ? `cherry-pick ${pullRequest.title} (#${pullRequest.number})`
+        : undefined,
       logger
     );
   });
@@ -245,7 +247,7 @@ export = (app: Probot) => {
         [context.payload.pull_request.merge_commit_sha],
         targetBranch,
         remoteConfig.preservePullRequestTitle
-          ? context.payload.pull_request.title
+          ? `cherry-pick ${context.payload.pull_request.title} (#${context.payload.pull_request.number})`
           : undefined,
         logger
       );
