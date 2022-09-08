@@ -19,9 +19,10 @@ import {RequestError} from '@octokit/request-error';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
-import {getConfig} from '@google-automations/bot-config-utils';
+import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {parseCherryPickComment, cherryPickAsPullRequest} from './cherry-pick';
 import {branchRequiresReviews} from './branch-protection';
+import schema from './config-schema.json';
 
 const CONFIGURATION_FILE_PATH = 'cherry-pick-bot.yml';
 
@@ -54,7 +55,8 @@ export = (app: Probot) => {
       octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
     if (!remoteConfig) {
       logger.debug(`cherry-pick-bot not configured for ${owner}/${repo}`);
@@ -164,6 +166,21 @@ export = (app: Probot) => {
           ' We cannot authenticate Octokit.'
       );
     }
+
+    // We should first check the config schema. Otherwise, we'll miss
+    // the opportunity for checking the schema when adding the config
+    // file for the first time.
+    const configChecker = new ConfigChecker<Configuration>(
+      schema,
+      CONFIGURATION_FILE_PATH
+    );
+    await configChecker.validateConfigChanges(
+      octokit,
+      owner,
+      repo,
+      context.payload.pull_request.head.sha,
+      context.payload.pull_request.number
+    );
     const remoteConfig = await getConfig<Configuration>(
       octokit,
       owner,
