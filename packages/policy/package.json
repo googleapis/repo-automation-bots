@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@google-cloud/bigquery": "^6.0.2",
-    "code-suggester": "^4.0.1",
+    "code-suggester": "^4.1.0",
     "gaxios": "^5.0.1",
     "gcf-utils": "^14.0.1",
     "lru-cache": "^7.14.0",
@@ -38,18 +38,18 @@
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.9",
+    "@types/node": "^18.7.16",
     "@types/sinon": "^10.0.13",
     "@types/uuid": "^8.3.4",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
-    "gts": "^3.1.0",
+    "gts": "^3.1.1",
     "meow": "^9.0.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
     "sinon": "^14.0.0",
     "smee-client": "^1.2.3",
-    "typescript": "~4.7.4"
+    "typescript": "~4.8.2"
   },
   "optionalDependencies": { "fsevents": "*" },
   "engines": {
