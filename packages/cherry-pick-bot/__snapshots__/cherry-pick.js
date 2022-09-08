@@ -88,6 +88,6 @@ exports['cherryPickAsPullRequest opens a pull request with title preserved 2'] =
   {
     head: 'cherry-pick-e99a18-dev',
     base: 'dev',
-    title: 'cherry-pick title from original PR (#1234)',
+    title: 'title from original PR (cherry-pick #1234)',
     body: '\n\nCherry-picked commit message for abc123',
   };

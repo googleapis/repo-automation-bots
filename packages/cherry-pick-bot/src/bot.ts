@@ -266,9 +266,6 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
-      const logger = getContextLogger(context);
-      const {owner, repo} = context.repo();
-      const repoUrl = context.payload.repository.full_name;
       let octokit: Octokit;
       if (context.payload.installation?.id) {
         octokit = await getAuthenticatedOctokit(
@@ -280,6 +277,10 @@ export = (app: Probot) => {
             ' We cannot authenticate Octokit.'
         );
       }
+
+      const logger = getContextLogger(context);
+      const {owner, repo} = context.repo();
+      const repoUrl = context.payload.repository.full_name;
 
       // We should first check the config schema. Otherwise, we'll miss
       // the opportunity for checking the schema when adding the config

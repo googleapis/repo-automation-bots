@@ -52,7 +52,6 @@ describe('cherry-pick-bot config validation', () => {
 
   let getAuthenticatedOctokitStub: sinon.SinonStub;
   let getConfigStub: sinon.SinonStub;
-  let cherryPickPullRequestStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -69,10 +68,6 @@ describe('cherry-pick-bot config validation', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    cherryPickPullRequestStub = sandbox.stub(
-      cherryPickModule,
-      'cherryPickAsPullRequest'
-    );
 
     getConfigStub.resolves({enabled: true, bla: 'foo'});
     getAuthenticatedOctokitStub.resolves(new Octokit());
@@ -87,19 +82,16 @@ describe('cherry-pick-bot config validation', () => {
     const payload = require(resolve(
       fixturesPath,
       'events',
-      'pull_request_merged'
+      'pull_request_opened'
     ));
     const files_payload = require(resolve(
       fixturesPath,
       'data',
       'pull_request_files_config_added'
     ));
-    const comments = require(resolve(fixturesPath, 'data', 'issue_comments'));
     const configBlob = createConfigResponse('config/broken-config.yml');
 
     const requests = nock('https://api.github.com')
-      .get('/repos/Codertocat/Hello-World/issues/2/comments')
-      .reply(200, comments)
       .get('/repos/Codertocat/Hello-World/pulls/2/files?per_page=50')
       .reply(200, files_payload)
       .get(
@@ -111,18 +103,6 @@ describe('cherry-pick-bot config validation', () => {
         return true;
       })
       .reply(200);
-
-    sandbox
-      .stub(branchProtectionModule, 'branchRequiresReviews')
-      .withArgs(sinon.match.any, 'Codertocat', 'Hello-World', 'feature-branch')
-      .resolves(false);
-
-    cherryPickPullRequestStub.resolves({
-      number: 123,
-      html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
-      title: 'chore: cherry-pick abc123',
-      body: null,
-    });
 
     await probot.receive({
       name: 'pull_request',
@@ -137,37 +117,22 @@ describe('cherry-pick-bot config validation', () => {
     const payload = require(resolve(
       fixturesPath,
       'events',
-      'pull_request_merged'
+      'pull_request_opened'
     ));
     const files_payload = require(resolve(
       fixturesPath,
       'data',
       'pull_request_files_config_added'
     ));
-    const comments = require(resolve(fixturesPath, 'data', 'issue_comments'));
     const configBlob = createConfigResponse('config/valid-config.yml');
 
     const requests = nock('https://api.github.com')
-      .get('/repos/Codertocat/Hello-World/issues/2/comments')
-      .reply(200, comments)
       .get('/repos/Codertocat/Hello-World/pulls/2/files?per_page=50')
       .reply(200, files_payload)
       .get(
         '/repos/Codertocat/Hello-World/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
       )
       .reply(200, configBlob);
-
-    sandbox
-      .stub(branchProtectionModule, 'branchRequiresReviews')
-      .withArgs(sinon.match.any, 'Codertocat', 'Hello-World', 'feature-branch')
-      .resolves(false);
-
-    cherryPickPullRequestStub.resolves({
-      number: 123,
-      html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
-      title: 'chore: cherry-pick abc123',
-      body: null,
-    });
 
     await probot.receive({
       name: 'pull_request',
