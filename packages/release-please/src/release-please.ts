@@ -236,6 +236,7 @@ async function buildManifest(
     labels: configuration.releaseLabels,
     releaseLabels: configuration.releaseLabel?.split(','),
     plugins,
+    logger,
   };
   return await Manifest.fromConfig(
     github,
