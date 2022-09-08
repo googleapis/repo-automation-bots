@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.4.1...mono-repo-publish-v1.5.0) (2022-09-08)
+
+
+### Features
+
+* add --exclude-files option ([#4368](https://github.com/googleapis/repo-automation-bots/issues/4368)) ([9c9664d](https://github.com/googleapis/repo-automation-bots/commit/9c9664d368661634249cc19819eb40ce09db2dd6))
+
 ## [1.4.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.3.0...mono-repo-publish-v1.4.1) (2022-08-08)
 
 
