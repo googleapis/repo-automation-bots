@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.0.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.0.1...gcf-utils-v14.0.2) (2022-09-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uuid to v9 ([#4347](https://github.com/googleapis/repo-automation-bots/issues/4347)) ([4144f3c](https://github.com/googleapis/repo-automation-bots/commit/4144f3c347c9ba5de6e16cf67110004dfc1e8cc6))
+
 ## [14.0.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.0.0...gcf-utils-v14.0.1) (2022-08-15)
 
 
