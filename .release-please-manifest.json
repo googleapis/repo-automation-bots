@@ -6,7 +6,7 @@
   "packages/git-file-utils": "1.2.0",
   "packages/issue-utils": "2.0.0",
   "packages/label-utils": "3.0.0",
-  "packages/mono-repo-publish": "1.4.1",
+  "packages/mono-repo-publish": "1.5.0",
   "packages/object-selector": "3.0.0",
   "packages/release-brancher": "1.3.3"
 }
