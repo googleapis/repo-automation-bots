@@ -50,7 +50,7 @@ export class JavaApiaryCodegen extends Process implements LanguageRule {
     ),
       (this.classRule = {
         author: 'yoshi-code-bot',
-        titleRegex: /^Regenerate .* client$/,
+        titleRegex: /^(chore:\s)?[Rr]egenerate .* client$/,
       });
   }
 
