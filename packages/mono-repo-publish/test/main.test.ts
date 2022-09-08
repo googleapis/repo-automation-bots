@@ -88,6 +88,14 @@ describe('mono-repo publish', () => {
     ]);
   });
 
+  it('skips exclude globs', () => {
+    const submodules = core.listChangedSubmodules(
+      changedFiles.map(l => l.filename),
+      ['**/firstPackage/*']
+    );
+    assert.deepStrictEqual(submodules, ['packages/secondPackage', '.']);
+  });
+
   it('passes in the right arguments for npm publish', () => {
     core.publishSubmodules(['foo'], false);
     sandbox.assert.calledWith(

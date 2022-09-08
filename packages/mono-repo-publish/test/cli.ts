@@ -122,6 +122,30 @@ describe('CLI', () => {
         sinon.match({cwd: 'packages/pkg1'})
       );
     });
+    it('excludes files', async () => {
+      getOctokitStub.resolves(sandbox.spy());
+      getFilesStub.resolves([
+        'packages/pkg1/package.json',
+        'packages/pkg1/package-lock.json',
+      ]);
+      sandbox.stub(process, 'env').value({
+        APP_ID_PATH: './test/fixtures/app-id',
+        INSTALLATION_ID_PATH: './test/fixtures/installation-id',
+        GITHUB_PRIVATE_KEY_PATH: './test/fixtures/private-key',
+      });
+      await parser.parseAsync(
+        '--pr-url=https://github.com/testOwner/testRepo/pull/1234 --exclude-files=**/pkg1/* --dry-run'
+      );
+
+      sinon.assert.calledOnceWithExactly(
+        getOctokitStub,
+        './test/fixtures/app-id',
+        './test/fixtures/private-key',
+        './test/fixtures/installation-id'
+      );
+      sinon.assert.calledOnce(getFilesStub);
+      sinon.assert.notCalled(execSync);
+    });
   });
 
   describe('custom', () => {

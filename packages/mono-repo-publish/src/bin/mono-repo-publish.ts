@@ -22,6 +22,7 @@ interface CommonArgs {
   'app-id-path'?: string;
   'private-key-path'?: string;
   'installation-id-path'?: string;
+  'exclude-files': string[];
 }
 interface PublishArgs extends CommonArgs {
   'dry-run': boolean;
@@ -64,6 +65,11 @@ function parseCommonArgs(yargs: yargs.Argv): yargs.Argv<CommonArgs> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any,
       demand: true,
+    })
+    .option('exclude-files', {
+      describe: 'glob of paths to exclude',
+      type: 'array',
+      default: [],
     });
 }
 
@@ -97,7 +103,7 @@ const publishCommand: yargs.CommandModule<{}, PublishArgs> = {
       throw Error(`Could not find PR from ${argv.prUrl}`);
     }
     const files = await core.getsPRFiles(pr, octokit);
-    const submodules = core.listChangedSubmodules(files);
+    const submodules = core.listChangedSubmodules(files, argv['exclude-files']);
     const errors = core.publishSubmodules(submodules, argv['dry-run']);
     if (errors.length) {
       throw Error('some publications failed, see logs');
@@ -135,7 +141,7 @@ const publishCustomCommand: yargs.CommandModule<{}, PublishCustomArgs> = {
       throw Error(`Could not find PR from ${argv.prUrl}`);
     }
     const files = await core.getsPRFiles(pr, octokit);
-    const submodules = core.listChangedSubmodules(files);
+    const submodules = core.listChangedSubmodules(files, argv['exclude-files']);
     const errors = core.publishCustom(submodules, argv['script']);
     if (errors.length) {
       throw Error('some publications failed, see logs');
