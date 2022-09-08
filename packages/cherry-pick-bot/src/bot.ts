@@ -244,7 +244,9 @@ export = (app: Probot) => {
         repo,
         [context.payload.pull_request.merge_commit_sha],
         targetBranch,
-        remoteConfig.preservePullRequestTitle ? context.payload.pull_request.title : undefined,
+        remoteConfig.preservePullRequestTitle
+          ? context.payload.pull_request.title
+          : undefined,
         logger
       );
     }

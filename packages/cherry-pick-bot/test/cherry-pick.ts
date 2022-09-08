@@ -232,4 +232,47 @@ describe('cherryPickAsPullRequest', () => {
     assert.strictEqual(pullRequest.body, 'body from API');
     req.done();
   });
+
+  it('opens a pull request with title preserved', async () => {
+    const req = nock('https://api.github.com')
+      .get('/repos/testOwner/testRepo/branches/dev')
+      .reply(200, {commit: {sha: 'basesha'}})
+      .post('/repos/testOwner/testRepo/git/refs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200)
+      .post('/repos/testOwner/testRepo/pulls', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200, (_uri, requestBody) => ({
+        number: 1234,
+        html_url: 'https://github.com/testOwner/testRepo/pull/1234',
+        title: (requestBody as any).title,
+        body: 'body from API',
+      }));
+
+    sandbox
+      .stub(CherryPickModule, 'cherryPickCommits')
+      .resolves([{message: 'commit message for abc123', sha: 'abc123'}]);
+    const commits = ['abc123'];
+    const pullRequest = await cherryPickAsPullRequest(
+      octokit,
+      'testOwner',
+      'testRepo',
+      commits,
+      'dev',
+      'title from original PR'
+    );
+
+    assert.strictEqual(pullRequest.number, 1234);
+    assert.strictEqual(
+      pullRequest.html_url,
+      'https://github.com/testOwner/testRepo/pull/1234'
+    );
+    assert.strictEqual(pullRequest.title, 'title from original PR');
+    assert.strictEqual(pullRequest.body, 'body from API');
+    req.done();
+  });
 });
