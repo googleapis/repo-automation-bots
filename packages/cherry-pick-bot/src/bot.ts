@@ -148,7 +148,7 @@ export = (app: Probot) => {
       [pullRequest.sha!],
       targetBranch,
       remoteConfig.preservePullRequestTitle
-        ? `cherry-pick ${pullRequest.title} (#${pullRequest.number})`
+        ? `${pullRequest.title} (cherry-pick #${pullRequest.number})`
         : undefined,
       logger
     );
@@ -167,25 +167,12 @@ export = (app: Probot) => {
       );
     }
 
-    // We should first check the config schema. Otherwise, we'll miss
-    // the opportunity for checking the schema when adding the config
-    // file for the first time.
-    const configChecker = new ConfigChecker<Configuration>(
-      schema,
-      CONFIGURATION_FILE_PATH
-    );
-    await configChecker.validateConfigChanges(
-      octokit,
-      owner,
-      repo,
-      context.payload.pull_request.head.sha,
-      context.payload.pull_request.number
-    );
     const remoteConfig = await getConfig<Configuration>(
       octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
     if (!remoteConfig) {
       logger.debug(`cherry-pick-bot not configured for ${owner}/${repo}`);
@@ -264,10 +251,53 @@ export = (app: Probot) => {
         [context.payload.pull_request.merge_commit_sha],
         targetBranch,
         remoteConfig.preservePullRequestTitle
-          ? `cherry-pick ${context.payload.pull_request.title} (#${context.payload.pull_request.number})`
+          ? `${context.payload.pull_request.title} (cherry-pick #${context.payload.pull_request.number})`
           : undefined,
         logger
       );
     }
   });
+
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+    ],
+    async context => {
+      const logger = getContextLogger(context);
+      const {owner, repo} = context.repo();
+      const repoUrl = context.payload.repository.full_name;
+      let octokit: Octokit;
+      if (context.payload.installation?.id) {
+        octokit = await getAuthenticatedOctokit(
+          context.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          'Installation ID not provided in pull_request event.' +
+            ' We cannot authenticate Octokit.'
+        );
+      }
+
+      // We should first check the config schema. Otherwise, we'll miss
+      // the opportunity for checking the schema when adding the config
+      // file for the first time.
+      const configChecker = new ConfigChecker<Configuration>(
+        schema,
+        CONFIGURATION_FILE_PATH
+      );
+      const valid = await configChecker.validateConfigChanges(
+        octokit,
+        owner,
+        repo,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
+      if (!valid) {
+        logger.info(`cherry-pick-bot config is not valid for ${repoUrl}.`);
+      }
+    }
+  );
 };

@@ -263,7 +263,7 @@ describe('cherryPickAsPullRequest', () => {
       'testRepo',
       commits,
       'dev',
-      'cherry-pick title from original PR (#1234)'
+      'title from original PR (cherry-pick #1234)'
     );
 
     assert.strictEqual(pullRequest.number, 1234);
@@ -273,7 +273,7 @@ describe('cherryPickAsPullRequest', () => {
     );
     assert.strictEqual(
       pullRequest.title,
-      'cherry-pick title from original PR (#1234)'
+      'title from original PR (cherry-pick #1234)'
     );
     assert.strictEqual(pullRequest.body, 'body from API');
     req.done();
