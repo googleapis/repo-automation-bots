@@ -23,7 +23,6 @@ import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 import * as gcfUtilsModule from 'gcf-utils';
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
-import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as cherryPickModule from '../src/cherry-pick';
 import * as branchProtectionModule from '../src/branch-protection';
 import * as fs from 'fs';
@@ -51,7 +50,6 @@ describe('cherry-pick-bot config validation', () => {
   const sandbox = sinon.createSandbox();
 
   let getAuthenticatedOctokitStub: sinon.SinonStub;
-  let getConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -63,13 +61,11 @@ describe('cherry-pick-bot config validation', () => {
     });
     probot.load(myProbotApp);
 
-    getConfigStub = sandbox.stub(botConfigUtilsModule, 'getConfig');
     getAuthenticatedOctokitStub = sandbox.stub(
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
 
-    getConfigStub.resolves({enabled: true, bla: 'foo'});
     getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 
@@ -150,7 +146,6 @@ describe('cherry-pick-bot', () => {
 
   let cherryPickPullRequestStub: sinon.SinonStub;
   let getAuthenticatedOctokitStub: sinon.SinonStub;
-  let validateConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -172,11 +167,6 @@ describe('cherry-pick-bot', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    validateConfigStub = sandbox.stub(
-      ConfigChecker.prototype,
-      'validateConfigChanges'
-    );
-    validateConfigStub.resolves(undefined);
     getAuthenticatedOctokitStub.resolves(new Octokit());
   });
 

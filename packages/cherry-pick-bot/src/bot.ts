@@ -297,7 +297,9 @@ export = (app: Probot) => {
         context.payload.pull_request.number
       );
       if (!valid) {
-        logger.info(`cherry-pick-bot config is not valid for ${repoUrl}.`);
+        logger.info(
+          `cherry-pick-bot config is not valid for ${repoUrl} (pull request ${context.payload.pull_request.number}).`
+        );
       }
     }
   );
