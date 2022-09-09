@@ -1,6 +1,6 @@
 {
   "name": "@google-cloud/mono-repo-publish",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "publishes submodules based on the last merged release PR",
   "main": "build/src/main.js",
   "bin": "build/src/bin/mono-repo-publish.js",
@@ -21,6 +21,7 @@
   "author": "Google LLC",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/minimatch": "^5.1.2",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
@@ -37,6 +38,7 @@
   "dependencies": {
     "@octokit/auth-app": "^4.0.5",
     "@octokit/rest": "^19.0.4",
+    "minimatch": "^5.1.0",
     "yargs": "^17.5.1"
   },
   "engines": {
