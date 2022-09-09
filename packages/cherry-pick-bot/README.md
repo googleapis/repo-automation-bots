@@ -37,6 +37,7 @@ Available configuration options:
 | Name | Description | Default |
 | ---- | ----------- | ------- |
 | `enabled` | Whether this bot is enabled or not | `true` |
+| `preservePullRequestTitle` | Preserves the original PR title | `false` |
 
 ## Running tests:
 

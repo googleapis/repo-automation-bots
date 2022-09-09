@@ -77,3 +77,17 @@ exports['cherryPickAsPullRequest opens a pull request for multiple commits 2'] =
     title: 'commit message for abc123',
     body: 'commit message for def234\n\nCherry-picked commit message for abc123, commit message for def234',
   };
+
+exports['cherryPickAsPullRequest opens a pull request with title preserved 1'] =
+  {
+    ref: 'refs/heads/cherry-pick-e99a18-dev',
+    sha: 'basesha',
+  };
+
+exports['cherryPickAsPullRequest opens a pull request with title preserved 2'] =
+  {
+    head: 'cherry-pick-e99a18-dev',
+    base: 'dev',
+    title: 'title from original PR (cherry-pick #1234)',
+    body: '\n\nCherry-picked commit message for abc123',
+  };
