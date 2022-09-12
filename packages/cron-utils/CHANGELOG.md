@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.1.3...cron-utils-v3.2.0) (2022-09-12)
+
+
+### Features
+
+* **cron-utils:** switch to @google-cloud/run ([#4383](https://github.com/googleapis/repo-automation-bots/issues/4383)) ([bba9703](https://github.com/googleapis/repo-automation-bots/commit/bba97031e2b7004ccc79fb025ecfbf9474ec818a))
+
 ## [3.1.3](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.1.2...cron-utils-v3.1.3) (2022-06-22)
 
 
