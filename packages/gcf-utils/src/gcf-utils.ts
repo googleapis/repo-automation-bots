@@ -37,8 +37,7 @@ import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, buildRequestLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
-import {run} from '@googleapis/run';
-import {GoogleAuth} from 'google-auth-library';
+import {v2 as CloudRunV2} from '@google-cloud/run';
 import {TriggerType, parseBotRequest, BotRequest} from './bot-request';
 import {
   SCHEDULER_GLOBAL_EVENT_NAME,
@@ -281,6 +280,7 @@ export const addOrUpdateIssueComment = async (
 interface BootstrapperOptions {
   secretsClient?: SecretManagerV1.SecretManagerServiceClient;
   tasksClient?: CloudTasksV2.CloudTasksClient;
+  cloudRunClient?: CloudRunV2.ServicesClient;
   projectId?: string;
   functionName?: string;
   location?: string;
@@ -299,6 +299,7 @@ export class GCFBootstrapper {
 
   secretsClient: SecretManagerV1.SecretManagerServiceClient;
   cloudTasksClient: CloudTasksV2.CloudTasksClient;
+  cloudRunClient: CloudRunV2.ServicesClient;
   storage: Storage;
   projectId: string;
   functionName: string;
@@ -325,6 +326,8 @@ export class GCFBootstrapper {
       new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient =
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
+    this.cloudRunClient =
+      options?.cloudRunClient || new CloudRunV2.ServicesClient();
     this.storage = new Storage({retryOptions: {autoRetry: !RUNNING_IN_TEST}});
     this.taskTargetEnvironment =
       options.taskTargetEnvironment || defaultTaskEnvironment();
@@ -1048,23 +1051,11 @@ export class GCFBootstrapper {
   ): Promise<string | null> {
     // Cloud Run service names can only use dashes
     const serviceName = botName.replace(/_/g, '-');
-    const auth = new GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-    });
-    const authClient = await auth.getClient();
-    const client = await run({
-      version: 'v1',
-      auth: authClient,
-    });
     const name = `projects/${projectId}/locations/${location}/services/${serviceName}`;
-    const res = await client.projects.locations.services.get({
+    const [res] = await this.cloudRunClient.getService({
       name,
     });
-
-    if (res.data.status?.address?.url) {
-      return res.data.status.address.url;
-    }
-    return null;
+    return res.uri;
   }
 
   private async getTaskTarget(
