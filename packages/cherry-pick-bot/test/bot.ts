@@ -642,5 +642,48 @@ describe('cherry-pick-bot', () => {
       sinon.assert.notCalled(cherryPickPullRequestStub);
       requests.done();
     });
+
+    it('ignores non-cherry-pick comments', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+      const comments = require(resolve(
+        fixturesPath,
+        'data',
+        'issue_comments_non_cherry_pick'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
+      cherryPickPullRequestStub.resolves({
+        number: 123,
+        html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
+        title: 'chore: cherry-pick abc123',
+        body: null,
+      });
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(cherryPickPullRequestStub);
+      requests.done();
+    });
   });
 });
