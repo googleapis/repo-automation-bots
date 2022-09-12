@@ -22,7 +22,7 @@ import {
   createOrUpdateCron,
 } from '../src/cron-utils';
 import {v1} from '@google-cloud/scheduler';
-import {GoogleAuth} from 'google-auth-library';
+import {v2 as CloudRunV2Client} from '@google-cloud/run';
 
 nock.disableNetConnect();
 
@@ -33,38 +33,32 @@ describe('getServerlessSchedulerProxyUrl', () => {
     sandbox.restore();
   });
   it('should fetch the proxy url', async () => {
-    const adcStub = sandbox.stub(GoogleAuth.prototype, 'getClient').resolves();
-    const runScope = nock('https://run.googleapis.com')
-      .get(
-        '/v1/projects/my-project-id/locations/my-region/services/serverless-scheduler-proxy'
-      )
-      .reply(200, {
-        status: {
-          address: {
-            url: 'http://some.domain/path',
-          },
-        },
-      });
+    const getServiceStub = sandbox
+      .stub(CloudRunV2Client.ServicesClient.prototype, 'getService')
+      .resolves([{uri: 'http://some.domain/path'}]);
     const url = await getServerlessSchedulerProxyUrl(
       'my-project-id',
       'my-region'
     );
     assert.strictEqual(url, 'http://some.domain/path');
-    assert.ok(runScope.isDone());
-    sinon.assert.calledOnce(adcStub);
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sinon.assert.calledOnceWithExactly(getServiceStub as any, {
+      name: 'projects/my-project-id/locations/my-region/services/serverless-scheduler-proxy',
+    });
   });
   it('rejects on not found', async () => {
-    const adcStub = sandbox.stub(GoogleAuth.prototype, 'getClient').resolves();
-    const runScope = nock('https://run.googleapis.com')
-      .get(
-        '/v1/projects/my-project-id/locations/my-region/services/serverless-scheduler-proxy'
-      )
-      .reply(404);
+    const getServiceStub = sandbox
+      .stub(CloudRunV2Client.ServicesClient.prototype, 'getService')
+      .rejects(new Error('foo'));
     await assert.rejects(() => {
       return getServerlessSchedulerProxyUrl('my-project-id', 'my-region');
     });
-    assert.ok(runScope.isDone());
-    sinon.assert.calledOnce(adcStub);
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sinon.assert.calledOnceWithExactly(getServiceStub as any, {
+      name: 'projects/my-project-id/locations/my-region/services/serverless-scheduler-proxy',
+    });
   });
 });
 
