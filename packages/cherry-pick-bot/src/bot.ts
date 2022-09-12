@@ -203,7 +203,7 @@ export = (app: Probot) => {
       const targetBranch = parseCherryPickComment(comment.body || '');
       if (!targetBranch) {
         logger.debug('comment did not match cherry-pick comment');
-        return;
+        continue;
       }
 
       logger.info(
