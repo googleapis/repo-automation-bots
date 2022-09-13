@@ -84,5 +84,5 @@ async function run(
   const webhookSecret = argv.secret;
   const id = Number(argv.id);
 
-  run(keyfile, webhookSecret, id, project, botname);
+  await run(keyfile, webhookSecret, id, project, botname);
 })();
