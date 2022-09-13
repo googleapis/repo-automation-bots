@@ -114,9 +114,9 @@ export async function assign(
   let refreshedIssueResponse: getIssueResponse | null = null;
 
   try {
-    refreshedIssueResponse = await context.octokit.issues.get(
+    refreshedIssueResponse = (await context.octokit.issues.get(
       context.repo({issue_number: issueOrPRNumber as number})
-    ) as getIssueResponse;
+    )) as getIssueResponse;
   } catch (e) {
     const err = e as RequestError;
     if (err.status === 404) {
