@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.1.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.1.0...gcf-utils-v14.1.1) (2022-09-14)
+
+
+### Bug Fixes
+
+* **deps:** [gcf-utils] update dependency yargs to v17 ([#4375](https://github.com/googleapis/repo-automation-bots/issues/4375)) ([62938db](https://github.com/googleapis/repo-automation-bots/commit/62938dbf505fc65496f5d4a56765559968faa1fc))
+
 ## [14.1.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.0.2...gcf-utils-v14.1.0) (2022-09-12)
 
 
