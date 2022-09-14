@@ -39,6 +39,45 @@ steps:
       - "$_FUNCTION_REGION"
       - "nodejs14"
 
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker"
+    waitFor: ["-"]
+    dir: packages/auto-label
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/auto-label"
+      - "."
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker"
+    waitFor: ["build-docker"]
+    args: ["push", "gcr.io/$PROJECT_ID/auto-label"]
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run"
+    waitFor: ["push-docker"]
+    entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+      # botName
+      - "auto-label"
+      # timeout
+      - "3600"
+      # minInstances: We want to serve Github webhook quickly, so keep one instance.
+      - "1"
+
   - name: gcr.io/cloud-builders/npm
     id: "cron-deploy"
     waitFor: ["-"]
