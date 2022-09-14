@@ -27,6 +27,7 @@ import * as gh from '../src/issue';
 nock.disableNetConnect();
 
 const sandbox = sinon.createSandbox();
+// by default yargs will exit process on failures
 const testParser = parser.exitProcess(false);
 
 describe('cli', () => {
