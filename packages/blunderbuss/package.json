@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/blunderbuss.js",
+    "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
@@ -31,7 +31,7 @@
     "@google-automations/bot-config-utils": "^6.1.0",
     "@google-automations/datastore-lock": "^4.0.0",
     "@google-automations/label-utils": "^3.0.0",
-    "gcf-utils": "^14.0.1"
+    "gcf-utils": "^14.1.0"
   },
   "devDependencies": {
     "@octokit/types": "^7.1.1",
