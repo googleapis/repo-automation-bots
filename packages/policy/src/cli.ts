@@ -15,6 +15,7 @@
 // limitations under the License.
 
 import * as yargs from 'yargs';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {exportToBigQuery} from './export';
 import {getPolicy, GitHubRepo} from './policy';
@@ -40,7 +41,8 @@ const defaultCommand: yargs.CommandModule<{}, Flags> = {
         conflicts: ['search'],
       })
       .option('search', {
-        describe: 'Provide a GitHub repository search filter to limit the repositories used',
+        describe:
+          'Provide a GitHub repository search filter to limit the repositories used',
         type: 'string',
         conflicts: ['repo'],
       })
@@ -75,9 +77,7 @@ const defaultCommand: yargs.CommandModule<{}, Flags> = {
       const r = await policy.getRepos(argv.search);
       repos.push(...r);
     } else {
-      throw new Error(
-        'Need to provide either --repo or --search option'
-      );
+      throw new Error('Need to provide either --repo or --search option');
     }
     for (const repo of repos) {
       const res = await policy.checkRepoPolicy(repo);
@@ -93,10 +93,10 @@ const defaultCommand: yargs.CommandModule<{}, Flags> = {
         await openIssue(octokit, res);
       }
     }
-  }
-}
+  },
+};
 
-const parser = yargs
+export const parser = yargs
   .command(defaultCommand)
   .strict(true)
   .scriptName('policy');
