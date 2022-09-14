@@ -30,21 +30,8 @@ const sandbox = sinon.createSandbox();
 const testParser = parser.exitProcess(false);
 
 describe('cli', () => {
-  let cacheGitHubToken: string | undefined;
-  let cacheGHToken: string | undefined;
   afterEach(() => {
     sandbox.restore();
-  });
-  before(() => {
-    cacheGitHubToken = process.env.GITHUB_TOKEN;
-    cacheGHToken = process.env.GH_TOKEN;
-  });
-  after(() => {
-    process.env.GITHUB_TOKEN = cacheGitHubToken;
-    process.env.GH_TOKEN = cacheGHToken;
-  });
-  afterEach(() => {
-    sinon.restore();
   });
   it('should throw if no token is available', async () => {
     sandbox.replace(process, 'env', {
