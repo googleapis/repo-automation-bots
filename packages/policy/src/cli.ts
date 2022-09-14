@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meow from 'meow';
+import * as yargs from 'yargs';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {exportToBigQuery} from './export';
@@ -30,69 +30,81 @@ interface Flags {
   report?: boolean;
 }
 
-const cli = meow(
-  `
-	Usage
-	  $ policy
-
-	Options
-    --repo        Filter by a given repository
-    --search      Provide a GitHub repository search filter to limit the repositories used
-    --export      Export the results to BigQuery.
-    --autofix     Where possible, submit a PR to fix any issues.
-    --report      Create or update a GitHub Issue documenting the gaps
-
-	Examples
-    $ policy [--repo][--search QUERY][--autofix][--report]
-
-`,
-  {
-    flags: {
-      repo: {type: 'string'},
-      search: {type: 'string'},
-      autofix: {type: 'boolean'},
-      report: {type: 'boolean'},
-    },
-  }
-);
-
-export async function main(cli: meow.Result<{}>) {
-  const auth = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
-  const flags = cli.flags as Flags;
-  if (!auth) {
-    throw new Error(
-      'The GITHUB_TOKEN or GH_TOKEN env var must be set with a personal access token'
-    );
-  }
-  const repos: GitHubRepo[] = [];
-  const octokit = new Octokit({auth});
-  const policy = getPolicy(octokit, console);
-  if (flags.repo) {
-    const repo = await policy.getRepo(flags.repo);
-    repos.push(repo);
-  } else if (flags.search) {
-    const r = await policy.getRepos(flags.search);
-    repos.push(...r);
-  } else {
-    cli.showHelp();
-    return;
-  }
-  for (const repo of repos) {
-    const res = await policy.checkRepoPolicy(repo);
-    console.log(res);
-    if (flags.export) {
-      await exportToBigQuery(res);
+const defaultCommand: yargs.CommandModule<{}, Flags> = {
+  command: '$0',
+  describe: 'Run policy bot against a repository',
+  builder(yargs) {
+    return yargs
+      .option('repo', {
+        describe: 'Filter by a given repository',
+        type: 'string',
+        conflicts: ['search'],
+      })
+      .option('search', {
+        describe:
+          'Provide a GitHub repository search filter to limit the repositories used',
+        type: 'string',
+        conflicts: ['repo'],
+      })
+      .option('export', {
+        describe: 'Export the results to BigQuery.',
+        type: 'boolean',
+      })
+      .option('autofix', {
+        describe: 'Where possible, submit a PR to fix any issues',
+        type: 'boolean',
+      })
+      .option('report', {
+        describe: 'Create or update a GitHub Issue documenting the gaps',
+        type: 'boolean',
+      });
+  },
+  async handler(argv) {
+    const auth = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    if (!auth) {
+      throw new Error(
+        'The GITHUB_TOKEN or GH_TOKEN env var must be set with a personal access token'
+      );
     }
-    if (flags.autofix) {
-      const changer = getChanger(octokit, repo);
-      await changer.submitFixes(res);
+
+    const octokit = new Octokit({auth});
+    const policy = getPolicy(octokit, console);
+    const repos: GitHubRepo[] = [];
+    if (argv.repo) {
+      const repo = await policy.getRepo(argv.repo);
+      repos.push(repo);
+    } else if (argv.search) {
+      const r = await policy.getRepos(argv.search);
+      repos.push(...r);
+    } else {
+      throw new Error('Need to provide either --repo or --search option');
     }
-    if (flags.report) {
-      await openIssue(octokit, res);
+    for (const repo of repos) {
+      const res = await policy.checkRepoPolicy(repo);
+      console.log(res);
+      if (argv.export) {
+        await exportToBigQuery(res);
+      }
+      if (argv.autofix) {
+        const changer = getChanger(octokit, repo);
+        await changer.submitFixes(res);
+      }
+      if (argv.report) {
+        await openIssue(octokit, res);
+      }
     }
-  }
-}
+  },
+};
+
+export const parser = yargs
+  .command(defaultCommand)
+  .strict(true)
+  .scriptName('policy');
 
 if (module === require.main) {
-  main(cli);
+  (async () => {
+    await parser.parseAsync();
+    process.on('unhandledRejection', console.error);
+    process.on('uncaughtException', console.error);
+  })();
 }
