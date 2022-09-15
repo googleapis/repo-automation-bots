@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/failurechecker.js",
+    "start": "node ./build/src/server.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@google-automations/issue-utils": "^2.0.0",
-    "gcf-utils": "^14.0.1"
+    "gcf-utils": "^14.1.1"
   },
   "devDependencies": {
     "@octokit/types": "^7.2.0",
