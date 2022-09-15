@@ -479,7 +479,10 @@ export class GCFBootstrapper {
 
       this.flowControlDelayInSeconds = wrapConfig.flowControlDelayInSeconds;
       this.flowControlBatch = wrapConfig.flowControlBatch;
-      this.limitter = new FlowLimitter(this.flowControlDelayInSeconds, this.flowControlBatch);
+      this.limitter = new FlowLimitter(
+        this.flowControlDelayInSeconds,
+        this.flowControlBatch
+      );
 
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapConfig.logging));

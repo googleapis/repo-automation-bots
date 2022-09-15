@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 
-
 /**
  * A class for limitting flow for Cloud Task.
  *
@@ -57,11 +56,11 @@ export class FlowLimitter {
 
   getDelay(): number {
     const currentTime = new Date().getTime() / 1000;
-    if ((currentTime - this.baseTime) > this.delayInSeconds) {
+    if (currentTime - this.baseTime > this.delayInSeconds) {
       this.baseTime = currentTime;
       this.itemSent = 0;
     }
-    const ret = Math.max(0, (this.baseTime - currentTime));
+    const ret = Math.max(0, this.baseTime - currentTime);
     this.itemSent += 1;
     if (this.itemSent >= this.batch) {
       this.baseTime += this.delayInSeconds;

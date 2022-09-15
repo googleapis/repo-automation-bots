@@ -19,9 +19,7 @@ import * as sinon from 'sinon';
 import {FlowLimitter} from '../src/flow-limitter';
 
 describe('FlowLimitter', () => {
-  const now = Date.now();
   const sandbox = sinon.createSandbox();
-  let getTimeStub: sinon.SinonStub;
 
   afterEach(() => {
     sandbox.restore();
@@ -31,7 +29,7 @@ describe('FlowLimitter', () => {
     const limitter = new FlowLimitter(30, 30);
     for (let i = 0; i < 30; i++) {
       const delay = limitter.getDelay();
-      assert(delay == 0);
+      assert(delay === 0);
     }
     // Then the next call should delay by 30 seconds
     // (at least 29 seconds);
@@ -43,7 +41,7 @@ describe('FlowLimitter', () => {
     const limitter = new FlowLimitter(30, 30);
     for (let i = 0; i < 29; i++) {
       const delay = limitter.getDelay();
-      assert(delay == 0);
+      assert(delay === 0);
     }
     const now = new Date().getTime();
     const getTimeStub = sandbox.stub(Date.prototype, 'getTime');
@@ -53,7 +51,7 @@ describe('FlowLimitter', () => {
     // We'll get 0 for another full batch.
     for (let i = 0; i < 30; i++) {
       const delay = limitter.getDelay();
-      assert(delay == 0);
+      assert(delay === 0);
     }
   });
 });
