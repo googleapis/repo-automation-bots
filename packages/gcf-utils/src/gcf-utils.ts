@@ -37,6 +37,7 @@ import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, buildRequestLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
+import {FlowLimitter} from './flow-limitter';
 import {v2 as CloudRunV2} from '@google-cloud/run';
 import {TriggerType, parseBotRequest, BotRequest} from './bot-request';
 import {
@@ -66,8 +67,10 @@ const DEFAULT_CRON_TYPE: CronType = 'repository';
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 const DEFAULT_TASK_CALLER =
   'task-caller@repo-automation-bots.iam.gserviceaccount.com';
+
 // Adding 30 second delay for each batch with 30 tasks
 export const DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND = 30;
+export const DEFAULT_FLOW_CONTROL_BATCH = 30;
 
 type BotEnvironment = 'functions' | 'run';
 
@@ -113,6 +116,9 @@ export interface WrapOptions {
 
   // Delay in task scheduling flow control
   flowControlDelayInSeconds?: number;
+
+  // Number of items allowed in the same flow control batch.
+  flowControlBatch?: number;
 }
 
 interface WrapConfig {
@@ -122,6 +128,7 @@ interface WrapConfig {
   maxRetries: number;
   maxPubSubRetries: number;
   flowControlDelayInSeconds: number;
+  flowControlBatch: number;
 }
 
 const DEFAULT_WRAP_CONFIG: WrapConfig = {
@@ -131,6 +138,7 @@ const DEFAULT_WRAP_CONFIG: WrapConfig = {
   maxRetries: 10,
   maxPubSubRetries: 0,
   flowControlDelayInSeconds: DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
+  flowControlBatch: DEFAULT_FLOW_CONTROL_BATCH,
 };
 
 export const logger = new GCFLogger();
@@ -309,6 +317,8 @@ export class GCFBootstrapper {
   taskTargetName: string;
   taskCaller: string;
   flowControlDelayInSeconds: number;
+  flowControlBatch: number;
+  limitter: FlowLimitter;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -353,6 +363,7 @@ export class GCFBootstrapper {
     this.taskTargetName = options.taskTargetName || this.functionName;
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
     this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
+    this.flowControlBatch = DEFAULT_FLOW_CONTROL_BATCH;
   }
 
   async loadProbot(
@@ -467,6 +478,8 @@ export class GCFBootstrapper {
       const wrapConfig = this.parseWrapConfig(wrapOptions);
 
       this.flowControlDelayInSeconds = wrapConfig.flowControlDelayInSeconds;
+      this.flowControlBatch = wrapConfig.flowControlBatch;
+      this.limitter = new FlowLimitter(this.flowControlDelayInSeconds, this.flowControlBatch);
 
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapConfig.logging));
@@ -517,7 +530,8 @@ export class GCFBootstrapper {
               name: botRequest.eventName,
               body: JSON.stringify(payload),
             },
-            requestLogger
+            requestLogger,
+            this.limitter.getDelay()
           );
         } else if (botRequest.triggerType === TriggerType.TASK) {
           // If the payload contains `tmpUrl` this indicates that the original
@@ -601,7 +615,8 @@ export class GCFBootstrapper {
               name: botRequest.eventName,
               body: JSON.stringify(request.body),
             },
-            requestLogger
+            requestLogger,
+            this.limitter.getDelay()
           );
         }
 
@@ -840,7 +855,6 @@ export class GCFBootstrapper {
         wrapConfig
       );
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
-      const batchSize = 30;
       let delayInSeconds = 0; // initial delay for the tasks
       for await (const repo of generator) {
         if (repo.archived === true || repo.disabled === true) {
@@ -856,7 +870,7 @@ export class GCFBootstrapper {
             delayInSeconds
           )
         );
-        if (promises.length >= batchSize) {
+        if (promises.length >= this.flowControlBatch) {
           await Promise.all(promises);
           promises.splice(0, promises.length);
           // add delay for flow control
@@ -871,7 +885,6 @@ export class GCFBootstrapper {
     } else {
       const installationGenerator = this.eachInstallation(wrapConfig);
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
-      const batchSize = 30;
       let delayInSeconds = 0; // initial delay for the tasks
       for await (const installation of installationGenerator) {
         if (body.allowed_organizations !== undefined) {
@@ -916,7 +929,7 @@ export class GCFBootstrapper {
               delayInSeconds
             )
           );
-          if (promises.length >= batchSize) {
+          if (promises.length >= this.flowControlBatch) {
             await Promise.all(promises);
             promises.splice(0, promises.length);
             // add delay for flow control
