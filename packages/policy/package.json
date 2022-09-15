@@ -22,7 +22,7 @@
   },
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/bot.js",
+    "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
     "test": "c8 mocha build/test",
     "fix": "gts fix",
@@ -32,7 +32,7 @@
     "@google-cloud/bigquery": "^6.0.2",
     "code-suggester": "^4.1.0",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^14.0.1",
+    "gcf-utils": "^14.1.1",
     "lru-cache": "^7.14.0",
     "uuid": "^9.0.0"
   },

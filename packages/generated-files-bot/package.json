@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/generated-files-bot.js",
+    "start": "node ./build/src/server.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test --timeout 10000",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^6.1.0",
-    "gcf-utils": "^14.0.1",
+    "gcf-utils": "^14.1.1",
     "js-yaml": "^4.1.0",
     "jsonpath": "^1.1.1",
     "minimatch": "^5.1.0"

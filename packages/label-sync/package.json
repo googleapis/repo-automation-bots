@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "compile": "tsc -p . && cp src/labels.json build/src",
-    "start": "probot run ./build/src/label-sync.js",
+    "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
     "fix": "gts fix",
@@ -28,7 +28,7 @@
   "dependencies": {
     "@google-cloud/storage": "^6.4.2",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^14.0.1"
+    "gcf-utils": "^14.1.1"
   },
   "devDependencies": {
     "@probot/octokit-plugin-config": "^1.1.6",
