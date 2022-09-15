@@ -16,9 +16,9 @@ import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as sinon from 'sinon';
 
-import {FlowLimitter} from '../src/flow-limitter';
+import {FlowLimiter} from '../src/flow-limiter';
 
-describe('FlowLimitter', () => {
+describe('FlowLimiter', () => {
   const sandbox = sinon.createSandbox();
 
   afterEach(() => {
@@ -26,7 +26,7 @@ describe('FlowLimitter', () => {
   });
 
   it('delays after batch is filled', () => {
-    const limitter = new FlowLimitter(30, 30);
+    const limitter = new FlowLimiter(30, 30);
     for (let i = 0; i < 30; i++) {
       const delay = limitter.getDelay();
       assert(delay === 0);
@@ -38,7 +38,7 @@ describe('FlowLimitter', () => {
   });
 
   it('reset the item number after delay has passed', () => {
-    const limitter = new FlowLimitter(30, 30);
+    const limitter = new FlowLimiter(30, 30);
     for (let i = 0; i < 29; i++) {
       const delay = limitter.getDelay();
       assert(delay === 0);

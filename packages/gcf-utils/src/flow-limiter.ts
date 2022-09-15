@@ -14,7 +14,7 @@
 //
 
 /**
- * A class for limitting flow for Cloud Task.
+ * A class for limiting flow for Cloud Task.
  *
  * @param delayInSeconds - The delay per batch.
  * @param batch - The number of items in a batch.
@@ -41,7 +41,7 @@
  * When number of item reaches the batch number, it will increment the
  * baseTime by `delayInSeconds` and reset the `itemSent`.
  */
-export class FlowLimitter {
+export class FlowLimiter {
   delayInSeconds: number;
   batch: number;
   itemSent: number;

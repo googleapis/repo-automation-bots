@@ -37,7 +37,7 @@ import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, buildRequestLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
-import {FlowLimitter} from './flow-limitter';
+import {FlowLimiter} from './flow-limiter';
 import {v2 as CloudRunV2} from '@google-cloud/run';
 import {TriggerType, parseBotRequest, BotRequest} from './bot-request';
 import {
@@ -318,7 +318,7 @@ export class GCFBootstrapper {
   taskCaller: string;
   flowControlDelayInSeconds: number;
   flowControlBatch: number;
-  limitter: FlowLimitter;
+  limiter: FlowLimiter;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -479,7 +479,7 @@ export class GCFBootstrapper {
 
       this.flowControlDelayInSeconds = wrapConfig.flowControlDelayInSeconds;
       this.flowControlBatch = wrapConfig.flowControlBatch;
-      this.limitter = new FlowLimitter(
+      this.limiter = new FlowLimiter(
         this.flowControlDelayInSeconds,
         this.flowControlBatch
       );
@@ -534,7 +534,7 @@ export class GCFBootstrapper {
               body: JSON.stringify(payload),
             },
             requestLogger,
-            this.limitter.getDelay()
+            this.limiter.getDelay()
           );
         } else if (botRequest.triggerType === TriggerType.TASK) {
           // If the payload contains `tmpUrl` this indicates that the original
@@ -619,7 +619,7 @@ export class GCFBootstrapper {
               body: JSON.stringify(request.body),
             },
             requestLogger,
-            this.limitter.getDelay()
+            this.limiter.getDelay()
           );
         }
 
