@@ -50,3 +50,42 @@ steps:
       - "$_FUNCTION_REGION"
       - "$_REGION"
       - "$_DIRECTORY"
+
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker"
+    waitFor: ["-"]
+    dir: packages/repo-metadata-lint
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/repo-metadata-lint"
+      - "."
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker"
+    waitFor: ["build-docker"]
+    args: ["push", "gcr.io/$PROJECT_ID/repo-metadata-lint"]
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run"
+    waitFor: ["push-docker"]
+    entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+      # botName
+      - "repo-metadata-lint"
+      # timeout
+      - "3600"
+      # minInstances: We want to serve Github webhook quickly, so keep one instance.
+      - "1"
