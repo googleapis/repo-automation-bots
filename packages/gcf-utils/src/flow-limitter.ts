@@ -55,7 +55,7 @@ export class FlowLimitter {
   }
 
   getDelay(): number {
-    const currentTime = new Date().getTime() / 1000;
+    const currentTime = Date.now() / 1000;
     if (currentTime - this.baseTime > this.delayInSeconds) {
       this.baseTime = currentTime;
       this.itemSent = 0;

@@ -43,10 +43,10 @@ describe('FlowLimitter', () => {
       const delay = limitter.getDelay();
       assert(delay === 0);
     }
-    const now = new Date().getTime();
-    const getTimeStub = sandbox.stub(Date.prototype, 'getTime');
+    const now = Date.now();
+    const nowStub = sandbox.stub(Date, 'now');
     // Simulate 31 seconds later
-    getTimeStub.returns(now + 31000);
+    nowStub.returns(now + 31000);
     // Then the itemSent should be reset to 0, so
     // We'll get 0 for another full batch.
     for (let i = 0; i < 30; i++) {
