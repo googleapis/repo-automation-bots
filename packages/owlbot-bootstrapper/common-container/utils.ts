@@ -253,7 +253,7 @@ export function checkIfGitIsInstalled(cmd: Function) {
  * @param language a Language enum (see interfaces)
  */
 export function isMonoRepo(language: Language): boolean {
-  const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java'];
+  const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java', 'python'];
   if (monorepos.includes(language)) {
     return true;
   }
