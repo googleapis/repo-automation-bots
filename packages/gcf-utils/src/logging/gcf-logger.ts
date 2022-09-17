@@ -18,6 +18,9 @@ import SonicBoom from 'sonic-boom';
 type Destination = NodeJS.WritableStream | SonicBoom;
 type LogEntry = {[key: string]: unknown};
 
+export const ERROR_REPORTING_TYPE_NAME =
+  'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent';
+
 /**
  * A logger standardized logger for Google Cloud Functions (and Cloud Run).
  * This logger outputs structured (JSON) logs formatted so that Google
@@ -101,10 +104,22 @@ export class GCFLogger {
   public error(obj: object, msg?: string, ...args: any[]): void;
   public error(
     objOrMsg: object | string,
-    addMsg?: string,
+    addMsg?: LogEntry | string,
     ...args: any[]
   ): void {
-    this.log('error', objOrMsg, addMsg, ...args);
+    let payload: LogEntry = {
+      '@type': ERROR_REPORTING_TYPE_NAME,
+    };
+    if (typeof objOrMsg === 'string') {
+      payload.message = objOrMsg;
+    } else {
+      payload = {...payload, ...objOrMsg};
+    }
+    if (typeof addMsg === 'object') {
+      payload = {...payload, ...addMsg};
+      addMsg = undefined;
+    }
+    this.log('error', payload, addMsg as string, ...args);
   }
 
   /**

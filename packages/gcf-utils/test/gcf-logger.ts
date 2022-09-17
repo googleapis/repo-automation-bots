@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {logger} from '../src/gcf-utils';
-import {GCFLogger} from '../src/logging/gcf-logger';
+import {GCFLogger, ERROR_REPORTING_TYPE_NAME} from '../src/logging/gcf-logger';
 import {describe, beforeEach, it} from 'mocha';
 import {ObjectWritableMock} from 'stream-mock';
 import {validateLogs, LogLine, logLevels} from './test-helpers';
@@ -68,6 +68,19 @@ describe('GCFLogger', () => {
       }
     }
 
+    describe('error', () => {
+      it('populates @type field', () => {
+        logger.error('Error happened');
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          [],
+          [{'@type': ERROR_REPORTING_TYPE_NAME}],
+          logLevels['error']
+        );
+      });
+    });
     describe('metric', () => {
       it('populates event, count, type, when single string argument provided', () => {
         logger.metric('release-created');
