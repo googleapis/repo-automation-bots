@@ -128,14 +128,24 @@ fi
 
 echo "Deploying Queue ${queueName}"
 
+maxConcurrentDispatches="2048"
+if [ -n "${TASK_MAX_CONCURRENT_DISPATCHES}" ]; then
+  maxConcurrentDispatches="${TASK_MAX_CONCURRENT_DISPATCHES}"
+fi
+
+maxDispatchesPerSecond="500"
+if [ -n "${TASK_MAX_DISPATCHES_PER_SECOND}" ]; then
+  maxDispatchesPerSecond="${TASK_MAX_DISPATCHES_PER_SECOND}"
+fi
+
 verb="create"
 if gcloud tasks queues describe "${queueName}"  &>/dev/null; then
   verb="update"
 fi
 
 gcloud --quiet tasks queues ${verb} "${queueName}" \
-  --max-concurrent-dispatches="2048" \
+  --max-concurrent-dispatches="${maxConcurrentDispatches}" \
   --max-attempts="100" \
   --max-retry-duration="43200s" \
-  --max-dispatches-per-second="500" \
+  --max-dispatches-per-second="${maxDispatchesPerSecond}" \
   --min-backoff="5s"
