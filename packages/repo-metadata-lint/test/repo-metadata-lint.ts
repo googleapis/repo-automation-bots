@@ -112,5 +112,36 @@ describe('repo-metadata-lint', () => {
       sandbox.assert.calledWith(infoStub, sinon.match(/1 validation errors/));
       githubApiRequests.done();
     });
+
+    it('handles repositories with issues disabled', async () => {
+      const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
+      FileIterator.prototype.repoMetadata = sandbox
+        .stub()
+        .returns(failingIterator());
+      const infoStub = sandbox.stub(logger, 'info');
+      const githubApiRequests = nock('https://api.github.com')
+        .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, [])
+        .post('/repos/foo-org/foo-repo/issues', (post: {body: string}) => {
+          assert(post.body.includes('library_type must be equal to one of'));
+          return true;
+        })
+        .reply(410, {message: 'Issues are disabled for this repo'});
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'foo-org'},
+          repository: {name: 'foo-repo', owner: {login: 'bar-login'}},
+          cron_org: 'foo-org',
+          installation: {id: 1234},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      sandbox.assert.calledWith(infoStub, sinon.match(/1 validation errors/));
+      githubApiRequests.done();
+    });
   });
 });
