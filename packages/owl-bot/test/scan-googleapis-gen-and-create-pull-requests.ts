@@ -355,7 +355,7 @@ Copy-Tag: ${copyTag}`
         body:
           '- [ ] Regenerate this pull request now.\n\n' +
           `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}\n` +
-          `Copy-Tag: ${copyTag}\n\nq\nThis is the greatest pull request ever.`,
+          `Copy-Tag: ${copyTag}\n\nBEGIN_NESTED_COMMIT\nq\nThis is the greatest pull request ever.\nEND_NESTED_COMMIT\n`,
         title: 'b',
       },
     ]);
