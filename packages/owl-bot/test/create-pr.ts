@@ -21,7 +21,12 @@ import {
   MAX_TITLE_LENGTH,
   resplit,
   WithRegenerateCheckbox,
+  prependCommitMessage,
 } from '../src/create-pr';
+import snapshot = require('snap-shot-it');
+
+const loremIpsum =
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
 
 describe('resplit', () => {
   it('leaves a short title unchanged', () => {
@@ -36,9 +41,6 @@ describe('resplit', () => {
       body: EMPTY_REGENERATE_CHECKBOX_TEXT + '\n\nbody\n',
     });
   });
-
-  const loremIpsum =
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
 
   it('resplits a long title', () => {
     const tb = resplit(loremIpsum + '\n\nbody', WithRegenerateCheckbox.No);
@@ -95,6 +97,40 @@ describe('resplit', () => {
     assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
     assert.ok(tb.body.length < body.length);
   });
+});
+
+describe('prependCommitMessage', () => {
+  for (const withCheckbox of [
+    WithRegenerateCheckbox.Yes,
+    WithRegenerateCheckbox.No,
+  ]) {
+    describe(`with checkbox: ${withCheckbox}`, () => {
+      it('handles an initial pull request content', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          withCheckbox
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          withCheckbox
+        );
+        snapshot(prependedContent.title);
+        snapshot(prependedContent.body);
+      });
+
+      it('handles an initial pull request with long title', () => {
+        const pullContent = resplit(loremIpsum, withCheckbox);
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          withCheckbox
+        );
+        snapshot(prependedContent.title);
+        snapshot(prependedContent.body);
+      });
+    });
+  }
 });
 
 describe('insertApiName', () => {

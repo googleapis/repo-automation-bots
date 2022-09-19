@@ -29,12 +29,11 @@ import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {
   createPullRequestFromLastCommit,
-  EMPTY_REGENERATE_CHECKBOX_TEXT,
   Force,
-  REGENERATE_CHECKBOX_TEXT,
   resplit,
   WithRegenerateCheckbox,
   insertApiName,
+  prependCommitMessage,
 } from './create-pr';
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {CopyStateStore} from './copy-state-store';
@@ -372,13 +371,9 @@ async function findAndAppendPullRequest(
   })
     .toString('utf8')
     .trim();
-  const {title, body} = resplit(
-    `${commitBody}\n\n` +
-      `${pull.title}\n` +
-      pull.body
-        ?.replace(REGENERATE_CHECKBOX_TEXT, '')
-        .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
-        .trim() ?? '',
+  const {title, body} = prependCommitMessage(
+    commitBody,
+    {title: pull.title, body: pull.body || ''},
     WithRegenerateCheckbox.Yes
   );
   const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
