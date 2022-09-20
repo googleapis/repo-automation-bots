@@ -27,7 +27,7 @@ import {
   GCFLogger,
   logger,
 } from 'gcf-utils';
-import {addOrUpdateIssue} from '@google-automations/issue-utils';
+import {addOrUpdateIssue, closeIssue} from '@google-automations/issue-utils';
 
 const RELEASE_TYPE_NO_PUBLISH = new Set(['go-yoshi', 'go', 'simple']);
 const SUCCESSFUL_PUBLISH_LABEL = 'autorelease: published';
@@ -261,6 +261,7 @@ export function failureChecker(app: Probot) {
 
     const failures = await checker.findFailedReleases(terminalStateLabel);
     if (failures.length === 0) {
+      await closeIssue(octokit, owner, repo, ISSUE_TITLE, logger);
       return;
     }
 
