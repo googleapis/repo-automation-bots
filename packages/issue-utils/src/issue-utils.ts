@@ -146,3 +146,46 @@ export async function addOrUpdateIssue(
   logger.metric('issue.opened', {opener: issueOpener});
   return issueFromGitHubIssue(owner, repo, newIssue);
 }
+
+/**
+ * Closes an existing issue that matches the issue title and
+ * authenticated user.
+ *
+ * @param {Octokit} octokit - The Octokit instance.
+ * @param {string} owner - The owner of the repository.
+ * @param {string} repo - The name of the repository.
+ * @param {string} title - The issue title.
+ * @param {GCFLogger} logger - A context logger.
+ * @returns {Issue} The created or updated issue.
+ */
+export async function closeIssue(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  title: string,
+  logger: GCFLogger = defaultLogger
+): Promise<Issue | null> {
+  const issueOpener = await getAuthenticatedBotUser(octokit);
+  const issues = await findOpenIssueByCreator(
+    octokit,
+    owner,
+    repo,
+    issueOpener
+  );
+  const issue = issues.find(issue => issue.title === title);
+  if (!issue) {
+    // No existing issue found, nothing to do.
+    return null;
+  }
+
+  logger.info(`Found existing issue: #${issue.number}, closing`);
+  const {data: updatedIssue} = await octokit.issues.update({
+    owner,
+    repo,
+    issue_number: issue.number,
+    state: 'closed',
+    state_reason: 'completed',
+  });
+  logger.metric('issue.closed', {opener: issueOpener});
+  return issueFromGitHubIssue(owner, repo, updatedIssue);
+}
