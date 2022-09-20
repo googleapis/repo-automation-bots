@@ -144,7 +144,11 @@ describe('closeIssue', () => {
           labels: [],
         },
       ])
-      .patch('/repos/test-owner/test-repo/issues/123')
+      .patch('/repos/test-owner/test-repo/issues/123', (body) => {
+        assert.strictEqual(body.state, 'closed');
+        assert.strictEqual(body.state_reason, 'completed');
+        return body;
+      })
       .reply(200, {
         title: 'my issue title',
         body: 'my issue body',
