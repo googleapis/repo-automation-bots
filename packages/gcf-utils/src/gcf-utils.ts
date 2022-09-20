@@ -1315,7 +1315,13 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
  */
 export function logErrors(logger: GCFLogger, e: Error) {
   // Add "@type" bindings so that Cloud Error Reporting will capture these logs.
-  logger.addBindings({'@type': ERROR_REPORTING_TYPE_NAME});
+  const bindings = logger.getBindings;
+  if (bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
+    logger = logger.child({
+      '@type': ERROR_REPORTING_TYPE_NAME,
+      ...bindings,
+    });
+  }
   if (e instanceof AggregateError) {
     for (const inner of e) {
       // AggregateError should not contain an AggregateError, but
