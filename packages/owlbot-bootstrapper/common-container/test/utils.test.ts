@@ -194,15 +194,6 @@ describe('common utils tests', async () => {
     scope.done();
   });
 
-  it('correctly determines if language is a monorepo or not', () => {
-    const isPythonMono = utils.isMonoRepo(Language.Python);
-
-    const isNodeMono = utils.isMonoRepo(Language.Nodejs);
-
-    assert.deepStrictEqual(isPythonMono, false);
-    assert.deepStrictEqual(isNodeMono, true);
-  });
-
   it('checks if git is installed', () => {
     const checkIfGitIsInstalledStub = sinon.stub(
       utils,
