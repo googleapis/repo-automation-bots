@@ -63,7 +63,6 @@ describe('logErrors', () => {
     const loggedLines: LogLine[] = readLogsAsObjects(destination);
     assert.strictEqual(loggedLines[0]['@type'], ERROR_REPORTING_TYPE_NAME);
   });
-
 });
 
 // Test app
