@@ -16,7 +16,6 @@ import {GithubAuthenticator} from '../github-authenticator';
 import nock from 'nock';
 import sinon from 'sinon';
 import {MonoRepo} from '../mono-repo';
-import {SplitRepo} from '../split-repo';
 import * as utils from '../utils';
 import {CliArgs} from '../interfaces';
 import assert from 'assert';
@@ -30,8 +29,6 @@ let getGitHubShortLivedAccessTokenStub: sinon.SinonStub;
 let authenticateOctokitStub: sinon.SinonStub;
 let cloneRepoAndOpenBranchStub: sinon.SinonStub;
 let pushToBranchAndOpenPRStub: sinon.SinonStub;
-let createAndInitializeEmptyGitRepoStub: sinon.SinonStub;
-let pushToMainAndCreateEmptyPR: sinon.SinonStub;
 let setConfigStub: sinon.SinonStub;
 
 describe('post processing', async () => {
@@ -58,16 +55,6 @@ describe('post processing', async () => {
       'pushToBranchAndOpenPR'
     );
 
-    createAndInitializeEmptyGitRepoStub = sinon.stub(
-      SplitRepo.prototype,
-      'createAndInitializeEmptyGitRepo'
-    );
-
-    pushToMainAndCreateEmptyPR = sinon.stub(
-      SplitRepo.prototype,
-      'pushToMainAndCreateEmptyPR'
-    );
-
     setConfigStub = sinon.stub(utils, 'setConfig');
   });
 
@@ -76,8 +63,6 @@ describe('post processing', async () => {
     authenticateOctokitStub.restore();
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
-    createAndInitializeEmptyGitRepoStub.restore();
-    pushToMainAndCreateEmptyPR.restore();
     setConfigStub.restore();
   });
 
@@ -94,40 +79,6 @@ describe('post processing', async () => {
     assert.ok(getGitHubShortLivedAccessTokenStub.calledOnce);
     assert.ok(authenticateOctokitStub.calledOnce);
     assert.ok(pushToBranchAndOpenPRStub.calledOnce);
-  });
-
-  it('calls the right stubs when entering splitrepo/post-process', async () => {
-    argv = {
-      projectId: 'myprojects',
-      apiId: 'google.cloud.kms.v1',
-      language: 'python',
-      installationId: '12345',
-    };
-
-    await postProcess(argv);
-    assert.ok(getGitHubShortLivedAccessTokenStub.calledOnce);
-    assert.ok(authenticateOctokitStub.calledOnce);
-    assert.ok(pushToMainAndCreateEmptyPR.calledOnce);
-  });
-
-  it('attempts to open an issue in googleapis if any part of main fails', async () => {
-    argv = {
-      projectId: 'myproject',
-      apiId: 'google.cloud.kms.v1',
-      language: 'python',
-      installationId: '12345',
-    };
-
-    const octokit = new Octokit({auth: 'abc1234'});
-    authenticateOctokitStub.returns(octokit);
-    pushToMainAndCreateEmptyPR.rejects();
-
-    const scope = nock('https://api.github.com')
-      .post(`/repos/${ORG}/googleapis/issues`)
-      .reply(201);
-
-    await assert.rejects(() => postProcess(argv));
-    scope.done();
   });
 
   it('attempts to open an issue in monorepo if any part of main fails', async () => {

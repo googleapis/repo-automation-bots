@@ -44,7 +44,7 @@ interface LanguageConstants {
 };
 
 // Here is where languages will need to fill out constants regarding their repo settings, i.e.,
-// repo to clone if mono repo, and language-specific container image name
+// repo to clone, and language-specific container image name
 const languageSpecificConsts = [
   {
     language: 'nodejs',
