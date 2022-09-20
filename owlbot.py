@@ -17,6 +17,7 @@ node.owlbot_main(templates_excludes=[
   '.eslintignore',
   '.eslintrc.json',
   '.github/CODEOWNERS',
+  '.github/auto-label.yaml',
   '.github/release-please.yml',
   '.github/workflows/',
   '.github/publish.yml',
