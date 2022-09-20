@@ -29,8 +29,6 @@ let getGitHubShortLivedAccessTokenStub: sinon.SinonStub;
 let authenticateOctokitStub: sinon.SinonStub;
 let cloneRepoAndOpenBranchStub: sinon.SinonStub;
 let pushToBranchAndOpenPRStub: sinon.SinonStub;
-let createAndInitializeEmptyGitRepoStub: sinon.SinonStub;
-let pushToMainAndCreateEmptyPR: sinon.SinonStub;
 let setConfigStub: sinon.SinonStub;
 
 describe('post processing', async () => {
@@ -65,8 +63,6 @@ describe('post processing', async () => {
     authenticateOctokitStub.restore();
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
-    createAndInitializeEmptyGitRepoStub.restore();
-    pushToMainAndCreateEmptyPR.restore();
     setConfigStub.restore();
   });
 
