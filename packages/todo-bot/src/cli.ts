@@ -55,7 +55,7 @@ const defaultCommand: yargs.CommandModule<{}, Flags> = {
   async handler(argv) {
     const scanner = new AnnotationScanner(argv.owner, argv.repo, argv.branch);
     const foundAnnotations = await scanner.findAnnotations(argv.annotation);
-    console.log(foundAnnotations);
+    console.log(`found ${foundAnnotations.length} annotations`, foundAnnotations);
   },
 };
 

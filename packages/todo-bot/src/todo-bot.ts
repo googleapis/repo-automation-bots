@@ -50,9 +50,9 @@ export = (app: Probot) => {
       repo,
       CONFIGURATION_FILE_PATH
     );
-    const annotations = config.annotations ?? DEFAULT_ANNOTATIONS;
+    const annotations = config?.annotations ?? DEFAULT_ANNOTATIONS;
     const branch =
-      config.branch ?? (await getDefaultBranch(octokit, owner, repo));
+      config?.branch ?? (await getDefaultBranch(octokit, owner, repo));
 
     logger.info(`Scanning repository for TODOs: ${owner}/${repo}`);
     const scanner = new AnnotationScanner(owner, repo, branch, {logger});

@@ -84,7 +84,6 @@ export class AnnotationScanner {
         if (file) {
           const content = rest.join(':');
           const match = content.match(contextMatcher);
-          console.log(match);
           foundAnnotations.push({
             name: annotation,
             file,
