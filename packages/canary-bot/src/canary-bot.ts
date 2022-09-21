@@ -122,6 +122,7 @@ export = (app: Probot) => {
   app.on('schedule.global' as any, async context => {
     const logger = getContextLogger(context);
     logger.info('executed global scheduled task');
+    throw new Error('Intentional error');
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
@@ -154,7 +155,7 @@ export = (app: Probot) => {
     const pubsubContext = context as unknown as PubSubContext;
     logger.info(
       'executed pubsub handler with the payload: ' +
-        `${JSON.stringify(pubsubContext.payload)}`
+      `${JSON.stringify(pubsubContext.payload)}`
     );
   });
 };
