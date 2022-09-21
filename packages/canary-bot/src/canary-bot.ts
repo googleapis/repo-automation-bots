@@ -122,7 +122,6 @@ export = (app: Probot) => {
   app.on('schedule.global' as any, async context => {
     const logger = getContextLogger(context);
     logger.info('executed global scheduled task');
-    throw new Error('Intentional error');
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
@@ -144,7 +143,9 @@ export = (app: Probot) => {
       );
     } else if (context.payload.issue.title.includes('canary-bot error')) {
       // For testing gcf-utils' error handling.
-      throw new Error('Intentional error');
+      throw new Error(
+        `Intentional error with '${context.payload.issue.title}'`
+      );
     } else {
       logger.info(
         'The bot is skipping this issue because the title does not include canary-bot test'
