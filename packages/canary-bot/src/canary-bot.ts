@@ -161,7 +161,7 @@ export = (app: Probot) => {
     const pubsubContext = context as unknown as PubSubContext;
     logger.info(
       'executed pubsub handler with the payload: ' +
-      `${JSON.stringify(pubsubContext.payload)}`
+        `${JSON.stringify(pubsubContext.payload)}`
     );
   });
 };
