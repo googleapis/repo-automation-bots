@@ -46,6 +46,8 @@ const cronIssueTitle = 'A canary is chirping';
 const myRepositoryName = 'repo-automation-bots';
 const myOrganizationName = 'googleapis';
 
+const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface PubSubContext<T = any> {
   github: Octokit;
@@ -143,7 +145,9 @@ export = (app: Probot) => {
         getIssueBody(addition)
       );
       // Temporarily throwing an error
-      throw new Error('Intentional error');
+      if (RUNNING_IN_TEST !== true) {
+        throw new Error('Intentional error');
+      }
     } else {
       logger.info(
         'The bot is skipping this issue because the title does not include canary-bot test'
@@ -157,7 +161,7 @@ export = (app: Probot) => {
     const pubsubContext = context as unknown as PubSubContext;
     logger.info(
       'executed pubsub handler with the payload: ' +
-        `${JSON.stringify(pubsubContext.payload)}`
+      `${JSON.stringify(pubsubContext.payload)}`
     );
   });
 };
