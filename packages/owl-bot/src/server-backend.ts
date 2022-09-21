@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line node/no-extraneous-import
-import admin from 'firebase-admin';
+import {Firestore} from '@google-cloud/firestore';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import {GCFBootstrapper} from 'gcf-utils';
@@ -26,11 +25,10 @@ const bootstrap = new GCFBootstrapper({
 });
 
 // Initialize firestore app here to avoid race condition.
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
+const db = new Firestore({
   projectId: process.env.FIRESTORE_PROJECT_ID,
+  preferRest: true,
 });
-const db = admin.firestore();
 
 // Unlike other probot apps, owl-bot-post-processor requires the ability
 // to generate its own auth token for Cloud Build, we use the helper in

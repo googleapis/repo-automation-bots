@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line node/no-extraneous-import
-import admin from 'firebase-admin';
+import {Firestore} from '@google-cloud/firestore';
 import {
   DatastoreLock,
   DatastoreLockError,
@@ -114,12 +113,10 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
 
   // Initialize firestore db:
   if (!db) {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
+    db = new Firestore({
       projectId: process.env.FIRESTORE_PROJECT_ID,
+      preferRest: true,
     });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    db = admin.firestore();
   }
 
   // We perform post processing on pull requests.  We run the specified docker container

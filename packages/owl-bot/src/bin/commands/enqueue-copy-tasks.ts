@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import admin from 'firebase-admin';
+import {Firestore} from '@google-cloud/firestore';
 import {getFilesModifiedBySha, commitsIterator} from '../../core';
 import {FirestoreConfigsStore} from '../../database';
 import yargs = require('yargs');
@@ -77,12 +77,10 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
+    const db = new Firestore({
       projectId: argv['firestore-project'],
+      preferRest: true,
     });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const db = admin.firestore();
     const configStore = new FirestoreConfigsStore(db!);
 
     let sha: string | undefined = undefined;
