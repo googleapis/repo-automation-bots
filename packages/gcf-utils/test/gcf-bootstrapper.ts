@@ -482,7 +482,7 @@ describe('GCFBootstrapper', () => {
     it('logs errors for single handler errors', async () => {
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(fakeLogger, 'error');
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -513,7 +513,7 @@ describe('GCFBootstrapper', () => {
     it('logs errors for multiple handler errors', async () => {
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(fakeLogger, 'error');
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');

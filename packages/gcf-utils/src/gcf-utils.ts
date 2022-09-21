@@ -47,6 +47,9 @@ import {
 export {TriggerType} from './bot-request';
 export {GCFLogger} from './logging/gcf-logger';
 
+export const ERROR_REPORTING_TYPE_NAME =
+  'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent';
+
 // On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
 export interface RequestWithRawBody extends express.Request {
@@ -1310,7 +1313,15 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
  * @param {GCFLogger} logger The logger to log to
  * @param {Error} e The error to log
  */
-function logErrors(logger: GCFLogger, e: Error) {
+export function logErrors(logger: GCFLogger, e: Error) {
+  // Add "@type" bindings so that Cloud Error Reporting will capture these logs.
+  const bindings = logger.getBindings();
+  if (bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
+    logger = logger.child({
+      '@type': ERROR_REPORTING_TYPE_NAME,
+      ...bindings,
+    });
+  }
   if (e instanceof AggregateError) {
     for (const inner of e) {
       // AggregateError should not contain an AggregateError, but

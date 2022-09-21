@@ -17,19 +17,53 @@
 import {
   addOrUpdateIssueComment,
   getAuthenticatedOctokit,
+  ERROR_REPORTING_TYPE_NAME,
+  logErrors,
 } from '../src/gcf-utils';
+import {GCFLogger} from '../src/logging/gcf-logger';
 import * as gcfUtilsModule from '../src/gcf-utils';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import snapshot from 'snap-shot-it';
+import {ObjectWritableMock} from 'stream-mock';
 import {Probot, ProbotOctokit} from 'probot';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import nock from 'nock';
 import * as sinon from 'sinon';
+import * as assert from 'assert';
+import {LogLine} from './test-helpers';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+describe('logErrors', () => {
+  let destination: ObjectWritableMock;
+  let logger: GCFLogger & {[key: string]: Function};
+
+  function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
+    try {
+      writeStream.end();
+      const lines: string[] = writeStream.data;
+      return lines.map(line => JSON.parse(line));
+    } catch (error) {
+      throw new Error(`Failed to read stream: ${error}`);
+    }
+  }
+
+  beforeEach(() => {
+    destination = new ObjectWritableMock();
+    logger = new GCFLogger(destination) as GCFLogger & {
+      [key: string]: Function;
+    };
+  });
+
+  it('adds @type property to the log entry', () => {
+    logErrors(logger, new Error('An error happened'));
+    const loggedLines: LogLine[] = readLogsAsObjects(destination);
+    assert.strictEqual(loggedLines[0]['@type'], ERROR_REPORTING_TYPE_NAME);
+  });
+});
 
 // Test app
 const app = (app: Probot) => {
