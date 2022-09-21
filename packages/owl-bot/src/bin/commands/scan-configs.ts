@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Firestore} from '@google-cloud/firestore';
+import admin from 'firebase-admin';
 import {FirestoreConfigsStore} from '../../database';
 import {scanGithubForConfigs} from '../../handlers';
 import yargs = require('yargs');
@@ -69,10 +69,11 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    const db = new Firestore({
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
       projectId: argv.project,
-      preferRest: true,
     });
+    const db = admin.firestore();
     const configStore = new FirestoreConfigsStore(db!);
     const invoke = () => {
       return scanGithubForConfigs(
