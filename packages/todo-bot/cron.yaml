@@ -1,0 +1,5 @@
+cron:
+  - name: todo nightly scan
+    # crontab formatted schedule
+    schedule: 0 1 * * *
+    description: scan repositories nightly

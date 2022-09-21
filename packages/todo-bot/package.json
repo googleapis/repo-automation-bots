@@ -1,0 +1,50 @@
+{
+    "name": "todo-bot",
+    "version": "1.0.0",
+    "description": "Maintain open issues for TODOs in code",
+    "private": true,
+    "author": "Google LLC.",
+    "license": "Apache-2.0",
+    "repository": "https://github.com/googleapis/repo-automation-bots.git",
+    "homepage": "https://github.com/googleapis/repo-automation-bots",
+    "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+    "main": "build/src/cli.js",
+    "keywords": [
+        "probot",
+        "github",
+        "probot-app"
+    ],
+    "files": [
+        "build/src"
+    ],
+    "scripts": {
+        "compile": "tsc -p .",
+        "start": "node ./build/src/server.js",
+        "start:local": "node ./build/src/local.js",
+        "pretest": "npm run compile",
+        "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+        "fix": "gts fix",
+        "lint": "gts check"
+    },
+    "dependencies": {
+        "@google-automations/bot-config-utils": "^6.1.0",
+        "gcf-utils": "^14.1.1",
+        "yargs": "^17.5.1"
+    },
+    "devDependencies": {
+        "@types/mocha": "^9.1.1",
+        "@types/node": "^18.7.13",
+        "@types/yargs": "^17.0.12",
+        "c8": "^7.12.0",
+        "cross-env": "^7.0.3",
+        "gts": "^4.0.0",
+        "lru-cache": "^7.14.0",
+        "mocha": "^10.0.0",
+        "nock": "^13.2.9",
+        "smee-client": "^1.2.3",
+        "typescript": "~4.8.1"
+    },
+    "engines": {
+        "node": ">= 14"
+    }
+}
