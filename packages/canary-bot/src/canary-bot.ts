@@ -142,6 +142,8 @@ export = (app: Probot) => {
         context.payload.installation!.id,
         getIssueBody(addition)
       );
+      // Temporarily throwing an error
+      throw new Error('Intentional error');
     } else {
       logger.info(
         'The bot is skipping this issue because the title does not include canary-bot test'
