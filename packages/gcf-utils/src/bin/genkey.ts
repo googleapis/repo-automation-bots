@@ -29,8 +29,11 @@ async function run(
   const opts = project
     ? {
         projectId: project,
+        fallback: 'rest',
       }
-    : undefined;
+    : {
+        fallback: 'rest',
+      }
   const smclient = new v1.SecretManagerServiceClient(opts);
   await create(smclient, project, botname, blob);
 }

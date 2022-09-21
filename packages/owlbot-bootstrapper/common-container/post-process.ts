@@ -31,7 +31,7 @@ export async function postProcess(argv: CliArgs) {
   const githubAuthenticator = new GithubAuthenticator(
     argv.projectId,
     argv.installationId,
-    new SecretManagerServiceClient()
+    new SecretManagerServiceClient({fallback: 'rest'})
   );
   const githubToken =
     await githubAuthenticator.getGitHubShortLivedAccessToken();

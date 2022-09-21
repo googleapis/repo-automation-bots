@@ -53,7 +53,7 @@ app.post('/rotate-service-account-key', async (req: Request, res: Response) => {
     version: 'v1',
     auth,
   });
-  const secretManagerClient = new SecretManagerServiceClient({auth});
+  const secretManagerClient = new SecretManagerServiceClient({auth, fallback: 'rest'});
 
   const helper = new SecretRotator(iamClient, secretManagerClient);
 

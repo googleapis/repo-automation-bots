@@ -23,8 +23,8 @@
     "lint": "cd cli && npm run lint && cd ../app && npm run lint && cd ../common-container && npm run lint"
   },
   "dependencies": {
-    "@google-cloud/cloudbuild": "^3.1.0",
-    "@google-cloud/secret-manager": "^4.1.1",
+    "@google-cloud/cloudbuild": "^3.1.1",
+    "@google-cloud/secret-manager": "^4.1.2",
     "@octokit/auth-app": "^4.0.5",
     "@octokit/rest": "^19.0.4",
     "@types/yargs": "^17.0.12",
