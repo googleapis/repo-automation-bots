@@ -28,6 +28,8 @@ steps:
     entrypoint: bash
     env:
       - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
+      - "TASK_MAX_CONCURRENT_DISPATCHES=50"
     args:
       - "-e"
       - "./scripts/publish-function.sh"
@@ -62,6 +64,8 @@ steps:
     entrypoint: bash
     env:
       - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
+      - "TASK_MAX_CONCURRENT_DISPATCHES=50"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
