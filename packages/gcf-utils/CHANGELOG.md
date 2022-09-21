@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.2.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.1.1...gcf-utils-v14.2.0) (2022-09-21)
+
+
+### Features
+
+* **gcf-utils:** Add [@type](https://github.com/type) property for unhandled errors. ([#4438](https://github.com/googleapis/repo-automation-bots/issues/4438)) ([d7b1a70](https://github.com/googleapis/repo-automation-bots/commit/d7b1a70efdd66e77540d99a063a87871d9caa671))
+
 ## [14.1.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.1.0...gcf-utils-v14.1.1) (2022-09-14)
 
 
