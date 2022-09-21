@@ -198,7 +198,7 @@ describe('canary-bot', () => {
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       sinon.assert.notCalled(addOrUpdateIssueCommentStub);
     });
-    it('thorws an error for canary-bot error', async () => {
+    it('throws an error for canary-bot error', async () => {
       const payload = require(resolve(
         fixturesPath,
         './events/issue_opened_testing_error'
