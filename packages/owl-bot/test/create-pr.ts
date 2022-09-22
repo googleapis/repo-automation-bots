@@ -124,7 +124,7 @@ describe('prependCommitMessage', () => {
             snapshot(prependedContent.title);
             snapshot(prependedContent.body);
           });
-    
+
           it('handles an initial pull request with long title', () => {
             const pullContent = resplit(loremIpsum, withCheckbox);
             const prependedContent = prependCommitMessage(
