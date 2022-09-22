@@ -38,6 +38,8 @@ steps:
       - "SERVICE_NAME=release-trigger-backend"
       - "CONCURRENCY=32"
       - "NUMBER_OF_CPU=4"
+      - "TASK_MAX_DISPATCHES_PER_SECOND=500"
+      - "TASK_MAX_CONCURRENT_DISPATCHES=128" # maximum of 4 instances
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
@@ -78,6 +80,8 @@ steps:
     env:
       - "IMAGE_NAME=gcr.io/$PROJECT_ID/release-trigger-frontend"
       - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+      - "TASK_MAX_DISPATCHES_PER_SECOND=500"
+      - "TASK_MAX_CONCURRENT_DISPATCHES=128" # maximum of 4 instances
       - "MEMORY=1G"
     args:
       - "-e"
