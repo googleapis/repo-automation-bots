@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v2.0.0...issue-utils-v2.1.0) (2022-09-20)
+
+
+### Features
+
+* add closeIssue helper ([#4432](https://github.com/googleapis/repo-automation-bots/issues/4432)) ([6bdc4b2](https://github.com/googleapis/repo-automation-bots/commit/6bdc4b2adb245e4edc06611029ff2b165c2e282c))
+
 ## [2.0.0](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v1.0.0...issue-utils-v2.0.0) (2022-08-15)
 
 

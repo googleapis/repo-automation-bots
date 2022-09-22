@@ -47,7 +47,7 @@
     "@google-cloud/secret-manager": "^3.12.0",
     "@googleapis/iam": "^3.0.1",
     "express": "^4.18.1",
-    "gcf-utils": "^14.0.1",
+    "gcf-utils": "^14.2.0",
     "google-auth-library": "^7.14.1"
   },
   "optionalDependencies": {

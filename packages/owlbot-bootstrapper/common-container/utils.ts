@@ -246,16 +246,3 @@ export function checkIfGitIsInstalled(cmd: Function) {
     throw new Error(`Error: git not installed: ${err}`);
   }
 }
-
-/**
- * Returns true if a given language is a mono repo
- *
- * @param language a Language enum (see interfaces)
- */
-export function isMonoRepo(language: Language): boolean {
-  const monorepos = ['nodejs', 'php', 'dotnet', 'ruby', 'java'];
-  if (monorepos.includes(language)) {
-    return true;
-  }
-  return false;
-}

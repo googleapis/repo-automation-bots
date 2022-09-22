@@ -31,7 +31,7 @@
     "@google-automations/bot-config-utils": "^6.1.0",
     "@google-automations/label-utils": "^3.0.0",
     "@google-cloud/storage": "^6.4.2",
-    "gcf-utils": "^14.1.0"
+    "gcf-utils": "^14.2.0"
   },
   "devDependencies": {
     "@octokit/types": "^7.2.0",

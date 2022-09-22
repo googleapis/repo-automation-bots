@@ -482,7 +482,7 @@ describe('GCFBootstrapper', () => {
     it('logs errors for single handler errors', async () => {
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(fakeLogger, 'error');
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -513,7 +513,7 @@ describe('GCFBootstrapper', () => {
     it('logs errors for multiple handler errors', async () => {
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(fakeLogger, 'error');
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -1791,7 +1791,7 @@ describe('GCFBootstrapper', () => {
       });
     });
 
-    it('queues a Cloud Run URL', async () => {
+    it('queues a Cloud Run URL with caching', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
         functionName: 'my-function-name',
@@ -1831,6 +1831,16 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnceWithExactly(getServiceStub as any, {
         name: 'projects/my-project/locations/my-location/services/my-function-name',
       });
+      // Make sure the Cloud Run service URL is cached.
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      const getServiceCalls = getServiceStub.getCalls();
+      assert.equal(getServiceCalls.length, 1);
+      const createTaskCalls = createTask.getCalls();
+      assert.equal(createTaskCalls.length, 2);
     });
 
     it('queues a Cloud Run URL with underscored bot name', async () => {
