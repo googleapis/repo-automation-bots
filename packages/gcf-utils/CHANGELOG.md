@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.2.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.2.0...gcf-utils-v14.2.1) (2022-09-22)
+
+
+### Bug Fixes
+
+* **gcf-utils:** cache Cloud Run service URL ([#4487](https://github.com/googleapis/repo-automation-bots/issues/4487)) ([a908803](https://github.com/googleapis/repo-automation-bots/commit/a908803a623c32d029b0d82d2d314b4ce61ff7a7)), closes [#4469](https://github.com/googleapis/repo-automation-bots/issues/4469)
+
 ## [14.2.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.1.1...gcf-utils-v14.2.0) (2022-09-21)
 
 

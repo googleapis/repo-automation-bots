@@ -1791,7 +1791,7 @@ describe('GCFBootstrapper', () => {
       });
     });
 
-    it('queues a Cloud Run URL', async () => {
+    it('queues a Cloud Run URL with caching', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
         functionName: 'my-function-name',
@@ -1831,6 +1831,16 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnceWithExactly(getServiceStub as any, {
         name: 'projects/my-project/locations/my-location/services/my-function-name',
       });
+      // Make sure the Cloud Run service URL is cached.
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      const getServiceCalls = getServiceStub.getCalls();
+      assert.equal(getServiceCalls.length, 1);
+      const createTaskCalls = createTask.getCalls();
+      assert.equal(createTaskCalls.length, 2);
     });
 
     it('queues a Cloud Run URL with underscored bot name', async () => {
