@@ -312,6 +312,7 @@ export class GCFBootstrapper {
   taskTargetName: string;
   taskCaller: string;
   flowControlDelayInSeconds: number;
+  cloudRunURL: string | undefined;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -356,6 +357,7 @@ export class GCFBootstrapper {
     this.taskTargetName = options.taskTargetName || this.functionName;
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
     this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
+    this.cloudRunURL = undefined;
   }
 
   async loadProbot(
@@ -1070,8 +1072,12 @@ export class GCFBootstrapper {
       // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green
       return `https://${location}-${projectId}.cloudfunctions.net/${botName}`;
     } else if (this.taskTargetEnvironment === 'run') {
+      if (this.cloudRunURL) {
+        return this.cloudRunURL;
+      }
       const url = await this.getCloudRunUrl(projectId, location, botName);
       if (url) {
+        this.cloudRunURL = url;
         return url;
       }
       throw new Error(`Unable to find url for Cloud Run service: ${botName}`);
