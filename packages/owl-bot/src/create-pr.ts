@@ -62,8 +62,18 @@ const NESTED_COMMIT_SEPARATOR = 'BEGIN_NESTED_COMMIT';
 
 /**
  * Given pull request content and a new commit message. Rewrite the pull request
- * title and body. If the initial pull request title was truncated with ellipses,
- * rejoin the title to the remaining part.
+ * title and body using the newest message as the title. If the initial pull
+ * request title was truncated with ellipses, rejoin the title to the remaining part.
+ *
+ * For example, if the existing pull request is something like:
+ * Title: `feat: original feature`
+ * Body: `Copy-Tag: 1234`
+ *
+ * and we prepend a new message of `feat: another new feature\nCopy-Tag: 2345`, the
+ * output will be:
+ * Title: `feat: another new feature`
+ * Body: `Copy-Tag: 2345\nBEGIN_NESTED_COMMIT\nfeat: original feature\nCopy-Tag:1234\nEND_NESTED_COMMIT`
+ *
  * @param {string} newCommitMessage the new commit message
  * @param {PullRequestContent} existingContent exisiting pull request title and body
  * @param {WithRegenerateCheckbox} withRegenerateCheckbox whether to include the
@@ -72,7 +82,8 @@ const NESTED_COMMIT_SEPARATOR = 'BEGIN_NESTED_COMMIT';
 export function prependCommitMessage(
   newCommitMessage: string,
   existingContent: PullRequestContent,
-  withRegenerateCheckbox: WithRegenerateCheckbox
+  withRegenerateCheckbox: WithRegenerateCheckbox,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
 ): PullRequestContent {
   // remove any regenerate checkbox content and leading/trailing whitespace
   const oldStrippedBody = existingContent.body
@@ -86,26 +97,29 @@ export function prependCommitMessage(
         existingContent.title.length - 3
       )}${oldStrippedBody}`
     : `${existingContent.title}\n${oldStrippedBody}`;
-  // anything before the first BEGIN_NESTED_COMMIT marker, is considered part of
-  // the previous commit
-  const bodyParts = oldBody.split(NESTED_COMMIT_SEPARATOR);
-  const oldBodyWithNestedCommitMarkers =
-    bodyParts.length === 1
-      ? // there is a single commit -- wrap the old body in the nested commit tags
-        `${NESTED_COMMIT_SEPARATOR}\n${oldBody}\nEND_NESTED_COMMIT\n`
-      : // there are already existing nested commit tags, content before the first
-        // one is wrapped in a new nested commit tag
-        `${NESTED_COMMIT_SEPARATOR}\n${
-          bodyParts[0]
-        }\nEND_NESTED_COMMIT\n${bodyParts
-          .slice(1)
-          .join(NESTED_COMMIT_SEPARATOR)}`;
+  if (withNestedCommitDelimiters === WithNestedCommitDelimiters.Yes) {
+    // anything before the first BEGIN_NESTED_COMMIT marker, is considered part of
+    // the previous commit
+    const bodyParts = oldBody.split(NESTED_COMMIT_SEPARATOR);
+    const oldBodyWithNestedCommitMarkers =
+      bodyParts.length === 1
+        ? // there is a single commit -- wrap the old body in the nested commit tags
+          `${NESTED_COMMIT_SEPARATOR}\n${oldBody}\nEND_NESTED_COMMIT\n`
+        : // there are already existing nested commit tags, content before the first
+          // one is wrapped in a new nested commit tag
+          `${NESTED_COMMIT_SEPARATOR}\n${
+            bodyParts[0]
+          }\nEND_NESTED_COMMIT\n${bodyParts
+            .slice(1)
+            .join(NESTED_COMMIT_SEPARATOR)}`;
 
-  // prepend the new commit message and use original title truncation logic
-  return resplit(
-    `${newCommitMessage}\n\n${oldBodyWithNestedCommitMarkers}`,
-    withRegenerateCheckbox
-  );
+    // prepend the new commit message and use original title truncation logic
+    return resplit(
+      `${newCommitMessage}\n\n${oldBodyWithNestedCommitMarkers}`,
+      withRegenerateCheckbox
+    );
+  }
+  return resplit(`${newCommitMessage}\n\n${oldBody}`, withRegenerateCheckbox);
 }
 
 // Exported for testing only.
@@ -152,6 +166,17 @@ export enum Force {
  * More type safe and readable than a boolean.
  */
 export enum WithRegenerateCheckbox {
+  Yes = 'yes',
+  No = 'no',
+}
+
+/**
+ * Should createPullRequestFromLastCommit() separate multiple commit message
+ * bodies with `BEGIN_NESTED_COMMIT`/`END_NESTED_COMMIT`?
+ *
+ * More type safe and readable than a boolean.
+ */
+export enum WithNestedCommitDelimiters {
   Yes = 'yes',
   No = 'no',
 }

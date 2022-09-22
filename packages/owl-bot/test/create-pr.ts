@@ -22,6 +22,7 @@ import {
   resplit,
   WithRegenerateCheckbox,
   prependCommitMessage,
+  WithNestedCommitDelimiters,
 } from '../src/create-pr';
 import snapshot = require('snap-shot-it');
 
@@ -105,30 +106,37 @@ describe('prependCommitMessage', () => {
     WithRegenerateCheckbox.No,
   ]) {
     describe(`with checkbox: ${withCheckbox}`, () => {
-      it('handles an initial pull request content', () => {
-        const pullContent = resplit(
-          'feat: some feature\n\nadditional context',
-          withCheckbox
-        );
-        const prependedContent = prependCommitMessage(
-          'fix: some new feature\n\nmore additional context',
-          pullContent,
-          withCheckbox
-        );
-        snapshot(prependedContent.title);
-        snapshot(prependedContent.body);
-      });
-
-      it('handles an initial pull request with long title', () => {
-        const pullContent = resplit(loremIpsum, withCheckbox);
-        const prependedContent = prependCommitMessage(
-          'fix: some new feature\n\nmore additional context',
-          pullContent,
-          withCheckbox
-        );
-        snapshot(prependedContent.title);
-        snapshot(prependedContent.body);
-      });
+      for (const withNested of [
+        WithNestedCommitDelimiters.Yes,
+        WithNestedCommitDelimiters.No,
+      ]) {
+        describe(`with nested: ${withNested}`, () => {
+          it('handles an initial pull request content', () => {
+            const pullContent = resplit(
+              'feat: some feature\n\nadditional context',
+              withCheckbox
+            );
+            const prependedContent = prependCommitMessage(
+              'fix: some new feature\n\nmore additional context',
+              pullContent,
+              withCheckbox
+            );
+            snapshot(prependedContent.title);
+            snapshot(prependedContent.body);
+          });
+    
+          it('handles an initial pull request with long title', () => {
+            const pullContent = resplit(loremIpsum, withCheckbox);
+            const prependedContent = prependCommitMessage(
+              'fix: some new feature\n\nmore additional context',
+              pullContent,
+              withCheckbox
+            );
+            snapshot(prependedContent.title);
+            snapshot(prependedContent.body);
+          });
+        });
+      }
     });
   }
 });
