@@ -98,6 +98,7 @@ steps:
       - "SERVICE_NAME=release-please-backend"
       - "SECURE_ACCESS=true"
       - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+      - "MEMORY=1G"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
