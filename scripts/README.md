@@ -8,3 +8,5 @@ To test these files, [shellcheck](https://github.com/koalaman/shellcheck) is req
 and `make` is suggested.
 
 Either run `make test` or `./test.sh`
+
+Testing Cloud Build Trigger issue
