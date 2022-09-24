@@ -441,7 +441,7 @@ async function checkReviews(
 }
 
 export function cleanGHLinks(ghBody: string): string {
-  return ghBody.replace(/https:\/\/github.com/, 'https://togithub.com');
+  return ghBody.replace(/https:\/\/github.com/g, 'https://togithub.com');
 }
 
 /**
