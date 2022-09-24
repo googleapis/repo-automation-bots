@@ -1022,7 +1022,7 @@ describe('merge-logic', () => {
   });
 
   describe('cleans GH links from GH body', () => {
-    it.only('converts GH links to togithub.gom', async () => {
+    it('converts GH links to togithub.gom', async () => {
       const bodyToClean =
         'Reactor-Core 3.4.16 is part of 2020.0.17 Release Train (Europium SR17).' +
         'This service release contains a few bugfixes and improvements.' +
