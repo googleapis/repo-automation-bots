@@ -31,6 +31,7 @@ const sandbox = sinon.createSandbox();
 describe('failurechecker', () => {
   let probot: Probot;
   let addIssueStub: sinon.SinonStub;
+  let closeIssueStub: sinon.SinonStub;
   let getAuthenticatedOctokitStub: sinon.SinonStub;
 
   beforeEach(() => {
@@ -39,6 +40,7 @@ describe('failurechecker', () => {
       .stub(TimeMethods, 'Date')
       .returns(new Date(Date.UTC(2020, 1, 1, 20)));
     addIssueStub = sandbox.stub(issueModule, 'addOrUpdateIssue').resolves();
+    closeIssueStub = sandbox.stub(issueModule, 'closeIssue').resolves();
     getAuthenticatedOctokitStub = sandbox.stub(
       gcfUtilsModule,
       'getAuthenticatedOctokit'
@@ -718,5 +720,51 @@ describe('failurechecker', () => {
     });
     requests.done();
     sinon.assert.notCalled(addIssueStub);
+  });
+
+  it('closes an issue if the issue is resolved', async () => {
+    const requests = nock('https://api.github.com')
+      .get('/repos/googleapis/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .reply(
+        200,
+        Buffer.from(
+          JSON.stringify({
+            releaseType: 'node',
+          })
+        )
+      )
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, []);
+
+    await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+          owner: {
+            login: 'googleapis',
+          },
+        },
+        organization: {
+          login: 'googleapis',
+        },
+        installation: {id: 123},
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+      id: 'abc123',
+    });
+    requests.done();
+    sinon.assert.calledOnce(closeIssueStub);
   });
 });

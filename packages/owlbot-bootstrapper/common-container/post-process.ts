@@ -17,13 +17,12 @@
 // the post-processing after the language contaner has run. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig, isMonoRepo, DIRECTORY_PATH} from './utils';
+import {openAnIssue, setConfig, DIRECTORY_PATH} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
-import {SplitRepo} from './split-repo';
 
 export async function postProcess(argv: CliArgs) {
   logger.info(`Entering post-process for ${argv.apiId}/${argv.language}`);
@@ -39,43 +38,24 @@ export async function postProcess(argv: CliArgs) {
 
   const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
 
-  // Decides whether we should go instantiate a mono or split repo.
-  const isMonoRepository = isMonoRepo(argv.language as Language);
-
-  if (argv.repoToClone === '' && isMonoRepository) {
-    throw new Error('No repo to clone specified for mono repo');
+  if (argv.repoToClone === '') {
+    throw new Error('No repo to clone specified');
   }
 
   // Sets git config options for owlbot-bootstrapper
   await setConfig(DIRECTORY_PATH);
   try {
-    if (isMonoRepository) {
-      // Mono-repo post-process (after language specific-container)
-      logger.info(`${argv.language} is a mono repo`);
-      const monoRepo = new MonoRepo(
-        argv.language as Language,
-        argv.repoToClone!,
-        githubToken,
-        argv.apiId,
-        octokit
-      );
+    // Post-process (after language specific-container)
+    const monoRepo = new MonoRepo(
+      argv.language as Language,
+      argv.repoToClone!,
+      githubToken,
+      argv.apiId,
+      octokit
+    );
 
-      await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
-      logger.info(`Opened a new PR in ${monoRepo.repoName}`);
-    } else {
-      // Split-repo post-process (after language specific-container)
-      logger.info(`${argv.language} is a split repo`);
-      const splitRepo = new SplitRepo(
-        argv.language as Language,
-        argv.apiId!,
-        octokit,
-        githubToken
-      );
-      await splitRepo.pushToMainAndCreateEmptyPR(DIRECTORY_PATH);
-      logger.info(
-        `Pushed files to main in ${splitRepo.repoName}, and opened empty PR`
-      );
-    }
+    await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
+    logger.info(`Opened a new PR in ${monoRepo.repoName}`);
   } catch (err) {
     await openAnIssue(
       octokit,

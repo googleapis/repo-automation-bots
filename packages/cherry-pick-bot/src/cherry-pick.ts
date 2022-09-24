@@ -67,6 +67,7 @@ export async function cherryPickAsPullRequest(
   repo: string,
   commits: string[],
   targetBranch: string,
+  title?: string,
   logger: GCFLogger = defaultLogger
 ): Promise<PullRequest> {
   logger.info(`cherry-pick ${commits} to ${targetBranch} via pull request`);
@@ -105,7 +106,6 @@ export async function cherryPickAsPullRequest(
   );
 
   logger.debug(`opening pull request from ${newBranchName} to ${targetBranch}`);
-  const title = newCommits[0].message;
   const body =
     newCommits.length > 1
       ? newCommits
@@ -118,7 +118,7 @@ export async function cherryPickAsPullRequest(
     repo,
     head: newBranchName,
     base: targetBranch,
-    title,
+    title: title || newCommits[0].message,
     body: `${body}\n\nCherry-picked ${newCommits
       .map(commit => commit.message)
       .join(', ')}`,

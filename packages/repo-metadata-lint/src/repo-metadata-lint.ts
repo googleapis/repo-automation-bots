@@ -15,6 +15,8 @@
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
 import {Octokit} from '@octokit/rest';
+/* eslint-disable-next-line node/no-extraneous-import */
+import {RequestError} from '@octokit/request-error';
 import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
 import * as fileIterator from './file-iterator';
 import {Validate, ValidationResult} from './validate';
@@ -61,7 +63,17 @@ export function handler(app: Probot) {
       );
     }
     const opener = new IssueOpener(owner, repo, octokit, logger);
-    await opener.open(results);
+    try {
+      await opener.open(results);
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 410) {
+        logger.warn(
+          `Issues are disabled on repo: ${owner}/${repo}, but would have opened an issue: ${e.request.body}`
+        );
+        return;
+      }
+      throw e;
+    }
   });
 
   // Adds failing check to pull requests if .repo-metadata.json is invalid.

@@ -1,0 +1,17 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "cherry-pick-bot config",
+	"description": "Schema for defining the cherry-pick-bot config",
+	"additionalProperties": false,
+	"type": "object",
+	"properties": {
+		"enabled": {
+			"description": "Enables the bot",
+			"type": "boolean"
+		},
+		"preservePullRequestTitle": {
+			"description": "Preserves the original PR title",
+			"type": "boolean"
+		}
+	}
+}

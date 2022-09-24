@@ -15,16 +15,15 @@
 // This file represents the _CONTAINER that is run in the
 // cloudbuild-owlbot-bootstrapper.yaml build. Depending on its env variables,
 // it will execute a 'pre-' or 'post-' flow (around a language-specific container)
-// for a split or mono repo-type object. This will be invoked by the Cloud Build file,
+// for a mono repo-type object. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig, isMonoRepo, DIRECTORY_PATH} from './utils';
+import {openAnIssue, setConfig, DIRECTORY_PATH} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
-import {SplitRepo} from './split-repo';
 
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
@@ -40,43 +39,24 @@ export async function preProcess(argv: CliArgs) {
 
   const octokit = await githubAuthenticator.authenticateOctokit(githubToken);
 
-  const isMonoRepository = isMonoRepo(argv.language as Language);
-
-  if (argv.repoToClone === '' && isMonoRepository) {
-    throw new Error('No repo to clone specified for mono repo');
+  if (argv.repoToClone === '') {
+    throw new Error('No repo to clone specified');
   }
 
   await setConfig(DIRECTORY_PATH);
 
   try {
-    if (isMonoRepository) {
-      // Mono-repo pre-process (before language specific-container)
-      logger.info(`${argv.language} is a mono repo`);
-      const monoRepo = new MonoRepo(
-        argv.language as Language,
-        argv.repoToClone!,
-        githubToken,
-        argv.apiId,
-        octokit
-      );
+    // Pre-process (before language specific-container)
+    const monoRepo = new MonoRepo(
+      argv.language as Language,
+      argv.repoToClone!,
+      githubToken,
+      argv.apiId,
+      octokit
+    );
 
-      await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
-      logger.info(`Repo ${monoRepo.repoName} cloned`);
-    } else {
-      // Split-repo pre-process (before language specific-container)
-      logger.info(`${argv.language} is a split repo`);
-
-      const splitRepo = new SplitRepo(
-        argv.language as Language,
-        argv.apiId,
-        octokit,
-        githubToken
-      );
-
-      await splitRepo.createAndInitializeEmptyGitRepo(DIRECTORY_PATH);
-
-      logger.info(`Initialized empty git repo ${splitRepo.repoName}`);
-    }
+    await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
+    logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
     logger.info(
       `Pre process failed; opening an issue on googleapis/${

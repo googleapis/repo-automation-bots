@@ -19,7 +19,7 @@
 # the language-specific container itself.
 
 steps:
-  # Clones the target repository and opens a branch for mono-repos, for split-repos creates a repository
+  # Clones the target repository and opens a branch
   - name: ${_CONTAINER}
     args:
     - "pre-process"

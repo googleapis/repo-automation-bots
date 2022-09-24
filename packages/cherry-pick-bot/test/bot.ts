@@ -25,14 +25,125 @@ import * as gcfUtilsModule from 'gcf-utils';
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import * as cherryPickModule from '../src/cherry-pick';
 import * as branchProtectionModule from '../src/branch-protection';
+import * as fs from 'fs';
+import snapshot from 'snap-shot-it';
 
 nock.disableNetConnect();
 
-const sandbox = sinon.createSandbox();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+function createConfigResponse(configFile: string) {
+  const config = fs.readFileSync(resolve(fixturesPath, configFile));
+  const base64Config = config.toString('base64');
+  return {
+    sha: '',
+    node_id: '',
+    size: base64Config.length,
+    url: '',
+    content: base64Config,
+    encoding: 'base64',
+  };
+}
+
+describe('cherry-pick-bot config validation', () => {
+  let probot: Probot;
+  const sandbox = sinon.createSandbox();
+
+  let getAuthenticatedOctokitStub: sinon.SinonStub;
+
+  beforeEach(() => {
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
+    });
+    probot.load(myProbotApp);
+
+    getAuthenticatedOctokitStub = sandbox.stub(
+      gcfUtilsModule,
+      'getAuthenticatedOctokit'
+    );
+
+    getAuthenticatedOctokitStub.resolves(new Octokit());
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
+  });
+
+  it('submits a failing check with a broken config file', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened'
+    ));
+    const files_payload = require(resolve(
+      fixturesPath,
+      'data',
+      'pull_request_files_config_added'
+    ));
+    const configBlob = createConfigResponse('config/broken-config.yml');
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/Codertocat/Hello-World/pulls/2/files?per_page=50')
+      .reply(200, files_payload)
+      .get(
+        '/repos/Codertocat/Hello-World/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob)
+      .post('/repos/Codertocat/Hello-World/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    requests.done();
+  });
+
+  it('does not submits a failing check with a correct config file', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened'
+    ));
+    const files_payload = require(resolve(
+      fixturesPath,
+      'data',
+      'pull_request_files_config_added'
+    ));
+    const configBlob = createConfigResponse('config/valid-config.yml');
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/Codertocat/Hello-World/pulls/2/files?per_page=50')
+      .reply(200, files_payload)
+      .get(
+        '/repos/Codertocat/Hello-World/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob);
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    requests.done();
+  });
+});
 
 describe('cherry-pick-bot', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
+
   let cherryPickPullRequestStub: sinon.SinonStub;
   let getAuthenticatedOctokitStub: sinon.SinonStub;
 
@@ -529,6 +640,49 @@ describe('cherry-pick-bot', () => {
       });
 
       sinon.assert.notCalled(cherryPickPullRequestStub);
+      requests.done();
+    });
+
+    it('ignores non-cherry-pick comments', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+      const comments = require(resolve(
+        fixturesPath,
+        'data',
+        'issue_comments_non_cherry_pick'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
+      cherryPickPullRequestStub.resolves({
+        number: 123,
+        html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
+        title: 'chore: cherry-pick abc123',
+        body: null,
+      });
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(cherryPickPullRequestStub);
       requests.done();
     });
   });

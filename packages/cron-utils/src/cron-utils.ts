@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import {v1, protos} from '@google-cloud/scheduler';
-import {run} from '@googleapis/run';
-import {GoogleAuth} from 'google-auth-library';
+import {v2 as CloudRunV2Client} from '@google-cloud/run';
 import {readFileSync, existsSync} from 'fs';
 import * as yaml from 'js-yaml';
 
@@ -48,23 +47,12 @@ export async function getServerlessSchedulerProxyUrl(
   projectId: string,
   region: string
 ): Promise<string | null> {
-  const auth = new GoogleAuth({
-    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-  });
-  const authClient = await auth.getClient();
-  const client = await run({
-    version: 'v1',
-    auth: authClient,
-  });
+  const client = new CloudRunV2Client.ServicesClient();
   const name = `projects/${projectId}/locations/${region}/services/serverless-scheduler-proxy`;
-  const res = await client.projects.locations.services.get({
+  const [service] = await client.getService({
     name,
   });
-
-  if (res.data.status?.address?.url) {
-    return res.data.status.address.url;
-  }
-  return null;
+  return service.uri || null;
 }
 
 /**

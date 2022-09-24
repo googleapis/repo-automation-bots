@@ -37,8 +37,7 @@ import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, buildRequestLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
-import {run} from '@googleapis/run';
-import {GoogleAuth} from 'google-auth-library';
+import {v2 as CloudRunV2} from '@google-cloud/run';
 import {TriggerType, parseBotRequest, BotRequest} from './bot-request';
 import {
   SCHEDULER_GLOBAL_EVENT_NAME,
@@ -47,6 +46,9 @@ import {
 } from './custom-events';
 export {TriggerType} from './bot-request';
 export {GCFLogger} from './logging/gcf-logger';
+
+export const ERROR_REPORTING_TYPE_NAME =
+  'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent';
 
 // On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
@@ -281,6 +283,7 @@ export const addOrUpdateIssueComment = async (
 interface BootstrapperOptions {
   secretsClient?: SecretManagerV1.SecretManagerServiceClient;
   tasksClient?: CloudTasksV2.CloudTasksClient;
+  cloudRunClient?: CloudRunV2.ServicesClient;
   projectId?: string;
   functionName?: string;
   location?: string;
@@ -299,6 +302,7 @@ export class GCFBootstrapper {
 
   secretsClient: SecretManagerV1.SecretManagerServiceClient;
   cloudTasksClient: CloudTasksV2.CloudTasksClient;
+  cloudRunClient: CloudRunV2.ServicesClient;
   storage: Storage;
   projectId: string;
   functionName: string;
@@ -308,6 +312,7 @@ export class GCFBootstrapper {
   taskTargetName: string;
   taskCaller: string;
   flowControlDelayInSeconds: number;
+  cloudRunURL: string | undefined;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -325,6 +330,8 @@ export class GCFBootstrapper {
       new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient =
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
+    this.cloudRunClient =
+      options?.cloudRunClient || new CloudRunV2.ServicesClient();
     this.storage = new Storage({retryOptions: {autoRetry: !RUNNING_IN_TEST}});
     this.taskTargetEnvironment =
       options.taskTargetEnvironment || defaultTaskEnvironment();
@@ -350,6 +357,7 @@ export class GCFBootstrapper {
     this.taskTargetName = options.taskTargetName || this.functionName;
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
     this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
+    this.cloudRunURL = undefined;
   }
 
   async loadProbot(
@@ -1048,23 +1056,11 @@ export class GCFBootstrapper {
   ): Promise<string | null> {
     // Cloud Run service names can only use dashes
     const serviceName = botName.replace(/_/g, '-');
-    const auth = new GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-    });
-    const authClient = await auth.getClient();
-    const client = await run({
-      version: 'v1',
-      auth: authClient,
-    });
     const name = `projects/${projectId}/locations/${location}/services/${serviceName}`;
-    const res = await client.projects.locations.services.get({
+    const [res] = await this.cloudRunClient.getService({
       name,
     });
-
-    if (res.data.status?.address?.url) {
-      return res.data.status.address.url;
-    }
-    return null;
+    return res.uri;
   }
 
   private async getTaskTarget(
@@ -1076,8 +1072,12 @@ export class GCFBootstrapper {
       // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green
       return `https://${location}-${projectId}.cloudfunctions.net/${botName}`;
     } else if (this.taskTargetEnvironment === 'run') {
+      if (this.cloudRunURL) {
+        return this.cloudRunURL;
+      }
       const url = await this.getCloudRunUrl(projectId, location, botName);
       if (url) {
+        this.cloudRunURL = url;
         return url;
       }
       throw new Error(`Unable to find url for Cloud Run service: ${botName}`);
@@ -1319,7 +1319,15 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
  * @param {GCFLogger} logger The logger to log to
  * @param {Error} e The error to log
  */
-function logErrors(logger: GCFLogger, e: Error) {
+export function logErrors(logger: GCFLogger, e: Error) {
+  // Add "@type" bindings so that Cloud Error Reporting will capture these logs.
+  const bindings = logger.getBindings();
+  if (bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
+    logger = logger.child({
+      '@type': ERROR_REPORTING_TYPE_NAME,
+      ...bindings,
+    });
+  }
   if (e instanceof AggregateError) {
     for (const inner of e) {
       // AggregateError should not contain an AggregateError, but

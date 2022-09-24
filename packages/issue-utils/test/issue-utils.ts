@@ -14,7 +14,7 @@
 
 import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
-import {addOrUpdateIssue} from '../src/issue-utils';
+import {addOrUpdateIssue, closeIssue} from '../src/issue-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
@@ -119,6 +119,70 @@ describe('addOrUpdateIssue', () => {
     assert.strictEqual(123, issue.number);
     assert.strictEqual('my issue title', issue.title);
     assert.strictEqual('my issue body', issue.body);
+    scopes.done();
+  });
+});
+
+describe('closeIssue', () => {
+  beforeEach(() => {
+    nock('https://api.github.com/').get('/app').reply(200, {
+      id: 12345,
+      slug: 'release-please',
+      name: 'Release Please',
+    });
+  });
+  it('closes an existing issue', async () => {
+    const scopes = nock('https://api.github.com/')
+      .get(
+        '/repos/test-owner/test-repo/issues?state=open&creator=release-please[bot]'
+      )
+      .reply(200, [
+        {
+          number: 123,
+          title: 'my issue title',
+          body: 'my issue body',
+          labels: [],
+        },
+      ])
+      .patch('/repos/test-owner/test-repo/issues/123', body => {
+        assert.strictEqual(body.state, 'closed');
+        assert.strictEqual(body.state_reason, 'completed');
+        return body;
+      })
+      .reply(200, {
+        title: 'my issue title',
+        body: 'my issue body',
+        number: 123,
+        labels: [{name: 'label1'}, {name: 'label2'}],
+      });
+    const issue = await closeIssue(
+      octokit,
+      'test-owner',
+      'test-repo',
+      'my issue title',
+      logger
+    );
+    assert(issue, 'expected issue to exist');
+    assert.strictEqual(123, issue.number);
+    assert.strictEqual('my issue title', issue.title);
+    assert.strictEqual('my issue body', issue.body);
+    scopes.done();
+  });
+
+  it('does nothing if no issue found', async () => {
+    const scopes = nock('https://api.github.com/')
+      .get(
+        '/repos/test-owner/test-repo/issues?state=open&creator=release-please[bot]'
+      )
+      .reply(200, []);
+    const issue = await closeIssue(
+      octokit,
+      'test-owner',
+      'test-repo',
+      'my issue title',
+      logger
+    );
+    assert.strictEqual(issue, null);
     scopes.done();
   });
 });

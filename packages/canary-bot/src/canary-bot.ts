@@ -141,6 +141,11 @@ export = (app: Probot) => {
         context.payload.installation!.id,
         getIssueBody(addition)
       );
+    } else if (context.payload.issue.title.includes('canary-bot error')) {
+      // For testing gcf-utils' error handling.
+      throw new Error(
+        `Intentional error with '${context.payload.issue.title}'`
+      );
     } else {
       logger.info(
         'The bot is skipping this issue because the title does not include canary-bot test'

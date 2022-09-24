@@ -87,6 +87,41 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.2.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.2.0...gcf-utils-v14.2.1) (2022-09-22)
+
+
+### Bug Fixes
+
+* **gcf-utils:** cache Cloud Run service URL ([#4487](https://github.com/googleapis/repo-automation-bots/issues/4487)) ([a908803](https://github.com/googleapis/repo-automation-bots/commit/a908803a623c32d029b0d82d2d314b4ce61ff7a7)), closes [#4469](https://github.com/googleapis/repo-automation-bots/issues/4469)
+
+## [14.2.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.1.1...gcf-utils-v14.2.0) (2022-09-21)
+
+
+### Features
+
+* **gcf-utils:** Add [@type](https://github.com/type) property for unhandled errors. ([#4438](https://github.com/googleapis/repo-automation-bots/issues/4438)) ([d7b1a70](https://github.com/googleapis/repo-automation-bots/commit/d7b1a70efdd66e77540d99a063a87871d9caa671))
+
+## [14.1.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.1.0...gcf-utils-v14.1.1) (2022-09-14)
+
+
+### Bug Fixes
+
+* **deps:** [gcf-utils] update dependency yargs to v17 ([#4375](https://github.com/googleapis/repo-automation-bots/issues/4375)) ([62938db](https://github.com/googleapis/repo-automation-bots/commit/62938dbf505fc65496f5d4a56765559968faa1fc))
+
+## [14.1.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.0.2...gcf-utils-v14.1.0) (2022-09-12)
+
+
+### Features
+
+* **gcf-utils:** switch to @google-cloud/run ([#4382](https://github.com/googleapis/repo-automation-bots/issues/4382)) ([54a23ca](https://github.com/googleapis/repo-automation-bots/commit/54a23ca48962d8dc6ddeb5a36876064f5343d557))
+
+## [14.0.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.0.1...gcf-utils-v14.0.2) (2022-09-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uuid to v9 ([#4347](https://github.com/googleapis/repo-automation-bots/issues/4347)) ([4144f3c](https://github.com/googleapis/repo-automation-bots/commit/4144f3c347c9ba5de6e16cf67110004dfc1e8cc6))
+
 ## [14.0.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.0.0...gcf-utils-v14.0.1) (2022-08-15)
 
 

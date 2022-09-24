@@ -28,6 +28,8 @@ steps:
     entrypoint: bash
     env:
       - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
+      - "TASK_MAX_CONCURRENT_DISPATCHES=20"
     args:
       - "-e"
       - "./scripts/publish-function.sh"
@@ -38,6 +40,47 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "nodejs14"
+
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker"
+    waitFor: ["-"]
+    dir: packages/blunderbuss
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/blunderbuss"
+      - "."
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker"
+    waitFor: ["build-docker"]
+    args: ["push", "gcr.io/$PROJECT_ID/blunderbuss"]
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run"
+    waitFor: ["push-docker"]
+    entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
+      - "TASK_MAX_CONCURRENT_DISPATCHES=20"
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+      # botName
+      - "blunderbuss"
+      # timeout
+      - "3600"
+      # minInstances: We want to serve Github webhook quickly, so keep one instance.
+      - "1"
 
   - name: gcr.io/cloud-builders/npm
     id: "cron-deploy"

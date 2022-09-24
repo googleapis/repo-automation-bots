@@ -482,7 +482,7 @@ describe('GCFBootstrapper', () => {
     it('logs errors for single handler errors', async () => {
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(fakeLogger, 'error');
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -513,7 +513,7 @@ describe('GCFBootstrapper', () => {
     it('logs errors for multiple handler errors', async () => {
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(fakeLogger, 'error');
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -1791,7 +1791,7 @@ describe('GCFBootstrapper', () => {
       });
     });
 
-    it('queues a Cloud Run URL', async () => {
+    it('queues a Cloud Run URL with caching', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
         functionName: 'my-function-name',
@@ -1801,20 +1801,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      const adcStub = sandbox
-        .stub(GoogleAuth.prototype, 'getClient')
-        .resolves();
-      const runScope = nock('https://run.googleapis.com')
-        .get(
-          '/v1/projects/my-project/locations/my-location/services/my-function-name'
-        )
-        .reply(200, {
-          status: {
-            address: {
-              url: 'http://some.domain/path',
-            },
-          },
-        });
+      const getServiceStub = sandbox
+        .stub(bootstrapper.cloudRunClient, 'getService')
+        .resolves([{uri: 'http://some.domain/path'}]);
       await bootstrapper.enqueueTask({
         body: JSON.stringify({installation: {id: 1}}),
         id: 'some-request-id',
@@ -1837,8 +1826,21 @@ describe('GCFBootstrapper', () => {
           },
         },
       });
-      runScope.done();
-      sinon.assert.calledOnce(adcStub);
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithExactly(getServiceStub as any, {
+        name: 'projects/my-project/locations/my-location/services/my-function-name',
+      });
+      // Make sure the Cloud Run service URL is cached.
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      const getServiceCalls = getServiceStub.getCalls();
+      assert.equal(getServiceCalls.length, 1);
+      const createTaskCalls = createTask.getCalls();
+      assert.equal(createTaskCalls.length, 2);
     });
 
     it('queues a Cloud Run URL with underscored bot name', async () => {
@@ -1851,20 +1853,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      const adcStub = sandbox
-        .stub(GoogleAuth.prototype, 'getClient')
-        .resolves();
-      const runScope = nock('https://run.googleapis.com')
-        .get(
-          '/v1/projects/my-project/locations/my-location/services/my-function-name'
-        )
-        .reply(200, {
-          status: {
-            address: {
-              url: 'http://some.domain/path',
-            },
-          },
-        });
+      const getServiceStub = sandbox
+        .stub(bootstrapper.cloudRunClient, 'getService')
+        .resolves([{uri: 'http://some.domain/path'}]);
       await bootstrapper.enqueueTask({
         body: JSON.stringify({installation: {id: 1}}),
         id: 'some-request-id',
@@ -1887,8 +1878,11 @@ describe('GCFBootstrapper', () => {
           },
         },
       });
-      runScope.done();
-      sinon.assert.calledOnce(adcStub);
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithExactly(getServiceStub as any, {
+        name: 'projects/my-project/locations/my-location/services/my-function-name',
+      });
     });
 
     it('queues a Cloud Run URL detected from environment', async () => {
@@ -1903,20 +1897,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      const adcStub = sandbox
-        .stub(GoogleAuth.prototype, 'getClient')
-        .resolves();
-      const runScope = nock('https://run.googleapis.com')
-        .get(
-          '/v1/projects/my-project/locations/my-location/services/my-function-name'
-        )
-        .reply(200, {
-          status: {
-            address: {
-              url: 'http://some.domain/path',
-            },
-          },
-        });
+      const getServiceStub = sandbox
+        .stub(bootstrapper.cloudRunClient, 'getService')
+        .resolves([{uri: 'http://some.domain/path'}]);
       await bootstrapper.enqueueTask({
         body: JSON.stringify({installation: {id: 1}}),
         id: 'some-request-id',
@@ -1939,8 +1922,11 @@ describe('GCFBootstrapper', () => {
           },
         },
       });
-      runScope.done();
-      sinon.assert.calledOnce(adcStub);
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithExactly(getServiceStub as any, {
+        name: 'projects/my-project/locations/my-location/services/my-function-name',
+      });
     });
 
     it('allows overriding the backend GCF bot name', async () => {
@@ -1988,20 +1974,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      const adcStub = sandbox
-        .stub(GoogleAuth.prototype, 'getClient')
-        .resolves();
-      const runScope = nock('https://run.googleapis.com')
-        .get(
-          '/v1/projects/my-project/locations/my-location/services/my-function-name-backend'
-        )
-        .reply(200, {
-          status: {
-            address: {
-              url: 'http://some.domain/path',
-            },
-          },
-        });
+      const getServiceStub = sandbox
+        .stub(bootstrapper.cloudRunClient, 'getService')
+        .resolves([{uri: 'http://some.domain/path'}]);
       await bootstrapper.enqueueTask({
         body: JSON.stringify({installation: {id: 1}}),
         id: 'some-request-id',
@@ -2024,8 +1999,11 @@ describe('GCFBootstrapper', () => {
           },
         },
       });
-      runScope.done();
-      sinon.assert.calledOnce(adcStub);
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithExactly(getServiceStub as any, {
+        name: 'projects/my-project/locations/my-location/services/my-function-name-backend',
+      });
     });
   });
 });

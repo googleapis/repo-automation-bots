@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "dayjs": "^1.11.5",
-    "gcf-utils": "^14.0.1",
+    "gcf-utils": "^14.2.1",
     "lru-cache": "^7.14.0"
   },
   "devDependencies": {
