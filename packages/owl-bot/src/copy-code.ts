@@ -375,7 +375,7 @@ async function findAndAppendPullRequest(
     .trim();
   const {title, body} = prependCommitMessage(
     commitBody,
-    {title: pull.title, body: pull.body || ''},
+    {title: pull.title, body: pull.body ?? ''},
     WithRegenerateCheckbox.Yes,
     withNestedCommitDelimiters
   );
