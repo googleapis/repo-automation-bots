@@ -100,16 +100,18 @@ export function prependCommitMessage(
   if (withNestedCommitDelimiters === WithNestedCommitDelimiters.Yes) {
     // anything before the first BEGIN_NESTED_COMMIT marker, is considered part of
     // the previous commit
-    const bodyParts = oldBody.split(NESTED_COMMIT_SEPARATOR);
+    const bodyParts = oldBody
+      .split(NESTED_COMMIT_SEPARATOR)
+      .map(part => part.trim());
     const oldBodyWithNestedCommitMarkers =
       bodyParts.length === 1
         ? // there is a single commit -- wrap the old body in the nested commit tags
-          `${NESTED_COMMIT_SEPARATOR}\n${oldBody}\nEND_NESTED_COMMIT\n`
+          `${NESTED_COMMIT_SEPARATOR}\n${oldBody}\nEND_NESTED_COMMIT`
         : // there are already existing nested commit tags, content before the first
           // one is wrapped in a new nested commit tag
           `${NESTED_COMMIT_SEPARATOR}\n${
             bodyParts[0]
-          }\nEND_NESTED_COMMIT\n${bodyParts
+          }\nEND_NESTED_COMMIT\n${NESTED_COMMIT_SEPARATOR}\n${bodyParts
             .slice(1)
             .join(NESTED_COMMIT_SEPARATOR)}`;
 
