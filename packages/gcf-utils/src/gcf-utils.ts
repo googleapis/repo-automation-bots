@@ -613,7 +613,8 @@ export class GCFBootstrapper {
               let isServiceUnavailable = e instanceof ServiceUnavailable;
               let serviceUnavailableMessage =
                 e instanceof ServiceUnavailable ? e.message : '';
-              let serviceUnavailableStack = e instanceof ServiceUnavailable ? e.originalError.stack : '';
+              let serviceUnavailableStack =
+                e instanceof ServiceUnavailable ? e.originalError.stack : '';
               if (e instanceof AggregateError) {
                 for (const inner of e) {
                   if (inner instanceof ServiceUnavailable) {

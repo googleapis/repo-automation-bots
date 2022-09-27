@@ -953,11 +953,11 @@ describe('GCFBootstrapper', () => {
         const lastScheduleTime = lastTask.task.scheduleTime.seconds;
         assert(
           lastScheduleTime - firstScheduleTime >
-          DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND
+            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND
         );
         assert(
           lastScheduleTime - firstScheduleTime <
-          DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND + 1
+            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND + 1
         );
         sinon.assert.notCalled(issueSpy);
         sinon.assert.notCalled(repositoryCronSpy);
