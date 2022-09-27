@@ -96,7 +96,13 @@ interface EnqueueTaskParams {
  * resource limitation.  GCFBootstrapper will catch this and return
  * HTTP 503 to suggest Cloud Task adds backoff for the next attempt.
  */
-export class ServiceUnavailable extends Error {}
+export class ServiceUnavailable extends Error {
+  readonly originalError: Error;
+  constructor(message: string, err: Error = undefined) {
+    super(message);
+    this.originalError = err;
+  }
+}
 
 export interface WrapOptions {
   // Whether or not to enqueue direct GitHub webhooks in a Cloud Task
@@ -607,18 +613,21 @@ export class GCFBootstrapper {
               let isServiceUnavailable = e instanceof ServiceUnavailable;
               let serviceUnavailableMessage =
                 e instanceof ServiceUnavailable ? e.message : '';
+              let serviceUnavailableStack = e instanceof ServiceUnavailable ? e.originalError.stack : '';
               if (e instanceof AggregateError) {
                 for (const inner of e) {
                   if (inner instanceof ServiceUnavailable) {
                     isServiceUnavailable = true;
                     serviceUnavailableMessage = inner.message;
+                    serviceUnavailableStack = inner.originalError.stack;
                   }
                 }
               }
               if (isServiceUnavailable) {
                 requestLogger.warn(
                   'ServiceUnavailable',
-                  serviceUnavailableMessage
+                  serviceUnavailableMessage,
+                  serviceUnavailableStack
                 );
                 response.status(503).send({
                   statusCode: 503,

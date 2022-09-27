@@ -691,7 +691,7 @@ describe('GCFBootstrapper', () => {
     it('returns 503 on ServiceUnavailable', async () => {
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
-          throw new ServiceUnavailable();
+          throw new ServiceUnavailable('', new Error('An error happened'));
         });
       });
       req.body = {
@@ -953,11 +953,11 @@ describe('GCFBootstrapper', () => {
         const lastScheduleTime = lastTask.task.scheduleTime.seconds;
         assert(
           lastScheduleTime - firstScheduleTime >
-            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND
+          DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND
         );
         assert(
           lastScheduleTime - firstScheduleTime <
-            DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND + 1
+          DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND + 1
         );
         sinon.assert.notCalled(issueSpy);
         sinon.assert.notCalled(repositoryCronSpy);
