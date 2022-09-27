@@ -21,7 +21,12 @@ import {
   MAX_TITLE_LENGTH,
   resplit,
   WithRegenerateCheckbox,
+  prependCommitMessage,
+  WithNestedCommitDelimiters,
 } from '../src/create-pr';
+
+const loremIpsum =
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
 
 describe('resplit', () => {
   it('leaves a short title unchanged', () => {
@@ -36,9 +41,6 @@ describe('resplit', () => {
       body: EMPTY_REGENERATE_CHECKBOX_TEXT + '\n\nbody\n',
     });
   });
-
-  const loremIpsum =
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
 
   it('resplits a long title', () => {
     const tb = resplit(loremIpsum + '\n\nbody', WithRegenerateCheckbox.No);
@@ -94,6 +96,253 @@ describe('resplit', () => {
     assert.strictEqual(tb.title, 'title');
     assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
     assert.ok(tb.body.length < body.length);
+  });
+});
+
+describe('prependCommitMessage', () => {
+  describe('with checkbox', () => {
+    describe('with nested delimiters', () => {
+      it('handles an initial pull request content', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          WithRegenerateCheckbox.Yes
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.Yes
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `- [ ] Regenerate this pull request now.
+
+more additional context
+
+BEGIN_NESTED_COMMIT
+feat: some feature
+additional context
+END_NESTED_COMMIT`
+        );
+      });
+
+      it('handles an initial pull request with long title', () => {
+        const pullContent = resplit(loremIpsum, WithRegenerateCheckbox.Yes);
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.Yes
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `- [ ] Regenerate this pull request now.
+
+more additional context
+
+BEGIN_NESTED_COMMIT
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+END_NESTED_COMMIT`
+        );
+      });
+
+      it('handles pull request already updated', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          WithRegenerateCheckbox.Yes
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.Yes
+        );
+        const prependedContent2 = prependCommitMessage(
+          'fix: another new feature\n\nfurther context',
+          prependedContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.Yes
+        );
+        assert.strictEqual(prependedContent2.title, 'fix: another new feature');
+        assert.strictEqual(
+          prependedContent2.body,
+          `- [ ] Regenerate this pull request now.
+
+further context
+
+BEGIN_NESTED_COMMIT
+fix: some new feature
+more additional context
+END_NESTED_COMMIT
+BEGIN_NESTED_COMMIT
+feat: some feature
+additional context
+END_NESTED_COMMIT`
+        );
+      });
+    });
+    describe('without nested delimiters', () => {
+      it('handles an initial pull request content', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          WithRegenerateCheckbox.Yes
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.No
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `- [ ] Regenerate this pull request now.
+
+more additional context
+
+feat: some feature
+additional context`
+        );
+      });
+
+      it('handles an initial pull request with long title', () => {
+        const pullContent = resplit(loremIpsum, WithRegenerateCheckbox.Yes);
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.No
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `- [ ] Regenerate this pull request now.
+
+more additional context
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`
+        );
+      });
+    });
+  });
+  describe('without checkbox', () => {
+    describe('with nested delimiters', () => {
+      it('handles an initial pull request content', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          WithRegenerateCheckbox.No
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.No,
+          WithNestedCommitDelimiters.Yes
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `more additional context
+
+BEGIN_NESTED_COMMIT
+feat: some feature
+additional context
+END_NESTED_COMMIT`
+        );
+      });
+
+      it('handles an initial pull request with long title', () => {
+        const pullContent = resplit(loremIpsum, WithRegenerateCheckbox.No);
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.No,
+          WithNestedCommitDelimiters.Yes
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `more additional context
+
+BEGIN_NESTED_COMMIT
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+END_NESTED_COMMIT`
+        );
+      });
+
+      it('handles pull request already updated', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          WithRegenerateCheckbox.No
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.No,
+          WithNestedCommitDelimiters.Yes
+        );
+        const prependedContent2 = prependCommitMessage(
+          'fix: another new feature\n\nfurther context',
+          prependedContent,
+          WithRegenerateCheckbox.No,
+          WithNestedCommitDelimiters.Yes
+        );
+        assert.strictEqual(prependedContent2.title, 'fix: another new feature');
+        assert.strictEqual(
+          prependedContent2.body,
+          `further context
+
+BEGIN_NESTED_COMMIT
+fix: some new feature
+more additional context
+END_NESTED_COMMIT
+BEGIN_NESTED_COMMIT
+feat: some feature
+additional context
+END_NESTED_COMMIT`
+        );
+      });
+    });
+    describe('without nested delimiters', () => {
+      it('handles an initial pull request content', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          WithRegenerateCheckbox.No
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.No,
+          WithNestedCommitDelimiters.No
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `more additional context
+
+feat: some feature
+additional context`
+        );
+      });
+
+      it('handles an initial pull request with long title', () => {
+        const pullContent = resplit(loremIpsum, WithRegenerateCheckbox.No);
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.No,
+          WithNestedCommitDelimiters.No
+        );
+        assert.strictEqual(prependedContent.title, 'fix: some new feature');
+        assert.strictEqual(
+          prependedContent.body,
+          `more additional context
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`
+        );
+      });
+    });
   });
 });
 
