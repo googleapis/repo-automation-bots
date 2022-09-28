@@ -24,6 +24,8 @@ import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
+import {getAndSaveDriftMetadata} from './utils';
+import {Storage} from '@google-cloud/storage';
 
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
@@ -56,6 +58,7 @@ export async function preProcess(argv: CliArgs) {
     );
 
     await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
+    await getAndSaveDriftMetadata(DIRECTORY_PATH, new Storage());
     logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
     logger.info(

@@ -30,6 +30,7 @@ let authenticateOctokitStub: sinon.SinonStub;
 let cloneRepoAndOpenBranchStub: sinon.SinonStub;
 let pushToBranchAndOpenPRStub: sinon.SinonStub;
 let setConfigStub: sinon.SinonStub;
+let getAndSaveDriftMetadataStub: sinon.SinonStub;
 
 describe('pre processing', async () => {
   let argv: CliArgs;
@@ -56,6 +57,7 @@ describe('pre processing', async () => {
     );
 
     setConfigStub = sinon.stub(utils, 'setConfig');
+    getAndSaveDriftMetadataStub = sinon.stub(utils, 'getAndSaveDriftMetadata');
   });
 
   afterEach(() => {
@@ -64,6 +66,7 @@ describe('pre processing', async () => {
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
     setConfigStub.restore();
+    getAndSaveDriftMetadataStub.restore();
   });
 
   it('assert right stubs are called during pre-process, monorepo', async () => {
@@ -77,6 +80,7 @@ describe('pre processing', async () => {
 
     await preProcess(argv);
     assert.ok(getGitHubShortLivedAccessTokenStub.calledOnce);
+    assert.ok(getAndSaveDriftMetadataStub.calledOnce);
     assert.ok(authenticateOctokitStub.calledOnce);
     assert.ok(cloneRepoAndOpenBranchStub.calledOnce);
   });

@@ -19,11 +19,10 @@ import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../utils';
 import snapshot from 'snap-shot-it';
-import {Language} from '../interfaces';
 import sinon from 'sinon';
 import * as fs from 'fs';
+import {Storage} from '@google-cloud/storage';
 
 let directoryPath: string;
 let repoToClonePath: string;
@@ -188,5 +187,42 @@ describe('common utils tests', async () => {
     }, /Error: git not installed/);
 
     cmdStub.restore();
+  });
+
+  it('should make a call to the Storage bucket', async () => {
+    const storage = {
+      bucket: sinon.stub().returns({
+        file: sinon.stub().returns({
+          download: sinon
+            .stub()
+            .returns(
+              '{"apis": [{"api_shortname": "kms", "display_name": "thing1", "docs_root_url": "thing2", "launch_stage": "thing3"}]}'
+            ),
+        }),
+      }),
+    } as unknown as Storage;
+
+    await utils.getAndSaveDriftMetadata(directoryPath, storage);
+    assert.ok(fs.existsSync(`${directoryPath}/${utils.DRIFT_APIS_PATH}`));
+
+    assert.deepStrictEqual(
+      fs.readFileSync(`${directoryPath}/${utils.DRIFT_APIS_PATH}`).toString(),
+      '{"apis": [{"api_shortname": "kms", "display_name": "thing1", "docs_root_url": "thing2", "launch_stage": "thing3"}]}'
+    );
+  });
+
+  it('should throw an error if apis file is empty', async () => {
+    const storage = {
+      bucket: sinon.stub().returns({
+        file: sinon.stub().returns({
+          download: sinon.stub().returns(''),
+        }),
+      }),
+    } as unknown as Storage;
+
+    assert.rejects(
+      async () => await utils.getAndSaveDriftMetadata(directoryPath, storage),
+      /apis.json downloaded from Cloud Storage was empty/
+    );
   });
 });
