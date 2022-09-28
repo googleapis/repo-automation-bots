@@ -91,6 +91,19 @@ interface EnqueueTaskParams {
   name: string;
 }
 
+/**
+ * Bot can throw this error to indicate it experienced some form of
+ * resource limitation.  GCFBootstrapper will catch this and return
+ * HTTP 503 to suggest Cloud Task adds backoff for the next attempt.
+ */
+export class ServiceUnavailable extends Error {
+  readonly originalError: Error;
+  constructor(message: string, err: Error = undefined) {
+    super(message);
+    this.originalError = err;
+  }
+}
+
 export interface WrapOptions {
   // Whether or not to enqueue direct GitHub webhooks in a Cloud Task
   // queue which provides a retry mechanism. Defaults to `true`.
@@ -596,7 +609,37 @@ export class GCFBootstrapper {
               });
               return;
             } else {
-              throw e;
+              // If a bot throws ServicceUnavailable, returns 503 for throttle task queue.
+              let isServiceUnavailable = e instanceof ServiceUnavailable;
+              let serviceUnavailableMessage =
+                e instanceof ServiceUnavailable ? e.message : '';
+              let serviceUnavailableStack =
+                e instanceof ServiceUnavailable ? e.originalError.stack : '';
+              if (e instanceof AggregateError) {
+                for (const inner of e) {
+                  if (inner instanceof ServiceUnavailable) {
+                    isServiceUnavailable = true;
+                    serviceUnavailableMessage = inner.message;
+                    serviceUnavailableStack = inner.originalError.stack;
+                  }
+                }
+              }
+              if (isServiceUnavailable) {
+                requestLogger.warn(
+                  'ServiceUnavailable',
+                  serviceUnavailableMessage,
+                  serviceUnavailableStack
+                );
+                response.status(503).send({
+                  statusCode: 503,
+                  body: JSON.stringify({
+                    message: serviceUnavailableMessage,
+                  }),
+                });
+                return;
+              } else {
+                throw e;
+              }
             }
           }
         } else if (botRequest.triggerType === TriggerType.GITHUB) {
