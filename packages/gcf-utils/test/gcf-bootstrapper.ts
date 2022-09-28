@@ -20,6 +20,7 @@ import {
   HandlerFunction,
   RequestWithRawBody,
   getContextLogger,
+  ServiceUnavailable,
 } from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
@@ -664,6 +665,33 @@ describe('GCFBootstrapper', () => {
               ],
             }
           );
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 503);
+    });
+
+    it('returns 503 on ServiceUnavailable', async () => {
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new ServiceUnavailable('', new Error('An error happened'));
         });
       });
       req.body = {

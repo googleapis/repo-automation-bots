@@ -29,12 +29,12 @@ import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {
   createPullRequestFromLastCommit,
-  EMPTY_REGENERATE_CHECKBOX_TEXT,
   Force,
-  REGENERATE_CHECKBOX_TEXT,
   resplit,
   WithRegenerateCheckbox,
   insertApiName,
+  prependCommitMessage,
+  WithNestedCommitDelimiters,
 } from './create-pr';
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {CopyStateStore} from './copy-state-store';
@@ -280,7 +280,8 @@ export function branchNameForCopies(yamlPaths: string[]): string {
 async function findAndAppendPullRequest(
   params: WorkingCopyParams,
   yamlPaths: string[],
-  logger: Logger = console
+  logger: Logger = console,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
 ): Promise<boolean> {
   const cmd = newCmd(logger);
   const octokit = await params.octokitFactory.getShortLivedOctokit();
@@ -372,14 +373,11 @@ async function findAndAppendPullRequest(
   })
     .toString('utf8')
     .trim();
-  const {title, body} = resplit(
-    `${commitBody}\n\n` +
-      `${pull.title}\n` +
-      pull.body
-        ?.replace(REGENERATE_CHECKBOX_TEXT, '')
-        .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
-        .trim() ?? '',
-    WithRegenerateCheckbox.Yes
+  const {title, body} = prependCommitMessage(
+    commitBody,
+    {title: pull.title, body: pull.body ?? ''},
+    WithRegenerateCheckbox.Yes,
+    withNestedCommitDelimiters
   );
   const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
   const apiList = abbreviateApiListForTitle(apiNames as string[]);
@@ -422,7 +420,8 @@ interface WorkingCopyParams extends CopyParams {
 export async function copyCodeAndAppendOrCreatePullRequest(
   params: CopyParams,
   yamlPaths: string[],
-  logger: Logger = console
+  logger: Logger = console,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
 ): Promise<void> {
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
@@ -449,7 +448,14 @@ export async function copyCodeAndAppendOrCreatePullRequest(
   const leftOvers: string[] = [];
   const wparams: WorkingCopyParams = {...params, destDir, workDir};
   for (const yamlPath of yamlPaths) {
-    if (!(await findAndAppendPullRequest(wparams, [yamlPath], logger))) {
+    if (
+      !(await findAndAppendPullRequest(
+        wparams,
+        [yamlPath],
+        logger,
+        withNestedCommitDelimiters
+      ))
+    ) {
       leftOvers.push(yamlPath);
     }
   }
@@ -459,7 +465,14 @@ export async function copyCodeAndAppendOrCreatePullRequest(
   if (isDeepStrictEqual(yamlPaths, leftOvers)) {
     // Don't repeat exactly the same search
   } else {
-    if (await findAndAppendPullRequest(wparams, leftOvers, logger)) {
+    if (
+      await findAndAppendPullRequest(
+        wparams,
+        leftOvers,
+        logger,
+        withNestedCommitDelimiters
+      )
+    ) {
       return; // Appended a pull request for all the left-over APIs.  Done.
     }
   }

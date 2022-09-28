@@ -27,6 +27,11 @@ export const EMPTY_REGENERATE_CHECKBOX_TEXT = REGENERATE_CHECKBOX_TEXT.replace(
   '[ ]'
 );
 
+interface PullRequestContent {
+  title: string;
+  body: string;
+}
+
 /***
  * Github will reject the pull request if the title is longer than 255
  * characters.  This function will move characters from the title to the body
@@ -37,7 +42,7 @@ export const EMPTY_REGENERATE_CHECKBOX_TEXT = REGENERATE_CHECKBOX_TEXT.replace(
 export function resplit(
   rawBody: string,
   withRegenerateCheckbox: WithRegenerateCheckbox
-): {title: string; body: string} {
+): PullRequestContent {
   const regexp = /([^\r\n]*)([\r\n]*)((.|\r|\n)*)/;
   const match = regexp.exec(rawBody)!;
   let title = match[1];
@@ -51,6 +56,72 @@ export function resplit(
     body = EMPTY_REGENERATE_CHECKBOX_TEXT + '\n\n' + body;
   }
   return {title, body: body.substring(0, MAX_BODY_LENGTH)};
+}
+
+const NESTED_COMMIT_SEPARATOR = 'BEGIN_NESTED_COMMIT';
+
+/**
+ * Given pull request content and a new commit message. Rewrite the pull request
+ * title and body using the newest message as the title. If the initial pull
+ * request title was truncated with ellipses, rejoin the title to the remaining part.
+ *
+ * For example, if the existing pull request is something like:
+ * Title: `feat: original feature`
+ * Body: `Copy-Tag: 1234`
+ *
+ * and we prepend a new message of `feat: another new feature\nCopy-Tag: 2345`, the
+ * output will be:
+ * Title: `feat: another new feature`
+ * Body: `Copy-Tag: 2345\nBEGIN_NESTED_COMMIT\nfeat: original feature\nCopy-Tag:1234\nEND_NESTED_COMMIT`
+ *
+ * @param {string} newCommitMessage the new commit message
+ * @param {PullRequestContent} existingContent exisiting pull request title and body
+ * @param {WithRegenerateCheckbox} withRegenerateCheckbox whether to include the
+ *   checkbox to regenerate the pull request
+ */
+export function prependCommitMessage(
+  newCommitMessage: string,
+  existingContent: PullRequestContent,
+  withRegenerateCheckbox: WithRegenerateCheckbox,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
+): PullRequestContent {
+  // remove any regenerate checkbox content and leading/trailing whitespace
+  const oldStrippedBody = existingContent.body
+    .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
+    .replace(REGENERATE_CHECKBOX_TEXT, '')
+    .trim();
+  // if title was truncated, re-add it to the beginning of the commit message
+  const oldBody = existingContent.title.endsWith('...')
+    ? `${existingContent.title.substring(
+        0,
+        existingContent.title.length - 3
+      )}${oldStrippedBody}`
+    : `${existingContent.title}\n${oldStrippedBody}`;
+  if (withNestedCommitDelimiters === WithNestedCommitDelimiters.Yes) {
+    // anything before the first BEGIN_NESTED_COMMIT marker, is considered part of
+    // the previous commit
+    const bodyParts = oldBody
+      .split(NESTED_COMMIT_SEPARATOR)
+      .map(part => part.trim());
+    const oldBodyWithNestedCommitMarkers =
+      bodyParts.length === 1
+        ? // there is a single commit -- wrap the old body in the nested commit tags
+          `${NESTED_COMMIT_SEPARATOR}\n${oldBody}\nEND_NESTED_COMMIT`
+        : // there are already existing nested commit tags, content before the first
+          // one is wrapped in a new nested commit tag
+          `${NESTED_COMMIT_SEPARATOR}\n${
+            bodyParts[0]
+          }\nEND_NESTED_COMMIT\n${NESTED_COMMIT_SEPARATOR}\n${bodyParts
+            .slice(1)
+            .join(NESTED_COMMIT_SEPARATOR)}`;
+
+    // prepend the new commit message and use original title truncation logic
+    return resplit(
+      `${newCommitMessage}\n\n${oldBodyWithNestedCommitMarkers}`,
+      withRegenerateCheckbox
+    );
+  }
+  return resplit(`${newCommitMessage}\n\n${oldBody}`, withRegenerateCheckbox);
 }
 
 // Exported for testing only.
@@ -97,6 +168,17 @@ export enum Force {
  * More type safe and readable than a boolean.
  */
 export enum WithRegenerateCheckbox {
+  Yes = 'yes',
+  No = 'no',
+}
+
+/**
+ * Should createPullRequestFromLastCommit() separate multiple commit message
+ * bodies with `BEGIN_NESTED_COMMIT`/`END_NESTED_COMMIT`?
+ *
+ * More type safe and readable than a boolean.
+ */
+export enum WithNestedCommitDelimiters {
   Yes = 'yes',
   No = 'no',
 }
