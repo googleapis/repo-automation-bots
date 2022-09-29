@@ -40,6 +40,7 @@ export interface BranchOptions {
   versionFile?: string;
   versioning?: VersioningStrategyType;
   changelogType?: ChangelogNotesType;
+  alternateInitialVersion?: string;
 }
 
 export interface BranchConfiguration extends BranchOptions {
