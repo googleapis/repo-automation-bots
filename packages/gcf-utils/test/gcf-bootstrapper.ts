@@ -20,6 +20,7 @@ import {
   HandlerFunction,
   RequestWithRawBody,
   getContextLogger,
+  ServiceUnavailable,
 } from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
@@ -664,6 +665,33 @@ describe('GCFBootstrapper', () => {
               ],
             }
           );
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 503);
+    });
+
+    it('returns 503 on ServiceUnavailable', async () => {
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new ServiceUnavailable('', new Error('An error happened'));
         });
       });
       req.body = {
@@ -1791,7 +1819,7 @@ describe('GCFBootstrapper', () => {
       });
     });
 
-    it('queues a Cloud Run URL', async () => {
+    it('queues a Cloud Run URL with caching', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
         functionName: 'my-function-name',
@@ -1831,6 +1859,16 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnceWithExactly(getServiceStub as any, {
         name: 'projects/my-project/locations/my-location/services/my-function-name',
       });
+      // Make sure the Cloud Run service URL is cached.
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      const getServiceCalls = getServiceStub.getCalls();
+      assert.equal(getServiceCalls.length, 1);
+      const createTaskCalls = createTask.getCalls();
+      assert.equal(createTaskCalls.length, 2);
     });
 
     it('queues a Cloud Run URL with underscored bot name', async () => {

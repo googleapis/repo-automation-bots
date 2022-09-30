@@ -27,6 +27,7 @@ import {newCmd} from './cmd';
 import {CopyStateStore} from './copy-state-store';
 import {GithubRepo} from './github-repo';
 import {Logger, LoggerWithTimestamp} from './logger';
+import {WithNestedCommitDelimiters} from './create-pr';
 
 interface Todo {
   repo: GithubRepo;
@@ -79,7 +80,8 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   cloneDepth = 100,
   copyStateStore: CopyStateStore,
   combinePullsThreshold = Number.MAX_SAFE_INTEGER,
-  logger: Logger = console
+  logger: Logger = console,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
 ): Promise<number> {
   logger = new LoggerWithTimestamp(logger);
   // Clone the source repo.
@@ -184,7 +186,12 @@ export async function scanGoogleapisGenAndCreatePullRequests(
       copyStateStore,
       octokitFactory,
     };
-    await copyCodeAndAppendOrCreatePullRequest(params, todo.yamlPaths, logger);
+    await copyCodeAndAppendOrCreatePullRequest(
+      params,
+      todo.yamlPaths,
+      logger,
+      withNestedCommitDelimiters
+    );
   }
   return todoStack.length;
 }
