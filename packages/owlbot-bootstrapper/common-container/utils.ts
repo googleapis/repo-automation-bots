@@ -17,12 +17,11 @@ import {logger} from 'gcf-utils';
 import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
-import {InterContainerVars, Language} from './interfaces';
-import {Storage} from '@google-cloud/storage';
+import {InterContainerVars} from './interfaces';
 
 export const INTER_CONTAINER_VARS_FILE = 'interContainerVars.json';
 export const DRIFT_APIS_PATH = 'drift_apis.json';
-const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
+export const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 export const ORG = 'googleapis';
 export const DIRECTORY_PATH = '/workspace';
 export const OWLBOT_LABEL = 'owlbot:copy-code';
@@ -68,24 +67,6 @@ export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
   const copyTagInfoEncoded = Buffer.from(copyTagInfo).toString('base64');
 
   return `Copy-Tag: ${copyTagInfoEncoded}`;
-}
-
-/**
- * Function that gets api information from a public DRIFT bucket, and saves it to a well-known location on disk
- * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
- * @param storageClient an instance of Google Cloud Storage
- */
-export async function getAndSaveDriftMetadata(
-  directoryPath: string,
-  storageClient: Storage
-): Promise<void> {
-  const bucket = 'devrel-prod-settings';
-  const file = 'apis.json';
-  const contents = await storageClient.bucket(bucket)?.file(file)?.download();
-  if (!contents) {
-    throw new Error('apis.json downloaded from Cloud Storage was empty');
-  }
-  fs.writeFileSync(`${directoryPath}/${DRIFT_APIS_PATH}`, contents.toString());
 }
 
 /**

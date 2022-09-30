@@ -18,14 +18,19 @@
 // for a mono repo-type object. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig, DIRECTORY_PATH} from './utils';
+import {
+  openAnIssue,
+  setConfig,
+  DIRECTORY_PATH,
+  INTER_CONTAINER_VARS_FILE,
+} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
-import {getAndSaveDriftMetadata} from './utils';
 import {Storage} from '@google-cloud/storage';
+import {ApiFieldFetcher} from './api-field-fetcher';
 
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
@@ -58,8 +63,17 @@ export async function preProcess(argv: CliArgs) {
     );
 
     await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
-    await getAndSaveDriftMetadata(DIRECTORY_PATH, new Storage());
     logger.info(`Repo ${monoRepo.repoName} cloned`);
+
+    new ApiFieldFetcher(
+      argv.apiId,
+      octokit,
+      new Storage()
+    ).getAndSaveApiInformation(DIRECTORY_PATH);
+
+    logger.info(
+      `API Information saved to ${DIRECTORY_PATH}/${INTER_CONTAINER_VARS_FILE}`
+    );
   } catch (err) {
     logger.info(
       `Pre process failed; opening an issue on googleapis/${
