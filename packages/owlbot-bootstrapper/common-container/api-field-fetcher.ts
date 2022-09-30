@@ -22,6 +22,8 @@ import * as fs from 'fs';
  * Fetches API-related information
  *
  * @param apiId the unique API ID
+ * @param storageClient a new instance of Storage
+ * @param octokit a new instance of Octokit
  */
 export class ApiFieldFetcher {
   apiId: string;
@@ -36,7 +38,9 @@ export class ApiFieldFetcher {
 
   /**
    * Function that gets api information from a public DRIFT bucket, and saves it to a well-known location on disk
+   * @param apiId the unique API ID
    * @param storageClient an instance of Google Cloud Storage
+   * @returns DriftApi info
    */
   public async _getDriftMetadata(
     apiId: string,
@@ -128,6 +132,14 @@ export class ApiFieldFetcher {
     return {name: parsedYaml?.name || '', title: parsedYaml?.title || ''};
   }
 
+  /**
+   * Compiles variables from DRIFT and Github into ApiFields object
+   *
+   * @param apiId the unique API ID
+   * @param storageClient a new instance of Storage
+   * @param octokit a new instance of Octokit
+   * @returns ApiFields
+   */
   public async _compileVariablesIntoApiFields(
     apiId: string,
     octokit: Octokit,
@@ -145,6 +157,12 @@ export class ApiFieldFetcher {
     };
   }
 
+  /**
+   * Writes API-related variables to the interContainerVars.json file
+   *
+   * @param variables ApiFields
+   * @param directoryPath local directory in which it is running
+   */
   public async _writeVariablesToWellKnownLocation(
     variables: ApiFields,
     directoryPath: string
