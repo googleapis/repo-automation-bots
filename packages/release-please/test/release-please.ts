@@ -370,7 +370,7 @@ describe('ReleasePleaseBot', () => {
           fromConfigStub,
           sinon.match.instanceOf(GitHub),
           'master',
-          sinon.match.has('initialVersion', true),
+          sinon.match.has('initialVersion', '0.1.0'),
           sinon.match.any,
           undefined
         );
