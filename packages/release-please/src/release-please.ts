@@ -230,7 +230,7 @@ async function buildManifest(
     changelogType: configuration.changelogType,
     versionFile: configuration.versionFile,
     extraFiles: configuration.extraFiles,
-    alternateInitialVersion: configuration.alternateInitialVersion,
+    initialVersion: configuration.initialVersion,
   };
   const manifestOverrides: ManifestOptions = {
     manifestPath: configuration.manifestFile,

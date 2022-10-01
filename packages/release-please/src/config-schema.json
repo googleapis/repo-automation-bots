@@ -109,7 +109,7 @@
                 "versionFile": {
                     "type": "string"
                 },
-                "alternateInitialVersion": {
+                "initialVersion": {
                     "type": "string"
                 }
             }
@@ -167,7 +167,7 @@
         "disableFailureChecker": true,
         "versioning": true,
         "changelogType": true,
-        "alternateInitialVersion": true
+        "initialVersion": true
     },
     "allOf": [
         { "$ref": "#/definitions/BranchOptions"},
@@ -207,7 +207,7 @@
                             "disableFailureChecker": true,
                             "versioning": true,
                             "changelogType": true,
-                            "alternateInitialVersion": true
+                            "initialVersion": true
                         },
                         "allOf": [
                             { "$ref": "#/definitions/BranchOptions"},
