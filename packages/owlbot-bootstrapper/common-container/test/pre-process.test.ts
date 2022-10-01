@@ -21,7 +21,6 @@ import {preProcess} from '../pre-process';
 import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {Octokit} from '@octokit/rest';
-import {ORG} from '../utils';
 import {ApiFieldFetcher} from '../api-field-fetcher';
 
 nock.disableNetConnect();
@@ -31,7 +30,8 @@ let authenticateOctokitStub: sinon.SinonStub;
 let cloneRepoAndOpenBranchStub: sinon.SinonStub;
 let pushToBranchAndOpenPRStub: sinon.SinonStub;
 let setConfigStub: sinon.SinonStub;
-let getAndSaveApiInformationStub: sinon.SinonStub;
+let loadApiFieldsStub: sinon.SinonStub;
+let writeToWellKnownLocationStub: sinon.SinonStub;
 
 describe('pre processing', async () => {
   let argv: CliArgs;
@@ -57,9 +57,11 @@ describe('pre processing', async () => {
       'pushToBranchAndOpenPR'
     );
 
-    getAndSaveApiInformationStub = sinon.stub(
-      ApiFieldFetcher.prototype,
-      'getAndSaveApiInformation'
+    loadApiFieldsStub = sinon.stub(ApiFieldFetcher.prototype, 'loadApiFields');
+
+    writeToWellKnownLocationStub = sinon.stub(
+      utils,
+      'writeToWellKnownLocation'
     );
 
     setConfigStub = sinon.stub(utils, 'setConfig');
@@ -71,7 +73,8 @@ describe('pre processing', async () => {
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
     setConfigStub.restore();
-    getAndSaveApiInformationStub.restore();
+    loadApiFieldsStub.restore();
+    writeToWellKnownLocationStub.restore();
   });
 
   it('assert right stubs are called during pre-process, monorepo', async () => {
@@ -85,7 +88,8 @@ describe('pre processing', async () => {
 
     await preProcess(argv);
     assert.ok(getGitHubShortLivedAccessTokenStub.calledOnce);
-    assert.ok(getAndSaveApiInformationStub.calledOnce);
+    assert.ok(loadApiFieldsStub.calledOnce);
+    assert.ok(writeToWellKnownLocationStub.calledOnce);
     assert.ok(authenticateOctokitStub.calledOnce);
     assert.ok(cloneRepoAndOpenBranchStub.calledOnce);
   });
@@ -105,7 +109,7 @@ describe('pre processing', async () => {
 
     const scope = nock('https://api.github.com')
       .post(
-        `/repos/${ORG}/${
+        `/repos/${utils.ORG}/${
           argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1]
         }/issues`
       )

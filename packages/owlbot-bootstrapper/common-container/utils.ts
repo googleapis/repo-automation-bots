@@ -108,6 +108,32 @@ export async function openABranch(repoName: string, directoryPath: string) {
 }
 
 /**
+ * Writes any object to the interContainerVars.json file without overwriting
+ * current information
+ *
+ * @param variables ApiFields
+ * @param directoryPath local directory in which it is running
+ */
+export async function writeToWellKnownLocation(
+  variables: {},
+  directoryPath: string
+) {
+  let contents = {};
+  if (fs.existsSync(`${directoryPath}/${INTER_CONTAINER_VARS_FILE}`)) {
+    contents = getWellKnownFileContents(
+      directoryPath,
+      INTER_CONTAINER_VARS_FILE
+    );
+  }
+
+  Object.assign(contents, variables);
+  fs.writeFileSync(
+    `${directoryPath}/${INTER_CONTAINER_VARS_FILE}`,
+    JSON.stringify(contents, null, 4)
+  );
+}
+
+/**
  * Opens a new PR on a repo
  *
  * @param octokit an authenticated octokit instance

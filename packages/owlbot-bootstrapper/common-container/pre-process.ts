@@ -31,6 +31,7 @@ import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
 import {Storage} from '@google-cloud/storage';
 import {ApiFieldFetcher} from './api-field-fetcher';
+import * as utils from './utils';
 
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
@@ -65,12 +66,13 @@ export async function preProcess(argv: CliArgs) {
     await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
     logger.info(`Repo ${monoRepo.repoName} cloned`);
 
-    new ApiFieldFetcher(
+    const apiInfo = new ApiFieldFetcher(
       argv.apiId,
       octokit,
       new Storage()
-    ).getAndSaveApiInformation(DIRECTORY_PATH);
+    ).loadApiFields();
 
+    utils.writeToWellKnownLocation(apiInfo, DIRECTORY_PATH);
     logger.info(
       `API Information saved to ${DIRECTORY_PATH}/${INTER_CONTAINER_VARS_FILE}`
     );

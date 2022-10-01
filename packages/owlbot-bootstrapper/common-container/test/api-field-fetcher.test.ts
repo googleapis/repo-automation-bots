@@ -14,18 +14,14 @@
 
 import {describe, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
-import {Language} from '../interfaces';
 import nock from 'nock';
 import {execSync} from 'child_process';
 import * as path from 'path';
-import * as fs from 'fs';
-import {MonoRepo} from '../mono-repo';
-import * as utils from '../utils';
 import assert from 'assert';
 import {ApiFieldFetcher} from '../api-field-fetcher';
 import {Storage} from '@google-cloud/storage';
 import sinon from 'sinon';
-import {regex} from 'uuidv4';
+import {ApiFields, ReleaseLevel} from '../interfaces';
 
 nock.disableNetConnect();
 
@@ -192,14 +188,6 @@ describe('Api Field Fetcher class', async () => {
   });
 
   it('should compile variables correctly', async () => {
-    const storage = {
-      bucket: sinon.stub().returns({
-        file: sinon.stub().returns({
-          download: sinon.stub().returns(''),
-        }),
-      }),
-    } as unknown as Storage;
-
     const getDriftMetadataStub = sinon
       .stub(ApiFieldFetcher.prototype, '_getDriftMetadata')
       .resolves({
@@ -216,13 +204,9 @@ describe('Api Field Fetcher class', async () => {
         title: 'Cloud Key Management Service (KMS) API',
       });
 
-    const variables =
-      await ApiFieldFetcher.prototype._compileVariablesIntoApiFields(
-        'google.cloud.kms.v1',
-        octokit,
-        storage
-      );
+    const variables = await ApiFieldFetcher.prototype.loadApiFields();
 
+    console.log(variables);
     assert.deepStrictEqual(variables, {
       apiShortName: 'kms',
       apiPrettyName: 'Cloud Key Management Service (KMS) API',
@@ -230,56 +214,10 @@ describe('Api Field Fetcher class', async () => {
       apiReleaseLevel: 'thing3',
       apiId: 'cloudkms.googleapis.com',
     });
+
     assert.ok(getDriftMetadataStub.calledOnce);
     assert.ok(getApiInfoStub.calledOnce);
     getDriftMetadataStub.restore();
     getApiInfoStub.restore();
-  });
-
-  it('should write variables to the intercontainervars file without overwriting any information', async () => {
-    fs.writeFileSync(
-      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
-      JSON.stringify({branchName: 'branchName'})
-    );
-    await ApiFieldFetcher.prototype._writeVariablesToWellKnownLocation(
-      {
-        apiShortName: 'kms',
-        apiPrettyName: 'Cloud Key Management Service (KMS) API',
-        apiProductDocumentation: 'thing2',
-        apiReleaseLevel: 'thing3',
-        apiId: 'cloudkms.googleapis.com',
-      },
-      directoryPath
-    );
-    const variables = await utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
-    );
-
-    assert.deepStrictEqual(variables, {
-      apiShortName: 'kms',
-      apiPrettyName: 'Cloud Key Management Service (KMS) API',
-      apiProductDocumentation: 'thing2',
-      apiReleaseLevel: 'thing3',
-      apiId: 'cloudkms.googleapis.com',
-      branchName: 'branchName',
-    });
-  });
-
-  it('should compile variables and save information to a well-known location', async () => {
-    const compileVariablesIntoApiFieldsStub = sinon
-      .stub(ApiFieldFetcher.prototype, '_compileVariablesIntoApiFields')
-      .resolves();
-
-    const writeVariablesToWellKnownLocationStub = sinon.stub(
-      ApiFieldFetcher.prototype,
-      '_writeVariablesToWellKnownLocation'
-    );
-
-    await ApiFieldFetcher.prototype.getAndSaveApiInformation(directoryPath);
-    assert.ok(compileVariablesIntoApiFieldsStub.calledOnce);
-    assert.ok(writeVariablesToWellKnownLocationStub.calledOnce);
-    compileVariablesIntoApiFieldsStub.restore();
-    writeVariablesToWellKnownLocationStub.restore();
   });
 });

@@ -188,4 +188,34 @@ describe('common utils tests', async () => {
 
     cmdStub.restore();
   });
+
+  it('should write to the intercontainervars file without overwriting any information', async () => {
+    fs.writeFileSync(
+      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      JSON.stringify({branchName: 'branchName'})
+    );
+    await utils.writeToWellKnownLocation(
+      {
+        apiShortName: 'kms',
+        apiPrettyName: 'Cloud Key Management Service (KMS) API',
+        apiProductDocumentation: 'thing2',
+        apiReleaseLevel: 'thing3',
+        apiId: 'cloudkms.googleapis.com',
+      },
+      directoryPath
+    );
+    const variables = await utils.getWellKnownFileContents(
+      directoryPath,
+      utils.INTER_CONTAINER_VARS_FILE
+    );
+
+    assert.deepStrictEqual(variables, {
+      apiShortName: 'kms',
+      apiPrettyName: 'Cloud Key Management Service (KMS) API',
+      apiProductDocumentation: 'thing2',
+      apiReleaseLevel: 'thing3',
+      apiId: 'cloudkms.googleapis.com',
+      branchName: 'branchName',
+    });
+  });
 });

@@ -46,27 +46,12 @@ export interface CliArgs {
   buildId?: string;
 }
 
-export interface InterContainerVars {
+export interface InterContainerVars extends ApiFields {
   branchName: string;
   owlbotYamlPath: string;
-  // API short name (e.g., accessapproval)
-  apiShortName: string;
-  // API pretty or full name (e.g., Access Approval API)
-  apiPrettyName?: string;
-  // Product documentation (e.g., https://cloud.google.com/cloud-provider-access-management/access-approval/docs)
-  apiProductDocumentation?: string;
-  // Client documentation (e.g., https://cloud.google.com/nodejs/docs/reference/access-approval/latest)
-  apiClientDocumentation?: string;
-  // API Issue tracker (e.g., https://issuetracker.google.com/issues/new?component=190865&template=1161103)
-  apiIssueTracker?: string;
-  // API Release level or launch stage (e.g., Beta)
-  apiReleaseLevel?: string;
-  // API ID (as described by 'name' in googleapis/google/*/*/*_v*.yaml)
-  // This is confusing notation as we also have apiId which refers to the unique identifier;
-  // But this is how most .repo-metadata.json files have their configuration.
-  apiId?: string;
 }
 
+// These API fields will
 export interface ApiFields {
   // API short name (e.g., accessapproval)
   apiShortName: string;
@@ -80,9 +65,10 @@ export interface ApiFields {
   apiIssueTracker?: string;
   // API Release level or launch stage (e.g., Beta)
   apiReleaseLevel?: string;
-  // API ID (as described by 'name' in googleapis/google/*/*/*_v*.yaml)
-  // This is confusing notation as we also have apiId which refers to the unique identifier;
-  // But this is how most .repo-metadata.json files have their configuration.
+  // API ID (as described by 'name' in api_proto.yaml)
+  // This is confusing notation as we also have apiId which refers to the unique identifier (see ID: https://raw.githubusercontent.com/googleapis/googleapis/master/api-index-v1.json)
+  // But most .repo-metadata.json files use apiId to refer to something that looks like the host name
+  // See internal doc https://docs.google.com/document/d/1IUpyM_V-LOC3OUSlkcG5GgqNzjQ5qnnlkEF9gu2kJR4/edit#heading=h.x9snb54sjlu9
   apiId?: string;
 }
 
@@ -104,4 +90,15 @@ export interface GHFile {
 
 export interface GHDir {
   name: string;
+}
+
+export enum ReleaseLevel {
+  LAUNCH_STAGE_UNSPECIFIED = 'LAUNCH_STAGE_UNSPECIFIED',
+  UNIMPLEMENTED = 'UNIMPLEMENTED',
+  PRELAUNCH = 'PRELAUNCH',
+  EARLY_ACCESS = 'EARLY_ACCESS',
+  ALPHA = 'ALPHA',
+  BETA = 'BETA',
+  GA = 'GA',
+  DEPRECATED = 'DEPRECATED',
 }

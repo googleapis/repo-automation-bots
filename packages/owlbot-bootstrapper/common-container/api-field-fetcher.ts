@@ -14,10 +14,8 @@
 
 import {Octokit} from '@octokit/rest';
 import {Storage} from '@google-cloud/storage';
-import {ApiFields, DriftApi, GHDir, GHFile} from './interfaces';
+import {ApiFields, DriftApi, GHDir, GHFile, ReleaseLevel} from './interfaces';
 import yaml from 'js-yaml';
-import {getWellKnownFileContents, INTER_CONTAINER_VARS_FILE} from './utils';
-import * as fs from 'fs';
 /**
  * Fetches API-related information
  *
@@ -133,65 +131,25 @@ export class ApiFieldFetcher {
   }
 
   /**
-   * Compiles variables from DRIFT and Github into ApiFields object
-   *
-   * @param apiId the unique API ID
-   * @param storageClient a new instance of Storage
-   * @param octokit a new instance of Octokit
-   * @returns ApiFields
+   * Gets API-specific information from various sources, and saves it to a well-known location
+   * @returns ApiFields object
    */
-  public async _compileVariablesIntoApiFields(
-    apiId: string,
-    octokit: Octokit,
-    storageClient: Storage
-  ): Promise<ApiFields> {
-    const driftData = await this._getDriftMetadata(apiId, storageClient);
-    const apiProtoData = await this._getApiProtoInformation(octokit, apiId);
+  public async loadApiFields(): Promise<ApiFields> {
+    const driftData = await this._getDriftMetadata(
+      this.apiId,
+      this.storageClient
+    );
+    const apiProtoData = await this._getApiProtoInformation(
+      this.octokit,
+      this.apiId
+    );
 
     return {
       apiShortName: driftData.api_shortname,
       apiPrettyName: apiProtoData.title || driftData.display_name,
       apiProductDocumentation: driftData.docs_root_url,
-      apiReleaseLevel: driftData.launch_stage,
+      apiReleaseLevel: driftData.launch_stage as ReleaseLevel,
       apiId: apiProtoData.name,
     };
-  }
-
-  /**
-   * Writes API-related variables to the interContainerVars.json file
-   *
-   * @param variables ApiFields
-   * @param directoryPath local directory in which it is running
-   */
-  public async _writeVariablesToWellKnownLocation(
-    variables: ApiFields,
-    directoryPath: string
-  ) {
-    let contents = {};
-    if (fs.existsSync(`${directoryPath}/${INTER_CONTAINER_VARS_FILE}`)) {
-      contents = getWellKnownFileContents(
-        directoryPath,
-        INTER_CONTAINER_VARS_FILE
-      );
-    }
-
-    Object.assign(contents, variables);
-    fs.writeFileSync(
-      `${directoryPath}/${INTER_CONTAINER_VARS_FILE}`,
-      JSON.stringify(contents, null, 4)
-    );
-  }
-
-  /**
-   * Gets API-specific information from various sources, and saves it to a well-known location
-   *
-   */
-  public async getAndSaveApiInformation(directoryPath: string) {
-    const variables = await this._compileVariablesIntoApiFields(
-      this.apiId,
-      this.octokit,
-      this.storageClient
-    );
-    this._writeVariablesToWellKnownLocation(variables, directoryPath);
   }
 }
