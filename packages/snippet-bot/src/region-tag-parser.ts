@@ -19,7 +19,6 @@ import {downloadFile} from './utils';
 import tmp from 'tmp-promise';
 import fs from 'fs';
 
-import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
 import {Violation} from './violations';
@@ -77,8 +76,7 @@ export async function parseRegionTagsInPullRequest(
   headOwner: string,
   headRepo: string,
   headSha: string,
-  headRef: string,
-  logger: GCFLogger = defaultLogger
+  headRef: string
 ): Promise<ChangesInPullRequest> {
   const cacheHead = new RepositoryFileCache(octokit, {
     owner: headOwner,
@@ -121,55 +119,45 @@ export async function parseRegionTagsInPullRequest(
     ) {
       // For the case of renaming the file, we scan the files directly,
       // no need to understand the diffs.
-      try {
-        const contentsBeforeRename = await cacheBase.getFileContents(
-          file.from,
-          ref
-        );
-        const linesBeforeRename =
-          contentsBeforeRename.parsedContent.split('\n');
-        for (let i = 0; i < linesBeforeRename.length; i++) {
-          const startMatch = linesBeforeRename[i].match(START_TAG_REGEX);
-          if (startMatch) {
-            ret.deleted += 1;
-            ret.changes.push({
-              type: 'del',
-              regionTag: startMatch[1],
-              owner: owner,
-              repo: repo,
-              file: file.from,
-              sha: sha,
-              line: i + 1,
-            });
-          }
+      const contentsBeforeRename = await cacheBase.getFileContents(
+        file.from,
+        ref
+      );
+      const linesBeforeRename = contentsBeforeRename.parsedContent.split('\n');
+      for (let i = 0; i < linesBeforeRename.length; i++) {
+        const startMatch = linesBeforeRename[i].match(START_TAG_REGEX);
+        if (startMatch) {
+          ret.deleted += 1;
+          ret.changes.push({
+            type: 'del',
+            regionTag: startMatch[1],
+            owner: owner,
+            repo: repo,
+            file: file.from,
+            sha: sha,
+            line: i + 1,
+          });
         }
-        const contentsAfterRename = await cacheHead.getFileContents(
-          file.to,
-          headRef
-        );
-        const linesAfterRename = contentsAfterRename.parsedContent.split('\n');
-        for (let i = 0; i < linesAfterRename.length; i++) {
-          const startMatch = linesAfterRename[i].match(START_TAG_REGEX);
-          if (startMatch) {
-            ret.added += 1;
-            ret.changes.push({
-              type: 'add',
-              regionTag: startMatch[1],
-              owner: headOwner,
-              repo: headRepo,
-              file: file.to,
-              sha: headSha,
-              line: i + 1,
-            });
-          }
+      }
+      const contentsAfterRename = await cacheHead.getFileContents(
+        file.to,
+        headRef
+      );
+      const linesAfterRename = contentsAfterRename.parsedContent.split('\n');
+      for (let i = 0; i < linesAfterRename.length; i++) {
+        const startMatch = linesAfterRename[i].match(START_TAG_REGEX);
+        if (startMatch) {
+          ret.added += 1;
+          ret.changes.push({
+            type: 'add',
+            regionTag: startMatch[1],
+            owner: headOwner,
+            repo: headRepo,
+            file: file.to,
+            sha: headSha,
+            line: i + 1,
+          });
         }
-      } catch (e) {
-        const err = e as Error;
-        err.message =
-          'Skipping the diff entry because it failed to read the' +
-          ` file: ${err.message}`;
-        logger.error(err);
-        continue;
       }
     } else {
       for (const chunk of file.chunks) {

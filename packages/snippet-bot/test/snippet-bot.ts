@@ -38,7 +38,10 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import {GCFLogger} from 'gcf-utils';
 import * as gcfUtils from 'gcf-utils';
-import {RepositoryFileCache} from '@google-automations/git-file-utils';
+import {
+  RepositoryFileCache,
+  FileNotFoundError,
+} from '@google-automations/git-file-utils';
 
 nock.disableNetConnect();
 
@@ -526,6 +529,35 @@ describe('snippet-bot', () => {
       });
 
       requests.done();
+      diffRequests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
+      );
+    });
+
+    it('ignores FileNotFound error when fetching the file and exits early', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      getFileContentsStub.rejects(new FileNotFoundError('test.py'));
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
       diffRequests.done();
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
