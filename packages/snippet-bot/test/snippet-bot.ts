@@ -569,35 +569,6 @@ describe('snippet-bot', () => {
       );
     });
 
-    it('ignores 404 RequestError when fetching the file and exits early', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
-      const payload = require(resolve(fixturesPath, './pr_event'));
-
-      getFileContentsStub.rejects({status: 404});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
-
-      const diffRequests = nock('https://github.com')
-        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(200, diffResponse);
-
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
-      });
-
-      diffRequests.done();
-      sinon.assert.calledOnceWithExactly(
-        getConfigStub,
-        sinon.match.instanceOf(Octokit),
-        'tmatsuo',
-        'repo-automation-bots',
-        CONFIGURATION_FILE_PATH,
-        {schema: schema}
-      );
-    });
-
     it('quits early for normal labels', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(

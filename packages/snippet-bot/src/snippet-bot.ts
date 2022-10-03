@@ -263,13 +263,7 @@ async function scanPullRequest(
       logger.info(`ignoring 404 errors upon fetching files: ${e.message}`);
       return;
     } else {
-      const err = e as RequestError;
-      if (err.status === 404) {
-        logger.info('ignoring 404 errors upon fetching files');
-        return;
-      } else {
-        throw e;
-      }
+      throw e;
     }
   }
 
@@ -319,13 +313,7 @@ async function scanPullRequest(
         logger.info(`ignoring 404 errors upon fetching ${file}: ${e.message}`);
         return;
       } else {
-        const err = e as RequestError;
-        if (err.status === 404) {
-          logger.info(`ignoring 404 errors upon fetching ${file}`);
-          return;
-        } else {
-          throw e;
-        }
+        throw e;
       }
     }
   }

@@ -18,10 +18,7 @@
 
 import {parseRegionTagsInPullRequest} from '../src/region-tag-parser';
 
-import {
-  FileNotFoundError,
-  RepositoryFileCache,
-} from '@google-automations/git-file-utils';
+import {RepositoryFileCache} from '@google-automations/git-file-utils';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import * as fs from 'fs';
