@@ -45,6 +45,7 @@
     }
   ],
   "lockFileMaintenance": {
+    "commitMessageAction": "[{{parentDir}}] Lock file maintenance",
     "enabled": true
   },
   "additionalBranchPrefix": "{{parentDir}}-",

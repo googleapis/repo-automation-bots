@@ -47,6 +47,9 @@ import {
 export {TriggerType} from './bot-request';
 export {GCFLogger} from './logging/gcf-logger';
 
+export const ERROR_REPORTING_TYPE_NAME =
+  'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent';
+
 // On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
 export interface RequestWithRawBody extends express.Request {
@@ -86,6 +89,19 @@ interface EnqueueTaskParams {
   body: string;
   id: string;
   name: string;
+}
+
+/**
+ * Bot can throw this error to indicate it experienced some form of
+ * resource limitation.  GCFBootstrapper will catch this and return
+ * HTTP 503 to suggest Cloud Task adds backoff for the next attempt.
+ */
+export class ServiceUnavailable extends Error {
+  readonly originalError: Error;
+  constructor(message: string, err: Error = undefined) {
+    super(message);
+    this.originalError = err;
+  }
 }
 
 export interface WrapOptions {
@@ -309,6 +325,7 @@ export class GCFBootstrapper {
   taskTargetName: string;
   taskCaller: string;
   flowControlDelayInSeconds: number;
+  cloudRunURL: string | undefined;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -353,6 +370,7 @@ export class GCFBootstrapper {
     this.taskTargetName = options.taskTargetName || this.functionName;
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
     this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
+    this.cloudRunURL = undefined;
   }
 
   async loadProbot(
@@ -591,7 +609,37 @@ export class GCFBootstrapper {
               });
               return;
             } else {
-              throw e;
+              // If a bot throws ServicceUnavailable, returns 503 for throttle task queue.
+              let isServiceUnavailable = e instanceof ServiceUnavailable;
+              let serviceUnavailableMessage =
+                e instanceof ServiceUnavailable ? e.message : '';
+              let serviceUnavailableStack =
+                e instanceof ServiceUnavailable ? e.originalError.stack : '';
+              if (e instanceof AggregateError) {
+                for (const inner of e) {
+                  if (inner instanceof ServiceUnavailable) {
+                    isServiceUnavailable = true;
+                    serviceUnavailableMessage = inner.message;
+                    serviceUnavailableStack = inner.originalError.stack;
+                  }
+                }
+              }
+              if (isServiceUnavailable) {
+                requestLogger.warn(
+                  'ServiceUnavailable',
+                  serviceUnavailableMessage,
+                  serviceUnavailableStack
+                );
+                response.status(503).send({
+                  statusCode: 503,
+                  body: JSON.stringify({
+                    message: serviceUnavailableMessage,
+                  }),
+                });
+                return;
+              } else {
+                throw e;
+              }
             }
           }
         } else if (botRequest.triggerType === TriggerType.GITHUB) {
@@ -1067,8 +1115,12 @@ export class GCFBootstrapper {
       // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green
       return `https://${location}-${projectId}.cloudfunctions.net/${botName}`;
     } else if (this.taskTargetEnvironment === 'run') {
+      if (this.cloudRunURL) {
+        return this.cloudRunURL;
+      }
       const url = await this.getCloudRunUrl(projectId, location, botName);
       if (url) {
+        this.cloudRunURL = url;
         return url;
       }
       throw new Error(`Unable to find url for Cloud Run service: ${botName}`);
@@ -1310,7 +1362,15 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
  * @param {GCFLogger} logger The logger to log to
  * @param {Error} e The error to log
  */
-function logErrors(logger: GCFLogger, e: Error) {
+export function logErrors(logger: GCFLogger, e: Error) {
+  // Add "@type" bindings so that Cloud Error Reporting will capture these logs.
+  const bindings = logger.getBindings();
+  if (bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
+    logger = logger.child({
+      '@type': ERROR_REPORTING_TYPE_NAME,
+      ...bindings,
+    });
+  }
   if (e instanceof AggregateError) {
     for (const inner of e) {
       // AggregateError should not contain an AggregateError, but

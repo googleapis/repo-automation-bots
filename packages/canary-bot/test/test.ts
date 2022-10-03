@@ -198,6 +198,16 @@ describe('canary-bot', () => {
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       sinon.assert.notCalled(addOrUpdateIssueCommentStub);
     });
+    it('throws an error for canary-bot error', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_testing_error'
+      ));
+      await assert.rejects(async () => {
+        await probot.receive({name: 'issues', payload, id: 'abc123'});
+      });
+      sinon.assert.notCalled(addOrUpdateIssueCommentStub);
+    });
   });
   describe('responds to pubsub events', () => {
     it('responds to pubsub events', async () => {
