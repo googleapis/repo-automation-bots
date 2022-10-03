@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {Octokit} from '@octokit/rest';
+import {RequestError} from '@octokit/types';
 import {basename, extname} from 'path';
 import {Minimatch} from 'minimatch';
 
@@ -24,6 +25,15 @@ export class FileNotFoundError extends Error {
     super(`Failed to find file: ${path}`);
     this.path = path;
     this.name = FileNotFoundError.name;
+  }
+}
+
+export class BranchNotFoundError extends FileNotFoundError {
+  originalError: RequestError;
+  constructor(path: string, originalError: RequestError) {
+    super(path);
+    this.originalError = originalError;
+    this.name = BranchNotFoundError.name;
   }
 }
 
@@ -215,9 +225,18 @@ export class BranchFileCache {
     if (cached) {
       return cached;
     }
-    const fetched = await this.fetchFileContents(path);
-    this.cache.set(path, fetched);
-    return fetched;
+    try {
+      const fetched = await this.fetchFileContents(path);
+      this.cache.set(path, fetched);
+      return fetched;
+    } catch (e) {
+      const err = e as RequestError;
+      if (err.status === 404) {
+        throw new BranchNotFoundError(path, err);
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**
