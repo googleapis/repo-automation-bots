@@ -81,7 +81,7 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
         describe:
           'Whether to use BEGIN_NESTED_COMMIT delimiters when separating multiple commit messages',
         type: 'boolean',
-        default: false,
+        default: true,
         demand: false,
       });
   },
