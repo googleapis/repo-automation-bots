@@ -13,13 +13,20 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
+import {Probot} from 'probot';
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './snippet-bot';
 
 const bootstrap = new GCFBootstrapper({
   taskTargetEnvironment: 'run',
   taskTargetName: 'snippet-bot-backend',
 });
+
+// We only need to deploy gcf-utils in the frontend server because
+// only thing it does is to enqueue a task for the snippet-bot
+// backend. Thus we deploy a dummy empty bot code.
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const appFn = (_app: Probot) => {};
 
 const server = bootstrap.server(appFn);
 const port = process.env.PORT ?? 8080;
