@@ -123,6 +123,7 @@ steps:
     waitFor: ["push-docker-frontend"]
     entrypoint: bash
     env:
+      - "IMAGE_NAME=gcr.io/$PROJECT_ID/snippet-bot-frontend"
       - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
       - "TASK_MAX_DISPATCHES_PER_SECOND=100"
       - "TASK_MAX_CONCURRENT_DISPATCHES=20"
