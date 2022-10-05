@@ -91,7 +91,7 @@ steps:
     waitFor: ["-"]
     entrypoint: bash
     env:
-      - "TERGET_TYPE=run"
+      - "TARGET_TYPE=run"
       - "FUNCTION_NAME=snippet_bot"
     args:
       - "-e"
