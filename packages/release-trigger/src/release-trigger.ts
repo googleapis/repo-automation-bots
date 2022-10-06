@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 
 import * as child_process from 'child_process';
 
@@ -35,7 +35,8 @@ export class TriggerError extends Error {
 
 export const exec = function (
   command: string,
-  token: string
+  token: string,
+  logger: GCFLogger = defaultLogger
 ): Promise<{stdout: string; stderr: string; error?: Error}> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return new Promise((resolve, _reject) => {
@@ -119,7 +120,8 @@ export async function findPendingReleasePullRequests(
   octokit: Octokit,
   repository: Repository,
   maxNumber = 5,
-  maxPages = 2
+  maxPages = 2,
+  logger: GCFLogger = defaultLogger
 ): Promise<PullRequest[]> {
   // TODO: switch to graphql
   const listGenerator = octokit.paginate.iterator(
@@ -155,8 +157,9 @@ export async function findPendingReleasePullRequests(
 
 export async function triggerKokoroJob(
   pullRequestUrl: string,
-  token: string
-): Promise<{stdout: string; stderr: string}> {
+  token: string,
+  logger: GCFLogger = defaultLogger
+): Promise<{stdout: string; stderr: string; jobName?: string}> {
   logger.info(`triggering job for ${pullRequestUrl}`);
 
   const command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
@@ -166,12 +169,23 @@ export async function triggerKokoroJob(
     logger.error(`error executing command: ${command}`, error);
     throw new TriggerError(error, command, stdout, stderr);
   }
-  return {stdout, stderr};
+  const jobName = parseJobName(stdout);
+  return {stdout, stderr, jobName};
+}
+
+const JOB_NAME_REGEX = new RegExp('Triggering (.*) using [0-9a-f]+');
+export function parseJobName(stdout: string): string | undefined {
+  const match = stdout.match(JOB_NAME_REGEX);
+  if (match) {
+    return match[1];
+  }
+  return undefined;
 }
 
 export async function markTriggered(
   octokit: Octokit,
-  pullRequest: BasicPullRequest
+  pullRequest: BasicPullRequest,
+  logger: GCFLogger = defaultLogger
 ) {
   logger.info('adding `autorelease: triggered` label');
   await octokit.issues.addLabels({
@@ -184,7 +198,8 @@ export async function markTriggered(
 
 export async function markFailed(
   octokit: Octokit,
-  pullRequest: BasicPullRequest
+  pullRequest: BasicPullRequest,
+  logger: GCFLogger = defaultLogger
 ) {
   logger.info('adding `autorelease: failed` label');
   await octokit.issues.addLabels({
@@ -197,7 +212,8 @@ export async function markFailed(
 
 export async function cleanupPublished(
   octokit: Octokit,
-  pullRequest: BasicPullRequest
+  pullRequest: BasicPullRequest,
+  logger: GCFLogger = defaultLogger
 ): Promise<boolean> {
   logger.info('adding `autorelease: failed` label');
   let success = true;
