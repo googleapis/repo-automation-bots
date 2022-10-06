@@ -848,8 +848,8 @@ export = (app: Probot) => {
     [
       'pull_request.opened',
       'pull_request.reopened',
-      'pull_request.edited',
       'pull_request.synchronize',
+      'pull_request.ready_for_review',
     ],
     async context => {
       let octokit: Octokit;
@@ -868,6 +868,13 @@ export = (app: Probot) => {
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
           `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
+      // Exit if the PR is a draft.
+      if (context.payload.pull_request.draft === true) {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is a draft, exiting.`
         );
         return;
       }
