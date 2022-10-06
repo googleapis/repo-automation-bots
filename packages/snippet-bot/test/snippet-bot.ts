@@ -540,6 +540,49 @@ describe('snippet-bot', () => {
       );
     });
 
+    it('ignores files under "owl-bot-staging"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(
+        resolve(fixturesPath, 'diff-owl-bot.txt')
+      );
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          postdata => {
+            assert.doesNotMatch(postdata.body, /violation/);
+            return true;
+          }
+        )
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      diffRequests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
+      );
+    });
+
     it('ignores FileNotFound error when fetching the file and exits early', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
