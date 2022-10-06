@@ -484,6 +484,17 @@ describe('snippet-bot', () => {
       });
     });
 
+    it('quits early if PR is a draft', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './pr_event_draft'));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+    });
+
     it('sets a "failure" context on PR without a warning about removal of region tags in use', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));

@@ -101,7 +101,7 @@ async function fullScan(
   if (installationId === undefined) {
     throw new Error(
       `Installation ID not provided in ${context.payload.action} event.` +
-        ' We cannot authenticate Octokit.'
+      ' We cannot authenticate Octokit.'
     );
   }
   const octokit = await getAuthenticatedOctokit(installationId);
@@ -230,7 +230,7 @@ async function scanPullRequest(
   if (installationId === undefined) {
     throw new Error(
       `Installation ID not provided in ${context.payload.action} event.` +
-        ' We cannot authenticate Octokit.'
+      ' We cannot authenticate Octokit.'
     );
   }
   const octokit = await getAuthenticatedOctokit(installationId);
@@ -666,7 +666,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in schedule.repository event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -692,7 +692,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in issue_comment.edited event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -752,7 +752,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in issues event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -785,7 +785,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in pull_request.labeled event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -848,8 +848,8 @@ export = (app: Probot) => {
     [
       'pull_request.opened',
       'pull_request.reopened',
-      'pull_request.edited',
       'pull_request.synchronize',
+      'pull_request.ready_for_review',
     ],
     async context => {
       let octokit: Octokit;
@@ -860,7 +860,7 @@ export = (app: Probot) => {
       } else {
         throw new Error(
           'Installation ID not provided in pull_request event.' +
-            ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
@@ -868,6 +868,13 @@ export = (app: Probot) => {
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
           `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
+      // Exit if the PR is a draft.
+      if (context.payload.pull_request.draft === true) {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is a draft, exiting.`
         );
         return;
       }
