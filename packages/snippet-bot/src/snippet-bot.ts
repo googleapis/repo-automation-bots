@@ -23,6 +23,7 @@ import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {REFRESH_LABEL, NO_PREFIX_REQ_LABEL, SNIPPET_BOT_LABELS} from './labels';
 import {
+  ChangesInPullRequest,
   parseRegionTags,
   parseRegionTagsInPullRequest,
   ParseResult,
@@ -242,20 +243,29 @@ async function scanPullRequest(
     configuration.aggregateChecks()
   );
 
-  // Parse the PR diff and recognize added/deleted region tags.
-  const result = await parseRegionTagsInPullRequest(
-    octokit,
-    pull_request.diff_url,
-    pull_request.base.repo.owner.login,
-    pull_request.base.repo.name,
-    pull_request.base.sha,
-    pull_request.base.ref,
-    pull_request.head.repo.owner.login,
-    pull_request.head.repo.name,
-    pull_request.head.sha,
-    pull_request.head.ref,
-    logger
-  );
+  let result: ChangesInPullRequest;
+  try {
+    // Parse the PR diff and recognize added/deleted region tags.
+    result = await parseRegionTagsInPullRequest(
+      octokit,
+      pull_request.diff_url,
+      pull_request.base.repo.owner.login,
+      pull_request.base.repo.name,
+      pull_request.base.sha,
+      pull_request.base.ref,
+      pull_request.head.repo.owner.login,
+      pull_request.head.repo.name,
+      pull_request.head.sha,
+      pull_request.head.ref
+    );
+  } catch (e) {
+    if (e instanceof FileNotFoundError) {
+      logger.info(`ignoring 404 errors upon fetching files: ${e.message}`);
+      return;
+    } else {
+      throw e;
+    }
+  }
 
   let mismatchedTags = false;
   let tagsFound = false;
@@ -301,6 +311,7 @@ async function scanPullRequest(
     } catch (e) {
       if (e instanceof FileNotFoundError) {
         logger.info(`ignoring 404 errors upon fetching ${file}: ${e.message}`);
+        return;
       } else {
         throw e;
       }
@@ -837,8 +848,8 @@ export = (app: Probot) => {
     [
       'pull_request.opened',
       'pull_request.reopened',
-      'pull_request.edited',
       'pull_request.synchronize',
+      'pull_request.ready_for_review',
     ],
     async context => {
       let octokit: Octokit;
@@ -857,6 +868,13 @@ export = (app: Probot) => {
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
           `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
+      // Exit if the PR is a draft.
+      if (context.payload.pull_request.draft === true) {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is a draft, exiting.`
         );
         return;
       }

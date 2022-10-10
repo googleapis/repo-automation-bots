@@ -315,4 +315,17 @@ describe('release-trigger', () => {
       scope.done();
     });
   });
+
+  describe('parseJobName', () => {
+    it('should parse emitted output', () => {
+      const output = `Processing chore(master): release java-function-invoker 1.2.0: https://github.com/GoogleCloudPlatform/functions-framework-java/pull/154
+      Triggering functions-framework/java/java-function-invoker/release using 4a4e471d05c93a95c5bb84dadd71ab7ae92352f0
+      `;
+      const jobName = releaseTriggerModule.parseJobName(output);
+      assert.strictEqual(
+        jobName,
+        'functions-framework/java/java-function-invoker/release'
+      );
+    });
+  });
 });

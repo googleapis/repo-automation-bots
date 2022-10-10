@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.0...git-file-utils-v1.2.1) (2022-10-03)
+
+
+### Bug Fixes
+
+* **git-file-utils:** throws BranchNotFoundError for missing branch ([#4522](https://github.com/googleapis/repo-automation-bots/issues/4522)) ([ecb7652](https://github.com/googleapis/repo-automation-bots/commit/ecb76529ab04e6676b8fd21a671281597ddab8b2))
+
 ## [1.2.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.1.0...git-file-utils-v1.2.0) (2022-08-31)
 
 
