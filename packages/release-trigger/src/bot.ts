@@ -122,18 +122,37 @@ async function doTrigger(
   const repo = pullRequest.base.repo.name;
   const number = pullRequest.number;
   try {
-    await triggerKokoroJob(pullRequest.html_url, token);
+    const {jobName} = await triggerKokoroJob(
+      pullRequest.html_url,
+      token,
+      logger
+    );
+    if (jobName) {
+      const commentBody = `Triggered job: ${jobName} (${new Date().toISOString()})\n\nTo trigger again, remove the ${TRIGGERED_LABEL} label (in a few minutes).`;
+      await addOrUpdateIssueComment(
+        octokit,
+        owner,
+        repo,
+        number,
+        installationId,
+        commentBody
+      );
+    }
   } catch (e) {
     logger.metric('release.trigger_failed', {
       owner,
       repo,
       number,
     });
-    await markFailed(octokit, {
-      owner,
-      repo,
-      number,
-    });
+    await markFailed(
+      octokit,
+      {
+        owner,
+        repo,
+        number,
+      },
+      logger
+    );
     if (e instanceof TriggerError) {
       const commentBody = `Release triggering failed:\n\nstdout:\n \`\`\`\n${e.stdout}\n\`\`\`\n\nstderr: \`\`\`\n${e.stderr}\n\`\`\``;
       await addOrUpdateIssueComment(
@@ -151,11 +170,15 @@ async function doTrigger(
       repo,
       number,
     });
-    await markTriggered(octokit, {
-      owner,
-      repo,
-      number,
-    });
+    await markTriggered(
+      octokit,
+      {
+        owner,
+        repo,
+        number,
+      },
+      logger
+    );
   }
 }
 
@@ -284,11 +307,15 @@ export = (app: Probot) => {
       logger.info(`ignoring non-published label: ${label}`);
       return;
     }
-    await cleanupPublished(octokit, {
-      owner,
-      repo,
-      number: context.payload.pull_request.number,
-    });
+    await cleanupPublished(
+      octokit,
+      {
+        owner,
+        repo,
+        number: context.payload.pull_request.number,
+      },
+      logger
+    );
   });
 
   // Try to trigger the job on removing the `autorelease: triggered` label.
@@ -432,10 +459,16 @@ export = (app: Probot) => {
       return;
     }
 
-    const releasePullRequests = await findPendingReleasePullRequests(octokit, {
-      owner: repository.owner.login,
-      repo: repository.name,
-    });
+    const releasePullRequests = await findPendingReleasePullRequests(
+      octokit,
+      {
+        owner: repository.owner.login,
+        repo: repository.name,
+      },
+      5,
+      2,
+      logger
+    );
     const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };

@@ -20,6 +20,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "start": "node ./build/src/server.js",
+    "start-frontend": "node ./build/src/server-frontend.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
@@ -29,7 +30,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^6.1.0",
-    "@google-automations/git-file-utils": "^1.2.0",
+    "@google-automations/git-file-utils": "^1.2.1",
     "@google-automations/label-utils": "^3.0.0",
     "@google-cloud/storage": "^6.4.2",
     "follow-redirects": "^1.15.1",
