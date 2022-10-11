@@ -19,9 +19,7 @@ import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../utils';
 import snapshot from 'snap-shot-it';
-import {Language} from '../interfaces';
 import sinon from 'sinon';
 import * as fs from 'fs';
 
@@ -73,19 +71,15 @@ describe('common utils tests', async () => {
   const octokit = new Octokit({auth: 'abc1234'});
 
   it('get branch name from a well-known path', async () => {
-    const branchName = await utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
-    ).branchName;
+    const branchName = await utils.getWellKnownFileContents(directoryPath)
+      .branchName;
 
     assert.deepStrictEqual(branchName, 'specialName');
   });
 
   it('gets owlbot.yaml path from a well-known path', async () => {
-    const owlbotPath = await utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
-    ).owlbotYamlPath;
+    const owlbotPath = await utils.getWellKnownFileContents(directoryPath)
+      .owlbotYamlPath;
 
     assert.deepStrictEqual(
       owlbotPath,
@@ -156,11 +150,15 @@ describe('common utils tests', async () => {
       repoToClonePath,
       directoryPath
     );
-    await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = await utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
-    ).branchName;
+    const branchNameToWrite = await utils.openABranch(
+      FAKE_REPO_NAME,
+      directoryPath
+    );
+    await utils.writeToWellKnownFile(
+      {branchName: branchNameToWrite},
+      directoryPath
+    );
+    const branchName = utils.getWellKnownFileContents(directoryPath).branchName;
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,

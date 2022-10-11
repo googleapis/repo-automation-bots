@@ -124,21 +124,16 @@ describe('MonoRepo class', async () => {
     );
 
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
-    await utils.openABranch(FAKE_REPO_NAME, directoryPath);
+    const branchName = await utils.openABranch(FAKE_REPO_NAME, directoryPath);
+    await utils.writeToWellKnownFile({branchName}, directoryPath);
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
-    const contents = utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
-    );
+    const contents = utils.getWellKnownFileContents(directoryPath);
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
       `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
       JSON.stringify(contents, null, 4)
     );
-    const interContainerVars = utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
-    );
+    const interContainerVars = utils.getWellKnownFileContents(directoryPath);
     const copyTagInfo = utils.getCopyTagText(
       '6dcb09b5b57875f334f61aebed695e2e4193db5e',
       interContainerVars.owlbotYamlPath
@@ -196,11 +191,8 @@ describe('MonoRepo class', async () => {
       .reply(201);
 
     monoRepo.repoName = FAKE_REPO_NAME;
-    await monoRepo.cloneRepoAndOpenBranch(directoryPath);
-    const contents = utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
-    );
+    await monoRepo.cloneRepoAndOpenBranch(directoryPath, directoryPath);
+    const contents = utils.getWellKnownFileContents(directoryPath);
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
       `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
@@ -208,7 +200,7 @@ describe('MonoRepo class', async () => {
     );
 
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
-    await monoRepo.pushToBranchAndOpenPR(directoryPath);
+    await monoRepo.pushToBranchAndOpenPR(directoryPath, directoryPath);
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,

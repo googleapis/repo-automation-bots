@@ -17,19 +17,19 @@ import {logger} from 'gcf-utils';
 import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
-import {InterContainerVars, Language} from './interfaces';
+import {InterContainerVars} from './interfaces';
 
 export const INTER_CONTAINER_VARS_FILE = 'interContainerVars.json';
-const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
+export const SERVICE_CONFIG_FILE = 'service_config.yaml';
 export const ORG = 'googleapis';
-export const DIRECTORY_PATH = '/workspace';
 export const OWLBOT_LABEL = 'owlbot:copy-code';
+const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
 
 /**
  * Saves the user name and email for owlbot-bootstrapper in git-credentials so as to not need to enter them when pushing using https protocol
- * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
+ * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container); defaults to root
  */
-export async function setConfig(directoryPath: string) {
+export async function setConfig(directoryPath?: string) {
   try {
     cmd('git config --global user.name "Owlbot Bootstrapper"');
     cmd(
@@ -57,6 +57,12 @@ export async function getLatestShaGoogleapisGen(octokit: Octokit) {
   return commits[0].sha;
 }
 
+/**
+ * Function that gets the necessary copy tag text for owlbot
+ * @param latestSha of googleapis/googleapis
+ * @param owlbotYamlPath the path to the new OwlBot.yaml file
+ * @returns the copy -tag text
+ */
 export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
   if (!owlbotYamlPath)
     logger.warn('No owlbot yaml path passed from language-container');
@@ -69,7 +75,8 @@ export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
 }
 /**
  * Function that compiles all the information for the body of the PR being generated
- * @param octokit authenticated octokit instance
+ * @param latestSha of googleapis/googleapis
+ * @param copyTagText the copy-tag text owlbot needs to update the PR
  * @returns full PR text for the PR being created
  */
 export async function getPRText(latestSha: string, copyTagText: string) {
@@ -77,28 +84,23 @@ export async function getPRText(latestSha: string, copyTagText: string) {
 }
 
 /**
- * Opens a new branch on a repo with a UUID, and saves that branch name to a well-known path
- * (/workspace/branchName.md). We need to save this branch to a file for the next container
- * to be able to access and push to it
+ * Opens a new branch on a repo with a UUID
  *
  * @param repoName name of the repo to open the branch in
- * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
+ * @param monoRepoPath directory where repo was cloned in
+ * @returns name of the branch that was opened
  */
-export async function openABranch(repoName: string, directoryPath: string) {
+export async function openABranch(repoName: string, monoRepoPath: string) {
   const UUID = uuid().split('-')[4];
   const branchName = `${BRANCH_NAME_PREFIX}-${UUID}`;
   logger.info(`Opening branch ${branchName} on ${repoName}`);
   try {
-    const contents = {branchName};
-    fs.writeFileSync(
-      `${directoryPath}/${INTER_CONTAINER_VARS_FILE}`,
-      JSON.stringify(contents, null, 4)
-    );
     // Need to push an empty commit to  push branch up
     cmd(
       `git checkout -b ${branchName}; git commit --allow-empty -m "feat: initial commit"; git push -u origin ${branchName}`,
-      {cwd: `${directoryPath}/${repoName}`}
+      {cwd: `${monoRepoPath}/${repoName}`}
     );
+    return branchName;
   } catch (err) {
     logger.error(err as any);
     throw err;
@@ -111,6 +113,9 @@ export async function openABranch(repoName: string, directoryPath: string) {
  * @param octokit an authenticated octokit instance
  * @param branchName the branchname with the UUID
  * @param repoName the name of the repo to open the PR on
+ * @param apiId unique identifier of API
+ * @param latestSha latest sha of googleapis/googleapis (for copy-tag text)
+ * @param copyTagText copy tag text for owlbot to update PR
  */
 export async function openAPR(
   octokit: Octokit,
@@ -163,6 +168,10 @@ export async function addOwlBotLabel(
  * @param octokit an authenticated octokit instance
  * @param repoName the name of the repo to open the PR on
  * @param apiName the name of the API it failed creating a library/PR for
+ * @param buildId the ID of the cloud build build in GCP
+ * @param projectId the project ID where the trigger was run
+ * @param language the language which failed
+ * @param errorBody the error, with token information redacted
  */
 export async function openAnIssue(
   octokit: Octokit,
@@ -191,24 +200,23 @@ export async function openAnIssue(
 }
 
 /**
- * Gets variables saved to a well-known file passed between containers
+ * Gets JSON saved to a well-known file passed between containers
  *
- * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
- * @param fileNameJSON name of the file that contains the inter-container variables, must be JSON
- * @returns the branch name with a UUID from a well-known file path (/workspace/branchName.md)
+ * @param interContainerVarsFilePath the absolute path where the well-known file lives
+ * @returns JSON-parsed info from a well-known file path
  * Since a separate container needs the UUID for the branch of the first container,
  * we need to save it in a well-known location that language-specific containers can access later on.
  */
 export function getWellKnownFileContents(
-  directoryPath: string,
-  fileNameJSON: string
+  interContainerVarsFilePath: string
 ): InterContainerVars {
   try {
-    console.log(
-      fs.readFileSync(`${directoryPath}/${fileNameJSON}`).toString('utf8')
-    );
     return JSON.parse(
-      fs.readFileSync(`${directoryPath}/${fileNameJSON}`).toString()
+      fs
+        .readFileSync(
+          `${interContainerVarsFilePath}/${INTER_CONTAINER_VARS_FILE}`
+        )
+        .toString()
     );
   } catch (err) {
     logger.error(err as any);
@@ -216,6 +224,30 @@ export function getWellKnownFileContents(
   }
 }
 
+/**
+ * Writes any object to the interContainerVars.json file without overwriting
+ * current information
+ *
+ * @param objectToWrite Any JSON object that will be written to the interContainerVars.json file
+ * @param directoryPath local directory in which it is running
+ */
+export async function writeToWellKnownFile(
+  objectToWrite: {},
+  interContainerVarsFilePath: string
+) {
+  let contents = {};
+  if (
+    fs.existsSync(`${interContainerVarsFilePath}/${INTER_CONTAINER_VARS_FILE}`)
+  ) {
+    contents = getWellKnownFileContents(interContainerVarsFilePath);
+  }
+
+  Object.assign(contents, objectToWrite);
+  fs.writeFileSync(
+    `${interContainerVarsFilePath}/${INTER_CONTAINER_VARS_FILE}`,
+    JSON.stringify(contents, null, 4)
+  );
+}
 /**
  * Runs a child process with logging.
  *
