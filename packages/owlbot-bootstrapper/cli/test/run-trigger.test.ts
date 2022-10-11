@@ -29,6 +29,7 @@ const API_ID = 'google.cloud.kms.v1';
 const REPO_TO_CLONE = 'github.com/soficodes/nodejs-kms.git';
 const LANGUAGE_CONTAINER = 'gcr.io/myproject/myimage:latest';
 const LANGUAGE = 'nodejs';
+const DIRECTORY_PATH = '/workspace';
 
 describe('tests running build trigger', () => {
   let cloudBuildClientStub: SinonStubbedInstance<CloudBuildClient> &
@@ -61,6 +62,9 @@ describe('tests running build trigger', () => {
         repoToClone: REPO_TO_CLONE,
         language: 'nodejs',
         languageContainer: LANGUAGE_CONTAINER,
+        monoRepoPath: DIRECTORY_PATH,
+        serviceConfigPath: DIRECTORY_PATH,
+        interContainerVarsPath: DIRECTORY_PATH,
       },
       cloudBuildClientStub
     );
@@ -80,6 +84,9 @@ describe('tests running build trigger', () => {
             _CONTAINER: COMMON_CONTAINER_IMAGE,
             _LANGUAGE_CONTAINER: LANGUAGE_CONTAINER,
             _PROJECT_ID: PROJECT_ID,
+            _MONO_REPO_PATH: DIRECTORY_PATH,
+            _SERVICE_CONFIG_PATH: DIRECTORY_PATH,
+            _INTER_CONTAINER_VARS_PATH: DIRECTORY_PATH,
           },
         },
       })
@@ -118,6 +125,9 @@ describe('tests running build trigger', () => {
             _CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`,
             _LANGUAGE_CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
             _PROJECT_ID: PROJECT_ID,
+            _MONO_REPO_PATH: DIRECTORY_PATH,
+            _SERVICE_CONFIG_PATH: DIRECTORY_PATH,
+            _INTER_CONTAINER_VARS_PATH: DIRECTORY_PATH,
           },
         },
       })
