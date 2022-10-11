@@ -13,34 +13,6 @@
 # limitations under the License.
 
 steps:
-  - name: gcr.io/cloud-builders/npm
-    id: "build"
-    waitFor: ["-"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/build-function.sh"
-      - "$_DIRECTORY"
-
-  - name: gcr.io/cloud-builders/gcloud
-    id: "publish-function"
-    waitFor: ["build"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
-      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
-      - "TASK_MAX_CONCURRENT_DISPATCHES=20"
-    args:
-      - "-e"
-      - "./scripts/publish-function.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      - "nodejs14"
-
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["-"]
