@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GithubAuthenticator} from '../github-authenticator';
-import nock, { load } from 'nock';
+import nock from 'nock';
 import sinon from 'sinon';
 import {MonoRepo} from '../mono-repo';
 import * as utils from '../utils';

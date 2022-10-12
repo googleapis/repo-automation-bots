@@ -14,7 +14,7 @@
 
 import {Octokit} from '@octokit/rest';
 import {Storage} from '@google-cloud/storage';
-import {ServiceConfigYaml, DriftApi, GHDir, GHFile, ReleaseLevel} from './interfaces';
+import {ServiceConfigYaml, DriftApi, ReleaseLevel} from './interfaces';
 import yaml from 'js-yaml';
 import {
   FileNotFoundError,
@@ -22,7 +22,7 @@ import {
 } from '@google-automations/git-file-utils';
 
 /**
- * Function that gets api information from a public DRIFT bucket, and saves it to a well-known location on disk
+ * Function that gets api information from a public DRIFT bucket
  * @param apiId the unique API ID
  * @param storageClient an instance of Google Cloud Storage
  * @returns DriftApi info
@@ -66,16 +66,16 @@ function extractApiInfoFromJson(apis: DriftApi[], apiId: string): DriftApi {
 }
 
 /**
- * Function that gets information from the apiName_versionNumber.yaml (api_proto.yaml) file in googleapis/googleapis
+ * Function that gets information from the service_config.yaml file in googleapis/googleapis
  *
- * @param octokit an instantiated Octokit instance
+ * @param apiId unique identifier fo API ID
  * @param repositoryFileCache wrapper for getting repository contents from github (allows globbing)
- * @returns servicconfig.yaml file from github
+ * @returns a yaml object
  */
 async function getApiProtoInformation(
   apiId: string,
   repositoryFileCache: RepositoryFileCache
-) {
+): Promise<ServiceConfigYaml | any> {
   const path = apiId.toString().replace(/\./g, '/');
 
   let yamlFile;
@@ -106,7 +106,7 @@ async function getApiProtoInformation(
 }
 
 function assignDriftValuesToServiceConfig(
-  serviceConfig: any,
+  serviceConfig: ServiceConfigYaml,
   driftData: DriftApi
 ): ServiceConfigYaml {
   if (!serviceConfig?.api_short_name) {

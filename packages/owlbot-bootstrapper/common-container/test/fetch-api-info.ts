@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {describe, it} from 'mocha';
-import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import {execSync} from 'child_process';
 import * as path from 'path';

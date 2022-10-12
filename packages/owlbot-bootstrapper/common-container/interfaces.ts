@@ -54,6 +54,7 @@ export interface InterContainerVars {
   owlbotYamlPath: string;
 }
 
+// Interface for service config yaml (internal): /depot/google3/google/api/client.proto
 export interface ServiceConfigYaml {
   api_short_name: string;
   github_label: string;
@@ -76,6 +77,7 @@ export interface DriftApi {
   github_label: string;
 }
 
+// Enum for release level for service config https://cloud.google.com/products#section-22
 export enum ReleaseLevel {
   LAUNCH_STAGE_UNSPECIFIED = 'LAUNCH_STAGE_UNSPECIFIED',
   UNIMPLEMENTED = 'UNIMPLEMENTED',
@@ -85,11 +87,4 @@ export enum ReleaseLevel {
   BETA = 'BETA',
   GA = 'GA',
   DEPRECATED = 'DEPRECATED',
-}
-export interface GHFile {
-  content: string | undefined;
-}
-
-export interface GHDir {
-  name: string;
 }
