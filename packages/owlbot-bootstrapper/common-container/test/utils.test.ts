@@ -19,9 +19,7 @@ import path from 'path';
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import assert from 'assert';
-import {ORG} from '../utils';
 import snapshot from 'snap-shot-it';
-import {Language} from '../interfaces';
 import sinon from 'sinon';
 import * as fs from 'fs';
 
@@ -38,12 +36,10 @@ describe('common utils tests', async () => {
     repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
 
     try {
-      await execSync(`mkdir ${directoryPath}`);
-      await execSync(
-        `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`
-      );
+      execSync(`mkdir ${directoryPath}`);
+      execSync(`mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`);
       fs.writeFileSync(
-        `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+        `${directoryPath}/interContainerVars.json`,
         JSON.stringify(
           {
             branchName: 'specialName',
@@ -74,17 +70,22 @@ describe('common utils tests', async () => {
 
   it('get branch name from a well-known path', async () => {
     const branchName = await utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+      `${directoryPath}/interContainerVars.json`
     ).branchName;
 
     assert.deepStrictEqual(branchName, 'specialName');
   });
 
+  it('throws if the file is not valid json', async () => {
+    fs.writeFileSync(`${directoryPath}/interContainerVars.txt`, 'hello');
+    assert.throws(() => {
+      utils.getWellKnownFileContents(`${directoryPath}/interContainerVars.txt`);
+    }, /interContainerVars file must be valid JSON/);
+  });
+
   it('gets owlbot.yaml path from a well-known path', async () => {
-    const owlbotPath = await utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+    const owlbotPath = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
     ).owlbotYamlPath;
 
     assert.deepStrictEqual(
@@ -156,10 +157,16 @@ describe('common utils tests', async () => {
       repoToClonePath,
       directoryPath
     );
-    await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    const branchName = await utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+    const branchNameToWrite = await utils.openABranch(
+      FAKE_REPO_NAME,
+      directoryPath
+    );
+    await utils.writeToWellKnownFile(
+      {branchName: branchNameToWrite},
+      `${directoryPath}/interContainerVars.json`
+    );
+    const branchName = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
     ).branchName;
 
     const stdoutBranch = execSync('git branch', {

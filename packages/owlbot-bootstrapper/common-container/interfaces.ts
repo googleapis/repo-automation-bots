@@ -44,6 +44,9 @@ export interface CliArgs {
   language: string;
   installationId: string;
   buildId?: string;
+  monoRepoPath: string;
+  serviceConfigPath: string;
+  interContainerVarsPath: string;
 }
 
 export interface InterContainerVars {

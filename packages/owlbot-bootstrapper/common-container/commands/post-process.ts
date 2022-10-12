@@ -49,6 +49,21 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('buildId', {
         describe: 'build id of given build',
         type: 'string',
+      })
+      .option('monoRepoPath', {
+        describe: 'path in which to save the mono repo',
+        type: 'string',
+        demand: true,
+      })
+      .option('serviceConfigPath', {
+        describe: 'path in which to save the service config file',
+        type: 'string',
+        demand: true,
+      })
+      .option('interContainerVarsPath', {
+        describe: 'path in which to save the inter container variables',
+        type: 'string',
+        demand: true,
       });
   },
   async handler(argv: CliArgs) {

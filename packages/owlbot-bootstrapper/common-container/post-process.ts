@@ -17,7 +17,7 @@
 // the post-processing after the language contaner has run. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig, DIRECTORY_PATH} from './utils';
+import {openAnIssue, setConfig} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
@@ -43,7 +43,7 @@ export async function postProcess(argv: CliArgs) {
   }
 
   // Sets git config options for owlbot-bootstrapper
-  await setConfig(DIRECTORY_PATH);
+  await setConfig();
   try {
     // Post-process (after language specific-container)
     const monoRepo = new MonoRepo(
@@ -54,7 +54,10 @@ export async function postProcess(argv: CliArgs) {
       octokit
     );
 
-    await monoRepo.pushToBranchAndOpenPR(DIRECTORY_PATH);
+    await monoRepo.pushToBranchAndOpenPR(
+      argv.monoRepoPath,
+      argv.interContainerVarsPath
+    );
     logger.info(`Opened a new PR in ${monoRepo.repoName}`);
   } catch (err) {
     await openAnIssue(
