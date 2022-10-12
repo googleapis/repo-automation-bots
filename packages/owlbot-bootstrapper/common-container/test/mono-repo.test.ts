@@ -124,20 +124,22 @@ describe('MonoRepo class', async () => {
     );
 
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
-    await utils.openABranch(FAKE_REPO_NAME, directoryPath);
+    const branchName = await utils.openABranch(FAKE_REPO_NAME, directoryPath);
+    await utils.writeToWellKnownFile(
+      {branchName},
+      `${directoryPath}/interContainerVars.json`
+    );
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     const contents = utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+      `${directoryPath}/interContainerVars.json`
     );
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
-      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      `${directoryPath}/interContainerVars.json`,
       JSON.stringify(contents, null, 4)
     );
     const interContainerVars = utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+      `${directoryPath}/interContainerVars.json`
     );
     const copyTagInfo = utils.getCopyTagText(
       '6dcb09b5b57875f334f61aebed695e2e4193db5e',
@@ -196,19 +198,24 @@ describe('MonoRepo class', async () => {
       .reply(201);
 
     monoRepo.repoName = FAKE_REPO_NAME;
-    await monoRepo.cloneRepoAndOpenBranch(directoryPath);
-    const contents = utils.getWellKnownFileContents(
+    await monoRepo.cloneRepoAndOpenBranch(
       directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+      `${directoryPath}/interContainerVars.json`
+    );
+    const contents = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
     );
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
-      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      `${directoryPath}/interContainerVars.json`,
       JSON.stringify(contents, null, 4)
     );
 
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
-    await monoRepo.pushToBranchAndOpenPR(directoryPath);
+    await monoRepo.pushToBranchAndOpenPR(
+      directoryPath,
+      `${directoryPath}/interContainerVars.json`
+    );
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,

@@ -24,6 +24,9 @@ export interface CliArgs {
   installationId: string;
   container?: string;
   languageContainer?: string;
+  monoRepoPath?: string;
+  serviceConfigPath?: string;
+  interContainerVarsPath?: string;
 }
 
 const languageContainers = [
@@ -86,6 +89,21 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
       })
       .option('languageContainer', {
         describe: 'language-specific container image',
+        type: 'string',
+        demand: false,
+      })
+      .option('monoRepoPath', {
+        describe: 'path to the directory in which the mono repo will be cloned',
+        type: 'string',
+        demand: false,
+      })
+      .option('serviceConfigPath', {
+        describe: 'path to save the service config file',
+        type: 'string',
+        demand: false,
+      })
+      .option('interContainerVarsPath', {
+        describe: 'path to save the inter container variables',
         type: 'string',
         demand: false,
       });
