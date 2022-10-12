@@ -73,6 +73,9 @@ describe('pre processing', async () => {
       apiId: 'google.cloud.kms.v1',
       language: 'nodejs',
       installationId: '12345',
+      monoRepoPath: 'MONO_REPO_PATH',
+      serviceConfigPath: 'SERVICE_CONFIG_PATH',
+      interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
     };
 
     await preProcess(argv);
@@ -88,6 +91,9 @@ describe('pre processing', async () => {
       language: 'nodejs',
       installationId: '12345',
       repoToClone: 'github.com/googleapis/nodejs-kms.git',
+      monoRepoPath: 'MONO_REPO_PATH',
+      serviceConfigPath: 'SERVICE_CONFIG_PATH',
+      interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});

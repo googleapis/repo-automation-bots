@@ -18,7 +18,7 @@
 // for a mono repo-type object. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig, DIRECTORY_PATH, ORG} from './utils';
+import {openAnIssue, setConfig, ORG, writeToWellKnownFile} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
@@ -46,7 +46,7 @@ export async function preProcess(argv: CliArgs) {
     throw new Error('No repo to clone specified');
   }
 
-  await setConfig(DIRECTORY_PATH);
+  await setConfig();
 
   try {
     // Pre-process (before language specific-container)
@@ -58,12 +58,17 @@ export async function preProcess(argv: CliArgs) {
       octokit
     );
 
-    await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
+    await monoRepo.cloneRepoAndOpenBranch(
+      argv.monoRepoPath,
+      argv.interContainerVarsPath
+    );
     const apiFields = await loadApiFields(
       argv.apiId,
       new Storage(),
       new RepositoryFileCache(octokit, {owner: ORG, repo: 'googleapis'})
     );
+
+    writeToWellKnownFile(apiFields, argv.interContainerVarsPath);
     logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
     logger.info(
