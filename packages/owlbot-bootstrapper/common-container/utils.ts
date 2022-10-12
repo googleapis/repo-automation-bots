@@ -211,7 +211,7 @@ export function getWellKnownFileContents(
   try {
     return JSON.parse(fs.readFileSync(interContainerVarsFilePath).toString());
   } catch (err) {
-    if ((err as any).toString.includes('not valid JSON')) {
+    if ((err as any).toString().includes('Unexpected token')) {
       throw new Error('interContainerVars file must be valid JSON');
     }
     logger.error(err as any);

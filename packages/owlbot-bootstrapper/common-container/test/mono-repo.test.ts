@@ -125,7 +125,10 @@ describe('MonoRepo class', async () => {
 
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
     const branchName = await utils.openABranch(FAKE_REPO_NAME, directoryPath);
-    await utils.writeToWellKnownFile({branchName}, directoryPath);
+    await utils.writeToWellKnownFile(
+      {branchName},
+      `${directoryPath}/interContainerVars.json`
+    );
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     const contents = utils.getWellKnownFileContents(
       `${directoryPath}/interContainerVars.json`
@@ -135,7 +138,9 @@ describe('MonoRepo class', async () => {
       `${directoryPath}/interContainerVars.json`,
       JSON.stringify(contents, null, 4)
     );
-    const interContainerVars = utils.getWellKnownFileContents(directoryPath);
+    const interContainerVars = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
+    );
     const copyTagInfo = utils.getCopyTagText(
       '6dcb09b5b57875f334f61aebed695e2e4193db5e',
       interContainerVars.owlbotYamlPath
@@ -193,8 +198,13 @@ describe('MonoRepo class', async () => {
       .reply(201);
 
     monoRepo.repoName = FAKE_REPO_NAME;
-    await monoRepo.cloneRepoAndOpenBranch(directoryPath, directoryPath);
-    const contents = utils.getWellKnownFileContents(directoryPath);
+    await monoRepo.cloneRepoAndOpenBranch(
+      directoryPath,
+      `${directoryPath}/interContainerVars.json`
+    );
+    const contents = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
+    );
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
       `${directoryPath}/interContainerVars.json`,
@@ -202,7 +212,10 @@ describe('MonoRepo class', async () => {
     );
 
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
-    await monoRepo.pushToBranchAndOpenPR(directoryPath, directoryPath);
+    await monoRepo.pushToBranchAndOpenPR(
+      directoryPath,
+      `${directoryPath}/interContainerVars.json`
+    );
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,

@@ -36,10 +36,8 @@ describe('common utils tests', async () => {
     repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
 
     try {
-      await execSync(`mkdir ${directoryPath}`);
-      await execSync(
-        `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`
-      );
+      execSync(`mkdir ${directoryPath}`);
+      execSync(`mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`);
       fs.writeFileSync(
         `${directoryPath}/interContainerVars.json`,
         JSON.stringify(
@@ -79,11 +77,10 @@ describe('common utils tests', async () => {
   });
 
   it('throws if the file is not valid json', async () => {
+    fs.writeFileSync(`${directoryPath}/interContainerVars.txt`, 'hello');
     assert.throws(() => {
-      utils.getWellKnownFileContents(
-        `${directoryPath}/interContainerVars.json`
-      );
-    }, /not valid JSON/);
+      utils.getWellKnownFileContents(`${directoryPath}/interContainerVars.txt`);
+    }, /interContainerVars file must be valid JSON/);
   });
 
   it('gets owlbot.yaml path from a well-known path', async () => {
@@ -166,7 +163,7 @@ describe('common utils tests', async () => {
     );
     await utils.writeToWellKnownFile(
       {branchName: branchNameToWrite},
-      directoryPath
+      `${directoryPath}/interContainerVars.json`
     );
     const branchName = utils.getWellKnownFileContents(
       `${directoryPath}/interContainerVars.json`
