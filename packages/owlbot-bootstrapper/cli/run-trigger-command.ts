@@ -98,14 +98,12 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         demand: false,
       })
       .option('serviceConfigPath', {
-        describe:
-          'path to the directory in which to save the service config file',
+        describe: 'path to save the service config file',
         type: 'string',
         demand: false,
       })
       .option('interContainerVarsPath', {
-        describe:
-          'path to the directory in which to save the inter container variables',
+        describe: 'path to save the inter container variables',
         type: 'string',
         demand: false,
       });

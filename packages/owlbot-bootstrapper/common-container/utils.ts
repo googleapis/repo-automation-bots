@@ -19,8 +19,6 @@ import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {InterContainerVars} from './interfaces';
 
-export const INTER_CONTAINER_VARS_FILE = 'interContainerVars.json';
-export const SERVICE_CONFIG_FILE = 'service_config.yaml';
 export const ORG = 'googleapis';
 export const OWLBOT_LABEL = 'owlbot:copy-code';
 const BRANCH_NAME_PREFIX = 'owlbot-bootstrapper-initial-PR';
@@ -211,14 +209,11 @@ export function getWellKnownFileContents(
   interContainerVarsFilePath: string
 ): InterContainerVars {
   try {
-    return JSON.parse(
-      fs
-        .readFileSync(
-          `${interContainerVarsFilePath}/${INTER_CONTAINER_VARS_FILE}`
-        )
-        .toString()
-    );
+    return JSON.parse(fs.readFileSync(interContainerVarsFilePath).toString());
   } catch (err) {
+    if ((err as any).toString.includes('not valid JSON')) {
+      throw new Error('interContainerVars file must be valid JSON');
+    }
     logger.error(err as any);
     throw err;
   }
@@ -236,15 +231,13 @@ export async function writeToWellKnownFile(
   interContainerVarsFilePath: string
 ) {
   let contents = {};
-  if (
-    fs.existsSync(`${interContainerVarsFilePath}/${INTER_CONTAINER_VARS_FILE}`)
-  ) {
+  if (fs.existsSync(interContainerVarsFilePath)) {
     contents = getWellKnownFileContents(interContainerVarsFilePath);
   }
 
   Object.assign(contents, objectToWrite);
   fs.writeFileSync(
-    `${interContainerVarsFilePath}/${INTER_CONTAINER_VARS_FILE}`,
+    interContainerVarsFilePath,
     JSON.stringify(contents, null, 4)
   );
 }

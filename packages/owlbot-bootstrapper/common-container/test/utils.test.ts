@@ -41,7 +41,7 @@ describe('common utils tests', async () => {
         `mkdir ${repoToClonePath}; cd ${repoToClonePath}; git init`
       );
       fs.writeFileSync(
-        `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+        `${directoryPath}/interContainerVars.json`,
         JSON.stringify(
           {
             branchName: 'specialName',
@@ -71,15 +71,25 @@ describe('common utils tests', async () => {
   const octokit = new Octokit({auth: 'abc1234'});
 
   it('get branch name from a well-known path', async () => {
-    const branchName = await utils.getWellKnownFileContents(directoryPath)
-      .branchName;
+    const branchName = await utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
+    ).branchName;
 
     assert.deepStrictEqual(branchName, 'specialName');
   });
 
+  it('throws if the file is not valid json', async () => {
+    assert.throws(() => {
+      utils.getWellKnownFileContents(
+        `${directoryPath}/interContainerVars.json`
+      );
+    }, /not valid JSON/);
+  });
+
   it('gets owlbot.yaml path from a well-known path', async () => {
-    const owlbotPath = await utils.getWellKnownFileContents(directoryPath)
-      .owlbotYamlPath;
+    const owlbotPath = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
+    ).owlbotYamlPath;
 
     assert.deepStrictEqual(
       owlbotPath,
@@ -158,7 +168,9 @@ describe('common utils tests', async () => {
       {branchName: branchNameToWrite},
       directoryPath
     );
-    const branchName = utils.getWellKnownFileContents(directoryPath).branchName;
+    const branchName = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
+    ).branchName;
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,

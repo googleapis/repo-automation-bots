@@ -53,12 +53,9 @@ steps:
     - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
     - 'BUILD_ID=$BUILD_ID'
     - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
-    - "--monoRepoPath"
-    - "$_MONO_REPO_PATH"
-    - "--serviceConfigPath"
-    - "$_SERVICE_CONFIG_PATH"
-    - "--interContainerVarsPath"
-    - "$_INTER_CONTAINER_VARS_PATH"
+    - 'MONO_REPO_PATH=$_MONO_REPO_PATH'
+    - 'SERVICE_CONFIG_PATH=$_SERVICE_CONFIG_PATH'
+    - 'INTER_CONTAINER_VARS_PATH=$_INTER_CONTAINER_VARS_PATH'
   # Commits and pushes changes to a branch; if the repo is nonempty, opens a PR
   - name: ${_CONTAINER}
     args:

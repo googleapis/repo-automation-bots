@@ -22,8 +22,8 @@ const COMMON_CONTAINER =
   'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/owlbot-bootstrapper:latest';
 const DIRECTORY_PATH = '/workspace';
 const MONO_REPO_PATH = DIRECTORY_PATH;
-const SERVICE_CONFIG_PATH = DIRECTORY_PATH;
-const INTER_CONTAINER_VARS_PATH = DIRECTORY_PATH;
+const SERVICE_CONFIG_PATH = `${DIRECTORY_PATH}/serviceConfig.yaml`;
+const INTER_CONTAINER_VARS_PATH = `${DIRECTORY_PATH}/interContainerVars.json`;
 
 export async function runTrigger(
   argv: CliArgs,

@@ -127,10 +127,12 @@ describe('MonoRepo class', async () => {
     const branchName = await utils.openABranch(FAKE_REPO_NAME, directoryPath);
     await utils.writeToWellKnownFile({branchName}, directoryPath);
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
-    const contents = utils.getWellKnownFileContents(directoryPath);
+    const contents = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
+    );
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
-      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      `${directoryPath}/interContainerVars.json`,
       JSON.stringify(contents, null, 4)
     );
     const interContainerVars = utils.getWellKnownFileContents(directoryPath);
@@ -195,7 +197,7 @@ describe('MonoRepo class', async () => {
     const contents = utils.getWellKnownFileContents(directoryPath);
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
-      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      `${directoryPath}/interContainerVars.json`,
       JSON.stringify(contents, null, 4)
     );
 
