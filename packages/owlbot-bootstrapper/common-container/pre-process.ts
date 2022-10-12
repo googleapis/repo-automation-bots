@@ -68,7 +68,7 @@ export async function preProcess(argv: CliArgs) {
       new RepositoryFileCache(octokit, {owner: ORG, repo: 'googleapis'})
     );
 
-    writeToWellKnownFile(apiFields, argv.interContainerVarsPath);
+    writeToWellKnownFile(apiFields, argv.serviceConfigPath);
     logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
     logger.info(
