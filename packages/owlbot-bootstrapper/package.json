@@ -23,6 +23,7 @@
     "lint": "cd cli && npm run lint && cd ../app && npm run lint && cd ../common-container && npm run lint"
   },
   "dependencies": {
+    "@google-automations/git-file-utils": "^1.2.1",
     "@google-cloud/cloudbuild": "^3.1.0",
     "@google-cloud/secret-manager": "^4.1.1",
     "@octokit/auth-app": "^4.0.5",
