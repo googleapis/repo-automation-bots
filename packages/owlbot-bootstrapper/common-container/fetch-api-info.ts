@@ -19,6 +19,9 @@ import {
   FileNotFoundError,
   RepositoryFileCache,
 } from '@google-automations/git-file-utils';
+import {logger} from 'gcf-utils';
+export const BUCKET = 'devrel-prod-settings';
+export const DRIFT_APIS_FILE = 'apis.json';
 
 /**
  * Function that gets api information from a public DRIFT bucket
@@ -28,10 +31,10 @@ import {
  */
 async function getDriftMetadata(
   apiId: string,
-  storageClient: Storage
+  storageClient: Storage,
+  bucket: string,
+  file: string
 ): Promise<DriftApi> {
-  const bucket = 'devrel-prod-settings';
-  const file = 'apis.json';
   const contents = await storageClient.bucket(bucket)?.file(file)?.download();
   let apis;
   if (contents) {
@@ -50,11 +53,18 @@ async function getDriftMetadata(
 function extractApiInfoFromJson(apis: DriftApi[], apiId: string): DriftApi {
   const shortName = apiId.split('.')[apiId.split('.').length - 2];
   for (const api of apis) {
-    if (api.api_shortname?.includes(shortName)) {
+    if (
+      api.api_shortname === shortName ||
+      api.api_shortname.includes(`cloud${shortName}`)
+    ) {
       return api;
     }
   }
 
+  // If we don't find a match, return an empty object
+  logger.info(
+    `There was no match in apis.json for ${apiId}, shortname: ${shortName}`
+  );
   return {
     api_shortname: shortName,
     display_name: '',
@@ -74,7 +84,7 @@ function extractApiInfoFromJson(apis: DriftApi[], apiId: string): DriftApi {
 async function getApiProtoInformation(
   apiId: string,
   repositoryFileCache: RepositoryFileCache
-): Promise<ServiceConfigYaml | any> {
+): Promise<Partial<ServiceConfigYaml>> {
   const path = apiId.toString().replace(/\./g, '/');
 
   let yamlFile;
@@ -105,26 +115,38 @@ async function getApiProtoInformation(
 }
 
 function assignDriftValuesToServiceConfig(
-  serviceConfig: ServiceConfigYaml,
+  serviceConfig: Partial<ServiceConfigYaml>,
   driftData: DriftApi
 ): ServiceConfigYaml {
   if (!serviceConfig?.api_short_name) {
+    logger.info(
+      `Service config did not contain api_short_name; replacing with DRIFT ${driftData.api_shortname}`
+    );
     serviceConfig.api_short_name = driftData.api_shortname;
   }
 
   if (!serviceConfig?.github_label) {
+    logger.info(
+      `Service config did not contain github_label; replacing with DRIFT ${driftData.github_label}`
+    );
     serviceConfig.github_label = driftData.github_label;
   }
 
   if (!serviceConfig?.documentation_uri) {
+    logger.info(
+      `Service config did not contain documentation_uri; replacing with DRIFT ${driftData.docs_root_url}`
+    );
     serviceConfig.documentation_uri = driftData.docs_root_url;
   }
 
   if (!serviceConfig?.launch_stage) {
+    logger.info(
+      `Service config did not contain launch_stage; replacing with DRIFT ${driftData.launch_stage}`
+    );
     serviceConfig.launch_stage = driftData.launch_stage;
   }
 
-  return serviceConfig;
+  return serviceConfig as ServiceConfigYaml;
 }
 
 /**
@@ -138,8 +160,13 @@ export async function loadApiFields(
   apiId: string,
   storageClient: Storage,
   repositoryFileCache: RepositoryFileCache
-) {
-  const driftData = await getDriftMetadata(apiId, storageClient);
+): Promise<ServiceConfigYaml> {
+  const driftData = await getDriftMetadata(
+    apiId,
+    storageClient,
+    BUCKET,
+    DRIFT_APIS_FILE
+  );
   const serviceConfig = await getApiProtoInformation(
     apiId,
     repositoryFileCache
