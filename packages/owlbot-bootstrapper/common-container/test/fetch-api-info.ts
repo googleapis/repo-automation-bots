@@ -36,7 +36,6 @@ describe('fetch api related info', async () => {
   beforeEach(async () => {
     directoryPath = path.join(__dirname, FAKE_WORKSPACE);
     repoToClonePath = path.join(__dirname, FAKE_REPO_NAME);
-    console.log(directoryPath);
     try {
       await execSync(`mkdir ${directoryPath}`);
       await execSync(
