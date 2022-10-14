@@ -155,7 +155,7 @@ describe('maybeTrimText', () => {
     const newText = maybeTrimText(longText);
     assert(newText.length === MAX_CHARS_IN_CHECK_TEXT);
   });
-  it('should trim a long text with a newline', () => {
+  it('should trim a long text with a `details` tag', () => {
     const details = '<details>\n<summary>sum</summary>det\n</details>\n';
     let longText = details;
     for (let i = 0; i < MAX_CHARS_IN_CHECK_TEXT; i++) {
