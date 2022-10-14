@@ -19,13 +19,22 @@ import {
   formatRegionTag,
   formatViolations,
   formatMatchingViolation,
+  MAX_CHARS_IN_CHECK_TEXT,
+  OVERFLOW_FOOTER,
+  maybeTrimText,
+  CheckAggregator,
+  Conclusion,
 } from '../src/utils';
 import {Violation} from '../src/violations';
 
 import {RegionTagLocation} from '../src/region-tag-parser';
 
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+
 import assert from 'assert';
 import {describe, it} from 'mocha';
+import * as sinon from 'sinon';
 
 const loc: RegionTagLocation = {
   type: 'add',
@@ -134,5 +143,90 @@ describe('formatMatchingViolation', () => {
     };
     const result = formatMatchingViolation(violation);
     assert(result.includes('already started.'));
+  });
+});
+
+describe('maybeTrimText', () => {
+  it('should trim a long text', () => {
+    let longText = '';
+    for (let i = 0; i < MAX_CHARS_IN_CHECK_TEXT + 10; i++) {
+      longText += 'a';
+    }
+    const newText = maybeTrimText(longText);
+    assert(newText.length === MAX_CHARS_IN_CHECK_TEXT);
+  });
+  it('should trim a long text with a newline', () => {
+    const details = '<details>\n<summary>sum</summary>det\n</details>\n';
+    let longText = details;
+    for (let i = 0; i < MAX_CHARS_IN_CHECK_TEXT; i++) {
+      longText += 'a';
+    }
+    const newText = maybeTrimText(longText);
+    console.log(newText);
+    // The new text should be cut at the end of the details.
+    assert(newText === `${details}${OVERFLOW_FOOTER}`);
+  });
+});
+
+describe('CheckAggregator', () => {
+  const octokit = new Octokit();
+  const sandbox = sinon.createSandbox();
+  let checksCreateStub: sinon.SinonStub;
+  beforeEach(() => {
+    checksCreateStub = sandbox.stub(octokit.checks, 'create');
+  });
+  afterEach(() => {
+    sandbox.restore();
+  });
+  it('should trim the text of an individual check param', () => {
+    let longText = '';
+    for (let i = 0; i < MAX_CHARS_IN_CHECK_TEXT + 10; i++) {
+      longText += 'a';
+    }
+    const aggregator = new CheckAggregator(octokit, 'title', false);
+    const checkParam = {
+      owner: 'owner',
+      repo: 'repo',
+      name: 'Mismatched region tag',
+      conclusion: 'success' as Conclusion,
+      head_sha: 'sha',
+      output: {
+        title: 'Region tag check',
+        summary: 'Region tag successful',
+        text: longText,
+      },
+    };
+    aggregator.add(checkParam);
+    aggregator.submit();
+    sinon.assert.calledOnce(checksCreateStub);
+    const args = checksCreateStub.getCalls()[0].args;
+    assert(args[0].output.text);
+    assert(args[0].output!.text.length <= MAX_CHARS_IN_CHECK_TEXT);
+  });
+  it('should trim the text of the aggregated check params', () => {
+    let longText = '';
+    for (let i = 0; i < MAX_CHARS_IN_CHECK_TEXT + 10; i++) {
+      longText += 'a';
+    }
+    const aggregator = new CheckAggregator(octokit, 'title', true);
+    const checkParam = {
+      owner: 'owner',
+      repo: 'repo',
+      name: 'Mismatched region tag',
+      conclusion: 'success' as Conclusion,
+      head_sha: 'sha',
+      output: {
+        title: 'Region tag check',
+        summary: 'Region tag successful',
+        text: longText,
+      },
+    };
+    aggregator.add(checkParam);
+    aggregator.add(checkParam);
+    aggregator.submit();
+    sinon.assert.calledOnce(checksCreateStub);
+    const args = checksCreateStub.getCalls()[0].args;
+    assert(args[0].output.text);
+    assert(args[0].output!.text.length <= MAX_CHARS_IN_CHECK_TEXT);
   });
 });
