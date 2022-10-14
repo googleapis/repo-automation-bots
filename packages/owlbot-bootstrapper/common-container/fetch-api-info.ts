@@ -74,6 +74,10 @@ function extractApiInfoFromJson(apis: DriftApi[], apiId: string): DriftApi {
   };
 }
 
+function transformApiIdToPath(apiId: string): string {
+  return apiId.toString().replace(/\./g, '/');
+}
+
 /**
  * Function that gets information from the service_config.yaml file in googleapis/googleapis
  *
@@ -82,22 +86,37 @@ function extractApiInfoFromJson(apis: DriftApi[], apiId: string): DriftApi {
  * @returns a yaml object
  */
 async function getApiProtoInformation(
-  apiId: string,
+  apiPath: string,
   repositoryFileCache: RepositoryFileCache
 ): Promise<Partial<ServiceConfigYaml>> {
-  const path = apiId.toString().replace(/\./g, '/');
-
+  let yamlFilePath;
   let yamlFile;
   try {
-    yamlFile = await repositoryFileCache.getFileContents(
-      `${path}/.*?_v.*?.yaml$`,
-      'main'
-    );
+    yamlFilePath = (
+      await repositoryFileCache.findFilesByGlob('*_v*.yaml', 'main', apiPath)
+    )[0];
   } catch (e) {
     if (e instanceof FileNotFoundError) {
-      console.log('service_config.yaml was not found');
+      logger.warn('service_config.yaml path was not found');
     } else {
       // rethrow
+      throw e;
+    }
+  }
+
+  try {
+    if (yamlFilePath) {
+      yamlFile = await repositoryFileCache.getFileContents(
+        yamlFilePath,
+        'main'
+      );
+    } else {
+      logger.warn('service_config.yaml path was not found');
+    }
+  } catch (e) {
+    if (e instanceof FileNotFoundError) {
+      logger.warn('service_config.yaml was not found');
+    } else {
       throw e;
     }
   }
@@ -161,16 +180,32 @@ export async function loadApiFields(
   storageClient: Storage,
   repositoryFileCache: RepositoryFileCache
 ): Promise<ServiceConfigYaml> {
+  const apiPath = transformApiIdToPath(apiId);
   const driftData = await getDriftMetadata(
     apiId,
     storageClient,
     BUCKET,
     DRIFT_APIS_FILE
   );
-  const serviceConfig = await getApiProtoInformation(
-    apiId,
-    repositoryFileCache
-  );
+  console.log(driftData);
+  let serviceConfig: Partial<ServiceConfigYaml> = {};
+
+  // If the service_config.yaml is empty, malformed, etc., it should
+  // not block the process of generating a library. Instead, it should
+  // generate with DRIFT fields or empty fields.
+  try {
+    serviceConfig = await getApiProtoInformation(apiPath, repositoryFileCache);
+  } catch (err) {
+    if (
+      (err as Error)
+        .toString()
+        .match(/Service config not valid yaml or undefined/)
+    ) {
+      logger.warn('No service config.yaml found');
+    } else {
+      throw err;
+    }
+  }
 
   return assignDriftValuesToServiceConfig(serviceConfig, driftData);
 }

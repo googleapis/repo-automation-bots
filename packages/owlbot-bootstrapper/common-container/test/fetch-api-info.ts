@@ -69,6 +69,9 @@ describe('fetch api related info', async () => {
 
     const repositoryFileCache = {
       getFileContents: sinon.stub().returns({parsedContent: '{}'}),
+      findFilesByGlob: sinon
+        .stub()
+        .returns(['google/cloud/kms/v1/cloudkms_v1.yaml']),
     } as unknown as RepositoryFileCache;
 
     const serviceConfig = await loadApiFields(
@@ -103,6 +106,9 @@ describe('fetch api related info', async () => {
         parsedContent:
           '{"api_short_name": "item1", "documentation_uri": "item2", "launch_stage": "item3", "github_label": "item4"}',
       }),
+      findFilesByGlob: sinon
+        .stub()
+        .returns(['google/cloud/kms/v1/cloudkms_v1.yaml']),
     } as unknown as RepositoryFileCache;
 
     const serviceConfig = await loadApiFields(
@@ -119,14 +125,14 @@ describe('fetch api related info', async () => {
     });
   });
 
-  it('should throw an error if service_config.yaml was not found', async () => {
+  it('should throw and catch an error if service_config.yaml was not found', async () => {
     const storage = {
       bucket: sinon.stub().returns({
         file: sinon.stub().returns({
           download: sinon
             .stub()
             .returns(
-              '{"apis": [{"api_shortname": "kms", "display_name": "thing1", "docs_root_url": "thing2", "launch_stage": "thing3", "github_label": "thing4"}]}'
+              '{"apis": [{"api_shortname": "cloudkms", "display_name": "thing1", "docs_root_url": "thing2", "launch_stage": "thing3", "github_label": "thing4"}]}'
             ),
         }),
       }),
@@ -136,22 +142,33 @@ describe('fetch api related info', async () => {
       getFileContents: sinon
         .stub()
         .returns(new FileNotFoundError('google/cloud/kms/v1/kms_v1.yaml')),
+      findFilesByGlob: sinon
+        .stub()
+        .returns(['google/cloud/kms/v1/cloudkms_v1.yaml']),
     } as unknown as RepositoryFileCache;
 
-    assert.rejects(
-      async () =>
-        await loadApiFields('google.cloud.kms.v1', storage, repositoryFileCache)
+    const serviceConfig = await loadApiFields(
+      'google.cloud.kms.v1',
+      storage,
+      repositoryFileCache
     );
+
+    assert.deepStrictEqual(serviceConfig, {
+      api_short_name: 'cloudkms',
+      documentation_uri: 'thing2',
+      launch_stage: 'thing3',
+      github_label: 'thing4',
+    });
   });
 
-  it('should throw an error if yaml was empty', async () => {
+  it('should throw and catch an error if yaml was empty', async () => {
     const storage = {
       bucket: sinon.stub().returns({
         file: sinon.stub().returns({
           download: sinon
             .stub()
             .returns(
-              '{"apis": [{"api_shortname": "kms", "display_name": "thing1", "docs_root_url": "thing2", "launch_stage": "thing3", "github_label": "thing4"}]}'
+              '{"apis": [{"api_shortname": "cloudkms", "display_name": "thing1", "docs_root_url": "thing2", "launch_stage": "thing3", "github_label": "thing4"}]}'
             ),
         }),
       }),
@@ -159,17 +176,23 @@ describe('fetch api related info', async () => {
 
     const repositoryFileCache = {
       getFileContents: sinon.stub().returns({}),
+      findFilesByGlob: sinon
+        .stub()
+        .returns(['google/cloud/kms/v1/cloudkms_v1.yaml']),
     } as unknown as RepositoryFileCache;
 
-    assert.rejects(
-      async () =>
-        await loadApiFields(
-          'google.cloud.kms.v1',
-          storage,
-          repositoryFileCache
-        ),
-      /Service config not valid yaml or undefined/
+    const serviceConfig = await loadApiFields(
+      'google.cloud.kms.v1',
+      storage,
+      repositoryFileCache
     );
+
+    assert.deepStrictEqual(serviceConfig, {
+      api_short_name: 'cloudkms',
+      documentation_uri: 'thing2',
+      launch_stage: 'thing3',
+      github_label: 'thing4',
+    });
   });
 
   it('should return empty fields if neither the service config nor drift have info', async () => {
@@ -189,6 +212,9 @@ describe('fetch api related info', async () => {
       getFileContents: sinon.stub().returns({
         parsedContent: '{}',
       }),
+      findFilesByGlob: sinon
+        .stub()
+        .returns(['google/cloud/kms/v1/cloudkms_v1.yaml']),
     } as unknown as RepositoryFileCache;
 
     const serviceConfig = await loadApiFields(
