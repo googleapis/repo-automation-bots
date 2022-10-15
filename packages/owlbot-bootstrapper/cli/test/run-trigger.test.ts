@@ -130,7 +130,7 @@ describe('tests running build trigger', () => {
             _CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`,
             _LANGUAGE_CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
             _PROJECT_ID: PROJECT_ID,
-            _MONO_REPO_PATH: '/workspace/google-cloud-node',
+            _MONO_REPO_PATH: `${MONO_REPO_PATH}/google-cloud-node`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
           },
