@@ -109,11 +109,7 @@ describe('post processing', async () => {
     pushToBranchAndOpenPRStub.rejects();
 
     const scope = nock('https://api.github.com')
-      .post(
-        `/repos/${ORG}/${
-          argv.repoToClone?.match(/git@github.com[\/|:].*?\/(.*?).git/)![1]
-        }/issues`
-      )
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
       .reply(201);
 
     await assert.rejects(() => postProcess(argv));

@@ -65,7 +65,7 @@ export async function preProcess(argv: CliArgs) {
     logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
     logger.info(
-      `Pre process failed; opening an issue on googleapis/${argv.monoRepoName}`
+      `Pre process failed; opening an issue on ${argv.monoRepoOrg}/${argv.monoRepoName}`
     );
 
     await openAnIssue(
