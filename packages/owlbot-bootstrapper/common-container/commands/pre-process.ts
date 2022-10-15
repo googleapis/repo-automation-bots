@@ -53,7 +53,7 @@ export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       })
       .option('monoRepoPath', {
         describe:
-          'path in which to save the mono repo (if relative, will be in the context of the container)',
+          'full path to the mono repo (if relative, will be in the context of the container)',
         type: 'string',
         demand: true,
       })
