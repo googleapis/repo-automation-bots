@@ -28,6 +28,7 @@ const INTER_CONTAINER_VARS_PATH = `${DIRECTORY_PATH}/interContainerVars.json`;
 export async function runTrigger(
   argv: CliArgs,
   cb: CloudBuildClient,
+  monoRepoName: string,
   languageValues?: {
     repoToClone: string;
     language: string;
@@ -51,7 +52,9 @@ export async function runTrigger(
           languageValues?.languageContainerInArtifactRegistry ??
           '',
         _PROJECT_ID: argv.projectId,
-        _MONO_REPO_PATH: argv.monoRepoPath ?? MONO_REPO_PATH,
+        _MONO_REPO_PATH: argv.monoRepoPath
+          ? `${argv.monoRepoPath}/${monoRepoName}`
+          : `${MONO_REPO_PATH}/${monoRepoName}`,
         _SERVICE_CONFIG_PATH: argv.serviceConfigPath ?? SERVICE_CONFIG_PATH,
         _INTER_CONTAINER_VARS_PATH:
           argv.interContainerVarsPath ?? INTER_CONTAINER_VARS_PATH,
