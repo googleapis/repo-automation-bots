@@ -30,7 +30,7 @@ const REPO_TO_CLONE = 'github.com/soficodes/nodejs-kms.git';
 const LANGUAGE_CONTAINER = 'gcr.io/myproject/myimage:latest';
 const LANGUAGE = 'nodejs';
 const DIRECTORY_PATH = '/workspace';
-const MONO_REPO_PATH = DIRECTORY_PATH;
+const MONO_REPO_DIR = DIRECTORY_PATH;
 const SERVICE_CONFIG_PATH = `${DIRECTORY_PATH}/serviceConfig.yaml`;
 const INTER_CONTAINER_VARS_PATH = `${DIRECTORY_PATH}/interContainerVars.json`;
 
@@ -65,7 +65,7 @@ describe('tests running build trigger', () => {
         repoToClone: REPO_TO_CLONE,
         language: 'nodejs',
         languageContainer: LANGUAGE_CONTAINER,
-        monoRepoPath: MONO_REPO_PATH,
+        monoRepoDir: MONO_REPO_DIR,
         serviceConfigPath: SERVICE_CONFIG_PATH,
         interContainerVarsPath: INTER_CONTAINER_VARS_PATH,
       },
@@ -88,7 +88,8 @@ describe('tests running build trigger', () => {
             _CONTAINER: COMMON_CONTAINER_IMAGE,
             _LANGUAGE_CONTAINER: LANGUAGE_CONTAINER,
             _PROJECT_ID: PROJECT_ID,
-            _MONO_REPO_PATH: `${MONO_REPO_PATH}/nodejs-kms`,
+            _MONO_REPO_DIR: MONO_REPO_DIR,
+            _MONO_REPO_PATH: `${MONO_REPO_DIR}/nodejs-kms`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
           },
@@ -130,7 +131,8 @@ describe('tests running build trigger', () => {
             _CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`,
             _LANGUAGE_CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
             _PROJECT_ID: PROJECT_ID,
-            _MONO_REPO_PATH: `${MONO_REPO_PATH}/google-cloud-node`,
+            _MONO_REPO_DIR: MONO_REPO_DIR,
+            _MONO_REPO_PATH: `${MONO_REPO_DIR}/google-cloud-node`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
           },

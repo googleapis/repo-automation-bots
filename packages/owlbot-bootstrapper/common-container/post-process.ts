@@ -62,7 +62,7 @@ export async function postProcess(argv: CliArgs) {
   } catch (err) {
     await openAnIssue(
       octokit,
-      argv.repoToClone?.split('/')[2]?.split('.')[0] ?? 'googleapis',
+      argv.repoToClone?.match(/git@github.com[/|:].*?\/(.*?).git/)![1],
       argv.apiId,
       argv.buildId,
       argv.projectId,

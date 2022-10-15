@@ -56,6 +56,7 @@ export async function preProcess(argv: CliArgs) {
     );
 
     await monoRepo.cloneRepoAndOpenBranch(
+      argv.monoRepoDir,
       argv.monoRepoPath,
       argv.interContainerVarsPath
     );
@@ -63,13 +64,14 @@ export async function preProcess(argv: CliArgs) {
   } catch (err) {
     logger.info(
       `Pre process failed; opening an issue on googleapis/${
-        argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1] ?? 'googleapis'
+        argv.repoToClone?.match(/git@github.com[/|:].*?\/(.*?).git/)![1] ??
+        'googleapis'
       }`
     );
 
     await openAnIssue(
       octokit,
-      argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1] ?? 'googleapis',
+      argv.repoToClone?.match(/git@github.com[/|:].*?\/(.*?).git/)![1],
       argv.apiId,
       argv.buildId,
       argv.projectId,

@@ -69,13 +69,15 @@ describe('pre processing', async () => {
   it('assert right stubs are called during pre-process, monorepo', async () => {
     argv = {
       projectId: 'myprojects',
-      repoToClone: 'github.com/googleapis/nodejs-kms.git',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
       apiId: 'google.cloud.kms.v1',
       language: 'nodejs',
       installationId: '12345',
       monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoDir: 'MONO_REPO_DIR',
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
     };
 
     await preProcess(argv);
@@ -90,10 +92,12 @@ describe('pre processing', async () => {
       apiId: 'google.cloud.kms.v1',
       language: 'nodejs',
       installationId: '12345',
-      repoToClone: 'github.com/googleapis/nodejs-kms.git',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
       monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoDir: 'MONO_REPO_DIR',
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -103,7 +107,7 @@ describe('pre processing', async () => {
     const scope = nock('https://api.github.com')
       .post(
         `/repos/${ORG}/${
-          argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1]
+          argv.repoToClone?.match(/git@github.com[\/|:].*?\/(.*?).git/)![1]
         }/issues`
       )
       .reply(201);

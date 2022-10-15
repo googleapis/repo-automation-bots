@@ -159,7 +159,7 @@ describe('common utils tests', async () => {
     );
     const branchNameToWrite = await utils.openABranch(
       FAKE_REPO_NAME,
-      directoryPath
+      `${directoryPath}/${FAKE_REPO_NAME}`
     );
     await utils.writeToWellKnownFile(
       {branchName: branchNameToWrite},

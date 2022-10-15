@@ -63,7 +63,7 @@ describe('MonoRepo class', async () => {
   it('should create the right type of object', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      'github.com/soficodes/nodejs-kms.git',
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
       octokit
@@ -71,7 +71,7 @@ describe('MonoRepo class', async () => {
 
     const expectation = {
       language: Language.Nodejs,
-      repoToCloneUrl: 'github.com/soficodes/nodejs-kms.git',
+      repoToCloneUrl: 'git@github.com/soficodes/nodejs-kms.git',
       githubToken: 'ghs_1234',
       octokit,
       repoName: 'nodejs-kms',
@@ -87,7 +87,7 @@ describe('MonoRepo class', async () => {
   it('should clone a given repo', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      'github.com/soficodes/nodejs-kms.git',
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
       octokit
@@ -117,14 +117,17 @@ describe('MonoRepo class', async () => {
   it('should open a branch, then commit and push to that branch', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      'github.com/soficodes/nodejs-kms.git',
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
       octokit
     );
 
     await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
-    const branchName = await utils.openABranch(FAKE_REPO_NAME, directoryPath);
+    const branchName = await utils.openABranch(
+      FAKE_REPO_NAME,
+      `${directoryPath}/${FAKE_REPO_NAME}`
+    );
     await utils.writeToWellKnownFile(
       {branchName},
       `${directoryPath}/interContainerVars.json`
@@ -147,8 +150,7 @@ describe('MonoRepo class', async () => {
     );
     await monoRepo._commitAndPushToBranch(
       interContainerVars.branchName,
-      FAKE_REPO_NAME,
-      directoryPath,
+      `${directoryPath}/${FAKE_REPO_NAME}`,
       copyTagInfo
     );
 
@@ -184,7 +186,7 @@ describe('MonoRepo class', async () => {
   it('should open a branch, then commit and push to that branch in the composite workflow', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      repoToClonePath,
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
       octokit
@@ -198,8 +200,10 @@ describe('MonoRepo class', async () => {
       .reply(201);
 
     monoRepo.repoName = FAKE_REPO_NAME;
+    monoRepo.repoToCloneUrl = repoToClonePath;
     await monoRepo.cloneRepoAndOpenBranch(
       directoryPath,
+      `${directoryPath}/${FAKE_REPO_NAME}`,
       `${directoryPath}/interContainerVars.json`
     );
     const contents = utils.getWellKnownFileContents(
@@ -213,7 +217,7 @@ describe('MonoRepo class', async () => {
 
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     await monoRepo.pushToBranchAndOpenPR(
-      directoryPath,
+      `${directoryPath}/${FAKE_REPO_NAME}`,
       `${directoryPath}/interContainerVars.json`
     );
 

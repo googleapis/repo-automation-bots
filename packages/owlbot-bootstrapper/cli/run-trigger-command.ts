@@ -24,7 +24,7 @@ export interface CliArgs {
   installationId: string;
   container?: string;
   languageContainer?: string;
-  monoRepoPath?: string;
+  monoRepoDir?: string;
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
 }
@@ -104,7 +104,7 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: false,
       })
-      .option('monoRepoPath', {
+      .option('monoRepoDir', {
         describe: 'path to the directory in which the mono repo will be cloned',
         type: 'string',
         demand: false,

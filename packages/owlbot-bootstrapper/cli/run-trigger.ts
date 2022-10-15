@@ -21,7 +21,7 @@ import {CliArgs} from './run-trigger-command';
 const COMMON_CONTAINER =
   'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/owlbot-bootstrapper:latest';
 const DIRECTORY_PATH = '/workspace';
-const MONO_REPO_PATH = DIRECTORY_PATH;
+const MONO_REPO_DIR = DIRECTORY_PATH;
 const SERVICE_CONFIG_PATH = `${DIRECTORY_PATH}/serviceConfig.yaml`;
 const INTER_CONTAINER_VARS_PATH = `${DIRECTORY_PATH}/interContainerVars.json`;
 
@@ -52,9 +52,10 @@ export async function runTrigger(
           languageValues?.languageContainerInArtifactRegistry ??
           '',
         _PROJECT_ID: argv.projectId,
-        _MONO_REPO_PATH: argv.monoRepoPath
-          ? `${argv.monoRepoPath}/${monoRepoName}`
-          : `${MONO_REPO_PATH}/${monoRepoName}`,
+        _MONO_REPO_DIR: argv.monoRepoDir ?? MONO_REPO_DIR,
+        _MONO_REPO_PATH: argv.monoRepoDir
+          ? `${argv.monoRepoDir}/${monoRepoName}`
+          : `${MONO_REPO_DIR}/${monoRepoName}`,
         _SERVICE_CONFIG_PATH: argv.serviceConfigPath ?? SERVICE_CONFIG_PATH,
         _INTER_CONTAINER_VARS_PATH:
           argv.interContainerVarsPath ?? INTER_CONTAINER_VARS_PATH,

@@ -55,7 +55,10 @@ export class MonoRepo {
     this.repoToCloneUrl = repoToCloneUrl;
     // Get the repo name from the repoToCloneUrl, i.e. github.com/googleapis/nodejs-kms.git becomes nodejs-kms
     // Or /googleapis/nodejs-kms becomes nodejs-kms
-    this.repoName = repoToCloneUrl.match(/\/([\w-]*)(.git|$)/)![1];
+    this.repoName = repoToCloneUrl.match(
+      // eslint-disable-next-line no-useless-escape
+      /git@github.com[\/|:].*?\/(.*?).git/
+    )![1];
     this.githubToken = githubToken;
     this.apiId = apiId;
     this.octokit = octokit;
@@ -71,7 +74,7 @@ export class MonoRepo {
   public async _cloneRepo(
     githubToken: string,
     repoToCloneUrl: string,
-    monoRepoPath: string
+    monoRepoDir: string
   ) {
     const repoToCloneRegexp = /git@github.com[/|:](.*?)\/(.*?).git/;
     const repoToClone = repoToCloneUrl.match(repoToCloneRegexp);
@@ -86,11 +89,11 @@ export class MonoRepo {
           repoToClone![1]
         }/${repoToClone![2]}`,
         {
-          cwd: monoRepoPath,
+          cwd: monoRepoDir,
         }
       );
     } else {
-      cmd(`git clone ${repoToCloneUrl}`, {cwd: monoRepoPath});
+      cmd(`git clone ${repoToCloneUrl}`, {cwd: monoRepoDir});
     }
     logger.info(`Repo ${repoToCloneUrl} cloned`);
   }
@@ -100,26 +103,25 @@ export class MonoRepo {
    *
    * @param branchName the name of the branch with a UUID
    * @param repoName the name of the repo containing the branch
-   * @param monoRepoPath name of the directory in which the repo was cloned
+   * @param monoRepoPath path to monorepo
    * @param copyTagText the commit tag text for owlbot
    */
   public async _commitAndPushToBranch(
     branchName: string,
-    repoName: string,
     monoRepoPath: string,
     copyTagText: string
   ) {
     cmd(
       `git add .; git commit -m "feat: initial generation of library\n${copyTagText}"; git push -u origin ${branchName}`,
       {
-        cwd: `${monoRepoPath}/${repoName}`,
+        cwd: `${monoRepoPath}`,
       }
     );
   }
 
   /**
    * Commits changes to a branch, then opens a PR with those changes
-   * @param monoRepoPath name of the directory in which the mono repo was cloned
+   * @param monoRepoPath path to monorepo
    * @param interContainerVarsFilePath path to where the intercontainervars file is saved
    */
   public async pushToBranchAndOpenPR(
@@ -137,7 +139,6 @@ export class MonoRepo {
     checkIfGitIsInstalled(cmd);
     await this._commitAndPushToBranch(
       interContainerVars.branchName,
-      this.repoName,
       monoRepoPath,
       copyTagText
     );
@@ -156,11 +157,12 @@ export class MonoRepo {
    * Clones a repository and opens an empty branch in it
    */
   public async cloneRepoAndOpenBranch(
+    monoRepoDir: string,
     monoRepoPath: string,
     interContainerVarsFilePath: string
   ) {
     checkIfGitIsInstalled(cmd);
-    await this._cloneRepo(this.githubToken, this.repoToCloneUrl, monoRepoPath);
+    await this._cloneRepo(this.githubToken, this.repoToCloneUrl, monoRepoDir);
     const branchName = await openABranch(this.repoName, monoRepoPath);
     await writeToWellKnownFile({branchName}, interContainerVarsFilePath);
   }

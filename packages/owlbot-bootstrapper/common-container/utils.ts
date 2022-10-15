@@ -85,7 +85,7 @@ export async function getPRText(latestSha: string, copyTagText: string) {
  * Opens a new branch on a repo with a UUID
  *
  * @param repoName name of the repo to open the branch in
- * @param monoRepoPath directory where repo was cloned in
+ * @param monoRepoPath full path to mono repo
  * @returns name of the branch that was opened
  */
 export async function openABranch(repoName: string, monoRepoPath: string) {
@@ -96,7 +96,7 @@ export async function openABranch(repoName: string, monoRepoPath: string) {
     // Need to push an empty commit to  push branch up
     cmd(
       `git checkout -b ${branchName}; git commit --allow-empty -m "feat: initial commit"; git push -u origin ${branchName}`,
-      {cwd: `${monoRepoPath}/${repoName}`}
+      {cwd: monoRepoPath}
     );
     return branchName;
   } catch (err) {
