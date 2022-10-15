@@ -111,7 +111,7 @@ describe('tests running build trigger', () => {
       {
         language: 'nodejs',
         languageContainerInArtifactRegistry: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
-        repoToClone: 'git@github.com:googleapis/google-cloud-node.git',
+        repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
       }
     );
 
@@ -124,7 +124,7 @@ describe('tests running build trigger', () => {
           branchName: 'main',
           substitutions: {
             _API_ID: API_ID,
-            _REPO_TO_CLONE: 'git@github.com:googleapis/google-cloud-node.git',
+            _REPO_TO_CLONE: 'git@github.com/googleapis/google-cloud-node.git',
             _LANGUAGE: LANGUAGE,
             _INSTALLATION_ID: INSTALLATION_ID,
             _CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`,
@@ -152,12 +152,19 @@ describe('tests running build trigger', () => {
         language: 'nodejs',
         languageContainerInArtifactRegistry:
           'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/node-bootstrapper:latest',
-        repoToClone: 'git@github.com:googleapis/google-cloud-node.git',
+        repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
       }
     );
   });
 
   it('gets the correct mono repo name, or throws an error', () => {
+    assert.deepStrictEqual(
+      runTriggerCommand.getMonoRepoName(
+        'git@github.com:googleapis/google-cloud-node.git'
+      ),
+      'google-cloud-node'
+    );
+
     assert.deepStrictEqual(
       runTriggerCommand.getMonoRepoName(
         'git@github.com/googleapis/google-cloud-node.git'

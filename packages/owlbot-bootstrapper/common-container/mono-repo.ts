@@ -73,17 +73,22 @@ export class MonoRepo {
     repoToCloneUrl: string,
     monoRepoPath: string
   ) {
-    const repoToCloneRegexp = /github\.com\/[a-z-]*\/[a-z-]*\.git/;
-    const repoToClone = repoToCloneUrl.match(repoToCloneRegexp)?.[0];
-    if (!repoToClone) {
+    const repoToCloneRegexp = /git@github.com[/|:](.*?)\/(.*?).git/;
+    const repoToClone = repoToCloneUrl.match(repoToCloneRegexp);
+    if (!repoToClone || !repoToClone[1] || !repoToClone[2]) {
       logger.error(
-        'repoToClone arg is in the wrong format; must include github.com:orgName/repoName.git'
+        'repoToClone arg is in the wrong format; must include git@github.com:orgName/repoName.git'
       );
     }
     if (repoToCloneUrl.includes('github')) {
-      cmd(`git clone https://x-access-token:${githubToken}@${repoToClone}`, {
-        cwd: monoRepoPath,
-      });
+      cmd(
+        `git clone https://x-access-token:${githubToken}@github.com/${
+          repoToClone![1]
+        }/${repoToClone![2]}`,
+        {
+          cwd: monoRepoPath,
+        }
+      );
     } else {
       cmd(`git clone ${repoToCloneUrl}`, {cwd: monoRepoPath});
     }

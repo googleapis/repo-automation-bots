@@ -34,7 +34,7 @@ const languageContainers = [
     language: 'nodejs',
     languageContainerInArtifactRegistry:
       'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/node-bootstrapper:latest',
-    repoToClone: 'git@github.com:googleapis/google-cloud-node.git',
+    repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
   },
 ];
 
