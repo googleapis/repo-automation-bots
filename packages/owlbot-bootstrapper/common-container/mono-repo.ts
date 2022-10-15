@@ -114,7 +114,7 @@ export class MonoRepo {
     cmd(
       `git add .; git commit -m "feat: initial generation of library\n${copyTagText}"; git push -u origin ${branchName}`,
       {
-        cwd: `${monoRepoPath}`,
+        cwd: monoRepoPath,
       }
     );
   }
