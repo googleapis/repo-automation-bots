@@ -51,6 +51,16 @@ export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: true,
       })
+      .option('monoRepoOrg', {
+        describe: 'org for mono repo name',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoName', {
+        describe: 'name of mono repo',
+        type: 'string',
+        demand: true,
+      })
       .option('monoRepoPath', {
         describe:
           'full path to the mono repo (if relative, will be in the context of the container)',

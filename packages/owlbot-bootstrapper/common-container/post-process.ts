@@ -48,9 +48,11 @@ export async function postProcess(argv: CliArgs) {
     // Post-process (after language specific-container)
     const monoRepo = new MonoRepo(
       argv.language as Language,
-      argv.repoToClone!,
+      argv.repoToClone,
       githubToken,
       argv.apiId,
+      argv.monoRepoName,
+      argv.monoRepoOrg,
       octokit
     );
 
@@ -62,7 +64,8 @@ export async function postProcess(argv: CliArgs) {
   } catch (err) {
     await openAnIssue(
       octokit,
-      argv.repoToClone?.match(/git@github.com[/|:].*?\/(.*?).git/)![1],
+      argv.monoRepoOrg,
+      argv.monoRepoName,
       argv.apiId,
       argv.buildId,
       argv.projectId,

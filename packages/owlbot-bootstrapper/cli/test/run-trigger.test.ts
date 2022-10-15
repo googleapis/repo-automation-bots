@@ -70,7 +70,7 @@ describe('tests running build trigger', () => {
         interContainerVarsPath: INTER_CONTAINER_VARS_PATH,
       },
       cloudBuildClientStub,
-      'nodejs-kms'
+      {monoRepoOrg: 'googleapis', monoRepoName: 'nodejs-kms'}
     );
 
     assert(
@@ -89,6 +89,8 @@ describe('tests running build trigger', () => {
             _LANGUAGE_CONTAINER: LANGUAGE_CONTAINER,
             _PROJECT_ID: PROJECT_ID,
             _MONO_REPO_DIR: MONO_REPO_DIR,
+            _MONO_REPO_NAME: 'nodejs-kms',
+            _MONO_REPO_ORG: 'googleapis',
             _MONO_REPO_PATH: `${MONO_REPO_DIR}/nodejs-kms`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
@@ -108,7 +110,7 @@ describe('tests running build trigger', () => {
         language: 'nodejs',
       },
       cloudBuildClientStub,
-      'google-cloud-node',
+      {monoRepoOrg: 'googleapis', monoRepoName: 'google-cloud-node'},
       {
         language: 'nodejs',
         languageContainerInArtifactRegistry: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
@@ -132,6 +134,8 @@ describe('tests running build trigger', () => {
             _LANGUAGE_CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
             _PROJECT_ID: PROJECT_ID,
             _MONO_REPO_DIR: MONO_REPO_DIR,
+            _MONO_REPO_NAME: 'google-cloud-node',
+            _MONO_REPO_ORG: 'googleapis',
             _MONO_REPO_PATH: `${MONO_REPO_DIR}/google-cloud-node`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
@@ -161,28 +165,28 @@ describe('tests running build trigger', () => {
 
   it('gets the correct mono repo name, or throws an error', () => {
     assert.deepStrictEqual(
-      runTriggerCommand.getMonoRepoName(
+      runTriggerCommand.getMonoRepoNameAndOrg(
         'git@github.com:googleapis/google-cloud-node.git'
       ),
-      'google-cloud-node'
+      {monoRepoOrg: 'googleapis', monoRepoName: 'google-cloud-node'}
     );
 
     assert.deepStrictEqual(
-      runTriggerCommand.getMonoRepoName(
+      runTriggerCommand.getMonoRepoNameAndOrg(
         'git@github.com/googleapis/google-cloud-node.git'
       ),
-      'google-cloud-node'
+      {monoRepoOrg: 'googleapis', monoRepoName: 'google-cloud-node'}
     );
 
     assert.deepStrictEqual(
-      runTriggerCommand.getMonoRepoName(
+      runTriggerCommand.getMonoRepoNameAndOrg(
         'git@github.com:googleapis/nodejs-scheduler.git'
       ),
-      'nodejs-scheduler'
+      {monoRepoOrg: 'googleapis', monoRepoName: 'nodejs-scheduler'}
     );
 
     assert.throws(() => {
-      runTriggerCommand.getMonoRepoName(undefined);
+      runTriggerCommand.getMonoRepoNameAndOrg(undefined);
     }, new Error("Repo to clone arg is malformed; should be in form of ssh address,' git@github.com:googleapis/google-cloud-node.git'"));
   });
 });

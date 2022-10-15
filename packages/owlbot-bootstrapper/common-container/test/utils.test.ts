@@ -155,7 +155,9 @@ describe('common utils tests', async () => {
     await MonoRepo.prototype._cloneRepo(
       'ab123',
       repoToClonePath,
-      directoryPath
+      directoryPath,
+      'monoRepoName',
+      'monoRepoOrg'
     );
     const branchNameToWrite = await utils.openABranch(
       FAKE_REPO_NAME,

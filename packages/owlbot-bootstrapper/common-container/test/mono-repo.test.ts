@@ -66,6 +66,8 @@ describe('MonoRepo class', async () => {
       'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
+      'nodejs-kms',
+      'soficodes',
       octokit
     );
 
@@ -73,14 +75,17 @@ describe('MonoRepo class', async () => {
       language: Language.Nodejs,
       repoToCloneUrl: 'git@github.com/soficodes/nodejs-kms.git',
       githubToken: 'ghs_1234',
-      octokit,
       repoName: 'nodejs-kms',
+      repoOrg: 'soficodes',
+      octokit,
     };
 
     assert.deepStrictEqual(monoRepo.language, expectation.language);
     assert.deepStrictEqual(monoRepo.repoToCloneUrl, expectation.repoToCloneUrl);
     assert.deepStrictEqual(monoRepo.githubToken, expectation.githubToken);
     assert.deepStrictEqual(monoRepo.octokit, expectation.octokit);
+    assert.deepStrictEqual(monoRepo.repoName, expectation.repoName);
+    assert.deepStrictEqual(monoRepo.repoOrg, expectation.repoOrg);
     assert.deepStrictEqual(monoRepo.repoName, 'nodejs-kms');
   });
 
@@ -89,11 +94,19 @@ describe('MonoRepo class', async () => {
       'nodejs' as Language,
       'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
+      'nodejs-kms',
+      'soficodes',
       'google.cloud.kms.v1',
       octokit
     );
 
-    await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
+    await monoRepo._cloneRepo(
+      'ab123',
+      repoToClonePath,
+      directoryPath,
+      'monoRepoDir',
+      'monoRepoName'
+    );
 
     assert.ok(fs.statSync(`${directoryPath}/${FAKE_REPO_NAME}`));
   });
@@ -119,11 +132,19 @@ describe('MonoRepo class', async () => {
       'nodejs' as Language,
       'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
+      'nodejs-kms',
+      'soficodes',
       'google.cloud.kms.v1',
       octokit
     );
 
-    await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
+    await monoRepo._cloneRepo(
+      'ab123',
+      repoToClonePath,
+      directoryPath,
+      'monoRepoDir',
+      'monoRepoName'
+    );
     const branchName = await utils.openABranch(
       FAKE_REPO_NAME,
       `${directoryPath}/${FAKE_REPO_NAME}`
@@ -188,6 +209,8 @@ describe('MonoRepo class', async () => {
       'nodejs' as Language,
       'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
+      'nodejs-kms',
+      'soficodes',
       'google.cloud.kms.v1',
       octokit
     );

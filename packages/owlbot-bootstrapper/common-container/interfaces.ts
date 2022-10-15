@@ -44,6 +44,8 @@ export interface CliArgs {
   installationId: string;
   monoRepoPath: string;
   monoRepoDir: string;
+  monoRepoName: string;
+  monoRepoOrg: string;
   serviceConfigPath: string;
   interContainerVarsPath: string;
   buildId: string;

@@ -49,9 +49,11 @@ export async function preProcess(argv: CliArgs) {
     // Pre-process (before language specific-container)
     const monoRepo = new MonoRepo(
       argv.language as Language,
-      argv.repoToClone!,
+      argv.repoToClone,
       githubToken,
       argv.apiId,
+      argv.monoRepoName,
+      argv.monoRepoOrg,
       octokit
     );
 
@@ -63,15 +65,13 @@ export async function preProcess(argv: CliArgs) {
     logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
     logger.info(
-      `Pre process failed; opening an issue on googleapis/${
-        argv.repoToClone?.match(/git@github.com[/|:].*?\/(.*?).git/)![1] ??
-        'googleapis'
-      }`
+      `Pre process failed; opening an issue on googleapis/${argv.monoRepoName}`
     );
 
     await openAnIssue(
       octokit,
-      argv.repoToClone?.match(/git@github.com[/|:].*?\/(.*?).git/)![1],
+      argv.monoRepoOrg,
+      argv.monoRepoName,
       argv.apiId,
       argv.buildId,
       argv.projectId,

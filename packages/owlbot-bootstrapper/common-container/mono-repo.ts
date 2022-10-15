@@ -42,6 +42,7 @@ export class MonoRepo {
   repoName: string;
   githubToken: string;
   apiId: string;
+  repoOrg: string;
   octokit: Octokit;
 
   constructor(
@@ -49,16 +50,14 @@ export class MonoRepo {
     repoToCloneUrl: string,
     githubToken: string,
     apiId: string,
+    monoRepoName: string,
+    monoRepoOrg: string,
     octokit: Octokit
   ) {
     this.language = language;
     this.repoToCloneUrl = repoToCloneUrl;
-    // Get the repo name from the repoToCloneUrl, i.e. github.com/googleapis/nodejs-kms.git becomes nodejs-kms
-    // Or /googleapis/nodejs-kms becomes nodejs-kms
-    this.repoName = repoToCloneUrl.match(
-      // eslint-disable-next-line no-useless-escape
-      /git@github.com[\/|:].*?\/(.*?).git/
-    )![1];
+    this.repoName = monoRepoName;
+    this.repoOrg = monoRepoOrg;
     this.githubToken = githubToken;
     this.apiId = apiId;
     this.octokit = octokit;
@@ -70,24 +69,19 @@ export class MonoRepo {
    * @param githubToken a short-lived access Github access token
    * @param repoToCloneUrl from where to clone the repo
    * @param monoRepoPath where to clone the repo to
+   * @param repoOrg: repo org name
+   * @param repoName: repo name
    */
   public async _cloneRepo(
     githubToken: string,
     repoToCloneUrl: string,
-    monoRepoDir: string
+    monoRepoDir: string,
+    repoOrg: string,
+    repoName: string
   ) {
-    const repoToCloneRegexp = /git@github.com[/|:](.*?)\/(.*?).git/;
-    const repoToClone = repoToCloneUrl.match(repoToCloneRegexp);
-    if (!repoToClone || !repoToClone[1] || !repoToClone[2]) {
-      logger.error(
-        'repoToClone arg is in the wrong format; must include git@github.com:orgName/repoName.git'
-      );
-    }
     if (repoToCloneUrl.includes('github')) {
       cmd(
-        `git clone https://x-access-token:${githubToken}@github.com/${
-          repoToClone![1]
-        }/${repoToClone![2]}`,
+        `git clone https://x-access-token:${githubToken}@github.com/${repoOrg}/${repoName}`,
         {
           cwd: monoRepoDir,
         }
@@ -102,7 +96,6 @@ export class MonoRepo {
    * Commits changes and pushes them to a new branch in github
    *
    * @param branchName the name of the branch with a UUID
-   * @param repoName the name of the repo containing the branch
    * @param monoRepoPath path to monorepo
    * @param copyTagText the commit tag text for owlbot
    */
@@ -162,7 +155,13 @@ export class MonoRepo {
     interContainerVarsFilePath: string
   ) {
     checkIfGitIsInstalled(cmd);
-    await this._cloneRepo(this.githubToken, this.repoToCloneUrl, monoRepoDir);
+    await this._cloneRepo(
+      this.githubToken,
+      this.repoToCloneUrl,
+      monoRepoDir,
+      this.repoOrg,
+      this.repoName
+    );
     const branchName = await openABranch(this.repoName, monoRepoPath);
     await writeToWellKnownFile({branchName}, interContainerVarsFilePath);
   }

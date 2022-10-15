@@ -56,6 +56,16 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: true,
       })
+      .option('monoRepoOrg', {
+        describe: 'org for mono repo name',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoName', {
+        describe: 'name of mono repo',
+        type: 'string',
+        demand: true,
+      })
       .option('monoRepoDir', {
         describe: 'path in which to save the mono repo',
         type: 'string',
