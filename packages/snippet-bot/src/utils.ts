@@ -130,6 +130,24 @@ export const formatMatchingViolation = (violation: Violation): string => {
   return `${formatRegionTag(violation.location)} ${detail}`;
 };
 
+export const MAX_CHARS_IN_CHECK_TEXT = 65535;
+export const OVERFLOW_FOOTER = '\n...(The text is too long, omitted)';
+
+export function maybeTrimText(text: string): string {
+  const actualLimit = MAX_CHARS_IN_CHECK_TEXT - OVERFLOW_FOOTER.length;
+  if (text.length > actualLimit) {
+    text = text.substring(0, actualLimit);
+    // Also trim the string after the last `details` close tag for not
+    // breaking the UI rendering.
+    const detailsIndex = text.lastIndexOf('</details>\n');
+    if (detailsIndex !== -1) {
+      text = text.substring(0, detailsIndex + '</details>\n'.length);
+    }
+    text += OVERFLOW_FOOTER;
+  }
+  return text;
+}
+
 function aggregateCheckParams(
   checks: Array<createCheckParams>,
   title: string
@@ -183,6 +201,9 @@ export class CheckAggregator {
     this.promises = new Array<Promise<createCheckResponse>>();
   }
   public async add(checkParams: createCheckParams): Promise<void> {
+    if (checkParams.output!.text) {
+      checkParams.output!.text = maybeTrimText(checkParams.output!.text);
+    }
     if (this.aggregateChecks) {
       this.checkParams.push(checkParams);
     } else {
@@ -198,6 +219,9 @@ export class CheckAggregator {
         this.checkParams,
         this.checkTitle
       );
+      if (checkParams.output!.text) {
+        checkParams.output!.text = maybeTrimText(checkParams.output!.text);
+      }
       await this.octokit.checks.create(checkParams);
     } else {
       await Promise.all(this.promises);
