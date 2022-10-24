@@ -99,7 +99,7 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
     await cc.copyCodeAndAppendOrCreatePullRequest(
       params,
       [argv['dest-owlbot-yaml']],
-      undefined,
+      undefined, /* logger */
       argv['use-nested-commit-delimiters']
         ? WithNestedCommitDelimiters.Yes
         : WithNestedCommitDelimiters.No
