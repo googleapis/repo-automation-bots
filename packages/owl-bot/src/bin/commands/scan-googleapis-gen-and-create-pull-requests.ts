@@ -102,7 +102,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       argv['clone-depth'],
       copyStateStore,
       argv['combine-pulls-threshold'],
-      undefined, /* logger */
+      undefined /* logger */,
       argv['use-nested-commit-delimiters']
         ? WithNestedCommitDelimiters.Yes
         : WithNestedCommitDelimiters.No
