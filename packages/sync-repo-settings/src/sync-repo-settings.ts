@@ -85,7 +85,7 @@ export class SyncRepoSettings {
     const [owner, name] = repo.split('/');
     if (!config?.enabled) {
       logger.info(`config is not enabled for repository ${repo}`);
-      return false;
+      return;
     }
     if (!config) {
       logger.info(`no local config found for ${repo}, checking global config`);
