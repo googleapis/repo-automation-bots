@@ -37,7 +37,7 @@
     "yargs": "^17.5.1"
   },
   "devDependencies": {
-    "@octokit/types": "^7.2.0",
+    "@octokit/types": "^8.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
