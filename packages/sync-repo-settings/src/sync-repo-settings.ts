@@ -48,6 +48,7 @@ function deepFreeze(object: any) {
 const languageConfig: LanguageConfig = deepFreeze(checks);
 
 const repoConfigDefaults: RepoConfig = deepFreeze({
+  enabled: true,
   mergeCommitAllowed: false,
   squashMergeAllowed: true,
   rebaseMergeAllowed: true,
@@ -82,6 +83,10 @@ export class SyncRepoSettings {
     const logger = this.logger;
     const repo = options.repo;
     const [owner, name] = repo.split('/');
+    if (config?.enabled === false) {
+      logger.info(`config is not enabled for repository ${repo}`);
+      return;
+    }
     if (!config) {
       logger.info(`no local config found for ${repo}, checking global config`);
       // Fetch the list of languages used in this repository
