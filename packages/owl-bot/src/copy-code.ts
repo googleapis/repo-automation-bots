@@ -302,7 +302,9 @@ async function findAndAppendPullRequest(
   }
 
   // Yes, there's a pull request.  Append a new commit to it.
-  logger.info(`Appending ${pull.html_url} with a new commit.`);
+  logger.info(
+    `Appending ${pull.html_url} with a new commit. Nested commit delimiters: ${withNestedCommitDelimiters}`
+  );
   cmd(`git checkout -t origin/${destBranch}`, {cwd: params.destDir});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
