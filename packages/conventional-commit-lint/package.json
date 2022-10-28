@@ -32,7 +32,7 @@
     "@commitlint/config-conventional": "^17.1.0",
     "@commitlint/lint": "^17.1.0",
     "@google-automations/bot-config-utils": "^6.1.0",
-    "@octokit/openapi-types": "^13.8.0",
+    "@octokit/openapi-types": "^14.0.0",
     "@octokit/webhooks-types": "^6.3.6",
     "gcf-utils": "^14.2.0"
   },
