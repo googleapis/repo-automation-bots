@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.1...git-file-utils-v1.2.2) (2022-10-31)
+
+
+### Bug Fixes
+
+* **deps:** [git-file-utils] update dependency @octokit/rest to v19.0.5 ([#4575](https://github.com/googleapis/repo-automation-bots/issues/4575)) ([92a5fc8](https://github.com/googleapis/repo-automation-bots/commit/92a5fc8a8d4a677fa36a72026687dd0f252550a1))
+
 ## [1.2.1](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.0...git-file-utils-v1.2.1) (2022-10-03)
 
 
