@@ -18,12 +18,15 @@
 // for a mono repo-type object. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig} from './utils';
+import {openAnIssue, setConfig, ORG, writeToWellKnownFile} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
+import {loadApiFields} from './fetch-api-info';
+import {Storage} from '@google-cloud/storage';
+import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
@@ -59,6 +62,13 @@ export async function preProcess(argv: CliArgs) {
       argv.monoRepoPath,
       argv.interContainerVarsPath
     );
+    const apiFields = await loadApiFields(
+      argv.apiId,
+      new Storage(),
+      new RepositoryFileCache(octokit, {owner: ORG, repo: 'googleapis'})
+    );
+
+    writeToWellKnownFile(apiFields, argv.serviceConfigPath);
     logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
     logger.info(

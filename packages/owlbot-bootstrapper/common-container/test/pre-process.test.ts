@@ -22,6 +22,7 @@ import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {Octokit} from '@octokit/rest';
 import {ORG} from '../utils';
+import * as fetchApiInfo from '../fetch-api-info';
 
 nock.disableNetConnect();
 
@@ -30,6 +31,8 @@ let authenticateOctokitStub: sinon.SinonStub;
 let cloneRepoAndOpenBranchStub: sinon.SinonStub;
 let pushToBranchAndOpenPRStub: sinon.SinonStub;
 let setConfigStub: sinon.SinonStub;
+let loadApiFieldsStub: sinon.SinonStub;
+let writeToWellKnownFileStub: sinon.SinonStub;
 
 describe('pre processing', async () => {
   let argv: CliArgs;
@@ -56,6 +59,10 @@ describe('pre processing', async () => {
     );
 
     setConfigStub = sinon.stub(utils, 'setConfig');
+
+    loadApiFieldsStub = sinon.stub(fetchApiInfo, 'loadApiFields');
+
+    writeToWellKnownFileStub = sinon.stub(utils, 'writeToWellKnownFile');
   });
 
   afterEach(() => {
@@ -64,6 +71,8 @@ describe('pre processing', async () => {
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
     setConfigStub.restore();
+    loadApiFieldsStub.restore();
+    writeToWellKnownFileStub.restore();
   });
 
   it('assert right stubs are called during pre-process, monorepo', async () => {
@@ -82,6 +91,8 @@ describe('pre processing', async () => {
     assert.ok(getGitHubShortLivedAccessTokenStub.calledOnce);
     assert.ok(authenticateOctokitStub.calledOnce);
     assert.ok(cloneRepoAndOpenBranchStub.calledOnce);
+    assert.ok(writeToWellKnownFileStub.calledOnce);
+    assert.ok(loadApiFieldsStub.calledOnce);
   });
 
   it('attempts to open an issue in monorepo if any part of main fails', async () => {
