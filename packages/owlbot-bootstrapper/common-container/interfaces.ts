@@ -56,11 +56,12 @@ export interface InterContainerVars {
 
 // Interface for service config yaml (internal): /depot/google3/google/api/client.proto
 export interface ServiceConfigYaml {
-  api_short_name: string;
-  github_label: string;
-  doc_tag_prefix: string;
-  documentation_uri: string;
-  launch_stage: string;
+  publishing: {
+    api_short_name: string;
+    github_label: string;
+    documentation_uri: string;
+    launch_stage: string;
+  }
 }
 
 // Interface for what is grabbed from DRIFT

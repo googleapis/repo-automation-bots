@@ -137,32 +137,36 @@ function assignDriftValuesToServiceConfig(
   serviceConfig: Partial<ServiceConfigYaml>,
   driftData: DriftApi
 ): ServiceConfigYaml {
-  if (!serviceConfig?.api_short_name) {
+  if (!serviceConfig.publishing) {
+    serviceConfig.publishing = {api_short_name: driftData.api_shortname, github_label: driftData.github_label, documentation_uri: driftData.docs_root_url, launch_stage: driftData.launch_stage};
+  }
+
+  if (!serviceConfig?.publishing?.api_short_name) {
     logger.info(
       `Service config did not contain api_short_name; replacing with DRIFT ${driftData.api_shortname}`
     );
-    serviceConfig.api_short_name = driftData.api_shortname;
+    serviceConfig.publishing.api_short_name = driftData.api_shortname;
   }
 
-  if (!serviceConfig?.github_label) {
+  if (!serviceConfig?.publishing?.github_label) {
     logger.info(
       `Service config did not contain github_label; replacing with DRIFT ${driftData.github_label}`
     );
-    serviceConfig.github_label = driftData.github_label;
+    serviceConfig.publishing.github_label = driftData.github_label;
   }
 
-  if (!serviceConfig?.documentation_uri) {
+  if (!serviceConfig?.publishing.documentation_uri) {
     logger.info(
       `Service config did not contain documentation_uri; replacing with DRIFT ${driftData.docs_root_url}`
     );
-    serviceConfig.documentation_uri = driftData.docs_root_url;
+    serviceConfig.publishing.documentation_uri = driftData.docs_root_url;
   }
 
-  if (!serviceConfig?.launch_stage) {
+  if (!serviceConfig?.publishing.launch_stage) {
     logger.info(
       `Service config did not contain launch_stage; replacing with DRIFT ${driftData.launch_stage}`
     );
-    serviceConfig.launch_stage = driftData.launch_stage;
+    serviceConfig.publishing.launch_stage = driftData.launch_stage;
   }
 
   return serviceConfig as ServiceConfigYaml;
@@ -187,7 +191,6 @@ export async function loadApiFields(
     BUCKET,
     DRIFT_APIS_FILE
   );
-  console.log(driftData);
   let serviceConfig: Partial<ServiceConfigYaml> = {};
 
   // If the service_config.yaml is empty, malformed, etc., it should

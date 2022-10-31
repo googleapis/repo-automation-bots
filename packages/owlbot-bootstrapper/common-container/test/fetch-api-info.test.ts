@@ -80,10 +80,12 @@ describe('fetch api related info', async () => {
     );
 
     assert.deepEqual(serviceConfig, {
-      api_short_name: 'kms',
-      documentation_uri: 'thing2',
-      launch_stage: 'thing3',
-      github_label: 'thing4',
+      publishing: {
+        api_short_name: 'kms',
+        documentation_uri: 'thing2',
+        launch_stage: 'thing3',
+        github_label: 'thing4',
+      },
     });
   });
 
@@ -103,7 +105,7 @@ describe('fetch api related info', async () => {
     const repositoryFileCache = {
       getFileContents: sinon.stub().returns({
         parsedContent:
-          '{"api_short_name": "item1", "documentation_uri": "item2", "launch_stage": "item3", "github_label": "item4"}',
+          '{"publishing": {"api_short_name": "item1", "documentation_uri": "item2", "launch_stage": "item3", "github_label": "item4"}}',
       }),
       findFilesByGlob: sinon
         .stub()
@@ -117,10 +119,12 @@ describe('fetch api related info', async () => {
     );
 
     assert.deepStrictEqual(serviceConfig, {
-      api_short_name: 'item1',
-      documentation_uri: 'item2',
-      launch_stage: 'item3',
-      github_label: 'item4',
+      publishing: {
+        api_short_name: 'item1',
+        documentation_uri: 'item2',
+        launch_stage: 'item3',
+        github_label: 'item4',
+      },
     });
   });
 
@@ -153,10 +157,12 @@ describe('fetch api related info', async () => {
     );
 
     assert.deepStrictEqual(serviceConfig, {
-      api_short_name: 'cloudkms',
-      documentation_uri: 'thing2',
-      launch_stage: 'thing3',
-      github_label: 'thing4',
+      publishing: {
+        api_short_name: 'cloudkms',
+        documentation_uri: 'thing2',
+        launch_stage: 'thing3',
+        github_label: 'thing4',
+      },
     });
   });
 
@@ -187,10 +193,12 @@ describe('fetch api related info', async () => {
     );
 
     assert.deepStrictEqual(serviceConfig, {
-      api_short_name: 'cloudkms',
-      documentation_uri: 'thing2',
-      launch_stage: 'thing3',
-      github_label: 'thing4',
+      publishing: {
+        api_short_name: 'cloudkms',
+        documentation_uri: 'thing2',
+        launch_stage: 'thing3',
+        github_label: 'thing4',
+      },
     });
   });
 
@@ -223,10 +231,12 @@ describe('fetch api related info', async () => {
     );
 
     assert.deepStrictEqual(serviceConfig, {
-      api_short_name: 'accessapproval',
-      documentation_uri: '',
-      launch_stage: 'LAUNCH_STAGE_UNSPECIFIED',
-      github_label: '',
+      publishing: {
+        api_short_name: 'accessapproval',
+        documentation_uri: '',
+        launch_stage: 'LAUNCH_STAGE_UNSPECIFIED',
+        github_label: '',
+      },
     });
   });
 });
