@@ -61,7 +61,7 @@ export interface ServiceConfigYaml {
     github_label: string;
     documentation_uri: string;
     launch_stage: string;
-  }
+  };
 }
 
 // Interface for what is grabbed from DRIFT

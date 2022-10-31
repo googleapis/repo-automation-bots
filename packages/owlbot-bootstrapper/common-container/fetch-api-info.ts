@@ -138,7 +138,12 @@ function assignDriftValuesToServiceConfig(
   driftData: DriftApi
 ): ServiceConfigYaml {
   if (!serviceConfig.publishing) {
-    serviceConfig.publishing = {api_short_name: driftData.api_shortname, github_label: driftData.github_label, documentation_uri: driftData.docs_root_url, launch_stage: driftData.launch_stage};
+    serviceConfig.publishing = {
+      api_short_name: driftData.api_shortname,
+      github_label: driftData.github_label,
+      documentation_uri: driftData.docs_root_url,
+      launch_stage: driftData.launch_stage,
+    };
   }
 
   if (!serviceConfig?.publishing?.api_short_name) {
