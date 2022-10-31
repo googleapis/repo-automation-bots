@@ -17,14 +17,14 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@octokit/rest": "19.0.4",
+    "@octokit/rest": "19.0.5",
     "@octokit/types": "^7.5.1",
     "minimatch": "^5.1.0"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
     "@types/minimatch": "^5.1.2",
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
