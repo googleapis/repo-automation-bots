@@ -45,7 +45,7 @@
     "@octokit/webhooks-types": "^6.3.6",
     "@types/follow-redirects": "^1.14.1",
     "@types/minimatch": "^5.1.2",
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
     "@types/tar": "^6.1.2",

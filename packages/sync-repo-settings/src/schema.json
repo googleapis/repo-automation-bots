@@ -5,6 +5,10 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "enabled": {
+      "description": "Whether or not the sync-repo-settings bot is enabled.",
+      "type": "boolean"
+    },
     "squashMergeAllowed": {
       "description": "Whether or not squash-merging is enabled on this repository.",
       "type": "boolean"

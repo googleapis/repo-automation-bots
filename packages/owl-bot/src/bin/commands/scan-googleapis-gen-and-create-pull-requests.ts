@@ -17,12 +17,14 @@ import yargs = require('yargs');
 import {scanGoogleapisGenAndCreatePullRequests} from '../../scan-googleapis-gen-and-create-pull-requests';
 import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../../database';
 import {OctokitParams, octokitFactoryFrom} from '../../octokit-util';
+import {WithNestedCommitDelimiters} from '../../create-pr';
 
 interface Args extends OctokitParams {
   'source-repo': string;
   'firestore-project': string;
   'clone-depth': number;
   'combine-pulls-threshold': number;
+  'use-nested-commit-delimiters'?: boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -76,6 +78,13 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
           'with changes to all the APIs.',
         type: 'number',
         default: 3,
+      })
+      .option('use-nested-commit-delimiters', {
+        describe:
+          'Whether to use BEGIN_NESTED_COMMIT delimiters when separating multiple commit messages',
+        type: 'boolean',
+        default: true,
+        demand: false,
       });
   },
   async handler(argv) {
@@ -92,7 +101,11 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       configsStore,
       argv['clone-depth'],
       copyStateStore,
-      argv['combine-pulls-threshold']
+      argv['combine-pulls-threshold'],
+      undefined /* logger */,
+      argv['use-nested-commit-delimiters']
+        ? WithNestedCommitDelimiters.Yes
+        : WithNestedCommitDelimiters.No
     );
   },
 };
