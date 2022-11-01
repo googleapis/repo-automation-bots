@@ -169,21 +169,21 @@ describe('tests running build trigger', () => {
         runTriggerCommand.parseRepoNameAndOrg(
           'git@github.com:googleapis/google-cloud-node.git'
         ),
-        {monoRepoOrg: 'googleapis', monoRepoName: 'google-cloud-node'}
+        {owner: 'googleapis', repo: 'google-cloud-node'}
       );
 
       assert.deepStrictEqual(
         runTriggerCommand.parseRepoNameAndOrg(
           'git@github.com/googleapis/google-cloud-node.git'
         ),
-        {monoRepoOrg: 'googleapis', monoRepoName: 'google-cloud-node'}
+        {owner: 'googleapis', repo: 'google-cloud-node'}
       );
 
       assert.deepStrictEqual(
         runTriggerCommand.parseRepoNameAndOrg(
           'git@github.com:googleapis/nodejs-scheduler.git'
         ),
-        {monoRepoOrg: 'googleapis', monoRepoName: 'nodejs-scheduler'}
+        {owner: 'googleapis', repo: 'nodejs-scheduler'}
       );
 
       assert.throws(() => {
