@@ -29,6 +29,11 @@ export interface CliArgs {
   interContainerVarsPath?: string;
 }
 
+export interface MonoRepo {
+  owner: string;
+  repo: string;
+}
+
 const languageContainers = [
   {
     language: 'nodejs',
@@ -47,7 +52,7 @@ export function getLanguageSpecificValues(language: string) {
   throw new Error('No language-specific container specified');
 }
 
-export function getMonoRepoNameAndOrg(repoToClone: string | undefined) {
+export function parseRepoNameAndOrg(repoToClone: string | undefined): MonoRepo {
   // find the repo name from git@github.com/googleapis/google-cloud-node.git
   const repoName = repoToClone?.match(/git@github.com[/|:](.*?)\/(.*?).git/);
   if (!repoName) {
@@ -56,7 +61,7 @@ export function getMonoRepoNameAndOrg(repoToClone: string | undefined) {
     );
   }
 
-  return {monoRepoOrg: repoName[1], monoRepoName: repoName[2]};
+  return {owner: repoName[1], repo: repoName[2]};
 }
 
 export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
@@ -126,9 +131,9 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
     if (!argv.languageContainer) {
       languageValues = getLanguageSpecificValues(argv.language);
     }
-    const monoRepoNameAndOrg = getMonoRepoNameAndOrg(
+    const monoRepo = parseRepoNameAndOrg(
       argv.repoToClone ?? languageValues?.repoToClone
     );
-    await runTrigger(argv, cb, monoRepoNameAndOrg, languageValues);
+    await runTrigger(argv, cb, monoRepo, languageValues);
   },
 };
