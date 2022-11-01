@@ -16,18 +16,19 @@
 // It kicks off a trigger in cloud build.
 
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {CliArgs} from './run-trigger-command';
+import {CliArgs, MonoRepo} from './run-trigger-command';
 
 const COMMON_CONTAINER =
   'us-docker.pkg.dev/owlbot-bootstrap-prod/owlbot-bootstrapper-images/owlbot-bootstrapper:latest';
 const DIRECTORY_PATH = '/workspace';
-const MONO_REPO_PATH = DIRECTORY_PATH;
+const MONO_REPO_DIR = DIRECTORY_PATH;
 const SERVICE_CONFIG_PATH = `${DIRECTORY_PATH}/serviceConfig.yaml`;
 const INTER_CONTAINER_VARS_PATH = `${DIRECTORY_PATH}/interContainerVars.json`;
 
 export async function runTrigger(
   argv: CliArgs,
   cb: CloudBuildClient,
+  monoRepo: MonoRepo,
   languageValues?: {
     repoToClone: string;
     language: string;
@@ -51,7 +52,12 @@ export async function runTrigger(
           languageValues?.languageContainerInArtifactRegistry ??
           '',
         _PROJECT_ID: argv.projectId,
-        _MONO_REPO_PATH: argv.monoRepoPath ?? MONO_REPO_PATH,
+        _MONO_REPO_DIR: argv.monoRepoDir ?? MONO_REPO_DIR,
+        _MONO_REPO_ORG: monoRepo.owner,
+        _MONO_REPO_NAME: monoRepo.repo,
+        _MONO_REPO_PATH: argv.monoRepoDir
+          ? `${argv.monoRepoDir}/${monoRepo.repo}`
+          : `${MONO_REPO_DIR}/${monoRepo.repo}`,
         _SERVICE_CONFIG_PATH: argv.serviceConfigPath ?? SERVICE_CONFIG_PATH,
         _INTER_CONTAINER_VARS_PATH:
           argv.interContainerVarsPath ?? INTER_CONTAINER_VARS_PATH,

@@ -38,15 +38,17 @@ export interface Secret {
  */
 export interface CliArgs {
   projectId: string;
-  triggerId?: string;
   apiId: string;
-  repoToClone?: string;
+  repoToClone: string;
   language: string;
   installationId: string;
-  buildId?: string;
   monoRepoPath: string;
+  monoRepoDir: string;
+  monoRepoName: string;
+  monoRepoOrg: string;
   serviceConfigPath: string;
   interContainerVarsPath: string;
+  buildId: string;
 }
 
 export interface InterContainerVars {

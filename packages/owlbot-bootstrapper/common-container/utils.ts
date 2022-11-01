@@ -85,7 +85,7 @@ export async function getPRText(latestSha: string, copyTagText: string) {
  * Opens a new branch on a repo with a UUID
  *
  * @param repoName name of the repo to open the branch in
- * @param monoRepoPath directory where repo was cloned in
+ * @param monoRepoPath full path to mono repo
  * @returns name of the branch that was opened
  */
 export async function openABranch(repoName: string, monoRepoPath: string) {
@@ -96,7 +96,7 @@ export async function openABranch(repoName: string, monoRepoPath: string) {
     // Need to push an empty commit to  push branch up
     cmd(
       `git checkout -b ${branchName}; git commit --allow-empty -m "feat: initial commit"; git push -u origin ${branchName}`,
-      {cwd: `${monoRepoPath}/${repoName}`}
+      {cwd: monoRepoPath}
     );
     return branchName;
   } catch (err) {
@@ -164,6 +164,7 @@ export async function addOwlBotLabel(
  * Opens an issue on a given repo
  *
  * @param octokit an authenticated octokit instance
+ * @param repoOrg the name of the org of the repo
  * @param repoName the name of the repo to open the PR on
  * @param apiName the name of the API it failed creating a library/PR for
  * @param buildId the ID of the cloud build build in GCP
@@ -173,6 +174,7 @@ export async function addOwlBotLabel(
  */
 export async function openAnIssue(
   octokit: Octokit,
+  repoOrg: string,
   repoName: string,
   apiName?: string,
   buildId?: string,
@@ -184,7 +186,7 @@ export async function openAnIssue(
   const tokenRedaction = /ghs_[\w\d]*[^@:\/\.]/g;
   try {
     await octokit.rest.issues.create({
-      owner: ORG,
+      owner: repoOrg,
       repo: repoName,
       title: `Owlbot Bootstrapper failed creating ${apiName} for ${language}`,
       body: `Check build number ${buildId} in ${projectId} for more details:\n\n${errorBody

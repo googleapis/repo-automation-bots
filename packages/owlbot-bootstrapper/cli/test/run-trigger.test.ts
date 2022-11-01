@@ -30,7 +30,7 @@ const REPO_TO_CLONE = 'github.com/soficodes/nodejs-kms.git';
 const LANGUAGE_CONTAINER = 'gcr.io/myproject/myimage:latest';
 const LANGUAGE = 'nodejs';
 const DIRECTORY_PATH = '/workspace';
-const MONO_REPO_PATH = DIRECTORY_PATH;
+const MONO_REPO_DIR = DIRECTORY_PATH;
 const SERVICE_CONFIG_PATH = `${DIRECTORY_PATH}/serviceConfig.yaml`;
 const INTER_CONTAINER_VARS_PATH = `${DIRECTORY_PATH}/interContainerVars.json`;
 
@@ -65,11 +65,12 @@ describe('tests running build trigger', () => {
         repoToClone: REPO_TO_CLONE,
         language: 'nodejs',
         languageContainer: LANGUAGE_CONTAINER,
-        monoRepoPath: MONO_REPO_PATH,
+        monoRepoDir: MONO_REPO_DIR,
         serviceConfigPath: SERVICE_CONFIG_PATH,
         interContainerVarsPath: INTER_CONTAINER_VARS_PATH,
       },
-      cloudBuildClientStub
+      cloudBuildClientStub,
+      {owner: 'googleapis', repo: 'nodejs-kms'}
     );
 
     assert(
@@ -87,7 +88,10 @@ describe('tests running build trigger', () => {
             _CONTAINER: COMMON_CONTAINER_IMAGE,
             _LANGUAGE_CONTAINER: LANGUAGE_CONTAINER,
             _PROJECT_ID: PROJECT_ID,
-            _MONO_REPO_PATH: MONO_REPO_PATH,
+            _MONO_REPO_DIR: MONO_REPO_DIR,
+            _MONO_REPO_NAME: 'nodejs-kms',
+            _MONO_REPO_ORG: 'googleapis',
+            _MONO_REPO_PATH: `${MONO_REPO_DIR}/nodejs-kms`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
           },
@@ -106,6 +110,7 @@ describe('tests running build trigger', () => {
         language: 'nodejs',
       },
       cloudBuildClientStub,
+      {owner: 'googleapis', repo: 'google-cloud-node'},
       {
         language: 'nodejs',
         languageContainerInArtifactRegistry: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
@@ -128,7 +133,10 @@ describe('tests running build trigger', () => {
             _CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/owlbot-bootstrapper:latest`,
             _LANGUAGE_CONTAINER: `us-docker.pkg.dev/${PROJECT_ID}/owlbot-bootstrapper-images/node-bootstrapper:latest`,
             _PROJECT_ID: PROJECT_ID,
-            _MONO_REPO_PATH: MONO_REPO_PATH,
+            _MONO_REPO_DIR: MONO_REPO_DIR,
+            _MONO_REPO_NAME: 'google-cloud-node',
+            _MONO_REPO_ORG: 'googleapis',
+            _MONO_REPO_PATH: `${MONO_REPO_DIR}/google-cloud-node`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
           },
@@ -153,5 +161,34 @@ describe('tests running build trigger', () => {
         repoToClone: 'git@github.com/googleapis/google-cloud-node.git',
       }
     );
+  });
+
+  describe('get mono repo name and org from ssh address', () => {
+    it('gets the correct mono repo name, or throws an error', () => {
+      assert.deepStrictEqual(
+        runTriggerCommand.parseRepoNameAndOrg(
+          'git@github.com:googleapis/google-cloud-node.git'
+        ),
+        {owner: 'googleapis', repo: 'google-cloud-node'}
+      );
+
+      assert.deepStrictEqual(
+        runTriggerCommand.parseRepoNameAndOrg(
+          'git@github.com/googleapis/google-cloud-node.git'
+        ),
+        {owner: 'googleapis', repo: 'google-cloud-node'}
+      );
+
+      assert.deepStrictEqual(
+        runTriggerCommand.parseRepoNameAndOrg(
+          'git@github.com:googleapis/nodejs-scheduler.git'
+        ),
+        {owner: 'googleapis', repo: 'nodejs-scheduler'}
+      );
+
+      assert.throws(() => {
+        runTriggerCommand.parseRepoNameAndOrg(undefined);
+      }, new Error("Repo to clone arg is malformed; should be in form of ssh address,' git@github.com:googleapis/google-cloud-node.git'"));
+    });
   });
 });

@@ -34,7 +34,7 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('repoToClone', {
         describe: 'monorepo to clone',
         type: 'string',
-        demand: false,
+        demand: true,
       })
       .option('language', {
         describe: 'language for which to generate a library',
@@ -49,8 +49,24 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('buildId', {
         describe: 'build id of given build',
         type: 'string',
+        demand: true,
       })
       .option('monoRepoPath', {
+        describe: 'full path to the monoRepo',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoOrg', {
+        describe: 'org for mono repo name',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoName', {
+        describe: 'name of mono repo',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoDir', {
         describe: 'path in which to save the mono repo',
         type: 'string',
         demand: true,

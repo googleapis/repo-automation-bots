@@ -71,11 +71,15 @@ describe('post processing', async () => {
       projectId: 'myprojects',
       apiId: 'google.cloud.kms.v1',
       language: 'nodejs',
-      repoToClone: 'github.com/googleapis/nodejs-kms.git',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
       installationId: '12345',
       monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoName: 'nodejs-kms',
+      monoRepoOrg: 'googleapis',
+      monoRepoDir: 'MONO_REPO_DIR',
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
     };
 
     await postProcess(argv);
@@ -90,10 +94,14 @@ describe('post processing', async () => {
       apiId: 'google.cloud.kms.v1',
       language: 'nodejs',
       installationId: '12345',
-      repoToClone: 'github.com/googleapis/nodejs-kms.git',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
       monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoDir: 'MONO_REPO_DIR',
+      monoRepoName: 'nodejs-kms',
+      monoRepoOrg: 'googleapis',
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -101,11 +109,7 @@ describe('post processing', async () => {
     pushToBranchAndOpenPRStub.rejects();
 
     const scope = nock('https://api.github.com')
-      .post(
-        `/repos/${ORG}/${
-          argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1]
-        }/issues`
-      )
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
       .reply(201);
 
     await assert.rejects(() => postProcess(argv));

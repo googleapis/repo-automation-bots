@@ -24,9 +24,14 @@ export interface CliArgs {
   installationId: string;
   container?: string;
   languageContainer?: string;
-  monoRepoPath?: string;
+  monoRepoDir?: string;
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
+}
+
+export interface MonoRepo {
+  owner: string;
+  repo: string;
 }
 
 const languageContainers = [
@@ -45,6 +50,18 @@ export function getLanguageSpecificValues(language: string) {
     }
   }
   throw new Error('No language-specific container specified');
+}
+
+export function parseRepoNameAndOrg(repoToClone: string | undefined): MonoRepo {
+  // find the repo name from git@github.com/googleapis/google-cloud-node.git
+  const repoName = repoToClone?.match(/git@github.com[/|:](.*?)\/(.*?).git/);
+  if (!repoName) {
+    throw new Error(
+      "Repo to clone arg is malformed; should be in form of ssh address,' git@github.com:googleapis/google-cloud-node.git'"
+    );
+  }
+
+  return {owner: repoName[1], repo: repoName[2]};
 }
 
 export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
@@ -92,7 +109,7 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: false,
       })
-      .option('monoRepoPath', {
+      .option('monoRepoDir', {
         describe: 'path to the directory in which the mono repo will be cloned',
         type: 'string',
         demand: false,
@@ -114,6 +131,9 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
     if (!argv.languageContainer) {
       languageValues = getLanguageSpecificValues(argv.language);
     }
-    await runTrigger(argv, cb, languageValues);
+    const monoRepo = parseRepoNameAndOrg(
+      argv.repoToClone ?? languageValues?.repoToClone
+    );
+    await runTrigger(argv, cb, monoRepo, languageValues);
   },
 };
