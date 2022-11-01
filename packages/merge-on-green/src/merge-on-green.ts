@@ -27,6 +27,7 @@ import {
   MERGE_ON_GREEN_LABEL_SECURE,
   MERGE_ON_GREEN_LABELS,
 } from './labels';
+import {ServiceUnavailable} from 'gcf-utils';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
@@ -101,7 +102,25 @@ handler.getDatastore = async function getDatastore(installationId?: number) {
   if (installationId) {
     query = query.filter('installationId', installationId);
   }
-  const [prs] = await datastore.runQuery(query);
+  let prs;
+  try {
+    [prs] = await datastore.runQuery(query);
+  } catch (err) {
+    if (
+      (err as Error)
+        .toString()
+        .includes(
+          'Total timeout of API google.datastore.v1.Datastore exceeded 60000 milliseconds'
+        )
+    ) {
+      throw new ServiceUnavailable(
+        `Failed attempting to run query based on ${installationId}`,
+        err as Error
+      );
+    } else {
+      throw err;
+    }
+  }
 
   return [prs];
 };
@@ -153,7 +172,25 @@ handler.listPRs = async function listPRs(
  */
 handler.getPR = async function getPR(url: string) {
   const key = datastore.key([TABLE, url]);
-  const [entity] = await datastore.get(key);
+  let entity;
+  try {
+    [entity] = await datastore.get(key);
+  } catch (err) {
+    if (
+      (err as Error)
+        .toString()
+        .includes(
+          'Total timeout of API google.datastore.v1.Datastore exceeded 60000 milliseconds'
+        )
+    ) {
+      throw new ServiceUnavailable(
+        `Failed attempting to get PR ${url} due to timeout`,
+        err as Error
+      );
+    } else {
+      throw err;
+    }
+  }
   return entity;
 };
 
@@ -164,7 +201,24 @@ handler.getPR = async function getPR(url: string) {
  */
 handler.removePR = async function removePR(url: string, logger: GCFLogger) {
   const key = datastore.key([TABLE, url]);
-  await datastore.delete(key);
+  try {
+    await datastore.delete(key);
+  } catch (err) {
+    if (
+      (err as Error)
+        .toString()
+        .includes(
+          'Total timeout of API google.datastore.v1.Datastore exceeded 60000 milliseconds'
+        )
+    ) {
+      throw new ServiceUnavailable(
+        `Failed attempting to delete PR ${url} due to timeout`,
+        err as Error
+      );
+    } else {
+      throw err;
+    }
+  }
   logger.info(`PR ${url} was removed`);
 };
 
@@ -376,7 +430,24 @@ handler.addPR = async function addPR(
       },
       method: 'upsert',
     };
-    await datastore.save(entity);
+    try {
+      await datastore.save(entity);
+    } catch (err) {
+      if (
+        (err as Error)
+          .toString()
+          .includes(
+            'Total timeout of API google.datastore.v1.Datastore exceeded 60000 milliseconds'
+          )
+      ) {
+        throw new ServiceUnavailable(
+          `Failed attempting to add PR ${url} due to timeout`,
+          err as Error
+        );
+      } else {
+        throw err;
+      }
+    }
     logger.metric('merge_on_green.labeled', {
       repo: `${incomingPR.owner}/${incomingPR.repo}`,
     });
