@@ -134,7 +134,6 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
   },
   async handler(argv) {
     const cb = new CloudBuildClient({projectId: argv.projectId});
-    console.log(await cb.getProjectId());
     let languageValues;
     if (!argv.languageContainer) {
       languageValues = getLanguageSpecificValues(argv.language);
@@ -142,7 +141,6 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
     const monoRepo = parseRepoNameAndOrg(
       argv.repoToClone ?? languageValues?.repoToClone
     );
-    console.log('at run trigger?');
     await runTrigger(argv, cb, monoRepo, languageValues);
   },
 };

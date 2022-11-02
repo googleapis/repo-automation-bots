@@ -138,11 +138,11 @@ describe('post processing', async () => {
     authenticateOctokitStub.returns(octokit);
     pushToBranchAndOpenPRStub.rejects();
 
-    // const scope = nock('https://api.github.com')
-    //   .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
-    //   .reply(201);
+    const scope = nock('https://api.github.com')
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
+      .reply(201);
 
     await assert.rejects(() => postProcess(argv));
-    // scope.done();
+    assert.deepStrictEqual(scope.isDone(), false);
   });
 });
