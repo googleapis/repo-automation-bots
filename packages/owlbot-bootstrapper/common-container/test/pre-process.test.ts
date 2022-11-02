@@ -21,7 +21,6 @@ import {preProcess} from '../pre-process';
 import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {Octokit} from '@octokit/rest';
-import {ORG} from '../utils';
 import * as fetchApiInfo from '../fetch-api-info';
 
 nock.disableNetConnect();

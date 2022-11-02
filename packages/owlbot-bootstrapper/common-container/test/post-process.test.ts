@@ -21,7 +21,6 @@ import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {postProcess} from '../post-process';
 import {Octokit} from '@octokit/rest';
-import {ORG} from '../utils';
 
 nock.disableNetConnect();
 

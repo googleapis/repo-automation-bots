@@ -63,6 +63,10 @@ export async function postProcess(argv: CliArgs) {
     logger.info(`Opened a new PR in ${monoRepo.repoName}`);
   } catch (err) {
     if (argv.test === 'false') {
+      logger.info(
+        `Post process failed; opening an issue on ${argv.monoRepoOrg}/${argv.monoRepoName}`
+      );
+
       await openAnIssue(
         octokit,
         argv.monoRepoOrg,
