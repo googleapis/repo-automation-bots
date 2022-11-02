@@ -83,6 +83,12 @@ export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
           'path in which to save the inter container variables (if relative, will be in the context of the container)',
         type: 'string',
         demand: true,
+      })
+      .option('test', {
+        describe:
+          'runs the bootstrapper in testing mode, does not create issues',
+        type: 'string',
+        default: 'false',
       });
   },
   async handler(argv: CliArgs) {

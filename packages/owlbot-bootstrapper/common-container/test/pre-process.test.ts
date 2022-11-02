@@ -89,6 +89,7 @@ describe('pre processing', async () => {
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
+      test: 'false',
     };
 
     await preProcess(argv);
@@ -113,6 +114,7 @@ describe('pre processing', async () => {
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
+      test: 'false',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -125,5 +127,34 @@ describe('pre processing', async () => {
 
     await assert.rejects(() => preProcess(argv));
     scope.done();
+  });
+
+  it('does not open an issue if test = true', async () => {
+    argv = {
+      projectId: 'myprojects',
+      apiId: 'google.cloud.kms.v1',
+      language: 'nodejs',
+      installationId: '12345',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
+      monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoName: 'nodejs-kms',
+      monoRepoOrg: 'googleapis',
+      monoRepoDir: 'MONO_REPO_DIR',
+      serviceConfigPath: 'SERVICE_CONFIG_PATH',
+      interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
+      test: 'true',
+    };
+
+    const octokit = new Octokit({auth: 'abc1234'});
+    authenticateOctokitStub.returns(octokit);
+    cloneRepoAndOpenBranchStub.rejects();
+
+    const scope = nock('https://api.github.com')
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
+      .reply(201);
+
+    await assert.rejects(() => preProcess(argv));
+    assert.deepStrictEqual(scope.isDone(), false);
   });
 });

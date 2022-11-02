@@ -49,6 +49,7 @@ export interface CliArgs {
   serviceConfigPath: string;
   interContainerVarsPath: string;
   buildId: string;
+  test: string;
 }
 
 export interface InterContainerVars {

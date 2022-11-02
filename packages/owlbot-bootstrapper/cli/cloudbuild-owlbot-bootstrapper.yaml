@@ -47,6 +47,8 @@ steps:
     - "$_SERVICE_CONFIG_PATH"
     - "--interContainerVarsPath"
     - "$_INTER_CONTAINER_VARS_PATH"
+    - "--test"
+    - "$_TEST"
   # Generates the basic files necessary for a minimal implementation of a library
   # Current working directory contains the branch of the target repo in branchName.md
   # Keeping this as env variables so as to not force parsing on language-specific containers;
@@ -90,4 +92,6 @@ steps:
     - "$_SERVICE_CONFIG_PATH"
     - "--interContainerVarsPath"
     - "$_INTER_CONTAINER_VARS_PATH"
+    - "--test"
+    - "$_TEST"
 

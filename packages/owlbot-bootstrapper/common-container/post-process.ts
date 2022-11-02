@@ -62,16 +62,18 @@ export async function postProcess(argv: CliArgs) {
     );
     logger.info(`Opened a new PR in ${monoRepo.repoName}`);
   } catch (err) {
-    await openAnIssue(
-      octokit,
-      argv.monoRepoOrg,
-      argv.monoRepoName,
-      argv.apiId,
-      argv.buildId,
-      argv.projectId,
-      argv.language,
-      (err as any).toString()
-    );
+    if (argv.test === 'false') {
+      await openAnIssue(
+        octokit,
+        argv.monoRepoOrg,
+        argv.monoRepoName,
+        argv.apiId,
+        argv.buildId,
+        argv.projectId,
+        argv.language,
+        (err as any).toString()
+      );
+    }
     throw err;
   }
 }

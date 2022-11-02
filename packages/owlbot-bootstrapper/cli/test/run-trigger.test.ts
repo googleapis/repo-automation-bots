@@ -68,6 +68,7 @@ describe('tests running build trigger', () => {
         monoRepoDir: MONO_REPO_DIR,
         serviceConfigPath: SERVICE_CONFIG_PATH,
         interContainerVarsPath: INTER_CONTAINER_VARS_PATH,
+        test: 'false',
       },
       cloudBuildClientStub,
       {owner: 'googleapis', repo: 'nodejs-kms'}
@@ -94,6 +95,7 @@ describe('tests running build trigger', () => {
             _MONO_REPO_PATH: `${MONO_REPO_DIR}/nodejs-kms`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
+            _TEST: 'false',
           },
         },
       })
@@ -108,6 +110,7 @@ describe('tests running build trigger', () => {
         installationId: INSTALLATION_ID,
         apiId: API_ID,
         language: 'nodejs',
+        test: 'false',
       },
       cloudBuildClientStub,
       {owner: 'googleapis', repo: 'google-cloud-node'},
@@ -139,6 +142,7 @@ describe('tests running build trigger', () => {
             _MONO_REPO_PATH: `${MONO_REPO_DIR}/google-cloud-node`,
             _SERVICE_CONFIG_PATH: SERVICE_CONFIG_PATH,
             _INTER_CONTAINER_VARS_PATH: INTER_CONTAINER_VARS_PATH,
+            _TEST: 'false',
           },
         },
       })

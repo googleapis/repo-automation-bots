@@ -27,6 +27,7 @@ export interface CliArgs {
   monoRepoDir?: string;
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
+  test: string;
 }
 
 export interface MonoRepo {
@@ -123,10 +124,17 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         describe: 'path to save the inter container variables',
         type: 'string',
         demand: false,
+      })
+      .option('test', {
+        describe:
+          'runs the bootstrapper in testing mode, does not create issues',
+        type: 'string',
+        default: 'false',
       });
   },
   async handler(argv) {
-    const cb = new CloudBuildClient();
+    const cb = new CloudBuildClient({projectId: argv.projectId});
+    console.log(await cb.getProjectId());
     let languageValues;
     if (!argv.languageContainer) {
       languageValues = getLanguageSpecificValues(argv.language);
@@ -134,6 +142,7 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
     const monoRepo = parseRepoNameAndOrg(
       argv.repoToClone ?? languageValues?.repoToClone
     );
+    console.log('at run trigger?');
     await runTrigger(argv, cb, monoRepo, languageValues);
   },
 };
