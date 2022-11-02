@@ -35,7 +35,6 @@ export async function runTrigger(
     languageContainerInArtifactRegistry: string;
   }
 ) {
-  console.log(await cb.getProjectId());
   const [resp] = await cb.runBuildTrigger({
     projectId: argv.projectId,
     triggerId: argv.triggerId,
