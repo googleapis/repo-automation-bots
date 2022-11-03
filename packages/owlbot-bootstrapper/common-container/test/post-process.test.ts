@@ -63,6 +63,7 @@ describe('post processing', async () => {
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
     setConfigStub.restore();
+    nock.cleanAll();
   });
 
   it('calls the right stubs when entering monorepo/post-process', async () => {
@@ -117,7 +118,7 @@ describe('post processing', async () => {
     scope.done();
   });
 
-  it('does not open an issue if test = true', async () => {
+  it('does not open an issue if skipIssueOnFailure = true', async () => {
     argv = {
       projectId: 'myprojects',
       apiId: 'google.cloud.kms.v1',
@@ -137,6 +138,12 @@ describe('post processing', async () => {
     authenticateOctokitStub.returns(octokit);
     pushToBranchAndOpenPRStub.rejects();
 
+    const scope = nock('https://api.github.com')
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
+      .reply(201);
+
     await assert.rejects(() => postProcess(argv));
+
+    assert.deepStrictEqual(scope.isDone(), false);
   });
 });

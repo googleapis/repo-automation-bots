@@ -27,7 +27,7 @@ export interface CliArgs {
   monoRepoDir?: string;
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
-  skipIssueOnFailure: string;
+  skipIssueOnFailure: boolean | string;
 }
 
 export interface MonoRepo {
@@ -127,8 +127,8 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
       })
       .option('skipIssueOnFailure', {
         describe: 'does not create issues if failure',
-        type: 'string',
-        default: 'false',
+        type: 'boolean',
+        default: false,
       });
   },
   async handler(argv) {

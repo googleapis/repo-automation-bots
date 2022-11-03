@@ -72,6 +72,7 @@ describe('pre processing', async () => {
     setConfigStub.restore();
     loadApiFieldsStub.restore();
     writeToWellKnownFileStub.restore();
+    nock.cleanAll();
   });
 
   it('assert right stubs are called during pre-process, monorepo', async () => {
@@ -128,7 +129,7 @@ describe('pre processing', async () => {
     scope.done();
   });
 
-  it('does not open an issue if test = true', async () => {
+  it('does not open an issue if skipIssueOnFailure = true', async () => {
     argv = {
       projectId: 'myprojects',
       apiId: 'google.cloud.kms.v1',
@@ -149,6 +150,12 @@ describe('pre processing', async () => {
     authenticateOctokitStub.returns(octokit);
     cloneRepoAndOpenBranchStub.rejects();
 
+    const scope = nock('https://api.github.com')
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
+      .reply(201);
+
     await assert.rejects(() => preProcess(argv));
+
+    assert.deepStrictEqual(scope.isDone(), false);
   });
 });
