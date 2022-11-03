@@ -80,6 +80,11 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         describe: 'path in which to save the inter container variables',
         type: 'string',
         demand: true,
+      })
+      .option('skipIssueOnFailure', {
+        describe: 'does not create issues if failure',
+        type: 'string',
+        default: 'false',
       });
   },
   async handler(argv: CliArgs) {

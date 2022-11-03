@@ -21,7 +21,6 @@ import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {postProcess} from '../post-process';
 import {Octokit} from '@octokit/rest';
-import {ORG} from '../utils';
 
 nock.disableNetConnect();
 
@@ -64,6 +63,7 @@ describe('post processing', async () => {
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
     setConfigStub.restore();
+    nock.cleanAll();
   });
 
   it('calls the right stubs when entering monorepo/post-process', async () => {
@@ -80,6 +80,7 @@ describe('post processing', async () => {
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
+      skipIssueOnFailure: 'false',
     };
 
     await postProcess(argv);
@@ -102,6 +103,7 @@ describe('post processing', async () => {
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
+      skipIssueOnFailure: 'false',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -114,5 +116,34 @@ describe('post processing', async () => {
 
     await assert.rejects(() => postProcess(argv));
     scope.done();
+  });
+
+  it('does not open an issue if skipIssueOnFailure = true', async () => {
+    argv = {
+      projectId: 'myprojects',
+      apiId: 'google.cloud.kms.v1',
+      language: 'nodejs',
+      installationId: '12345',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
+      monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoDir: 'MONO_REPO_DIR',
+      monoRepoName: 'nodejs-kms',
+      monoRepoOrg: 'googleapis',
+      serviceConfigPath: 'SERVICE_CONFIG_PATH',
+      interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
+      skipIssueOnFailure: 'true',
+    };
+    const octokit = new Octokit({auth: 'abc1234'});
+    authenticateOctokitStub.returns(octokit);
+    pushToBranchAndOpenPRStub.rejects();
+
+    const scope = nock('https://api.github.com')
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
+      .reply(201);
+
+    await assert.rejects(() => postProcess(argv));
+
+    assert.deepStrictEqual(scope.isDone(), false);
   });
 });
