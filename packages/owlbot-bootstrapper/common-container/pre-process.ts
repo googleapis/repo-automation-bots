@@ -74,7 +74,7 @@ export async function preProcess(argv: CliArgs) {
     writeToWellKnownFile(apiFields, argv.serviceConfigPath);
     logger.info(`Repo ${monoRepo.repoName} cloned`);
   } catch (err) {
-    if (argv.test === 'false') {
+    if (argv.skipIssueOnFailure === 'false') {
       logger.info(
         `Pre process failed; opening an issue on ${argv.monoRepoOrg}/${argv.monoRepoName}`
       );

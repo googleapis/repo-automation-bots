@@ -88,7 +88,7 @@ describe('pre processing', async () => {
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
-      test: 'false',
+      skipIssueOnFailure: 'false',
     };
 
     await preProcess(argv);
@@ -113,7 +113,7 @@ describe('pre processing', async () => {
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
-      test: 'false',
+      skipIssueOnFailure: 'false',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -142,18 +142,13 @@ describe('pre processing', async () => {
       serviceConfigPath: 'SERVICE_CONFIG_PATH',
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
-      test: 'true',
+      skipIssueOnFailure: 'true',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
     authenticateOctokitStub.returns(octokit);
     cloneRepoAndOpenBranchStub.rejects();
 
-    const scope = nock('https://api.github.com')
-      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
-      .reply(201);
-
     await assert.rejects(() => preProcess(argv));
-    assert.deepStrictEqual(scope.isDone(), false);
   });
 });

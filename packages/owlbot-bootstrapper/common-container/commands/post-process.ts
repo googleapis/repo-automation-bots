@@ -81,9 +81,9 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: true,
       })
-      .option('test', {
+      .option('skipIssueOnFailure', {
         describe:
-          'runs the bootstrapper in testing mode, does not create issues',
+          'does not create issues if failure',
         type: 'string',
         default: 'false',
       });

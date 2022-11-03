@@ -27,7 +27,7 @@ export interface CliArgs {
   monoRepoDir?: string;
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
-  test: string;
+  skipIssueOnFailure: string;
 }
 
 export interface MonoRepo {
@@ -125,9 +125,8 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         type: 'string',
         demand: false,
       })
-      .option('test', {
-        describe:
-          'runs the bootstrapper in testing mode, does not create issues',
+      .option('skipIssueOnFailure', {
+        describe: 'does not create issues if failure',
         type: 'string',
         default: 'false',
       });
