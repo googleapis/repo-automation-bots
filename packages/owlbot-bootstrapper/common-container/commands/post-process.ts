@@ -82,8 +82,7 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         demand: true,
       })
       .option('skipIssueOnFailure', {
-        describe:
-          'does not create issues if failure',
+        describe: 'does not create issues if failure',
         type: 'string',
         default: 'false',
       });
