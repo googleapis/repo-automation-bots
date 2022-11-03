@@ -27,7 +27,7 @@ export interface CliArgs {
   monoRepoDir?: string;
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
-  skipIssueOnFailure: boolean | string;
+  skipIssueOnFailure: boolean;
 }
 
 export interface MonoRepo {

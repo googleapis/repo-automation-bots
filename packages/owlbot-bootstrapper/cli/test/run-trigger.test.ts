@@ -68,7 +68,7 @@ describe('tests running build trigger', () => {
         monoRepoDir: MONO_REPO_DIR,
         serviceConfigPath: SERVICE_CONFIG_PATH,
         interContainerVarsPath: INTER_CONTAINER_VARS_PATH,
-        skipIssueOnFailure: 'false',
+        skipIssueOnFailure: false,
       },
       cloudBuildClientStub,
       {owner: 'googleapis', repo: 'nodejs-kms'}
@@ -110,7 +110,7 @@ describe('tests running build trigger', () => {
         installationId: INSTALLATION_ID,
         apiId: API_ID,
         language: 'nodejs',
-        skipIssueOnFailure: 'false',
+        skipIssueOnFailure: false,
       },
       cloudBuildClientStub,
       {owner: 'googleapis', repo: 'google-cloud-node'},
