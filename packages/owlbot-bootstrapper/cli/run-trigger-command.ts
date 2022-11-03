@@ -27,6 +27,7 @@ export interface CliArgs {
   monoRepoDir?: string;
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
+  skipIssueOnFailure: boolean;
 }
 
 export interface MonoRepo {
@@ -123,6 +124,11 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         describe: 'path to save the inter container variables',
         type: 'string',
         demand: false,
+      })
+      .option('skipIssueOnFailure', {
+        describe: 'does not create issues if failure',
+        type: 'boolean',
+        default: false,
       });
   },
   async handler(argv) {
