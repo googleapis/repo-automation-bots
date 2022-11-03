@@ -126,7 +126,7 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
       });
   },
   async handler(argv) {
-    const cb = new CloudBuildClient();
+    const cb = new CloudBuildClient({projectId: argv.projectId});
     let languageValues;
     if (!argv.languageContainer) {
       languageValues = getLanguageSpecificValues(argv.language);
