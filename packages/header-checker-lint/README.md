@@ -18,6 +18,7 @@ define a JSON object with the following options:
 | `allowedCopyrightHolders` | List of allowed copyright holders | `string[]` | `[]` |
 | `allowedLicenses` | The allowed licenses. | `string[]` | `["Apache-2.0", "MIT", "BSD-3"]` |
 | `ignoreFiles` | List of files to ignore. These values will be treated as path globs | `string[]` | `[]` |
+| `ignoreLicenseYear` | Ignore license header year check | `boolean` | `false` |
 | `sourceFileExtensions` | List of file extensions that will be treated as source files | `string[]` | `["ts", "js", "java"]` |
 
 Here is the default configuration:
