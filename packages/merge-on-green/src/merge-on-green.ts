@@ -423,7 +423,10 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
  * @param {DatastorePR} watchedPR The pull request
  * @returns {GCFLogger} New logger with added context
  */
-function addPullRequestLoggerContext(logger: GCFLogger, watchedPR: DatastorePR): GCFLogger {
+function addPullRequestLoggerContext(
+  logger: GCFLogger,
+  watchedPR: DatastorePR
+): GCFLogger {
   // deep copy base logger bindings
   const bindings = JSON.parse(JSON.stringify(logger.getBindings()));
   if (!bindings.trigger) {
