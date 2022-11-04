@@ -466,7 +466,7 @@ async function merge(
       repo,
       pull_number: pr,
       commit_title: `${prInfo.title} (#${pr})`,
-      commit_message: cleanGHLinks(prInfo.body) || '',
+      commit_message: cleanGHLinks(prInfo.body || '') || '',
       merge_method: 'squash',
     })
   ).data as Merge;

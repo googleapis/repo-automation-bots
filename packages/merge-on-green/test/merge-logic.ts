@@ -135,13 +135,14 @@ function getPR(
   mergeable: boolean,
   mergeableState: string,
   state: string,
-  labels: {name: string}[] = []
+  labels: {name: string}[] = [],
+  body: string | null | undefined = 'Test Body'
 ) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1')
     .reply(200, {
       title: 'Test PR',
-      body: 'Test Body',
+      body,
       state,
       mergeable,
       mergeable_state: mergeableState,
@@ -243,6 +244,43 @@ describe('merge-logic', () => {
       scopes.forEach(s => s.done());
     });
 
+    it('merges a PR with empty body on green', async () => {
+      const scopes = [
+        getRateLimit(5000),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        getPR(true, 'clean', 'open', [], /* body: */ null),
+        getCommentsOnPr([]),
+        merge(),
+        removeMogLabel('automerge'),
+        removeReaction(),
+      ];
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
     it('fails when a review has not been approved', async () => {
       const scopes = [
         getRateLimit(5000),
