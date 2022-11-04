@@ -433,7 +433,19 @@ handler.checkPRMergeability = async function checkPRMergeability(
     const work = watchedPRs.splice(0, WORKER_SIZE);
     await Promise.all(
       work.map(async wp => {
-        logger.info(`checking ${wp.url}, ${wp.installationId}`);
+        // deep copy base logger bindings
+        const bindings = JSON.parse(JSON.stringify(logger.getBindings()));
+        if (!bindings.trigger) {
+          bindings.trigger = {};
+        }
+        bindings.trigger.trigger_source_repo = {
+          owner: wp.owner,
+          repo_name: wp.repo,
+          url: `https://github.com/${wp.owner}/${wp.repo}`,
+        };
+        bindings.pull_request_url = wp.url;
+        const prLogger = logger.child(bindings);
+        prLogger.info(`checking ${wp.url}, ${wp.installationId}`);
         try {
           const remove = await mergeOnGreen(
             wp.owner,
@@ -445,10 +457,10 @@ handler.checkPRMergeability = async function checkPRMergeability(
             wp.label,
             wp.author,
             octokit,
-            logger
+            prLogger
           );
           if (remove || wp.state === 'stop') {
-            await handler.removePR(wp.url, logger);
+            await handler.removePR(wp.url, prLogger);
             try {
               await handler.cleanUpPullRequest(
                 wp.owner,
@@ -459,7 +471,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
                 octokit
               );
             } catch (err) {
-              logger.warn(
+              prLogger.warn(
                 `Failed to delete reaction and label on ${wp.owner}/${wp.repo}/${wp.number}`
               );
             }
@@ -467,7 +479,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
         } catch (e) {
           const err = e as Error;
           err.message = `Error in merge-on-green: \n\n${err.message}`;
-          logger.error(err);
+          prLogger.error(err);
         }
       })
     );
