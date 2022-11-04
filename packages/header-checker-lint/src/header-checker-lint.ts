@@ -209,9 +209,7 @@ export = (app: Probot) => {
 
             // for new files, ensure the license year is the current year for new
             // files
-            if (
-              !configuration.ignoreLicenseYear()
-            ) {
+            if (!configuration.ignoreLicenseYear()) {
               const currentYear = new Date().getFullYear();
               if (detectedLicense.year !== currentYear) {
                 lintError = true;
