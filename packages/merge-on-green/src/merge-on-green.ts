@@ -418,6 +418,27 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
 };
 
 /**
+ * Returns a new child logger with added PR contexst.
+ * @param {GCFLogger} logger The base logger
+ * @param {DatastorePR} watchedPR The pull request
+ * @returns {GCFLogger} New logger with added context
+ */
+function addPullRequestLoggerContext(logger: GCFLogger, watchedPR: DatastorePR): GCFLogger {
+  // deep copy base logger bindings
+  const bindings = JSON.parse(JSON.stringify(logger.getBindings()));
+  if (!bindings.trigger) {
+    bindings.trigger = {};
+  }
+  bindings.trigger.trigger_source_repo = {
+    owner: watchedPR.owner,
+    repo_name: watchedPR.repo,
+    url: `https://github.com/${watchedPR.owner}/${watchedPR.repo}`,
+  };
+  bindings.pull_request_url = watchedPR.url;
+  return logger.child(bindings);
+}
+
+/**
  * Calls the main MOG logic, either deletes or keeps that PR in the Datastore table
  * @param watchedPRs array of watched PRs
  * @param octokit An authenticated octokit instance
@@ -433,18 +454,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
     const work = watchedPRs.splice(0, WORKER_SIZE);
     await Promise.all(
       work.map(async wp => {
-        // deep copy base logger bindings
-        const bindings = JSON.parse(JSON.stringify(logger.getBindings()));
-        if (!bindings.trigger) {
-          bindings.trigger = {};
-        }
-        bindings.trigger.trigger_source_repo = {
-          owner: wp.owner,
-          repo_name: wp.repo,
-          url: `https://github.com/${wp.owner}/${wp.repo}`,
-        };
-        bindings.pull_request_url = wp.url;
-        const prLogger = logger.child(bindings);
+        const prLogger = addPullRequestLoggerContext(logger, wp);
         prLogger.info(`checking ${wp.url}, ${wp.installationId}`);
         try {
           const remove = await mergeOnGreen(
