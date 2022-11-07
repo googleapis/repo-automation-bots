@@ -18,6 +18,7 @@ export interface ConfigurationOptions {
   allowedCopyrightHolders: string[];
   allowedLicenses: LicenseType[];
   ignoreFiles: string[];
+  ignoreLicenseYear: boolean;
   sourceFileExtensions: string[];
 }
 
