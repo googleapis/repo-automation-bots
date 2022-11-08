@@ -82,24 +82,7 @@ const publishCommand: yargs.CommandModule<{}, PublishArgs> = {
     });
   },
   async handler(argv) {
-    const appIdPath = argv['app-id-path'];
-    const privateKeyPath = argv['private-key-path'];
-    const installationIdPath = argv['installation-id-path'];
-
-    let octokit: Octokit;
-    if (!appIdPath || !privateKeyPath || !installationIdPath) {
-      console.warn(
-        'Missing one of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH. Using unauthenticated client.'
-      );
-      octokit = new Octokit();
-    } else {
-      octokit = core.getOctokitInstance(
-        appIdPath,
-        privateKeyPath,
-        installationIdPath
-      );
-    }
-
+    const octokit = buildOctokit(argv);
     const pr = core.parseURL(argv['pr-url']);
     if (!pr) {
       throw Error(`Could not find PR from ${argv.prUrl}`);
@@ -124,24 +107,7 @@ const publishCustomCommand: yargs.CommandModule<{}, PublishCustomArgs> = {
     });
   },
   async handler(argv) {
-    const appIdPath = argv['app-id-path'];
-    const privateKeyPath = argv['private-key-path'];
-    const installationIdPath = argv['installation-id-path'];
-
-    let octokit: Octokit;
-    if (!appIdPath || !privateKeyPath || !installationIdPath) {
-      console.warn(
-        'Missing one of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH. Using unauthenticated client.'
-      );
-      octokit = new Octokit();
-    } else {
-      octokit = core.getOctokitInstance(
-        appIdPath,
-        privateKeyPath,
-        installationIdPath
-      );
-    }
-
+    const octokit = buildOctokit(argv);
     const pr = core.parseURL(argv['pr-url']);
     if (!pr) {
       throw Error(`Could not find PR from ${argv.prUrl}`);
@@ -154,6 +120,24 @@ const publishCustomCommand: yargs.CommandModule<{}, PublishCustomArgs> = {
     }
   },
 };
+
+function buildOctokit(argv: CommonArgs): Octokit {
+  const appIdPath = argv['app-id-path'];
+  const privateKeyPath = argv['private-key-path'];
+  const installationIdPath = argv['installation-id-path'];
+  if (!appIdPath || !privateKeyPath || !installationIdPath) {
+    console.warn(
+      'Missing one of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH. Using unauthenticated client.'
+    );
+    return new Octokit();
+  } else {
+    return core.getOctokitInstance(
+      appIdPath,
+      privateKeyPath,
+      installationIdPath
+    );
+  }
+}
 
 // Get testing repo that touches submodules that we would want to publish
 // Once we have the list, actually calling npm publish on those modules
