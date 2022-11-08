@@ -27,6 +27,10 @@
 		"type": "string"
 	    }
 	},
+	"ignoreLicenseYear": {
+	    "description": "A boolean specifying whether to ignore license header year checks",
+	    "type": "boolean"
+	},
 	"sourceFileExtensions": {
 	    "description": "A list of file extensions",
 	    "type": "array",

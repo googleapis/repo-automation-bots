@@ -55,7 +55,7 @@ function extractApiInfoFromJson(apis: DriftApi[], apiId: string): DriftApi {
   for (const api of apis) {
     if (
       api.api_shortname === shortName ||
-      api.api_shortname.includes(`cloud${shortName}`)
+      api.api_shortname?.includes(`cloud${shortName}`)
     ) {
       return api;
     }
