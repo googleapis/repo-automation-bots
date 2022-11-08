@@ -16,6 +16,7 @@
 
 import * as yargs from 'yargs';
 import * as core from '../main';
+import {Octokit} from '@octokit/rest';
 
 interface CommonArgs {
   'pr-url': string;
@@ -46,7 +47,6 @@ function parseCommonArgs(yargs: yargs.Argv): yargs.Argv<CommonArgs> {
         return process.env.APP_ID_PATH;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any,
-      demand: true,
     })
     .option('private-key-path', {
       describe: 'path to a file containing the GitHub private key',
@@ -55,7 +55,6 @@ function parseCommonArgs(yargs: yargs.Argv): yargs.Argv<CommonArgs> {
         return process.env.GITHUB_PRIVATE_KEY_PATH;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any,
-      demand: true,
     })
     .option('installation-id-path', {
       describe: 'path to a file containing the GitHub installation ID',
@@ -64,7 +63,6 @@ function parseCommonArgs(yargs: yargs.Argv): yargs.Argv<CommonArgs> {
         return process.env.INSTALLATION_ID_PATH;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any,
-      demand: true,
     })
     .option('exclude-files', {
       describe: 'glob of paths to exclude',
@@ -88,17 +86,21 @@ const publishCommand: yargs.CommandModule<{}, PublishArgs> = {
     const privateKeyPath = argv['private-key-path'];
     const installationIdPath = argv['installation-id-path'];
 
+    let octokit: Octokit;
     if (!appIdPath || !privateKeyPath || !installationIdPath) {
-      throw Error(
-        'Need to set all of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH'
+      console.warn(
+        'Missing one of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH. Using unauthenticated client.'
+      );
+      octokit = new Octokit();
+    } else {
+      octokit = core.getOctokitInstance(
+        appIdPath,
+        privateKeyPath,
+        installationIdPath
       );
     }
+
     const pr = core.parseURL(argv['pr-url']);
-    const octokit = core.getOctokitInstance(
-      appIdPath,
-      privateKeyPath,
-      installationIdPath
-    );
     if (!pr) {
       throw Error(`Could not find PR from ${argv.prUrl}`);
     }
@@ -126,17 +128,21 @@ const publishCustomCommand: yargs.CommandModule<{}, PublishCustomArgs> = {
     const privateKeyPath = argv['private-key-path'];
     const installationIdPath = argv['installation-id-path'];
 
+    let octokit: Octokit;
     if (!appIdPath || !privateKeyPath || !installationIdPath) {
-      throw Error(
-        'Need to set all of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH'
+      console.warn(
+        'Missing one of APP_ID_PATH, GITHUB_PRIVATE_KEY_PATH, INSTALLATION_ID_PATH. Using unauthenticated client.'
+      );
+      octokit = new Octokit();
+    } else {
+      octokit = core.getOctokitInstance(
+        appIdPath,
+        privateKeyPath,
+        installationIdPath
       );
     }
+
     const pr = core.parseURL(argv['pr-url']);
-    const octokit = core.getOctokitInstance(
-      appIdPath,
-      privateKeyPath,
-      installationIdPath
-    );
     if (!pr) {
       throw Error(`Could not find PR from ${argv.prUrl}`);
     }
