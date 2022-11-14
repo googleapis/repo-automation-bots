@@ -22,7 +22,7 @@ import {
 import {logger} from 'gcf-utils';
 export const BUCKET = 'devrel-prod-settings';
 export const DRIFT_APIS_FILE = 'apis.json';
-
+export const GOOGLEAPIS_DEFAULT_BRANCH = 'master';
 /**
  * Function that gets api information from a public DRIFT bucket
  * @param apiId the unique API ID
@@ -93,7 +93,11 @@ async function getApiProtoInformation(
   let yamlFile;
   try {
     yamlFilePath = (
-      await repositoryFileCache.findFilesByGlob('*_v*.yaml', 'main', apiPath)
+      await repositoryFileCache.findFilesByGlob(
+        '**/*_v*.yaml',
+        GOOGLEAPIS_DEFAULT_BRANCH,
+        apiPath
+      )
     )[0];
   } catch (e) {
     if (e instanceof FileNotFoundError) {
@@ -108,7 +112,7 @@ async function getApiProtoInformation(
     if (yamlFilePath) {
       yamlFile = await repositoryFileCache.getFileContents(
         yamlFilePath,
-        'main'
+        GOOGLEAPIS_DEFAULT_BRANCH
       );
     } else {
       logger.warn('service_config.yaml path was not found');
