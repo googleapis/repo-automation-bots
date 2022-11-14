@@ -1,4 +1,4 @@
-exports['common utils tests opens a PR against the main branch 1'] = {
+exports['common utils tests opens a PR against the default branch 1'] = {
   head: 'specialName',
   base: 'main',
   title: 'feat: add initial files for google.cloud.kms.v1',

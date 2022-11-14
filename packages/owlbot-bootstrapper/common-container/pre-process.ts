@@ -28,6 +28,7 @@ import {loadApiFields} from './fetch-api-info';
 import {Storage} from '@google-cloud/storage';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
+const GOOGLEAPIS_REPO_NAME = 'googleapis';
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
 
@@ -68,7 +69,7 @@ export async function preProcess(argv: CliArgs) {
     const apiFields = await loadApiFields(
       argv.apiId,
       new Storage(),
-      new RepositoryFileCache(octokit, {owner: ORG, repo: 'googleapis'})
+      new RepositoryFileCache(octokit, {owner: ORG, repo: GOOGLEAPIS_REPO_NAME})
     );
 
     writeToWellKnownFile(apiFields, argv.serviceConfigPath);
