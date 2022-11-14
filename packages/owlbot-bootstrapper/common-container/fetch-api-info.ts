@@ -111,7 +111,7 @@ async function getApiProtoInformation(
   try {
     if (yamlFilePath) {
       yamlFile = await repositoryFileCache.getFileContents(
-        yamlFilePath,
+        `${apiPath}/${yamlFilePath}`,
         GOOGLEAPIS_DEFAULT_BRANCH
       );
     } else {
