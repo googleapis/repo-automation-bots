@@ -70,7 +70,24 @@ func main() {
 	log.Println("Sending logs to Flaky Bot...")
 	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot.")
 
-	if ok := publish(cfg); !ok {
+	logs, err := findLogs(cfg.logsDir)
+	if err != nil {
+		log.Printf("Error searching for logs: %v", err)
+		os.Exit(1)
+	}
+	if len(logs) == 0 {
+		log.Printf("No sponge_log.xml files found in %s. Did you forget to generate sponge_log.xml?", cfg.logsDir)
+		os.Exit(0)
+	}
+
+	p, err := pubSubPublisher(context.Background(), cfg)
+	if err != nil {
+		log.Printf("Could not connect to Pub/Sub: %v", err)
+		os.Exit(1)
+	}
+
+	if err := publish(context.Background(), cfg, p, logs); err != nil {
+		log.Printf("Could not publish: %v", err)
 		os.Exit(1)
 	}
 
@@ -164,11 +181,7 @@ See https://github.com/apps/flaky-bot/.`)
 	return true
 }
 
-// publish searches for sponge_log.xml files and publishes them to Pub/Sub.
-// publish logs a message and returns false if there was an error.
-func publish(cfg *config) (ok bool) {
-	ctx := context.Background()
-
+func pubSubPublisher(ctx context.Context, cfg *config) (*publisher, error) {
 	opts := []option.ClientOption{}
 
 	if cfg.serviceAccount != "" {
@@ -177,19 +190,41 @@ func publish(cfg *config) (ok bool) {
 
 	client, err := pubsub.NewClient(ctx, cfg.projectID, opts...)
 	if err != nil {
-		log.Printf("Unable to connect to Pub/Sub: %v", err)
-		return false
+		return nil, fmt.Errorf("unable to connect to Pub/Sub: %v", err)
 	}
 	topic := client.Topic(cfg.topicID)
-	p := &publisher{topic: topic}
+	return &publisher{topic: topic}, nil
+}
 
+// findLogs searches dir for sponge_log.xml files and returns their paths.
+func findLogs(dir string) (logs []string, err error) {
+	walk := func(path string, dirEntry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !strings.HasSuffix(dirEntry.Name(), "sponge_log.xml") {
+			return nil
+		}
+		logs = append(logs, path)
+		return nil
+	}
 	// Handle logs in the current directory.
-	if err := filepath.WalkDir(cfg.logsDir, processLog(ctx, cfg, p)); err != nil {
-		log.Printf("Error publishing logs: %v", err)
-		return false
+	if err := filepath.WalkDir(dir, walk); err != nil {
+		return nil, err
+	}
+	return logs, nil
+}
+
+// publish publishes the given log files with the given publisher.
+// publish logs a message and returns false if there was an error.
+func publish(ctx context.Context, cfg *config, p messagePublisher, logs []string) error {
+	for _, path := range logs {
+		if err := processLog(ctx, cfg, p, path); err != nil {
+			return fmt.Errorf("publishing logs: %v", err)
+		}
 	}
 
-	return true
+	return nil
 }
 
 // detectRepo tries to detect the repo from the environment.
@@ -237,41 +272,33 @@ func (p *publisher) publish(ctx context.Context, msg *pubsub.Message) (serverID 
 }
 
 // processLog is used to process log files and publish them to Pub/Sub.
-func processLog(ctx context.Context, cfg *config, p messagePublisher) fs.WalkDirFunc {
-	return func(path string, dirEntry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !strings.HasSuffix(dirEntry.Name(), "sponge_log.xml") {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("os.ReadFile(%q): %v", path, err)
-		}
-		enc := base64.StdEncoding.EncodeToString(data)
-		msg := message{
-			Name:         "flakybot",
-			Type:         "function",
-			Location:     "us-central1",
-			Installation: githubInstallation{ID: cfg.installationID},
-			Repo:         cfg.repo,
-			Commit:       cfg.commit,
-			BuildURL:     cfg.buildURL,
-			XUnitXML:     enc,
-		}
-		data, err = json.Marshal(msg)
-		if err != nil {
-			return fmt.Errorf("json.Marshal: %v", err)
-		}
-		pubsubMsg := &pubsub.Message{
-			Data: data,
-		}
-		id, err := p.publish(ctx, pubsubMsg)
-		if err != nil {
-			return fmt.Errorf("Pub/Sub Publish.Get: %v", err)
-		}
-		log.Printf("Published %s (%v)!", path, id)
-		return nil
+func processLog(ctx context.Context, cfg *config, p messagePublisher, path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("os.ReadFile(%q): %v", path, err)
 	}
+	enc := base64.StdEncoding.EncodeToString(data)
+	msg := message{
+		Name:         "flakybot",
+		Type:         "function",
+		Location:     "us-central1",
+		Installation: githubInstallation{ID: cfg.installationID},
+		Repo:         cfg.repo,
+		Commit:       cfg.commit,
+		BuildURL:     cfg.buildURL,
+		XUnitXML:     enc,
+	}
+	data, err = json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("json.Marshal: %v", err)
+	}
+	pubsubMsg := &pubsub.Message{
+		Data: data,
+	}
+	id, err := p.publish(ctx, pubsubMsg)
+	if err != nil {
+		return fmt.Errorf("Pub/Sub Publish.Get: %v", err)
+	}
+	log.Printf("Published %s (%v)!", path, id)
+	return nil
 }
