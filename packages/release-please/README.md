@@ -24,11 +24,76 @@ options:
 
 | Name                | Description                                        | Type       | Default                                                                               |
 | ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| `primaryBranch` | The primary branch from which releases are started | `string` | `master` |
+| `primaryBranch` | The primary branch from which releases are started | `string` | detected from repository |
+| `handleGHRelease` | Whether or not to tag releases on GitHub | `boolean` | `false` |
+| `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
+| `manifestConfig` | Path to the manifest config | `string` | `release-please-config.json` |
+| `manifestFile` | Path to the manifest file | `string` | `.release-please-manifest.json` |
+| `branches` | Additional release branches to track | `BranchConfiguration[]` | `[]` |
+
+`BranchConfiguration`:
+
+| Name                | Description                                        | Type       | Default                                                                               |
+| ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| `branch` | The branch from which releases are started | `string` | required |
+| `handleGHRelease` | Whether or not to tag releases on GitHub | `boolean` | `false` |
+| `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
+| `manifestConfig` | Path to the manifest config | `string` | `release-please-config.json` |
+| `manifestFile` | Path to the manifest file | `string` | `.release-please-manifest.json` |
+
+#### Using a manifest config
+
+We highly recommend using a manifest to configure your repository as the newest features
+will only be configurable there. To configure a manifest, create a `release-please-config.json`
+and a `.release-please-manifest.json` in the root of the repository.
+
+The `release-please-config.json` contains the configuration for all modules in the
+repository. If you are converting from configurations in the `release-please.yml`, then
+you likely only have a single component in the repository. In this case, you will configure
+a single package path with `.`.
+
+Example:
+
+```json
+{
+  "release-type": "node",
+  "packages": {
+    ".": {}
+  }
+}
+```
+
+The `.release-please-manifest.json` contains a mapping of paths to the current version (latest
+release of your artifact).
+
+Example:
+
+```json
+{
+  ".": "1.2.3"
+}
+```
+
+For more information on manifest configurations, see the [documentation][manifest-docs].
+
+#### Validating the configuration
+
+If the bot is installed, it will create a failing GitHub check on any pull request that
+modifies the `.github/release-please.yml` config file. It will validate both the yaml config
+([schema]) and the manifest config ([schema][manifest-config-schema]) if you are using a
+manifest config.
+
+#### Deprecated Options
+
+The following options are still supported, but can also be configured in a manifest configuration file.
+Future configuration options will only be available in a manifest configuration file. Note that the
+configuration names are often the "dasherized" versions of these camel-cased names.
+
+| Name                | Description                                        | Type       | Default                                                                               |
+| ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
 | `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` |
 | `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
 | `versioning` | Versioning strategy | `string` | `default` |
-| `handleGHRelease` | Release to GitHub | `boolean` | `false` |
 | `bumpMinorPreMajor` | Bump minor for breaking changes before GA | `boolean` | default from underlying release strategy |
 | `bumpPatchForMinorPreMajor` | Bump patch for feature changes before GA | `boolean` | default from underlying release strategy |
 | `packageName` | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name |
@@ -36,9 +101,6 @@ options:
 | `changelogHost` | Override the host for the git source | `string` | `https://github.com` |
 | `changelogPath` | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md` |
 | `changelogType` | Strategy for generating the changelog entries. One of `default` or `github` | `string` | `default` |
-| `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
-| `manifestConfig` | Path to the manifest config | `string` | `release-please-config.json` |
-| `manifestFile` | Path to the manifest file | `string` | `.release-please-manifest.json` |
 | `extraFiles` | Additional files to track (if language supports it) | `string[]` | `[]` |
 | `versionFile` | Path to the version file (if language supports it) | `string` | |
 | `branches` | Additional release branches to track | `BranchConfiguration[]` | `[]` |
@@ -52,11 +114,9 @@ options:
 
 | Name                | Description                                        | Type       | Default                                                                               |
 | ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| `branch` | The branch from which releases are started | `string` | required |
 | `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` |
 | `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
 | `versioning` | Versioning strategy | `string` | `default` |
-| `handleGHRelease` | Release to GitHub | `boolean` | `false` |
 | `bumpMinorPreMajor` | Bump minor for breaking changes before GA | `boolean` | default from underlying release strategy |
 | `bumpPatchForMinorPreMajor` | Bump patch for feature changes before GA | `boolean` | default from underlying release strategy |
 | `packageName` | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name |
@@ -64,12 +124,8 @@ options:
 | `changelogHost` | Override the host for the git source | `string` | `https://github.com` |
 | `changelogPath` | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md` |
 | `changelogType` | Strategy for generating the changelog entries. One of `default` or `github` | `string` | `default` |
-| `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
-| `manifestConfig` | Path to the manifest config | `string` | `release-please-config.json` |
-| `manifestFile` | Path to the manifest file | `string` | `.release-please-manifest.json` |
 | `extraFiles` | Additional files to track (if language supports it) | `string[]` | `[]` |
 | `versionFile` | Path to the version file (if language supports it) | `string` | |
-| `branches` | Additional release branches to track | `BranchConfiguration[]` | `[]` |
 | `releaseLabel` | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`) |
 | `draft` | Whether to create the release as a draft | `boolean` | `false` |
 | `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
@@ -124,3 +180,6 @@ Apache 2.0 © 2019 Google Inc.
 
 [release-please]: https://github.com/googleapis/release-please
 [npm-package]: https://www.npmjs.com/package/release-please
+[schema]: https://github.com/googleapis/repo-automation-bots/blob/main/packages/release-please/src/config-schema.json
+[manifest-config-schema]: https://github.com/googleapis/release-please/blob/main/schemas/config.json
+[manifest-docs]: https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md
