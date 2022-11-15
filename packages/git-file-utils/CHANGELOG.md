@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.2...git-file-utils-v1.2.3) (2022-11-15)
+
+
+### Bug Fixes
+
+* **deps:** [git-file-utils] update dependency @octokit/types to v8 ([#4672](https://github.com/googleapis/repo-automation-bots/issues/4672)) ([a372a6d](https://github.com/googleapis/repo-automation-bots/commit/a372a6d6cab9535c77d830bbf079ba7594ed1b3e))
+
 ## [1.2.2](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.1...git-file-utils-v1.2.2) (2022-10-31)
 
 
