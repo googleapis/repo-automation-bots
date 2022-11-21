@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.3.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.3.1...gcf-utils-v14.3.2) (2022-11-21)
+
+
+### Bug Fixes
+
+* **deps:** use google-gax v3.5.2 ([#4650](https://github.com/googleapis/repo-automation-bots/issues/4650)) ([b01f8a6](https://github.com/googleapis/repo-automation-bots/commit/b01f8a64edd6b11f10bb513c858381469644185f))
+
 ## [14.3.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.3.0...gcf-utils-v14.3.1) (2022-10-31)
 
 
