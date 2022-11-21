@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/secretmanager v1.9.0
 	github.com/google/uuid v1.3.0
-	google.golang.org/genproto v0.0.0-20221107162902-2d387536bcdd
+	google.golang.org/genproto v0.0.0-20221114212237-e4508ebdbee1
 )
 
 require (
