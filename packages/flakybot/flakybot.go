@@ -77,7 +77,7 @@ func main() {
 	}
 	if len(logs) == 0 {
 		log.Printf("No sponge_log.xml files found in %s. Did you forget to generate sponge_log.xml?", cfg.logsDir)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	p, err := pubSubPublisher(context.Background(), cfg)
@@ -197,7 +197,8 @@ func pubSubPublisher(ctx context.Context, cfg *config) (*publisher, error) {
 }
 
 // findLogs searches dir for sponge_log.xml files and returns their paths.
-func findLogs(dir string) (logs []string, err error) {
+func findLogs(dir string) ([]string, error) {
+	var paths []string
 	walk := func(path string, dirEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -205,18 +206,16 @@ func findLogs(dir string) (logs []string, err error) {
 		if !strings.HasSuffix(dirEntry.Name(), "sponge_log.xml") {
 			return nil
 		}
-		logs = append(logs, path)
+		paths = append(paths, path)
 		return nil
 	}
-	// Handle logs in the current directory.
 	if err := filepath.WalkDir(dir, walk); err != nil {
 		return nil, err
 	}
-	return logs, nil
+	return paths, nil
 }
 
 // publish publishes the given log files with the given publisher.
-// publish logs a message and returns false if there was an error.
 func publish(ctx context.Context, cfg *config, p messagePublisher, logs []string) error {
 	for _, path := range logs {
 		if err := processLog(ctx, cfg, p, path); err != nil {
@@ -271,7 +270,7 @@ func (p *publisher) publish(ctx context.Context, msg *pubsub.Message) (serverID 
 	return p.topic.Publish(ctx, msg).Get(ctx)
 }
 
-// processLog is used to process log files and publish them to Pub/Sub.
+// processLog is used to process log files and publish them with the given publisher.
 func processLog(ctx context.Context, cfg *config, p messagePublisher, path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
