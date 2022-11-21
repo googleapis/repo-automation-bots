@@ -94,8 +94,10 @@ describe('common utils tests', async () => {
     );
   });
 
-  it('opens a PR against the main branch', async () => {
+  it('opens a PR against the default branch', async () => {
     const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/nodejs-kms')
+      .reply(200, {default_branch: 'main'})
       .post('/repos/googleapis/nodejs-kms/pulls', body => {
         snapshot(body);
         return true;

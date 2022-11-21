@@ -124,11 +124,13 @@ export async function openAPR(
   copyTagText: string
 ): Promise<number> {
   try {
+    const defaultBranch = (await getRepoMetadata(ORG, repoName, octokit))
+      .default_branch;
     const pr = await octokit.rest.pulls.create({
       owner: ORG,
       repo: repoName,
       head: branchName,
-      base: 'main',
+      base: defaultBranch,
       title: `feat: add initial files for ${apiId}`,
       body: await getPRText(latestSha, copyTagText),
     });
@@ -197,6 +199,14 @@ export async function openAnIssue(
     logger.error(err.toString().replace(tokenRedaction, ''));
     throw err;
   }
+}
+
+export async function getRepoMetadata(
+  owner: string,
+  repo: string,
+  octokit: Octokit
+) {
+  return (await octokit.rest.repos.get({owner, repo})).data;
 }
 
 /**
