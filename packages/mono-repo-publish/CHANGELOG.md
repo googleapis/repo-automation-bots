@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.5.0...mono-repo-publish-v1.6.0) (2022-11-08)
+
+
+### Features
+
+* allow unauthentiated GitHub API usage ([#4666](https://github.com/googleapis/repo-automation-bots/issues/4666)) ([4dd4b8d](https://github.com/googleapis/repo-automation-bots/commit/4dd4b8d96f255c063c9ae39a5bd3a278db40a86d))
+
 ## [1.5.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.4.1...mono-repo-publish-v1.5.0) (2022-09-08)
 
 

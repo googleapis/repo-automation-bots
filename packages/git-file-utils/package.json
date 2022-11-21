@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/git-file-utils",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Utilities for github file operation",
   "scripts": {
     "compile": "tsc -p .",
@@ -18,7 +18,7 @@
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
     "@octokit/rest": "19.0.5",
-    "@octokit/types": "^7.5.1",
+    "@octokit/types": "^8.0.0",
     "minimatch": "^5.1.0"
   },
   "devDependencies": {
