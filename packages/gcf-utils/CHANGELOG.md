@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.3.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.3.2...gcf-utils-v14.3.3) (2022-11-22)
+
+
+### Bug Fixes
+
+* logger.child() should preserve original bindings ([#4686](https://github.com/googleapis/repo-automation-bots/issues/4686)) ([9575fa2](https://github.com/googleapis/repo-automation-bots/commit/9575fa2484194f64dcfebe2c09343fcc7a1ea5f5))
+
 ## [14.3.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.3.1...gcf-utils-v14.3.2) (2022-11-21)
 
 
