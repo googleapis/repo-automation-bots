@@ -173,7 +173,10 @@ export class GCFLogger {
    */
   public child(properties: object): GCFLogger {
     const child = new GCFLogger(this.destination);
-    child.addBindings(properties);
+    child.addBindings({
+      ...this.getBindings(),
+      ...properties,
+    });
     return child;
   }
 
