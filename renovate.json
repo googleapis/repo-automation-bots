@@ -42,6 +42,10 @@
       "groupName": "all non-major dependencies",
       "groupSlug": "all-minor-patch",
       "stabilityDays": 30
+    },
+    {
+      "matchPackageNames": ["release-please"],
+      "stabilityDays": 0
     }
   ],
   "lockFileMaintenance": {
