@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  MAX_BODY_SIZE_FOR_CLOUD_TASK,
   DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
   GCFBootstrapper,
   WrapOptions,
@@ -771,7 +772,27 @@ describe('GCFBootstrapper', () => {
           .reply(200, {access_token: 'abc123'});
       });
 
-      it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
+      it('does not store task payload in Cloud Storage even if WEBHOOK_TMP set when the body is small enough', async () => {
+        await mockBootstrapper();
+        req.body = {
+          installation: {id: 1},
+          repo: 'myRepo',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('stores task payload in Cloud Storage if WEBHOOK_TMP set and the body size is big', async () => {
         await mockBootstrapper();
         let uploaded: {[key: string]: {[key: string]: number}} | undefined;
         // Fake an upload to Cloud Storage. It seemed worthwhile mocking this
@@ -795,7 +816,7 @@ describe('GCFBootstrapper', () => {
           .reply(200, {});
         req.body = {
           installation: {id: 1},
-          repo: 'firstRepo',
+          repo: 'x'.repeat(MAX_BODY_SIZE_FOR_CLOUD_TASK),
         };
         req.headers = {};
         req.headers['x-github-event'] = 'schedule.repository';

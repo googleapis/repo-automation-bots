@@ -47,6 +47,8 @@ import {
 export {TriggerType} from './bot-request';
 export {GCFLogger} from './logging/gcf-logger';
 
+// A maximum body size in bytes for Cloud Task
+export const MAX_BODY_SIZE_FOR_CLOUD_TASK = 665600; // 650KB
 export const ERROR_REPORTING_TYPE_NAME =
   'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent';
 
@@ -1156,8 +1158,9 @@ export class GCFBootstrapper {
     );
     log.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
-      // Payload conists of either the original params.body or, if Cloud
-      // Storage has been configured, a tmp file in a bucket:
+      // Payload conists of either the original params.body or, if
+      // Cloud Storage has been configured and the size exceeds the
+      // threshold, a tmp file in a bucket:
       const payload = await this.maybeWriteBodyToTmp(params.body, log);
       const signature = (await this.probot?.webhooks.sign(payload)) || '';
       await this.cloudTasksClient.createTask({
@@ -1220,7 +1223,10 @@ export class GCFBootstrapper {
     body: string,
     log: GCFLogger
   ): Promise<string> {
-    if (this.payloadBucket) {
+    if (
+      this.payloadBucket &&
+      Buffer.byteLength(body) > MAX_BODY_SIZE_FOR_CLOUD_TASK
+    ) {
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = this.storage.bucket(this.payloadBucket);
       const writeable = bucket.file(tmp).createWriteStream({
