@@ -19,8 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -88,7 +87,7 @@ func TestSetDefaults(t *testing.T) {
 				repo:           "GoogleCloudPlatform/golang-samples",
 				installationID: "5943459",
 				commit:         "abc123",
-				buildURL:       fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/test), [Sponge](http://sponge2/test)"),
+				buildURL:       "[Build Status](https://source.cloud.google.com/results/invocations/test), [Sponge](http://sponge2/test)",
 			},
 			wantOK: true,
 		},
@@ -131,7 +130,7 @@ func TestSetDefaults(t *testing.T) {
 }
 
 func TestDetectRepo(t *testing.T) {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 	defer log.SetOutput(os.Stderr)
 	tests := []struct {
 		envVar   string
@@ -230,8 +229,9 @@ func (p *fakePublisher) publish(_ context.Context, msg *pubsub.Message) (serverI
 	return "", nil
 }
 
-func TestProcessLog(t *testing.T) {
+func TestFindAndPublish(t *testing.T) {
 	filesToCreate := []string{"sponge_log.xml", "hello/sponge_log.xml", "unused.txt"}
+	numLogFiles := 2
 
 	tmpdir, err := os.MkdirTemp(os.TempDir(), "flakybot-")
 	if err != nil {
@@ -254,23 +254,32 @@ func TestProcessLog(t *testing.T) {
 
 	cfg := &config{
 		installationID: "installation-id",
-		repo:           "googleapis/repo-automation-bogs",
+		repo:           "googleapis/repo-automation-bots",
 		commit:         "abc123",
 		buildURL:       "https://google.com",
+		logsDir:        tmpdir,
+	}
+
+	logs, err := findLogs(cfg.logsDir)
+	if err != nil {
+		t.Fatalf("Error finding logs in %q: %v", cfg.logsDir, err)
+	}
+
+	if got := len(logs); got != numLogFiles {
+		t.Errorf("findLogs found %d files, want %d", got, numLogFiles)
 	}
 
 	p := &fakePublisher{}
-
-	if err := filepath.WalkDir(tmpdir, processLog(context.Background(), cfg, p)); err != nil {
+	if err := publish(context.Background(), cfg, p, logs); err != nil {
 		t.Fatalf("Error publishing logs: %v", err)
 	}
 
-	if got := len(p.called); got != 2 {
-		t.Errorf("processLog called %d times, want %d", got, 2)
+	if got := len(p.called); got != numLogFiles {
+		t.Errorf("publish called %d times, want %d", got, numLogFiles)
 	}
 	for _, got := range p.called {
 		if !strings.Contains(got, wantEnc) {
-			t.Errorf("processLog published message %v, want to contain %q", got, wantEnc)
+			t.Errorf("published message %v, want to contain %q", got, wantEnc)
 		}
 	}
 }
