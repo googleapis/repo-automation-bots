@@ -1242,6 +1242,7 @@ export class GCFBootstrapper {
         tmpUrl: tmp,
       });
     } else {
+      log.info('uploading payload directly to Cloud Task');
       return body;
     }
   }
