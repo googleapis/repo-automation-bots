@@ -95,6 +95,6 @@ steps:
     env:
       - 'HOME=/workspace'
 
-# allow 80 minutes for the post-processor image to run
-timeout: '4800s'
+# allow 180 minutes (3 hours) for the post-processor image to run
+timeout: '10800s'
 logsBucket: 'gs://repo-automation-bots-post-processor-logs'
