@@ -17,9 +17,10 @@ npm start
 The following configuration settings can be set by creating a
 `.github/conventional-commit-lint.yaml` file:
 
-| Name         | Description                        | Default              |
-|--------------|------------------------------------|----------------------|
-| enabled      | Should commit linting be enabled?  | `boolean` = `true`   |
+| Name                  | Description                                   | Default              |
+|-----------------------|-----------------------------------------------|----------------------|
+| enabled               | Should commit linting be enabled?             | `boolean` = `true`   |
+| always_check_pr_title | If set to true, the bot will use the PR title | `boolean` = `false`  |
 
 ## Testing
 
