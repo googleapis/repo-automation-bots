@@ -8,6 +8,11 @@
     "enabled": {
       "description": "Should the Conventional Commit Lint bot be enabled.",
       "type": "boolean"
+    },
+    "onlyCheckPrTitle" : {
+      "description": "Should the Conventional Commit Lint only check PR titles.",
+      "type": "boolean",
+      "default": false
     }
   }
 }

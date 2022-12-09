@@ -31,6 +31,7 @@ import {scanPullRequest} from './utils';
 const CONFIGURATION_FILE = 'conventional-commit-lint.yaml';
 interface Configuration {
   enabled?: boolean;
+  onlyCheckPrTitle?: boolean;
 }
 
 export = (app: Probot) => {
@@ -126,7 +127,8 @@ export = (app: Probot) => {
         context,
         context.payload.pull_request as PullRequest,
         logger,
-        octokit
+        octokit,
+        config?.onlyCheckPrTitle === true
       );
     }
   );

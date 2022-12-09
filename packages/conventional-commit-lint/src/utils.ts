@@ -55,7 +55,8 @@ export async function scanPullRequest(
   context: Context<'pull_request'> | Context<'issue_comment'>,
   pull_request: PullRequest,
   logger: GCFLogger,
-  octokit: Octokit
+  octokit: Octokit,
+  onlyCheckPrTitle: boolean
 ) {
   // Fetch last 100 commits stored on a specific PR.
   const commitParams = context.repo({
@@ -108,7 +109,10 @@ export async function scanPullRequest(
   // This is done becaues GitHub uses the commit title, rather than the
   // issue title, if there is only one commit:
   let usingCommitMessage = false;
-  if (commits.length === 1 && !hasAutomergeLabel && !hasAutoMergeEnabled) {
+  if (
+    commits.length === 1 &&
+    ((!hasAutomergeLabel && !hasAutoMergeEnabled) || onlyCheckPrTitle)
+  ) {
     message = commits[0].commit.message;
     usingCommitMessage = true;
   }
@@ -187,7 +191,7 @@ export async function scanPullRequest(
         'Run `git commit --amend` and edit your message to match Conventional Commit guidelines.';
     } else {
       summary +=
-        'edit your pull request title to match Conventional Commit guidelines.';
+        'Edit your pull request title to match Conventional Commit guidelines.';
     }
 
     checkParams = context.repo({
