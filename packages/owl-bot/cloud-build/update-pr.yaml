@@ -93,7 +93,7 @@ steps:
       - --github-token
       - ${_GITHUB_TOKEN}
       - --new-pull-request-text-path
-      - /workspace/new_pull_request_text.txt'
+      - /workspace/new_pull_request_text.txt
 
     dir: ${_PR_REPOSITORY}
     env:
