@@ -22,6 +22,7 @@ import {copyTagFrom} from '../src/copy-code';
 import sinon from 'sinon';
 import nock from 'nock';
 import {OWL_BOT_IGNORE, OWLBOT_RUN_LABEL} from '../src/labels';
+import * as fs from 'fs';
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -104,6 +105,7 @@ describe('commitPostProcessorUpdate', () => {
       pr,
       'github-token': gitHubToken,
       'repo-path': repoPath,
+      'new-pull-request-text-path': '',
     };
   }
 
@@ -177,7 +179,7 @@ describe('commitPostProcessorUpdate', () => {
     assert.match(log, /Updates from OwlBot/);
   });
 
-  it('adds commit when .OwlBot.yaml contains no flag', async () => {
+  function makeRepoWithPendingCommit(): {origin: string; clone: string} {
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:deep-remove-regex:\n  - /pasta.txt`]);
@@ -185,7 +187,34 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
+    return {origin, clone};
+  }
+
+  it('adds commit when .OwlBot.yaml contains no flag', async () => {
+    const {origin, clone} = makeRepoWithPendingCommit();
     await commitPostProcessorUpdate(prepareArgs(clone));
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.match(log, /Updates from OwlBot/);
+  });
+
+  it('updates pr title and body', async () => {
+    const {origin, clone} = makeRepoWithPendingCommit();
+    const args = prepareArgs(clone);
+    args['new-pull-request-text-path'] = tmp.fileSync().name;
+    fs.writeFileSync(
+      args['new-pull-request-text-path'],
+      'updated title\n\nUpdated body.'
+    );
+    // commitPostProcessorUpdate() should issue a PATCH request to update the PR.
+    nock('https://api.github.com')
+      .patch(`/repos/${destRepo}/pulls/${pr}`, {
+        title: 'updated title',
+        body: 'Updated body.',
+      })
+      .reply(204);
+    await commitPostProcessorUpdate(args);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
