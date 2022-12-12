@@ -189,7 +189,7 @@ export async function scanPullRequest(
 
   if (lintError) {
     let summary = `${target} failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\n`;
-    if (commits.length === 1) {
+    if (usingCommitMessage) {
       summary +=
         'Run `git commit --amend` and edit your message to match Conventional Commit guidelines.';
     } else {
