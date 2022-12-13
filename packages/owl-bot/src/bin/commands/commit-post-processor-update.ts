@@ -31,12 +31,15 @@ import * as proc from 'child_process';
 import path = require('path');
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {hasGitChanges} from '../../git-utils';
+import * as fs from 'fs';
+import {resplit, WithRegenerateCheckbox} from '../../create-pr';
 
 interface Args {
   'dest-repo': string;
   pr: number;
   'github-token': string;
   'repo-path': string;
+  'new-pull-request-text-path': string;
 }
 
 export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
@@ -63,6 +66,12 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
         describe: 'Short-lived GitHub token.',
         type: 'string',
         demand: true,
+      })
+      .option('new-pull-request-text-path', {
+        describe:
+          'Path to a text file containing the new pull request title and body.',
+        type: 'string',
+        default: '',
       })
       .option('repo-path', {
         describe: 'Local path to the repository',
@@ -95,11 +104,12 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   // Check if the ignore label has been added during the post-processing.
   // If so, do not push changes.
   console.log(`Retrieving PR info for ${repo}`);
-  const {data: prData} = await octokit.pulls.get({
+  const prOwnerRepoPullNumber = {
     owner: repo.owner,
     repo: repo.repo,
     pull_number: args.pr,
-  });
+  };
+  const {data: prData} = await octokit.pulls.get(prOwnerRepoPullNumber);
   console.log(`Retrieved PR info for ${repo}`);
 
   if (prData.labels.find(label => label.name === OWL_BOT_IGNORE)) {
@@ -138,6 +148,14 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   cmd('git pull --no-verify', {cwd: repoDir});
   // Push changes back to origin.
   cmd('git push --no-verify', {cwd: repoDir});
+
+  // Update the PR title and body if new ones were provided.
+  const text_path = args['new-pull-request-text-path'];
+  if (text_path && fs.existsSync(text_path)) {
+    const text = fs.readFileSync(text_path).toString();
+    const prContent = resplit(text, WithRegenerateCheckbox.No);
+    await octokit.pulls.update({...prOwnerRepoPullNumber, ...prContent});
+  }
 }
 
 export function commitOwlbotUpdate(repoDir: string) {

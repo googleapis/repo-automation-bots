@@ -59,6 +59,7 @@ steps:
     dir: '${_PR_REPOSITORY}'
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
+      - 'NEW_PULL_REQUEST_TEXT_PATH=/workspace/new_pull_request_text.txt'
 
   # Install credentials *after* running the container.
   - name: 'bash'
@@ -91,6 +92,9 @@ steps:
       - ${_PR}
       - --github-token
       - ${_GITHUB_TOKEN}
+      - --new-pull-request-text-path
+      - /workspace/new_pull_request_text.txt
+
     dir: ${_PR_REPOSITORY}
     env:
       - 'HOME=/workspace'
