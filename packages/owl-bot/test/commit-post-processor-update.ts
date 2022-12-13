@@ -208,7 +208,7 @@ describe('commitPostProcessorUpdate', () => {
       'updated title\n\nUpdated body.'
     );
     // commitPostProcessorUpdate() should issue a PATCH request to update the PR.
-    nock('https://api.github.com')
+    const scope = nock('https://api.github.com')
       .patch(`/repos/${destRepo}/pulls/${pr}`, {
         title: 'updated title',
         body: 'Updated body.',
@@ -219,6 +219,7 @@ describe('commitPostProcessorUpdate', () => {
       'utf-8'
     );
     assert.match(log, /Updates from OwlBot/);
+    scope.done();
   });
 
   it('squashes commit when .OwlBot.yaml contains flag', async () => {
