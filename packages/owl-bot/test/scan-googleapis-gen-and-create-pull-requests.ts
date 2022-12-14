@@ -318,6 +318,48 @@ Copy-Tag: ${copyTag}`
     assert.strictEqual(copyStateStore.store.size, 2);
   });
 
+  it('copies files and creates 2 pull requests when maxYamlCountPerPullRequest=1', async () => {
+    const anotherYaml: OwlBotYaml = {
+      'deep-copy-regex': [
+        {
+          source: '/b.txt',
+          dest: '/another/b.txt',
+        },
+      ],
+    };
+    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml, [
+      {
+        yaml: anotherYaml,
+        path: 'SpellCheck/.OwlBot.yaml',
+      },
+    ]);
+
+    const pulls = new FakePulls();
+    pulls.list = () => {
+      return Promise.resolve({data: []});
+    };
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore,
+      1, // combinePullsThreshold
+      undefined,
+      undefined,
+      1 // maxYamlCountPerPullRequest
+    );
+
+    // Confirm it created two pull requests.
+    assert.strictEqual(pulls.pulls.length, 2);
+
+    // Confirm both were recorded in the copy state store.
+    assert.strictEqual(copyStateStore.store.size, 2);
+  });
+
   it('copies files and appends a pull request', async () => {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 
