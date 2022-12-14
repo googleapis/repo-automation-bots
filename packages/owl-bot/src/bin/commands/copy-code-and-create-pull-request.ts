@@ -27,6 +27,7 @@ interface Args extends OctokitParams {
   'dest-repo': string;
   'dest-owlbot-yaml': string;
   'use-nested-commit-delimiters': boolean;
+  'max-yaml-count-per-pull-request': number;
 }
 
 export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
@@ -83,6 +84,13 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
         type: 'boolean',
         default: true,
         demand: false,
+      })
+      .option('max-yaml-count-per-pull-request', {
+        describe:
+          'maximum number of yamls (APIs) to combine in a single pull request',
+        type: 'number',
+        default: Number.MAX_SAFE_INTEGER,
+        demand: false,
       });
   },
   async handler(argv) {
@@ -95,6 +103,7 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
       // and it shouldn't interfere with Owl Bot state.
       copyStateStore: new FakeCopyStateStore(),
       octokitFactory,
+      maxYamlCountPerPullRequest: argv['max-yaml-count-per-pull-request'],
     };
     await cc.copyCodeAndAppendOrCreatePullRequest(
       params,
