@@ -55,9 +55,8 @@ export async function getChangedFiles(
       );
       return undefined;
     }
-    throw new Error(
-      `${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
-    );
+    // rethrow original error with context
+    throw e;
   }
 }
 /**
