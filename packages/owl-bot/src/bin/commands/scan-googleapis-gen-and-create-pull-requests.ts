@@ -25,6 +25,7 @@ interface Args extends OctokitParams {
   'clone-depth': number;
   'combine-pulls-threshold': number;
   'use-nested-commit-delimiters'?: boolean;
+  'max-yaml-count-per-pull-request': number;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -85,6 +86,13 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
         type: 'boolean',
         default: true,
         demand: false,
+      })
+      .option('max-yaml-count-per-pull-request', {
+        describe:
+          'maximum number of yamls (APIs) to combine in a single pull request',
+        type: 'number',
+        default: 20,
+        demand: false,
       });
   },
   async handler(argv) {
@@ -105,7 +113,8 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       undefined /* logger */,
       argv['use-nested-commit-delimiters']
         ? WithNestedCommitDelimiters.Yes
-        : WithNestedCommitDelimiters.No
+        : WithNestedCommitDelimiters.No,
+      argv['max-yaml-count-per-pull-request']
     );
   },
 };
