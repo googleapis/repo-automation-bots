@@ -18,9 +18,13 @@ import {Probot} from 'probot';
 import {RequestError} from '@octokit/request-error';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
+import {getAuthenticatedOctokit, getContextLogger, GCFLogger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
-import {parseCherryPickComment, cherryPickAsPullRequest} from './cherry-pick';
+import {
+  parseCherryPickComment,
+  cherryPickAsPullRequest,
+  MergeConflictError,
+} from './cherry-pick';
 import {branchRequiresReviews} from './branch-protection';
 import schema from './config-schema.json';
 
@@ -141,7 +145,7 @@ export = (app: Probot) => {
       }
     }
 
-    await cherryPickAsPullRequest(
+    await cherryPickAsPullRequestWithComment(
       octokit,
       owner,
       repo,
@@ -150,6 +154,7 @@ export = (app: Probot) => {
       remoteConfig.preservePullRequestTitle
         ? `${pullRequest.title} (cherry-pick #${pullRequest.number})`
         : undefined,
+      context.payload.issue.number,
       logger
     );
   });
@@ -244,7 +249,7 @@ export = (app: Probot) => {
         }
       }
 
-      await cherryPickAsPullRequest(
+      await cherryPickAsPullRequestWithComment(
         octokit,
         owner,
         repo,
@@ -253,6 +258,7 @@ export = (app: Probot) => {
         remoteConfig.preservePullRequestTitle
           ? `${context.payload.pull_request.title} (cherry-pick #${context.payload.pull_request.number})`
           : undefined,
+        context.payload.pull_request.number,
         logger
       );
     }
@@ -304,3 +310,38 @@ export = (app: Probot) => {
     }
   );
 };
+
+async function cherryPickAsPullRequestWithComment(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  shas: string[],
+  targetBranch: string,
+  message: string | undefined,
+  issueNumber: number,
+  logger: GCFLogger
+) {
+  try {
+    await cherryPickAsPullRequest(
+      octokit,
+      owner,
+      repo,
+      shas,
+      targetBranch,
+      message,
+      logger
+    );
+  } catch (e) {
+    if (e instanceof MergeConflictError) {
+      const body = `Cherry-pick failed with \`${e.message}\``;
+      await octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        body,
+      });
+      return;
+    }
+    throw e;
+  }
+}
