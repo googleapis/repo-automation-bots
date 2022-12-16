@@ -41,7 +41,7 @@ COPY package*.json ./
 COPY --from=BUILD /home/node/build build
 COPY requirements.txt ./
 RUN npm ci --only=production && \
-    python3 -m pip install -r requirements.txt
+    python3 -m pip install --require-hashes -r requirements.txt
 
 ENV NODE_ENV "production"
 
