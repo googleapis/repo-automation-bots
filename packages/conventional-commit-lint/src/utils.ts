@@ -59,6 +59,8 @@ export async function scanPullRequest(
   always_check_pr_title = false
 ) {
   // Fetch last 100 commits stored on a specific PR.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const commitParams = context.repo({
     pull_number: pull_request.number,
     per_page: 100,
