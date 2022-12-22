@@ -28,7 +28,8 @@
   "dependencies": {
     "@google-cloud/storage": "^6.4.2",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^14.2.0"
+    "gcf-utils": "^14.2.0",
+    "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
     "@probot/octokit-plugin-config": "^1.1.6",

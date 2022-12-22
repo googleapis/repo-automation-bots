@@ -43,6 +43,7 @@
     "get-stream": "^6.0.1",
     "google-gax": "^3.5.2",
     "into-stream": "^6.0.0",
+    "jsonwebtoken": "^9.0.0",
     "octokit-auth-probot": "^1.2.8",
     "pino": "^8.4.2",
     "probot": "^12.2.7",

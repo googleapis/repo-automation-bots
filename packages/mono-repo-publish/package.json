@@ -38,6 +38,7 @@
   "dependencies": {
     "@octokit/auth-app": "^4.0.5",
     "@octokit/rest": "^19.0.4",
+    "jsonwebtoken": "^9.0.0",
     "minimatch": "^5.1.0",
     "yargs": "^17.5.1"
   },
