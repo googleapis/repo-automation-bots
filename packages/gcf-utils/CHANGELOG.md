@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.4.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.1...gcf-utils-v14.4.2) (2022-12-22)
+
+
+### Bug Fixes
+
+* lock the version of typescript to 4.8.4 ([#4800](https://github.com/googleapis/repo-automation-bots/issues/4800)) ([add7f46](https://github.com/googleapis/repo-automation-bots/commit/add7f4637ff6533308b0e5164ab0a4fe9486e3db))
+
 ## [14.4.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.0...gcf-utils-v14.4.1) (2022-12-07)
 
 

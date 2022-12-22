@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.0.1...datastore-lock-v4.0.2) (2022-12-22)
+
+
+### Bug Fixes
+
+* pin typescript to 4.8.4 for four more bots ([#4806](https://github.com/googleapis/repo-automation-bots/issues/4806)) ([3f4d0b0](https://github.com/googleapis/repo-automation-bots/commit/3f4d0b03c14a80460d4269e174a3613454c7c530))
+
 ## [4.0.1](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.0.0...datastore-lock-v4.0.1) (2022-09-08)
 
 
