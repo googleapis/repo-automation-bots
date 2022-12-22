@@ -36,7 +36,7 @@
     "gaxios": "^5.0.1",
     "gcf-utils": "^14.0.1",
     "js-yaml": "^4.1.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "node-fetch": "^3.2.10",
     "nodejs-fetch": "^1.0.0",
     "snap-shot-it": "^7.9.6",
