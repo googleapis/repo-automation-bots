@@ -82,7 +82,7 @@
     "gcf-utils": "^14.2.0",
     "glob": "^8.0.3",
     "js-yaml": "^4.1.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "minimatch": "^5.1.0",
     "probot": "^12.2.8",
     "tmp": "^0.2.1",
