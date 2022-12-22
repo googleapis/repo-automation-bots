@@ -33,6 +33,7 @@
     "code-suggester": "^4.1.0",
     "gaxios": "^5.0.1",
     "gcf-utils": "^14.2.0",
+    "jsonwebtoken": "^9.0.0",
     "lru-cache": "^7.14.0",
     "uuid": "^9.0.0"
   },
