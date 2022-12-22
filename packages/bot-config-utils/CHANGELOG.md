@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.1](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.1.0...bot-config-utils-v6.1.1) (2022-12-22)
+
+
+### Bug Fixes
+
+* pin typescript to 4.8.4 for four more bots ([#4806](https://github.com/googleapis/repo-automation-bots/issues/4806)) ([3f4d0b0](https://github.com/googleapis/repo-automation-bots/commit/3f4d0b03c14a80460d4269e174a3613454c7c530))
+
 ## [6.1.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.0.0...bot-config-utils-v6.1.0) (2022-08-19)
 
 
