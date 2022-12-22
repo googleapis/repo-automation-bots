@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.3...git-file-utils-v1.2.4) (2022-12-22)
+
+
+### Bug Fixes
+
+* pin typescript to 4.8.4 for four more bots ([#4806](https://github.com/googleapis/repo-automation-bots/issues/4806)) ([3f4d0b0](https://github.com/googleapis/repo-automation-bots/commit/3f4d0b03c14a80460d4269e174a3613454c7c530))
+
 ## [1.2.3](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.2...git-file-utils-v1.2.3) (2022-11-15)
 
 
