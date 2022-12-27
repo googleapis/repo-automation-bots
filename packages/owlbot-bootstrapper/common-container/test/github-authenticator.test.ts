@@ -20,6 +20,7 @@ import nock from 'nock';
 import * as fs from 'fs';
 import path from 'path';
 import assert from 'assert';
+import {request} from 'gaxios';
 
 nock.disableNetConnect();
 
@@ -74,10 +75,22 @@ describe('behavior of Github Authenticator Class', async () => {
   });
 
   it('should get a short lived access token', async () => {
-    const githubAuthenticator = new GithubAuthenticator(
-      'projectId',
-      '2345567',
-      secretManagerClientStub
+    const githubAuthenticatorStub = sinon.createStubInstance(
+      GithubAuthenticator
+    ) as SinonStubbedInstance<GithubAuthenticator> & GithubAuthenticator;
+
+    githubAuthenticatorStub.getGitHubShortLivedAccessToken.callsFake(
+      async () => {
+        const resp = await request({
+          url: 'https://api.github.com/app/installations/2345567/access_tokens',
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer 1234',
+            Accept: 'application/vnd.github.v3+json',
+          },
+        });
+        return (resp as any).data.token as string;
+      }
     );
 
     const scope = nock('https://api.github.com')
@@ -85,7 +98,7 @@ describe('behavior of Github Authenticator Class', async () => {
       .reply(201, {token: 'ghs_12345'});
 
     assert.deepStrictEqual(
-      await githubAuthenticator.getGitHubShortLivedAccessToken(),
+      await githubAuthenticatorStub.getGitHubShortLivedAccessToken(),
       'ghs_12345'
     );
 
@@ -93,10 +106,22 @@ describe('behavior of Github Authenticator Class', async () => {
   });
 
   it('should throw an error if getting token does not respond with 201', async () => {
-    const githubAuthenticator = new GithubAuthenticator(
-      'projectId',
-      '2345567',
-      secretManagerClientStub
+    const githubAuthenticatorStub = sinon.createStubInstance(
+      GithubAuthenticator
+    ) as SinonStubbedInstance<GithubAuthenticator> & GithubAuthenticator;
+
+    githubAuthenticatorStub.getGitHubShortLivedAccessToken.callsFake(
+      async () => {
+        const resp = await request({
+          url: 'https://api.github.com/app/installations/2345567/access_tokens',
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer 1234',
+            Accept: 'application/vnd.github.v3+json',
+          },
+        });
+        throw Error(`unexpected response http = ${resp.status}`);
+      }
     );
 
     const scope = nock('https://api.github.com')
@@ -104,7 +129,7 @@ describe('behavior of Github Authenticator Class', async () => {
       .reply(202);
 
     await assert.rejects(
-      githubAuthenticator.getGitHubShortLivedAccessToken(),
+      githubAuthenticatorStub.getGitHubShortLivedAccessToken(),
       /unexpected response/
     );
     scope.done();
