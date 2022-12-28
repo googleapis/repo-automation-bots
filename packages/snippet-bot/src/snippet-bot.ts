@@ -101,7 +101,7 @@ async function fullScan(
   if (installationId === undefined) {
     throw new Error(
       `Installation ID not provided in ${context.payload.action} event.` +
-        ' We cannot authenticate Octokit.'
+      ' We cannot authenticate Octokit.'
     );
   }
   const octokit = await getAuthenticatedOctokit(installationId);
@@ -230,7 +230,7 @@ async function scanPullRequest(
   if (installationId === undefined) {
     throw new Error(
       `Installation ID not provided in ${context.payload.action} event.` +
-        ' We cannot authenticate Octokit.'
+      ' We cannot authenticate Octokit.'
     );
   }
   const octokit = await getAuthenticatedOctokit(installationId);
@@ -318,6 +318,8 @@ async function scanPullRequest(
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const checkParams = context.repo({
     name: 'Mismatched region tag',
     conclusion: 'success' as Conclusion,
@@ -666,7 +668,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in schedule.repository event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -692,7 +694,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in issue_comment.edited event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -752,7 +754,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in issues event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -785,7 +787,7 @@ export = (app: Probot) => {
     } else {
       throw new Error(
         'Installation ID not provided in pull_request.labeled event.' +
-          ' We cannot authenticate Octokit.'
+        ' We cannot authenticate Octokit.'
       );
     }
     const logger = getContextLogger(context);
@@ -860,7 +862,7 @@ export = (app: Probot) => {
       } else {
         throw new Error(
           'Installation ID not provided in pull_request event.' +
-            ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
         );
       }
       const logger = getContextLogger(context);
