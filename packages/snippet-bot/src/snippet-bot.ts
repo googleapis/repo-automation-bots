@@ -318,6 +318,8 @@ async function scanPullRequest(
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const checkParams = context.repo({
     name: 'Mismatched region tag',
     conclusion: 'success' as Conclusion,
