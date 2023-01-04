@@ -13,6 +13,12 @@
 // limitations under the License.
 
 const {execSync} = require('child_process');
+const fs = require('fs');
+const outputFile = process.env.GITHUB_OUTPUT;
+
+function writeOutput(name, value) {
+  fs.appendFileSync(outputFile, `${name}=${value}\n`);
+}
 
 const output = execSync(`ls packages/*/package-lock.json`, { encoding: 'utf-8' });
 const packages = output.split('\n');
@@ -21,4 +27,5 @@ const nodePaths = new Set();
 for (const package of packages) {
   nodePaths.add(package.split('/')[1]);
 }
-console.log(`::set-output name=nodePaths::${JSON.stringify(Array.from(nodePaths))}`);
+
+writeOutput('nodePaths', JSON.stringify(Array.from(nodePaths)));

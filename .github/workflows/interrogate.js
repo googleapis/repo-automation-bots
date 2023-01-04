@@ -13,6 +13,13 @@
 // limitations under the License.
 
 const {execSync} = require('child_process');
+const fs = require('fs');
+const outputFile = process.env.GITHUB_OUTPUT;
+
+function writeOutput(name, value) {
+  fs.appendFileSync(outputFile, `${name}=${value}\n`);
+}
+
 const baseRef = process.env.GITHUB_BASE_REF;
 let status;
 
@@ -60,8 +67,9 @@ const requiredJobs = [
   ...goPaths.map(p => `go-test (${p})`),
   ...bashPaths.map(p => `bash-test (${p})`),
 ];
+
 console.log(nodePaths, '\n', goPaths, '\n', bashPaths, '\n', requiredJobs);
-console.log(`::set-output name=nodePaths::${JSON.stringify(nodePaths)}`);
-console.log(`::set-output name=goPaths::${JSON.stringify(goPaths)}`);
-console.log(`::set-output name=bashPaths::${JSON.stringify(bashPaths)}`);
-console.log(`::set-output name=requiredJobs::${JSON.stringify(requiredJobs)}`);
+writeOutput('nodePaths', JSON.stringify(nodePaths));
+writeOutput('goPaths', JSON.stringify(goPaths));
+writeOutput('bashPaths', JSON.stringify(bashPaths));
+writeOutput('requiredJobs', JSON.stringify(requiredJobs));
