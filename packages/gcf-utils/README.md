@@ -201,4 +201,3 @@ For more, check out the [Contributing Guide](../../CONTRIBUTING.md).
 ## License
 
 Apache 2.0 © 2019 Google Inc.
-
