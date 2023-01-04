@@ -24,16 +24,13 @@ assign_prs_by:
     - 'bot: owl-bot'
     to:
     - chingor13
-    - tmatsuo
     - SurferJeffAtGoogle
 
 assign_issues:
   - chingor13
-  - tmatsuo
   - SurferJeffAtGoogle
 assign_prs:
   - bcoe
   - chingor13
   - sofisl
-  - tmatsuo
   - SurferJeffAtGoogle
