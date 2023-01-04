@@ -45,6 +45,11 @@ describe('parseCherryPickComment', () => {
     const branch = parseCherryPickComment('\n/cherry-pick 2.1.x   ');
     assert.strictEqual(branch, '2.1.x');
   });
+
+  it('handles forward slash format', () => {
+    const branch = parseCherryPickComment('\n/cherry-pick release/2.1.x   ');
+    assert.strictEqual(branch, 'release/2.1.x');
+  });
 });
 
 describe('cherryPickCommits', () => {
