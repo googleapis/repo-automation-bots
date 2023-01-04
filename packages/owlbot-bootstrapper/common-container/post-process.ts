@@ -23,6 +23,7 @@ import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
+import {sign} from 'jsonwebtoken';
 
 export async function postProcess(argv: CliArgs) {
   logger.info(`Entering post-process for ${argv.apiId}/${argv.language}`);
@@ -31,7 +32,8 @@ export async function postProcess(argv: CliArgs) {
   const githubAuthenticator = new GithubAuthenticator(
     argv.projectId,
     argv.installationId,
-    new SecretManagerServiceClient()
+    new SecretManagerServiceClient(),
+    sign
   );
   const githubToken =
     await githubAuthenticator.getGitHubShortLivedAccessToken();

@@ -30,16 +30,19 @@ export class GithubAuthenticator {
   projectId: string;
   appInstallationId: string;
   secretManagerClient: SecretManagerServiceClient;
+  signingClient: typeof sign;
   OWLBOT_SECRET_NAME = 'owlbot-bootstrapper';
 
   constructor(
     projectId: string,
     appInstallationId: string,
-    secretManagerClient: SecretManagerServiceClient
+    secretManagerClient: SecretManagerServiceClient,
+    signingClient: typeof sign
   ) {
     this.projectId = projectId;
     this.appInstallationId = appInstallationId;
     this.secretManagerClient = secretManagerClient;
+    this.signingClient = signingClient;
   }
 
   /**
@@ -61,7 +64,9 @@ export class GithubAuthenticator {
       // GitHub App's identifier
       iss: secret.appId,
     };
-    const jwt = sign(payload, secret.privateKey, {algorithm: 'RS256'});
+    const jwt = this.signingClient(payload, secret.privateKey, {
+      algorithm: 'RS256',
+    });
     const resp = await request({
       url: `https://api.github.com/app/installations/${this.appInstallationId}/access_tokens`,
       method: 'POST',

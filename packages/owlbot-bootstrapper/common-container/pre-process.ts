@@ -27,6 +27,7 @@ import {CliArgs, Language} from './interfaces';
 import {loadApiFields} from './fetch-api-info';
 import {Storage} from '@google-cloud/storage';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
+import {sign} from 'jsonwebtoken';
 
 const GOOGLEAPIS_REPO_NAME = 'googleapis';
 export async function preProcess(argv: CliArgs) {
@@ -36,7 +37,8 @@ export async function preProcess(argv: CliArgs) {
   const githubAuthenticator = new GithubAuthenticator(
     argv.projectId,
     argv.installationId,
-    new SecretManagerServiceClient()
+    new SecretManagerServiceClient(),
+    sign
   );
   const githubToken =
     await githubAuthenticator.getGitHubShortLivedAccessToken();
