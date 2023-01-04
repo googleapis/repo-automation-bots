@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.3](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.0.2...datastore-lock-v4.0.3) (2023-01-04)
+
+
+### Bug Fixes
+
+* upgrade jsonwebtoken to 9.0.0 ([#4820](https://github.com/googleapis/repo-automation-bots/issues/4820)) ([ab1314f](https://github.com/googleapis/repo-automation-bots/commit/ab1314f4b72a86ec90ddf785d7a939ff5877153e))
+
 ## [4.0.2](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.0.1...datastore-lock-v4.0.2) (2022-12-22)
 
 
