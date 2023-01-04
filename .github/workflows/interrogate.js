@@ -60,8 +60,13 @@ const requiredJobs = [
   ...goPaths.map(p => `go-test (${p})`),
   ...bashPaths.map(p => `bash-test (${p})`),
 ];
+
+function writeOutput(name, value) {
+  console.log(`::set-output name=${name}::${value}`);
+}
+
 console.log(nodePaths, '\n', goPaths, '\n', bashPaths, '\n', requiredJobs);
-console.log(`::set-output name=nodePaths::${JSON.stringify(nodePaths)}`);
-console.log(`::set-output name=goPaths::${JSON.stringify(goPaths)}`);
-console.log(`::set-output name=bashPaths::${JSON.stringify(bashPaths)}`);
-console.log(`::set-output name=requiredJobs::${JSON.stringify(requiredJobs)}`);
+writeOutput('nodePaths', JSON.stringify(nodePaths));
+writeOutput('goPaths', JSON.stringify(goPaths));
+writeOutput('bashPaths', JSON.stringify(bashPaths));
+writeOutput('requiredJobs', JSON.stringify(requiredJobs));
