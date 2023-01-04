@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v3.0.0...label-utils-v3.0.1) (2023-01-04)
+
+
+### Bug Fixes
+
+* upgrade jsonwebtoken to 9.0.0 ([#4820](https://github.com/googleapis/repo-automation-bots/issues/4820)) ([ab1314f](https://github.com/googleapis/repo-automation-bots/commit/ab1314f4b72a86ec90ddf785d7a939ff5877153e))
+
 ## [3.0.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v2.0.2...label-utils-v3.0.0) (2022-08-15)
 
 

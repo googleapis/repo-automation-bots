@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.0...mono-repo-publish-v1.6.1) (2023-01-04)
+
+
+### Bug Fixes
+
+* upgrade jsonwebtoken to 9.0.0 ([#4820](https://github.com/googleapis/repo-automation-bots/issues/4820)) ([ab1314f](https://github.com/googleapis/repo-automation-bots/commit/ab1314f4b72a86ec90ddf785d7a939ff5877153e))
+
 ## [1.6.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.5.0...mono-repo-publish-v1.6.0) (2022-11-08)
 
 
