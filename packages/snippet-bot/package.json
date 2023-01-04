@@ -38,7 +38,7 @@
     "jsonwebtoken": "^9.0.0",
     "lru-cache": "^7.14.0",
     "minimatch": "^5.1.0",
-    "parse-diff": "^0.9.0",
+    "parse-diff": "^0.10.0",
     "tar": "^6.1.11",
     "tmp-promise": "^3.0.3"
   },
@@ -59,7 +59,7 @@
     "sinon": "^15.0.0",
     "smee-client": "^1.2.3",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.8.2"
+    "typescript": "~4.9.0"
   },
   "optionalDependencies": {
     "fsevents": "*"
