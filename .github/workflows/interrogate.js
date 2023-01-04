@@ -14,8 +14,13 @@
 
 const {execSync} = require('child_process');
 const fs = require('fs');
-const baseRef = process.env.GITHUB_BASE_REF;
 const outputFile = process.env.GITHUB_OUTPUT;
+
+function writeOutput(name, value) {
+  fs.appendFileSync(outputFile, `${name}=${value}\n`);
+}
+
+const baseRef = process.env.GITHUB_BASE_REF;
 let status;
 
 if (baseRef) {
@@ -62,10 +67,6 @@ const requiredJobs = [
   ...goPaths.map(p => `go-test (${p})`),
   ...bashPaths.map(p => `bash-test (${p})`),
 ];
-
-function writeOutput(name, value) {
-  fs.appendFileSync(outputFile, `${name}=${value}\n`);
-}
 
 console.log(nodePaths, '\n', goPaths, '\n', bashPaths, '\n', requiredJobs);
 writeOutput('nodePaths', JSON.stringify(nodePaths));
