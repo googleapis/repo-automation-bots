@@ -13,6 +13,12 @@
 // limitations under the License.
 
 const {execSync} = require('child_process');
+const fs = require('fs');
+const outputFile = process.env.GITHUB_OUTPUT;
+
+function writeOutput(name, value) {
+  fs.appendFileSync(outputFile, `${name}=${value}\n`);
+}
 
 // We want to match sub packages like owlbot-bootstrapper/cli
 const output = execSync(`find packages -type d -name node_modules -prune -o -name package-lock.json -print`, { encoding: 'utf-8' });
@@ -36,4 +42,4 @@ for (const package of packages) {
   }
 }
 
-console.log(`::set-output name=nodePaths::${JSON.stringify(Array.from(nodePaths))}`);
+writeOutput('nodePaths', JSON.stringify(Array.from(nodePaths)));
