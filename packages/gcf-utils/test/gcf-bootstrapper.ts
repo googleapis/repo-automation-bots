@@ -22,6 +22,7 @@ import {
   RequestWithRawBody,
   getContextLogger,
   ServiceUnavailable,
+  RetryableError,
 } from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
@@ -545,6 +546,68 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledTwice(errorStub);
       sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
       sinon.assert.calledWith(errorStub, sinon.match.instanceOf(Error));
+    });
+
+    it('skips logging retryable errors', async () => {
+      const fakeLogger = new GCFLogger();
+      sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new RetryableError(new SyntaxError('Some error message'));
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      sinon.assert.notCalled(errorStub);
+    });
+
+    it('logs retryable error on final attempt', async () => {
+      const fakeLogger = new GCFLogger();
+      sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new RetryableError(new SyntaxError('Some error message'));
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      req.headers['x-cloudtasks-taskretrycount'] = '10';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      sinon.assert.calledOnce(errorStub);
+      sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
     });
 
     it('returns 503 on rate limit errors', async () => {

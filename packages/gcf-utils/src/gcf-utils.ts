@@ -106,6 +106,19 @@ export class ServiceUnavailable extends Error {
   }
 }
 
+/**
+ * Bots can throw this error to indicate an error that can be
+ * retried. If we catch one of these errors, we will skip
+ * error reporting unless it is the final attempt.
+ */
+export class RetryableError extends Error {
+  readonly originalError: Error;
+  constructor(err: Error) {
+    super(err.message);
+    this.originalError = err;
+  }
+}
+
 export interface WrapOptions {
   // Whether or not to enqueue direct GitHub webhooks in a Cloud Task
   // queue which provides a retry mechanism. Defaults to `true`.
@@ -660,7 +673,12 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
-        logErrors(requestLogger, err);
+        // only report to error reporting if it's the final attempt
+        const maxRetries = this.getRetryLimit(wrapConfig, botRequest.eventName);
+        const shouldReportRetryableErrors =
+          botRequest.taskRetryCount >= maxRetries;
+        logErrors(requestLogger, err, shouldReportRetryableErrors);
+
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -1369,7 +1387,11 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
  * @param {GCFLogger} logger The logger to log to
  * @param {Error} e The error to log
  */
-export function logErrors(logger: GCFLogger, e: Error) {
+export function logErrors(
+  logger: GCFLogger,
+  e: Error,
+  shouldReportRetryableErrors = true
+) {
   // Add "@type" bindings so that Cloud Error Reporting will capture these logs.
   const bindings = logger.getBindings();
   if (bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
@@ -1382,7 +1404,11 @@ export function logErrors(logger: GCFLogger, e: Error) {
     for (const inner of e) {
       // AggregateError should not contain an AggregateError, but
       // we can run this recursively anyways.
-      logErrors(logger, inner);
+      logErrors(logger, inner, shouldReportRetryableErrors);
+    }
+  } else if (e instanceof RetryableError) {
+    if (shouldReportRetryableErrors) {
+      logger.error(e.originalError);
     }
   } else {
     logger.error(e);
