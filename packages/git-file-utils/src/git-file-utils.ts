@@ -15,6 +15,7 @@
 import {Octokit} from '@octokit/rest';
 import {basename, extname} from 'path';
 import {Minimatch} from 'minimatch';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {RequestError} from '@octokit/request-error';
 
 export const DEFAULT_FILE_MODE = '100644';
