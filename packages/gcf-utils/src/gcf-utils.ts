@@ -660,7 +660,10 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
-        logErrors(requestLogger, err);
+        // only report to error reporting if it's the final attempt
+        const maxRetries = this.getRetryLimit(wrapConfig, botRequest.eventName);
+        const shouldReportErrors = botRequest.taskRetryCount >= maxRetries;
+        logErrors(requestLogger, err, shouldReportErrors);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -1369,10 +1372,15 @@ function parseRateLimitError(e: Error): RateLimits | undefined {
  * @param {GCFLogger} logger The logger to log to
  * @param {Error} e The error to log
  */
-export function logErrors(logger: GCFLogger, e: Error) {
+export function logErrors(
+  logger: GCFLogger,
+  e: Error,
+  shouldReportErrors = true
+) {
   // Add "@type" bindings so that Cloud Error Reporting will capture these logs.
   const bindings = logger.getBindings();
-  if (bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
+  if (shouldReportErrors && bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
+    console.log('adding type bindings');
     logger = logger.child({
       '@type': ERROR_REPORTING_TYPE_NAME,
       ...bindings,
@@ -1382,7 +1390,7 @@ export function logErrors(logger: GCFLogger, e: Error) {
     for (const inner of e) {
       // AggregateError should not contain an AggregateError, but
       // we can run this recursively anyways.
-      logErrors(logger, inner);
+      logErrors(logger, inner, shouldReportErrors);
     }
   } else {
     logger.error(e);
