@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import {Octokit} from '@octokit/rest';
-import {RequestError} from '@octokit/types';
 import {basename, extname} from 'path';
 import {Minimatch} from 'minimatch';
+import {RequestError} from '@octokit/request-error';
 
 export const DEFAULT_FILE_MODE = '100644';
 
@@ -420,19 +420,30 @@ export class BranchFileCache {
     sha: string,
     recursive: boolean
   ): Promise<TreeResponse> {
-    const {
-      data: {tree, truncated},
-    } = await this.octokit.git.getTree({
-      owner: this.repository.owner,
-      repo: this.repository.repo,
-      tree_sha: sha,
-      // fetching tree non-recursively requires omitting the param
-      recursive: recursive ? 'true' : undefined,
-    });
-    return {
-      tree,
-      truncated,
-    };
+    try {
+      const {
+        data: {tree, truncated},
+      } = await this.octokit.git.getTree({
+        owner: this.repository.owner,
+        repo: this.repository.repo,
+        tree_sha: sha,
+        // fetching tree non-recursively requires omitting the param
+        recursive: recursive ? 'true' : undefined,
+      });
+      return {
+        tree,
+        truncated,
+      };
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 409) {
+        // handle empty repository
+        return {
+          tree: [],
+          truncated: false,
+        };
+      }
+      throw e;
+    }
   }
 
   /**
