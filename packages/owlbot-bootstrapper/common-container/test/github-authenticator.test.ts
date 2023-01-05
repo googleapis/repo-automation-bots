@@ -20,7 +20,6 @@ import nock from 'nock';
 import * as fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import {request} from 'gaxios';
 import jwt from 'jsonwebtoken';
 
 nock.disableNetConnect();
