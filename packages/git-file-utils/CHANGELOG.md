@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.4...git-file-utils-v1.2.5) (2023-01-05)
+
+
+### Bug Fixes
+
+* handle empty repository as if it has no files ([#4863](https://github.com/googleapis/repo-automation-bots/issues/4863)) ([9c1d60e](https://github.com/googleapis/repo-automation-bots/commit/9c1d60ef624f476f661be27f6697a7af42a01f6a))
+
 ## [1.2.4](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.3...git-file-utils-v1.2.4) (2022-12-22)
 
 

@@ -130,6 +130,18 @@ describe('BranchFileCache', () => {
       }, BranchNotFoundError);
       req.done();
     });
+
+    it('throws on empty repository', async () => {
+      const req = nock('https://api.github.com')
+        .get(
+          '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+        )
+        .reply(409);
+      await assert.rejects(async () => {
+        await cache.getFileContents('missing-file');
+      }, FileNotFoundError);
+      req.done();
+    });
   });
 
   describe('with large repository', () => {
