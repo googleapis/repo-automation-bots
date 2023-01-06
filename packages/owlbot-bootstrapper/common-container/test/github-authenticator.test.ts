@@ -40,11 +40,7 @@ secretManagerClientStub.accessSecretVersion.resolves([
   },
 ]);
 
-function testSigner(
-  payload: object,
-  privateKey: string,
-  algorithm: {}
-): string {
+function testSigner(payload: object, privateKey: string): string {
   return '123';
 }
 

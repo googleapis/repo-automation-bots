@@ -37,8 +37,7 @@ export async function preProcess(argv: CliArgs) {
   const githubAuthenticator = new GithubAuthenticator(
     argv.projectId,
     argv.installationId,
-    new SecretManagerServiceClient(),
-    sign
+    new SecretManagerServiceClient()
   );
   const githubToken =
     await githubAuthenticator.getGitHubShortLivedAccessToken();
