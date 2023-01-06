@@ -481,10 +481,52 @@ describe('GCFBootstrapper', () => {
       assert.strictEqual(response.statusCode, 500);
     });
 
-    it('logs errors for single handler errors', async () => {
+    it('reports to error reporting on final retry', async () => {
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
+      const childSpy = sandbox.spy(GCFLogger.prototype, 'child');
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new SyntaxError('Some error message');
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      req.headers['x-cloudtasks-taskretrycount'] = '10';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      sinon.assert.calledOnce(childSpy);
+      sinon.assert.calledWith(
+        childSpy,
+        sinon.match({
+          '@type':
+            'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent',
+        })
+      );
+      sinon.assert.calledOnce(errorStub);
+      sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
+    });
+
+    it('logs errors for single handler errors', async () => {
       const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
+      const childSpy = sandbox.spy(GCFLogger.prototype, 'child');
+      const fakeLogger = new GCFLogger();
+      sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -508,14 +550,15 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.called(sendStub);
 
+      sinon.assert.notCalled(childSpy);
       sinon.assert.calledOnce(errorStub);
       sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
     });
 
     it('logs errors for multiple handler errors', async () => {
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
