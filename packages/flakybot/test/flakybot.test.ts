@@ -108,6 +108,14 @@ function nockIssuePatch(repo: string, issueNumber: number) {
     .reply(200);
 }
 
+function nockRepo(repo: string, archived: boolean) {
+  return nock('https://api.github.com')
+    .get(`/repos/GoogleCloudPlatform/${repo}`)
+    .reply(200, {
+      archived,
+    });
+}
+
 describe('flakybot', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
@@ -384,6 +392,38 @@ describe('flakybot', () => {
       sandbox.restore();
     });
     it('skips when there is no XML and no testsFailed', async () => {
+      nockRepo('golang-samples', false);
+      getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
+      const payload = {
+        repo: 'GoogleCloudPlatform/golang-samples',
+        organization: {login: 'GoogleCloudPlatform'},
+        repository: {name: 'golang-samples'},
+        commit: '123',
+        buildURL: 'http://example.com',
+      };
+
+      const requests = nock('https://api.github.com');
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'pubsub.message' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
+        id: 'abc123',
+      });
+      requests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'GoogleCloudPlatform',
+        'golang-samples',
+        CONFIG_FILENAME,
+        DEFAULT_CONFIG,
+        {schema: schema}
+      );
+    });
+
+    it('skips when the repo is archived', async () => {
+      nockRepo('golang-samples', true);
       getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
       const payload = {
         repo: 'GoogleCloudPlatform/golang-samples',
@@ -414,6 +454,9 @@ describe('flakybot', () => {
     });
 
     describe('testsFailed', () => {
+      beforeEach(() => {
+        nockRepo('golang-samples', false);
+      });
       it('opens an issue when testsFailed', async () => {
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = {
@@ -560,6 +603,7 @@ describe('flakybot', () => {
 
     describe('xunitXML', () => {
       it('opens an issue [Go]', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
@@ -580,6 +624,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Python]', async () => {
+        nockRepo('python-docs-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'python_one_failed.xml',
@@ -603,6 +648,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Python error]', async () => {
+        nockRepo('python-docs-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'python_one_error.xml',
@@ -626,6 +672,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Java]', async () => {
+        nockRepo('java-vision', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('java_one_failed.xml', 'java-vision');
 
@@ -643,6 +690,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue 2 [Java]', async () => {
+        nockRepo('java-datastore', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('java_one_error.xml', 'java-datastore');
 
@@ -663,6 +711,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Node.js]', async () => {
+        nockRepo('nodejs-spanner', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('node_one_failed.xml', 'nodejs-spanner');
 
@@ -683,6 +732,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Ruby]', async () => {
+        nockRepo('ruby-docs-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'ruby_one_failed.xml',
@@ -706,6 +756,7 @@ describe('flakybot', () => {
       });
 
       it('comments on existing issue', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
         const issues = [
@@ -754,6 +805,7 @@ describe('flakybot', () => {
       });
 
       it('does not comment about failure on existing flaky issue', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'many_failed_same_pkg.xml',
@@ -806,6 +858,7 @@ describe('flakybot', () => {
       });
 
       it('does not comment about failure on existing issue labeled quiet', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'many_failed_same_pkg.xml',
@@ -860,6 +913,7 @@ describe('flakybot', () => {
       });
 
       it('handles a testsuite with no test cases', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('no_tests.xml', 'golang-samples');
 
@@ -877,6 +931,7 @@ describe('flakybot', () => {
       });
 
       it('reopens issue with correct labels for failing test', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
@@ -925,6 +980,7 @@ describe('flakybot', () => {
       });
 
       it('closes an issue for a passing test [Go]', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
         const issues = [
@@ -959,6 +1015,7 @@ describe('flakybot', () => {
       });
 
       it('closes an issue for a passing test [Python]', async () => {
+        nockRepo('python-docs-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'python_one_passed.xml',
@@ -996,6 +1053,7 @@ describe('flakybot', () => {
       });
 
       it('closes an issue for a passing test [Java]', async () => {
+        nockRepo('java-vision', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('java_one_passed.xml', 'java-vision');
         const issues = [
@@ -1030,6 +1088,7 @@ describe('flakybot', () => {
       });
 
       it('does not close an issue that did not explicitly pass', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
         const issues = [
@@ -1060,6 +1119,7 @@ describe('flakybot', () => {
       });
 
       it('keeps an issue open for a passing test that failed in the same build (comment)', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
         const issues = [
@@ -1100,6 +1160,7 @@ describe('flakybot', () => {
       });
 
       it('keeps an issue open for a passing test that failed in the same build (issue body)', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
         const issues = [
@@ -1134,6 +1195,7 @@ describe('flakybot', () => {
       });
 
       it('does not comment for failure in the same build [Go]', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
         const issues = [
@@ -1174,6 +1236,7 @@ describe('flakybot', () => {
       });
 
       it('keeps an issue open for a passing flaky test', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
         const issues = [
@@ -1205,6 +1268,7 @@ describe('flakybot', () => {
       });
 
       it('opens multiple issues for multiple failures', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'many_failed_same_pkg.xml',
@@ -1243,6 +1307,7 @@ describe('flakybot', () => {
       });
 
       it('closes a duplicate issue', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
 
@@ -1304,6 +1369,7 @@ describe('flakybot', () => {
       });
 
       it('reopens the more recently closed issue when there is a duplicate', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
@@ -1357,6 +1423,7 @@ describe('flakybot', () => {
       });
 
       it('only opens one issue for a group of failures [Go]', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('go_failure_group.xml', 'golang-samples');
 
@@ -1377,6 +1444,7 @@ describe('flakybot', () => {
       });
 
       it('opens a new issue when the original is locked [Go]', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
         const issues = [
@@ -1413,6 +1481,7 @@ describe('flakybot', () => {
       });
 
       it('opens a new issue when the original was closed a long time ago [Go]', async () => {
+        nockRepo('golang-samples', false);
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
@@ -1459,6 +1528,9 @@ describe('flakybot', () => {
           state: 'open',
           url: 'url',
         };
+        beforeEach(() => {
+          nockRepo('nodejs-spanner', false);
+        });
 
         it('opens a single issue for many tests in the same package', async () => {
           getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);

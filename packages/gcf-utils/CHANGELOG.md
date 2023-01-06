@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.4.4](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.3...gcf-utils-v14.4.4) (2023-01-06)
+
+
+### Bug Fixes
+
+* report errors to error reporting only on the last retry attempt ([#4867](https://github.com/googleapis/repo-automation-bots/issues/4867)) ([d15cb54](https://github.com/googleapis/repo-automation-bots/commit/d15cb540aa7307d2f275a12d6ffecf8ef867d8f7))
+
 ## [14.4.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.2...gcf-utils-v14.4.3) (2023-01-04)
 
 
