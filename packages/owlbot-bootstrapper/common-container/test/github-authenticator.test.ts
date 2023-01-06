@@ -20,7 +20,6 @@ import nock from 'nock';
 import * as fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import jwt from 'jsonwebtoken';
 
 nock.disableNetConnect();
 
@@ -41,7 +40,13 @@ secretManagerClientStub.accessSecretVersion.resolves([
   },
 ]);
 
-const signStub = sinon.stub(jwt, 'sign');
+function testSigner(
+  payload: object,
+  privateKey: string,
+  algorithm: {}
+): string {
+  return '123';
+}
 
 describe('behavior of Github Authenticator Class', async () => {
   it('should create the right type of object', async () => {
@@ -49,7 +54,7 @@ describe('behavior of Github Authenticator Class', async () => {
       'projectId',
       '2345567',
       secretManagerClientStub,
-      signStub as unknown as typeof jwt.sign
+      testSigner
     );
 
     const expectation = {
@@ -82,7 +87,7 @@ describe('behavior of Github Authenticator Class', async () => {
       'projectId',
       '2345567',
       secretManagerClientStub,
-      signStub as unknown as typeof jwt.sign
+      testSigner
     );
 
     const scope = nock('https://api.github.com')
@@ -102,7 +107,7 @@ describe('behavior of Github Authenticator Class', async () => {
       'projectId',
       '2345567',
       secretManagerClientStub,
-      signStub as unknown as typeof jwt.sign
+      testSigner
     );
 
     const scope = nock('https://api.github.com')
@@ -121,7 +126,7 @@ describe('behavior of Github Authenticator Class', async () => {
       'projectId',
       '2345567',
       secretManagerClientStub,
-      signStub as unknown as typeof jwt.sign
+      testSigner
     );
 
     const typeofOctokit = await githubAuthenticator.authenticateOctokit(

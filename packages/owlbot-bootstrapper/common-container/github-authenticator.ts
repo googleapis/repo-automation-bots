@@ -14,7 +14,6 @@
 
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
-import {sign} from 'jsonwebtoken';
 import {Secret} from './interfaces';
 import {request} from 'gaxios';
 import {logger} from 'gcf-utils';
@@ -30,14 +29,18 @@ export class GithubAuthenticator {
   projectId: string;
   appInstallationId: string;
   secretManagerClient: SecretManagerServiceClient;
-  signingClient: typeof sign;
+  signingClient: (payload: object, privateKey: string, algorithm: {}) => string;
   OWLBOT_SECRET_NAME = 'owlbot-bootstrapper';
 
   constructor(
     projectId: string,
     appInstallationId: string,
     secretManagerClient: SecretManagerServiceClient,
-    signingClient: typeof sign
+    signingClient: (
+      payload: object,
+      privateKey: string,
+      algorithm: {}
+    ) => string
   ) {
     this.projectId = projectId;
     this.appInstallationId = appInstallationId;
