@@ -213,6 +213,17 @@ export function flakybot(app: Probot) {
     logger.debug(`config: ${config}`);
     logger.info(`[${owner}/${repo}] processing ${buildURL}`);
 
+    const {
+      data: {archived},
+    } = await typedContext.octokit.repos.get({
+      owner,
+      repo,
+    });
+    if (archived) {
+      logger.info(`${owner}/${repo} is archived, skipping...`);
+      return;
+    }
+
     let results: TestResults;
     if (typedContext.payload.xunitXML) {
       const xml = Buffer.from(
