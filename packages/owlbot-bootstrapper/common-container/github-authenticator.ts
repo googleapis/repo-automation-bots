@@ -14,10 +14,18 @@
 
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
-import {sign} from 'jsonwebtoken';
 import {Secret} from './interfaces';
 import {request} from 'gaxios';
 import {logger} from 'gcf-utils';
+import {sign} from 'jsonwebtoken';
+type JwtSigner = (payload: object, privateKey: string) => string;
+
+const DEFAULT_JWT_SIGNER: JwtSigner = function (
+  payload: object,
+  privateKey: string
+): string {
+  return sign(payload, privateKey, {algorithm: 'RS256'});
+};
 
 /**
  * Github authenticator class
@@ -30,16 +38,19 @@ export class GithubAuthenticator {
   projectId: string;
   appInstallationId: string;
   secretManagerClient: SecretManagerServiceClient;
+  jwtSigner: JwtSigner;
   OWLBOT_SECRET_NAME = 'owlbot-bootstrapper';
 
   constructor(
     projectId: string,
     appInstallationId: string,
-    secretManagerClient: SecretManagerServiceClient
+    secretManagerClient: SecretManagerServiceClient,
+    jwtSigner: JwtSigner = DEFAULT_JWT_SIGNER
   ) {
     this.projectId = projectId;
     this.appInstallationId = appInstallationId;
     this.secretManagerClient = secretManagerClient;
+    this.jwtSigner = jwtSigner;
   }
 
   /**
@@ -61,7 +72,7 @@ export class GithubAuthenticator {
       // GitHub App's identifier
       iss: secret.appId,
     };
-    const jwt = sign(payload, secret.privateKey, {algorithm: 'RS256'});
+    const jwt = this.jwtSigner(payload, secret.privateKey);
     const resp = await request({
       url: `https://api.github.com/app/installations/${this.appInstallationId}/access_tokens`,
       method: 'POST',
