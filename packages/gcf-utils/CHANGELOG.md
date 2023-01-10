@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.4.5](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.4...gcf-utils-v14.4.5) (2023-01-10)
+
+
+### Bug Fixes
+
+* **deps:** [gcf-utils] update dependency @google-cloud/run to ^0.3.0 ([#4881](https://github.com/googleapis/repo-automation-bots/issues/4881)) ([753b3a3](https://github.com/googleapis/repo-automation-bots/commit/753b3a3e8882b372d8287118521d9171ef7c53dd))
+
 ## [14.4.4](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.3...gcf-utils-v14.4.4) (2023-01-06)
 
 
