@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@google-cloud/kms": "^3.0.1",
-    "@google-cloud/run": "^0.2.2",
+    "@google-cloud/run": "^0.3.0",
     "@google-cloud/secret-manager": "^4.1.1",
     "@google-cloud/storage": "^6.4.1",
     "@google-cloud/tasks": "^3.0.2",
