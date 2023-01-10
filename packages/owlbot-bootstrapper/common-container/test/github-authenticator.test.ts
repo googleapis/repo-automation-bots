@@ -40,12 +40,17 @@ secretManagerClientStub.accessSecretVersion.resolves([
   },
 ]);
 
+function testSigner(payload: object, privateKey: string): string {
+  return '123';
+}
+
 describe('behavior of Github Authenticator Class', async () => {
   it('should create the right type of object', async () => {
     const githubAuthenticator = new GithubAuthenticator(
       'projectId',
       '2345567',
-      secretManagerClientStub
+      secretManagerClientStub,
+      testSigner
     );
 
     const expectation = {
@@ -77,7 +82,8 @@ describe('behavior of Github Authenticator Class', async () => {
     const githubAuthenticator = new GithubAuthenticator(
       'projectId',
       '2345567',
-      secretManagerClientStub
+      secretManagerClientStub,
+      testSigner
     );
 
     const scope = nock('https://api.github.com')
@@ -96,7 +102,8 @@ describe('behavior of Github Authenticator Class', async () => {
     const githubAuthenticator = new GithubAuthenticator(
       'projectId',
       '2345567',
-      secretManagerClientStub
+      secretManagerClientStub,
+      testSigner
     );
 
     const scope = nock('https://api.github.com')
@@ -114,7 +121,8 @@ describe('behavior of Github Authenticator Class', async () => {
     const githubAuthenticator = new GithubAuthenticator(
       'projectId',
       '2345567',
-      secretManagerClientStub
+      secretManagerClientStub,
+      testSigner
     );
 
     const typeofOctokit = await githubAuthenticator.authenticateOctokit(
