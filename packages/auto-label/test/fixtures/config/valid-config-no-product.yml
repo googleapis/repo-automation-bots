@@ -2,22 +2,22 @@ randomBoolean: true
 product: false
 language:
   pullrequest: true
-  labelprefix: "language:"
+  labelprefix: 'language:'
   extensions:
-    JSON: ["JSON"]
-    typescript: ["ts"]
+    JSON: ['JSON']
+    typescript: ['ts']
   paths:
-    .: "js"
-    src: "typescript"
+    .: 'js'
+    src: 'typescript'
     test:
-      .: "test"
-      fixtures: "JSON"
+      .: 'test'
+      fixtures: 'JSON'
 path:
   pullrequest: true
-  labelprefix: "path: "
+  labelprefix: 'path: '
   paths:
-    .: "root"
-    src: "source"
+    .: 'root'
+    src: 'source'
     test:
-      .: "tests"
-      fixtures: "test_fixtures"
+      .: 'tests'
+      fixtures: 'test_fixtures'
