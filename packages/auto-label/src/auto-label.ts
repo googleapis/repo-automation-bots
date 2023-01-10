@@ -261,6 +261,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       config.language,
       'language'
     );
+
     if (language_label && !helper.labelExists(labels, language_label)) {
       logger.info(
         `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`

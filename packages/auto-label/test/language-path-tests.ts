@@ -276,6 +276,44 @@ describe('language-and-path-labeling', () => {
       );
     });
 
+    it('labels with user defined path on the deepest path', async () => {
+      const path_config = {
+        pullrequest: true,
+        labelprefix: 'api: ',
+        paths: {
+          'ai-platform': {
+            '.': 'aiplatform',
+          },
+          appengine: {
+            '.': 'appengine',
+          },
+          asset: {
+            '.': 'cloudasset',
+          },
+          run: {
+            '.': 'run',
+          },
+          vision: {
+            '.': 'vision',
+          },
+        },
+      };
+      const data = [
+        {
+          filename: 'run/image-processing/.dockerignore',
+          changes: 2,
+        },
+        {
+          filename: 'vision/async-batch-annotate-images.js',
+          changes: 1,
+        },
+      ];
+      assert.deepStrictEqual(
+        helper.getLabel(data, path_config, 'language'),
+        'api: run'
+      );
+    });
+
     it('lets users customize label prefix', async () => {
       const lang_config = {
         pullrequest: true,
