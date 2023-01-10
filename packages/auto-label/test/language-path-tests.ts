@@ -276,7 +276,7 @@ describe('language-and-path-labeling', () => {
       );
     });
 
-    it('labels with user defined path on the deepest path', async () => {
+    it('labels with user defined path according to example on README', async () => {
       const path_config = {
         pullrequest: true,
         labelprefix: 'api: ',
