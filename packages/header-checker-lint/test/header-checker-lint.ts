@@ -30,7 +30,7 @@ import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as gcfUtilsModule from 'gcf-utils';
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
-import myProbotApp from '../src/header-checker-lint';
+import {appMain} from '../src/header-checker-lint';
 import schema from '../src/config-schema.json';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -48,6 +48,7 @@ describe('HeaderCheckerLint', () => {
         }),
       },
     });
+    const myProbotApp = (app: Probot) => appMain(app, () => 2022);
     probot.load(myProbotApp);
   });
 
