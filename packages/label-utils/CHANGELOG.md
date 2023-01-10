@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.2](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v3.0.1...label-utils-v3.0.2) (2023-01-10)
+
+
+### Bug Fixes
+
+* update gcf-utils to update dependency on jsonwebtoken ([#4919](https://github.com/googleapis/repo-automation-bots/issues/4919)) ([b1d4e4b](https://github.com/googleapis/repo-automation-bots/commit/b1d4e4bb9253420cfa8f8ad13f4ec3e9bb9548a3))
+
 ## [3.0.1](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v3.0.0...label-utils-v3.0.1) (2023-01-04)
 
 
