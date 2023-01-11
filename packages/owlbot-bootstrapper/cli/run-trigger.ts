@@ -67,4 +67,5 @@ export async function runTrigger(
   });
 
   await resp.promise();
+  console.log(`Check build log at ${(resp.metadata as any).build.logUrl}`);
 }
