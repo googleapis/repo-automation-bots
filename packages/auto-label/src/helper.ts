@@ -278,25 +278,32 @@ export function autoDetectLabel(
 // A mapping of languages to their file extensions
 import defaultExtensions from './extensions.json';
 
-function getLabelFromPathConfig(filename: string, config: PathConfig): string {
+function getLabelFromPathConfig(
+  filename: string,
+  config: LanguageConfig
+): string {
   // If user specified labels for discrete paths
+  let label: string | PathConfig = '';
   const dirs = filename.split('/');
-  let label = '';
-  let exactMatch = false;
-
+  let paths = config.paths!;
   // If user set default label for entire drive, use that label
+  if ('.' in paths) {
+    label = paths['.'];
+  }
   for (const dir of dirs) {
-    if (typeof config[dir] === 'string') {
-      label = config[dir] as string;
-      exactMatch = true;
-    } else if (typeof config[dir] === 'object' || Array.isArray(config[dir])) {
-      label = getLabelFromPathConfig(filename, config[dir] as PathConfig);
-    } else if (config['.'] && !exactMatch) {
-      label = config['.'] as string;
+    if (dir in paths) {
+      if ('.' in paths) label = paths['.'];
+      if (typeof paths[dir] === 'string') {
+        label = paths[dir];
+        break; // break as this is the end of user defined path
+      } else {
+        paths = paths[dir] as PathConfig;
+      }
+    } else {
+      break; // break as this is the end of user defined path
     }
   }
-
-  return label;
+  return label as string;
 }
 
 /**
@@ -313,7 +320,7 @@ function getFileLabel(
 ): string {
   // Return a path based label, if user defined a path configuration
   if (config.paths) {
-    const lang = getLabelFromPathConfig(filename, config.paths);
+    const lang = getLabelFromPathConfig(filename, config);
     if (lang) {
       if (config.labelprefix) {
         return config.labelprefix + lang;
