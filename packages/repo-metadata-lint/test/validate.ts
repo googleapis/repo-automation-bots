@@ -17,8 +17,8 @@ import assert from 'assert';
 import {Validate} from '../src/validate';
 import {Octokit} from '@octokit/rest';
 import {readFileSync} from 'fs';
-import * as fileIterator from '../src/file-iterator';
 import * as sinon from 'sinon';
+import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
 const apiIndex = readFileSync('./test/fixtures/api-index-v1.json');
 const sandbox = sinon.createSandbox();
@@ -28,13 +28,18 @@ const OctokitFactory = Octokit.defaults({
 });
 const octokit = new OctokitFactory();
 
-function mockValidApiShortNames() {
-  const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
-  FileIterator.prototype.getFile = sandbox.stub().resolves(apiIndex);
-  return FileIterator.prototype.getFile;
-}
-
 describe('validate', () => {
+  beforeEach(() => {
+    sandbox
+      .stub(RepositoryFileCache.prototype, 'getFileContents')
+      .withArgs('api-index-v1.json', 'master')
+      .resolves({
+        sha: 'abc123',
+        content: '',
+        mode: '100644',
+        parsedContent: apiIndex.toString('utf-8'),
+      });
+  });
   afterEach(() => {
     sandbox.restore();
   });
@@ -48,7 +53,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if api_shortname is not a known API', async () => {
-    const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       api_shortname: 'zombocom',
       release_level: 'stable',
@@ -65,7 +69,6 @@ describe('validate', () => {
       result.errors[0],
       "api_shortname 'zombocom' invalid in apis/foo/.repo-metadata.json"
     );
-    sandbox.assert.calledOnce(validApiShortNames);
   });
 
   it('succeeds if api_shortname missing, but library type does not correspond to API', async () => {
@@ -124,7 +127,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if release_level not preview or stable', async () => {
-    const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       name: 'bigquery',
       api_shortname: 'bigquery',
@@ -142,11 +144,9 @@ describe('validate', () => {
       result.errors[0],
       'release_level must be equal to one of the allowed values in apis/foo/.repo-metadata.json'
     );
-    sandbox.assert.calledOnce(validApiShortNames);
   });
 
   it('returns validation error if release_level missing', async () => {
-    const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       name: 'bigquery',
       api_shortname: 'bigquery',
@@ -163,11 +163,9 @@ describe('validate', () => {
       result.errors[0],
       "must have required property 'release_level' in apis/foo/.repo-metadata.json"
     );
-    sandbox.assert.calledOnce(validApiShortNames);
   });
 
   it('returns validation error if client_documentation missing', async () => {
-    const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       name: 'bigquery',
       api_shortname: 'bigquery',
@@ -184,11 +182,9 @@ describe('validate', () => {
       result.errors[0],
       "must have required property 'client_documentation' in apis/foo/.repo-metadata.json"
     );
-    sandbox.assert.calledOnce(validApiShortNames);
   });
 
   it('returns validation error if client_documentation is invalid URL', async () => {
-    const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       name: 'bigquery',
       api_shortname: 'bigquery',
@@ -206,11 +202,9 @@ describe('validate', () => {
       result.errors[0],
       'client_documentation must match pattern "^https://.*" in apis/foo/.repo-metadata.json'
     );
-    sandbox.assert.calledOnce(validApiShortNames);
   });
 
   it('succeeds when all fields are valid for GAPIC libraries', async () => {
-    const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       release_level: 'stable',
       library_type: 'GAPIC_AUTO',
@@ -223,11 +217,9 @@ describe('validate', () => {
       file
     );
     assert.strictEqual(result.status, 'success');
-    sandbox.assert.calledOnce(validApiShortNames);
   });
 
   it('succeeds for release_level of unreleased', async () => {
-    const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       release_level: 'unreleased',
       library_type: 'GAPIC_AUTO',
@@ -240,6 +232,5 @@ describe('validate', () => {
       file
     );
     assert.strictEqual(result.status, 'success');
-    sandbox.assert.calledOnce(validApiShortNames);
   });
 });
