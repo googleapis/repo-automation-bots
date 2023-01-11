@@ -309,7 +309,7 @@ describe('language-and-path-labeling', () => {
         },
       ];
       assert.deepStrictEqual(
-        helper.getLabel(data, path_config, 'language'),
+        helper.getLabel(data, path_config, 'path'),
         'api: run'
       );
     });
