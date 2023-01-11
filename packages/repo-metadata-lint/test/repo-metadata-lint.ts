@@ -21,18 +21,8 @@ import * as sinon from 'sinon';
 import {handler} from '../src/repo-metadata-lint';
 import {logger} from 'gcf-utils';
 import * as gcfUtils from 'gcf-utils';
-import * as fileIterator from '../src/file-iterator';
 import {assert} from 'console';
-
-async function* emptyIterator() {}
-async function* failingIterator() {
-  yield [
-    './foo',
-    JSON.stringify({
-      library_type: 'BATMAN_LIB',
-    }),
-  ];
-}
+import {RepositoryFileCache} from '@google-automations/git-file-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -58,10 +48,9 @@ describe('repo-metadata-lint', () => {
 
   describe('schedule.repository', () => {
     it('handles schedule.repository event', async () => {
-      const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
-      FileIterator.prototype.repoMetadata = sandbox
-        .stub()
-        .returns(emptyIterator());
+      sandbox
+        .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
+        .resolves([]);
       const infoStub = sandbox.stub(logger, 'info');
       const githubApiRequests = nock('https://api.github.com')
         .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')
@@ -83,10 +72,20 @@ describe('repo-metadata-lint', () => {
     });
 
     it('opens an issue on failure', async () => {
-      const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
-      FileIterator.prototype.repoMetadata = sandbox
-        .stub()
-        .returns(failingIterator());
+      sandbox
+        .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
+        .resolves(['.repo-metadata.json']);
+      sandbox
+        .stub(RepositoryFileCache.prototype, 'getFileContents')
+        .withArgs('.repo-metadata.json', 'main')
+        .resolves({
+          sha: 'abc123',
+          content: '',
+          mode: '100644',
+          parsedContent: JSON.stringify({
+            library_type: 'BATMAN_LIB',
+          }),
+        });
       const infoStub = sandbox.stub(logger, 'info');
       const githubApiRequests = nock('https://api.github.com')
         .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')
@@ -114,10 +113,20 @@ describe('repo-metadata-lint', () => {
     });
 
     it('handles repositories with issues disabled', async () => {
-      const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
-      FileIterator.prototype.repoMetadata = sandbox
-        .stub()
-        .returns(failingIterator());
+      sandbox
+        .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
+        .resolves(['.repo-metadata.json']);
+      sandbox
+        .stub(RepositoryFileCache.prototype, 'getFileContents')
+        .withArgs('.repo-metadata.json', 'main')
+        .resolves({
+          sha: 'abc123',
+          content: '',
+          mode: '100644',
+          parsedContent: JSON.stringify({
+            library_type: 'BATMAN_LIB',
+          }),
+        });
       const infoStub = sandbox.stub(logger, 'info');
       const githubApiRequests = nock('https://api.github.com')
         .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')

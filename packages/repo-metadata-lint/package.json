@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/storage": "^6.4.2",
+    "@google-automations/git-file-utils": "^1.2.5",
     "@octokit/rest": "^19.0.4",
     "ajv": "^8.11.0",
     "gaxios": "^5.0.1",
