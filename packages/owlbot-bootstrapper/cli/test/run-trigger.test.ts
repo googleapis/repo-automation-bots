@@ -45,6 +45,7 @@ describe('tests running build trigger', () => {
 
     cloudBuildClientStub.runBuildTrigger.resolves([
       {
+        metadata: {build: {logUrl: 'abc123'}},
         promise: () => Promise.resolve(),
       },
     ]);
