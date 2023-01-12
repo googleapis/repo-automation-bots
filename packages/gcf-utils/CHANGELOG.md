@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [14.4.6](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.5...gcf-utils-v14.4.6) (2023-01-12)
+
+
+### Bug Fixes
+
+* update dependency on jsonwebtoken ([#4929](https://github.com/googleapis/repo-automation-bots/issues/4929)) ([325f171](https://github.com/googleapis/repo-automation-bots/commit/325f17191e2c102b53eff6673c0fdd2b10ed642d))
+
 ## [14.4.5](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.4...gcf-utils-v14.4.5) (2023-01-10)
 
 
