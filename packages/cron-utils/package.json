@@ -17,7 +17,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@google-cloud/run": "^0.2.2",
+    "@google-cloud/run": "^0.3.0",
     "@google-cloud/scheduler": "^3.0.3",
     "google-auth-library": "^8.5.1",
     "js-yaml": "^4.1.0",
