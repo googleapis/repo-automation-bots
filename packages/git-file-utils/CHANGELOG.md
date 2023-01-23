@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.5...git-file-utils-v1.2.6) (2023-01-23)
+
+
+### Bug Fixes
+
+* **deps:** upgrade octokit types ([#4944](https://github.com/googleapis/repo-automation-bots/issues/4944)) ([bb852df](https://github.com/googleapis/repo-automation-bots/commit/bb852dfe8b2161481426f5202a7ecf1669072972))
+
 ## [1.2.5](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.4...git-file-utils-v1.2.5) (2023-01-05)
 
 
