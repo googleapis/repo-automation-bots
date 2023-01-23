@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.1...mono-repo-publish-v1.6.2) (2023-01-19)
+
+
+### Bug Fixes
+
+* **deps:** npm audit fixes for several packages ([#4939](https://github.com/googleapis/repo-automation-bots/issues/4939)) ([a9a6755](https://github.com/googleapis/repo-automation-bots/commit/a9a67552a1cd0278a1b74383c988f099082e949f))
+
 ## [1.6.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.0...mono-repo-publish-v1.6.1) (2023-01-04)
 
 
