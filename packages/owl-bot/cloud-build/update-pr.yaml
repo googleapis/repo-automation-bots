@@ -49,7 +49,8 @@ steps:
       - -b
       - ${_PR_BRANCH}
       - --depth
-      - '2'
+      - '100'
+      - --no-single-branch
       - https://github.com/${_PR_OWNER}/${_PR_REPOSITORY}.git
     env:
       - 'HOME=/workspace'
