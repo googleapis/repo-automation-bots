@@ -5,10 +5,6 @@ assign_issues_by:
     - 'bot: release-please'
     to:
     - chingor13
-  - labels:
-    - 'bot: snippet-bot'
-    to:
-    - tmatsuo
 
 assign_prs_by:
   - labels:
@@ -16,10 +12,6 @@ assign_prs_by:
     to:
     - bcoe
     - chingor13
-  - labels:
-    - 'bot: snippet-bot'
-    to:
-    - tmatsuo
   - labels:
     - 'bot: owl-bot'
     to:
