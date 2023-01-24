@@ -15,7 +15,7 @@ import {exec} from 'child_process';
 import {promisify} from 'util';
 const execAsync = promisify(exec);
 import {load} from 'js-yaml';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
@@ -87,7 +87,8 @@ export const OWL_BOT_COPY = 'owl-bot-copy';
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
-  octokit?: Octokit
+  octokit?: Octokit,
+  logger: GCFLogger = defaultLogger
 ): Promise<BuildResponse | null> {
   const token = await core.getGitHubShortLivedAccessToken(
     args.privateKey,
@@ -242,7 +243,11 @@ export async function getHeadCommit(
   return headCommit;
 }
 
-export async function createCheck(args: CheckArgs, octokit?: Octokit) {
+export async function createCheck(
+  args: CheckArgs,
+  octokit?: Octokit,
+  logger: GCFLogger = defaultLogger
+) {
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit({
       privateKey: args.privateKey,
@@ -587,7 +592,8 @@ async function updatePullRequestAfterPostProcessor(
   owner: string,
   repo: string,
   prNumber: number,
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger = defaultLogger
 ): Promise<void> {
   const {data: pull} = await octokit.pulls.get({
     owner,
