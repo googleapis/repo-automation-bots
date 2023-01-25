@@ -155,6 +155,14 @@ export async function triggerPostProcessBuild(
     logger.error(`triggerPostProcessBuild: ${err.message}`, {
       stack: err.stack,
     });
+    if (err instanceof TimeoutError) {
+      return {
+        conclusion: 'failure',
+        summary: 'timed out waiting for build',
+        text: 'timed out waiting for build',
+        detailsURL,
+      };
+    }
     return buildFailureFrom(detailsURL);
   }
 }
@@ -200,6 +208,13 @@ function detailsUrlFrom(buildID: string, project: string): string {
   return `https://console.cloud.google.com/cloud-build/builds;region=global/${buildID}?project=${project}`;
 }
 
+class TimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = TimeoutError.name;
+  }
+}
+
 async function waitForBuild(
   projectId: string,
   id: string,
@@ -218,7 +233,7 @@ async function waitForBuild(
       }, delay);
     });
   }
-  throw Error(`timed out waiting for build ${id}`);
+  throw new TimeoutError(`timed out waiting for build ${id}`);
 }
 
 export async function getHeadCommit(
