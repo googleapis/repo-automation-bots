@@ -205,7 +205,9 @@ async function waitForBuild(
   id: string,
   client: CloudBuildClient
 ): Promise<google.devtools.cloudbuild.v1.IBuild> {
-  for (let i = 0; i < 60; i++) {
+  // This loop is set to equal a total of 3 hours, which should
+  // match the timeout in cloud-build/update-pr.yaml's timeout
+  for (let i = 0; i < 540; i++) {
     const [build] = await client.getBuild({projectId, id});
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
       return build;
