@@ -601,7 +601,8 @@ const runPostProcessor = async (
         detailsURL:
           'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
       },
-      octokit
+      octokit,
+      logger
     );
     return;
   }
@@ -619,7 +620,8 @@ const runPostProcessor = async (
         detailsURL:
           'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
       },
-      octokit
+      octokit,
+      logger
     );
     return;
   }
@@ -636,7 +638,8 @@ const runPostProcessor = async (
         detailsURL:
           'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
       },
-      octokit
+      octokit,
+      logger
     );
     return;
   }
@@ -655,7 +658,8 @@ const runPostProcessor = async (
         detailsURL:
           'https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md',
       },
-      octokit
+      octokit,
+      logger
     );
     return;
   }
@@ -678,7 +682,8 @@ const runPostProcessor = async (
         detailsURL:
           'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
       },
-      octokit
+      octokit,
+      logger
     );
     return;
   }
@@ -696,7 +701,8 @@ const runPostProcessor = async (
       trigger,
       defaultBranch: opts.defaultBranch,
     },
-    octokit
+    octokit,
+    logger
   );
 
   if (null === buildStatus) {
@@ -711,7 +717,8 @@ const runPostProcessor = async (
         detailsURL:
           'https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md',
       },
-      octokit
+      octokit,
+      logger
     );
     return;
   }
@@ -726,14 +733,16 @@ const runPostProcessor = async (
       title: `🦉 OwlBot - ${buildStatus.summary}`,
       detailsURL: buildStatus.detailsURL,
     },
-    octokit
+    octokit,
+    logger
   );
 
   await core.updatePullRequestAfterPostProcessor(
     opts.owner,
     opts.repo,
     opts.prNumber,
-    octokit
+    octokit,
+    logger
   );
 };
 
