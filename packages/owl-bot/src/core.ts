@@ -209,10 +209,7 @@ function detailsUrlFrom(buildID: string, project: string): string {
 }
 
 class TimeoutError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = TimeoutError.name;
-  }
+  name = 'TimeoutError';
 }
 
 async function waitForBuild(
