@@ -84,6 +84,10 @@ interface Token {
 
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
+// Check back on the build every 1/3 of a minute (20000ms)
+const PING_DELAY = 20000;
+// 60 min * 3 hours * 3 * 1/3s of a minute (3 hours)
+const TOTAL_PINGS = 3 * 60 * 3;
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
@@ -206,14 +210,16 @@ async function waitForBuild(
   id: string,
   client: CloudBuildClient
 ): Promise<google.devtools.cloudbuild.v1.IBuild> {
-  for (let i = 0; i < 60; i++) {
+  // This loop is set to equal a total of 3 hours, which should
+  // match the timeout in cloud-build/update-pr.yaml's timeout
+  for (let i = 0; i < TOTAL_PINGS; i++) {
     const [build] = await client.getBuild({projectId, id});
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
       return build;
     }
     // Wait a few seconds before checking the build status again:
     await new Promise(resolve => {
-      const delay = 20000;
+      const delay = PING_DELAY;
       setTimeout(() => {
         return resolve(undefined);
       }, delay);
