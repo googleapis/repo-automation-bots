@@ -160,7 +160,7 @@ export async function triggerPostProcessBuild(
     logger.error(`triggerPostProcessBuild: ${err.message}`, {
       stack: err.stack,
     });
-    return buildFailureFrom(detailsURL);
+    return buildFailureFrom(err, detailsURL);
   }
 }
 
@@ -190,19 +190,33 @@ function summarizeBuild(
   };
 }
 
-function buildFailureFrom(detailsUrl: string): BuildResponse {
-  return {
-    conclusion: 'failure',
-    summary: 'unknown build failure',
-    text: 'unknown build failure',
-    detailsURL: detailsUrl,
-  };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildFailureFrom(error: any, detailsUrl: string): BuildResponse {
+  if (typeof error.name === 'string' && typeof error.message === 'string') {
+    return {
+      conclusion: 'failure',
+      summary: error.name,
+      text: error.message,
+      detailsURL: detailsUrl,
+    };
+  } else {
+    return {
+      conclusion: 'failure',
+      summary: 'unknown build failure',
+      text: 'unknown build failure',
+      detailsURL: detailsUrl,
+    };
+  }
 }
 
 // Helper to build a link to the Cloud Build job, which peers in DPE
 // can use to view a given post processor run:
 function detailsUrlFrom(buildID: string, project: string): string {
   return `https://console.cloud.google.com/cloud-build/builds;region=global/${buildID}?project=${project}`;
+}
+
+class TimeoutError extends Error {
+  name = 'TimeoutError';
 }
 
 async function waitForBuild(
@@ -225,7 +239,7 @@ async function waitForBuild(
       }, delay);
     });
   }
-  throw Error(`timed out waiting for build ${id}`);
+  throw new TimeoutError(`timed out waiting for build ${id}`);
 }
 
 export async function getHeadCommit(
