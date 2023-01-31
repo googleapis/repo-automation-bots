@@ -120,9 +120,9 @@ cryptography==38.0.4 \
     # via
     #   gcp-releasetool
     #   secretstorage
-gcp-releasetool==1.10.2 \
-    --hash=sha256:6a6722680d2221096d4b37747ec368071c00eda0261ba6de3c75b233d867d6d1 \
-    --hash=sha256:e3098c6da3dcdb9dd02c56fc7949da02fa0c387f666998117031d64338ad34db
+gcp-releasetool==1.10.3 \
+    --hash=sha256:650ea36d0e1fc321171b062b6fcbbc9dff6a1971ee78a0354642b075ecef9f69 \
+    --hash=sha256:aeabbfaad59959eed229d33b47236c4527b69db4f2444438875eae7936c5ddd7
     # via -r requirements.in
 google-auth==2.15.0 \
     --hash=sha256:6897b93556d8d807ad70701bb89f000183aea366ca7ed94680828b37437a4994 \
@@ -136,12 +136,12 @@ importlib-metadata==4.13.0 \
     --hash=sha256:8a8a81bcf996e74fee46f0d16bd3eaa382a7eb20fd82445c3ad11f4090334116 \
     --hash=sha256:dd0173e8f150d6815e098fd354f6414b0f079af4644ddfe90c71e2fc6174346d
     # via keyring
-jaraco.classes==3.2.3 \
+jaraco-classes==3.2.3 \
     --hash=sha256:2353de3288bc6b82120752201c6b1c1a14b058267fa424ed5ce5984e3b922158 \
     --hash=sha256:89559fa5c1d3c34eff6f631ad80bb21f378dbcbb35dd161fd2c6b93f5be2f98a
     # via
     #   keyring
-    #   keyrings.alt
+    #   keyrings-alt
 jeepney==0.8.0 \
     --hash=sha256:5efe48d255973902f6badc3ce55e2aa6c5c3b3bc642059ef3a91247bcfcc5806 \
     --hash=sha256:c0a454ad016ca575060802ee4d590dd912e35c122fa04e70306de3d076cce755
@@ -156,7 +156,7 @@ keyring==23.11.0 \
     --hash=sha256:3dd30011d555f1345dec2c262f0153f2f0ca6bca041fb1dc4588349bb4c0ac1e \
     --hash=sha256:ad192263e2cdd5f12875dedc2da13534359a7e760e77f8d04b50968a821c2361
     # via gcp-releasetool
-keyrings.alt==4.2.0 \
+keyrings-alt==4.2.0 \
     --hash=sha256:2ba3d56441ba0637f5f9c096068f67010ac0453f9d0b626de2aa3019353b6431 \
     --hash=sha256:3d25912ed71d6deec85d7e6e867963e1357cd56186a41c9295b86939a5ebf85c
     # via -r requirements.in
@@ -205,7 +205,7 @@ markupsafe==2.1.1 \
 more-itertools==9.0.0 \
     --hash=sha256:250e83d7e81d0c87ca6bd942e6aeab8cc9daa6096d12c5308f3f92fa5e5c1f41 \
     --hash=sha256:5a6257e40878ef0520b1803990e3e22303a41b5714006c32a3fd8304b26ea1ab
-    # via jaraco.classes
+    # via jaraco-classes
 packaging==23.0 \
     --hash=sha256:714ac14496c3e68c99c29b00845f7a2b85f3bb6f1078fd9f72fd20f0570002b2 \
     --hash=sha256:b6ad297f8907de0fa2fe1ccbd26fdaf387f5f47c7275fedf8cce89f99446cf97
@@ -252,10 +252,6 @@ pyjwt==2.6.0 \
     --hash=sha256:69285c7e31fc44f68a1feb309e948e0df53259d579295e6cfe2b1792329f05fd \
     --hash=sha256:d83c3d892a77bbb74d3e1a2cfa90afaadb60945205d1095d9221f04466f64c14
     # via gcp-releasetool
-pyparsing==3.0.9 \
-    --hash=sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb \
-    --hash=sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc
-    # via packaging
 pyperclip==1.8.2 \
     --hash=sha256:105254a8b04934f0bc84e9c24eb360a591aaf6535c9def5f29d92af107a9bf57
     # via gcp-releasetool
