@@ -34,13 +34,20 @@ export class SecretRotator {
     serviceAccountEmail: string
   ) {
     const name = `projects/${serviceAccountProjectId}/serviceAccounts/${serviceAccountEmail}`;
-    const key = await client.projects.serviceAccounts.keys.create({
-      name,
-      requestBody: {
-        privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
-      },
-    });
+    let key;
+    try {
+      key = await client.projects.serviceAccounts.keys.create({
+        name,
+        requestBody: {
+          privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
+        },
+      });
+    } catch (err) {
+      logger.error(err as any);
+      throw err;
+    }
     if (!key.data.privateKeyData) {
+      logger.error('unable to return data');
       throw new Error('unable to return data');
     }
     return Buffer.from(key.data.privateKeyData, 'base64');
@@ -66,7 +73,12 @@ export class SecretRotator {
           logger.info(
             `deleting expired keys for ${serviceAccountEmail}: ${key.name}`
           );
-          await client.projects.serviceAccounts.keys.delete({name: key.name});
+          try {
+            await client.projects.serviceAccounts.keys.delete({name: key.name});
+          } catch (err) {
+            logger.error(err as any);
+            throw err;
+          }
         }
       }
     }
@@ -79,12 +91,18 @@ export class SecretRotator {
     data: Buffer
   ) {
     const parent = `projects/${secretManagerProjectId}/secrets/${secretName}`;
-    const [version] = await secretsClient.addSecretVersion({
-      parent,
-      payload: {
-        data,
-      },
-    });
+    let version;
+    try {
+      [version] = await secretsClient.addSecretVersion({
+        parent,
+        payload: {
+          data,
+        },
+      });
+    } catch (err) {
+      logger.error(err as any);
+      throw err;
+    }
     return version.name;
   }
 
