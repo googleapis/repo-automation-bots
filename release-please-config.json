@@ -30,6 +30,10 @@
     },
     "packages/datastore-lock": {
       "release-type": "node"
+    },
+    "packages/flakybot": {
+      "release-type": "go",
+      "component": "flakybot"
     }
   }
 }
