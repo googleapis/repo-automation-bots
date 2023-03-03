@@ -139,7 +139,7 @@ describe('check for config', () => {
       assert.strictEqual(isSchemaValid, '');
     });
 
-    it('should return empty string if title is a valid regex', async () => {
+    it('should return empty string if title matches regex', async () => {
       const isSchemaValid = await checkForValidSchema(7, '', '');
       assert.strictEqual(isSchemaValid, '');
     });
