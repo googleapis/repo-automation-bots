@@ -138,6 +138,11 @@ describe('check for config', () => {
       const isSchemaValid = await checkForValidSchema(3, '', '');
       assert.strictEqual(isSchemaValid, '');
     });
+
+    it('should return empty string if title is a valid regex', async () => {
+      const isSchemaValid = await checkForValidSchema(7, '', '');
+      assert.strictEqual(isSchemaValid, '');
+    });
   });
 
   describe('whether YAML file has valid schema V2', async () => {

@@ -191,7 +191,7 @@
               "properties": {
                 "title": {
                   "type": "string",
-                  "const": "^(fix|chore)\\(deps\\):"
+                  "pattern": "\\^\\(fix|chore\\)\\(deps\\):"
                 },
                 "changedFiles": {
                   "type": "array",
