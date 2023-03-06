@@ -182,6 +182,53 @@ additional context
 END_NESTED_COMMIT`
         );
       });
+      it('handles pull request already updated twice', () => {
+        const pullContent = resplit(
+          'feat: some feature\n\nadditional context',
+          WithRegenerateCheckbox.Yes
+        );
+        const prependedContent = prependCommitMessage(
+          'fix: some new feature\n\nmore additional context',
+          pullContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.Yes
+        );
+        const prependedContent2 = prependCommitMessage(
+          'fix: another new feature\n\nfurther context',
+          prependedContent,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.Yes
+        );
+        const prependedContent3 = prependCommitMessage(
+          'fix: yet another new feature\n\neven further context',
+          prependedContent2,
+          WithRegenerateCheckbox.Yes,
+          WithNestedCommitDelimiters.Yes
+        );
+        assert.strictEqual(
+          prependedContent3.title,
+          'fix: yet another new feature'
+        );
+        assert.strictEqual(
+          prependedContent3.body,
+          `- [ ] Regenerate this pull request now.
+
+even further context
+
+BEGIN_NESTED_COMMIT
+fix: another new feature
+further context
+END_NESTED_COMMIT
+BEGIN_NESTED_COMMIT
+fix: some new feature
+more additional context
+END_NESTED_COMMIT
+BEGIN_NESTED_COMMIT
+feat: some feature
+additional context
+END_NESTED_COMMIT`
+        );
+      });
     });
     describe('without nested delimiters', () => {
       it('handles an initial pull request content', () => {
