@@ -122,7 +122,7 @@ function publish(
   execSync: typeof childProcess.execSync,
   rmSync: typeof fs.rmSync
 ): ExecutionOutput {
-  const pkg = readFileSync(resolve(directory, 'package.json'))
+  const pkg = fs.readFileSync(resolve(directory, 'package.json'))
   if (pkg.private) {
     return {
       output: "skipping publication ${directory}/package.json is private"
