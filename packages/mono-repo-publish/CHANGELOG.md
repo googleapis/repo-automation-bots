@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.3](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.2...mono-repo-publish-v1.6.3) (2023-03-14)
+
+
+### Bug Fixes
+
+* skip publishing private packages ([d982753](https://github.com/googleapis/repo-automation-bots/commit/d982753b2bdc68564e83a0d5dc31165affa8482c))
+
 ## [1.6.2](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.1...mono-repo-publish-v1.6.2) (2023-01-19)
 
 
