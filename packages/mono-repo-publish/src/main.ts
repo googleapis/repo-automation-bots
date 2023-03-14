@@ -122,10 +122,14 @@ function publish(
   execSync: typeof childProcess.execSync,
   rmSync: typeof fs.rmSync
 ): ExecutionOutput {
-  const pkg = fs.readFileSync(resolve(directory, 'package.json'))
-  if (pkg.private) {
-    return {
-      output: "skipping publication ${directory}/package.json is private"
+  if (fs.existsSync(resolve(directory, 'package.json'))) {
+    const pkg = JSON.parse(
+      fs.readFileSync(resolve(directory, 'package.json'), 'utf-8')
+    );
+    if (pkg.private) {
+      return {
+        output: 'skipping publication ${directory}/package.json is private',
+      };
     }
   }
   const installCommand = stat(resolve(directory, 'package-lock.json'))
