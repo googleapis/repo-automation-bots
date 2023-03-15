@@ -152,7 +152,6 @@ export class PythonDependency extends Process implements LanguageRule {
       [
         'authorshipMatches',
         'titleMatches',
-        'fileCountMatches',
         'filePatternsMatch',
       ],
       [authorshipMatches, titleMatches, filePatternsMatch],
