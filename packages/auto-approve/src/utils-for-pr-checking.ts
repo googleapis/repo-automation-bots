@@ -283,19 +283,13 @@ export function doesDependencyChangeMatchPRTitleV2(
   const titleRegex = title.match(dependencyRegex);
 
   if (titleRegex) {
-    const matchesAdditionalRegex = true;
     dependencyName = titleRegex[2];
-
-    return (
-      versions.newDependencyName === versions.oldDependencyName &&
-      dependencyName === versions.newDependencyName &&
-      matchesAdditionalRegex
-    );
   }
-
-  return false;
+  return (
+    versions.newDependencyName === versions.oldDependencyName &&
+    dependencyName === versions.newDependencyName
+  );
 }
-
 /**
  * This function determines whether the major version of a package was changed.
  *

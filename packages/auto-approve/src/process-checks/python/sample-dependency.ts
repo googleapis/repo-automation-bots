@@ -71,6 +71,7 @@ export class PythonSampleDependency extends Process implements LanguageRule {
         fileRules: [
           {
             targetFileToCheck: /requirements.txt$/,
+            // @Python team: please add API paths here to exclude from auto-approving
             targetFileToExclude: [/airflow/, /composer/],
             // This would match: fix(deps): update dependency @octokit to v1
             dependencyTitle: new RegExp(
