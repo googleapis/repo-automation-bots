@@ -244,8 +244,30 @@ export function doesDependencyChangeMatchPRTitle(
   return false;
 }
 
+export function doesDependencyAgainstRegexes(
+  versions: Versions,
+  regexToInclude: RegExp[] | undefined,
+  regexToExclude: RegExp[] | undefined
+): boolean {
+  let doesDepIncludeRegexToInclude = true;
+  regexToInclude?.forEach(regex => {
+    if (!versions.newDependencyName.match(regex)) {
+      doesDepIncludeRegexToInclude = false;
+    }
+  });
+
+  let doesDepExcludeRegexToExclude = true;
+  regexToExclude?.forEach(regex => {
+    if (versions.newDependencyName.match(regex)) {
+      doesDepExcludeRegexToExclude = false;
+    }
+  });
+
+  return doesDepExcludeRegexToExclude && doesDepIncludeRegexToInclude;
+}
+
 /**
- * This function checks whether the dependency stated in a given title was the one that was changed (non Java, see doesDependencyChangeMatchPRTitleJava)
+ * This function checks whether the dependency stated in a given title was the one that was changed (not Java, see doesDependencyChangeMatchPRTitleJava)
  *
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
  * @param dependencyRegex the regular exp to find the dependency within the title of the PR
@@ -261,11 +283,13 @@ export function doesDependencyChangeMatchPRTitleV2(
   const titleRegex = title.match(dependencyRegex);
 
   if (titleRegex) {
+    const matchesAdditionalRegex = true;
     dependencyName = titleRegex[2];
 
     return (
       versions.newDependencyName === versions.oldDependencyName &&
-      dependencyName === versions.newDependencyName
+      dependencyName === versions.newDependencyName &&
+      matchesAdditionalRegex
     );
   }
 

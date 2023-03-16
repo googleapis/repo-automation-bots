@@ -34,10 +34,12 @@ export interface FileSpecificRule {
  * regex for the versions for those particular formats.
  */
 export interface FileRule {
+  targetFileToExclude?: RegExp[];
   oldVersion?: RegExp;
   newVersion?: RegExp;
   dependencyTitle?: RegExp;
   targetFileToCheck: RegExp;
+  regexForDepToInclude?: RegExp[];
 }
 
 /**
