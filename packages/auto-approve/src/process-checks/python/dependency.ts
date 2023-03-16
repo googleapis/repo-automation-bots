@@ -69,7 +69,7 @@ export class PythonDependency extends Process implements LanguageRule {
         ],
         fileRules: [
           {
-            targetFileToCheck: /^samples\/snippets\/requirements.txt$/,
+            targetFileToCheck: /requirements.txt$/,
             // This would match: fix(deps): update dependency @octokit to v1
             dependencyTitle: new RegExp(
               /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
@@ -149,11 +149,7 @@ export class PythonDependency extends Process implements LanguageRule {
     }
 
     reportIndividualChecks(
-      [
-        'authorshipMatches',
-        'titleMatches',
-        'filePatternsMatch',
-      ],
+      ['authorshipMatches', 'titleMatches', 'filePatternsMatch'],
       [authorshipMatches, titleMatches, filePatternsMatch],
       this.incomingPR.repoOwner,
       this.incomingPR.repoName,
