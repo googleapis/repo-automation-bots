@@ -136,8 +136,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         );
         wasNotAdded = false;
       }
-      if (cleanUpOtherLabels.length) {
-        for (const dirtyLabel of cleanUpOtherLabels) {
+      for (const dirtyLabel of cleanUpOtherLabels) {
           await context.octokit.issues
             .removeLabel({
               owner,
@@ -146,7 +145,6 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
               name: dirtyLabel.name,
             })
             .catch(logger.error);
-        }
       }
     } else {
       await context.octokit.issues
