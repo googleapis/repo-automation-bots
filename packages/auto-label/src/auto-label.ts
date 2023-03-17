@@ -137,14 +137,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         wasNotAdded = false;
       }
       for (const dirtyLabel of cleanUpOtherLabels) {
-          await context.octokit.issues
-            .removeLabel({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              name: dirtyLabel.name,
-            })
-            .catch(logger.error);
+        await context.octokit.issues
+          .removeLabel({
+            owner,
+            repo,
+            issue_number: issueNumber,
+            name: dirtyLabel.name,
+          })
+          .catch(logger.error);
       }
     } else {
       await context.octokit.issues
