@@ -53,12 +53,12 @@ Below is what each process checks for:
 * PythonDependency:
   - Checks that the author is 'renovate-bot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-  - Max 3 files changed in the PR
   - Each file path must match one of these regexps:
     - /requirements.txt$/
+    - /^samples/**/requirements*.txt$/
   - All files must: 
-    - Match this regexp: /^samples\/snippets\/requirements.txt$/
-    - Increase the non-major package version of a dependency
+    - Match this regexp: /requirements.txt$/
+    - Increase the package version of a dependency (major or nonmajor)
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
 * NodeDependency:
