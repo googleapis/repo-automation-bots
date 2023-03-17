@@ -272,7 +272,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
   }
 
   // Update all labels gathered so far if any
-  if (new_labels.length > 0) {
+  if (new_labels.length) {
     logger.info(
       `Labels added to PR# ${pull_number} in ${owner}/${repo} are ${JSON.stringify(
         new_labels
