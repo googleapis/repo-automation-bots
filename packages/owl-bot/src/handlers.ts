@@ -288,7 +288,6 @@ export async function refreshConfigs(
   };
 
   const {lock, yamls, badConfigs} = await fetchConfigs(githubRepo, commitHash);
-  console.log(badConfigs);
   if (lock) {
     newConfigs.lock = lock;
   }
@@ -305,7 +304,6 @@ export async function refreshConfigs(
   if (stored) {
     logger.info(`Stored new configs for ${repoFull}`);
     for (const badConfig of badConfigs) {
-      console.log(badConfig);
       if (!CONFIG_PATHS_TO_SKIP.includes(badConfig.path)) {
         await createIssueIfTitleDoesntExist(
           octokit,
