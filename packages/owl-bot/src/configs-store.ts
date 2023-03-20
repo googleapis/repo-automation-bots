@@ -162,6 +162,8 @@ export function collectConfigs(dir: string): CollectedConfigs {
   }
   // .OwlBot.yamls may be scattered throughout the directory.  Find them.
   const yamlPaths = glob.sync(path.join('**', '.OwlBot.yaml'), {cwd: dir});
+  console.log(yamlPaths);
+  console.log(dir);
   // Glob ignores .dot files, and we need to look in the .github directory.
   yamlPaths.push(
     ...glob.sync(path.join('.github', '**', '.OwlBot.yaml'), {cwd: dir})

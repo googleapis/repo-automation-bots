@@ -31,6 +31,9 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
+export const CONFIG_PATHS_TO_SKIP = [
+  'packages/gapic-node-templating/templates/bootstrap-templates/.OwlBot.yaml',
+];
 /**
  * Invoked when a new pubsub message arrives because a new post processor
  * docker image has been published to Google Container Registry.
@@ -285,6 +288,7 @@ export async function refreshConfigs(
   };
 
   const {lock, yamls, badConfigs} = await fetchConfigs(githubRepo, commitHash);
+  console.log(badConfigs);
   if (lock) {
     newConfigs.lock = lock;
   }
@@ -301,16 +305,19 @@ export async function refreshConfigs(
   if (stored) {
     logger.info(`Stored new configs for ${repoFull}`);
     for (const badConfig of badConfigs) {
-      await createIssueIfTitleDoesntExist(
-        octokit,
-        githubRepo.owner,
-        githubRepo.repo,
-        badConfig.path + ' is broken.',
-        [
-          'This repo will not receive automatic updates until this issue is fixed.\n',
-          ...badConfig.errorMessages,
-        ].join('\n* ')
-      );
+      console.log(badConfig);
+      if (!CONFIG_PATHS_TO_SKIP.includes(badConfig.path)) {
+        await createIssueIfTitleDoesntExist(
+          octokit,
+          githubRepo.owner,
+          githubRepo.repo,
+          badConfig.path + ' is broken.',
+          [
+            'This repo will not receive automatic updates until this issue is fixed.\n',
+            ...badConfig.errorMessages,
+          ].join('\n* ')
+        );
+      }
     }
   } else {
     logger.info(
