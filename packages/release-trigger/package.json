@@ -30,10 +30,11 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^6.1.0",
     "@google-automations/datastore-lock": "^4.0.0",
-    "gcf-utils": "^14.0.1"
+    "gcf-utils": "^14.2.1",
+    "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
@@ -42,9 +43,9 @@
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
-    "sinon": "^14.0.0",
+    "sinon": "^15.0.0",
     "smee-client": "^1.2.3",
-    "typescript": "~4.8.2"
+    "typescript": "~4.9.0"
   },
   "engines": {
     "node": ">= 14"

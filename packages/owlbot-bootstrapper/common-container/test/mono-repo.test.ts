@@ -63,43 +63,58 @@ describe('MonoRepo class', async () => {
   it('should create the right type of object', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      'github.com/soficodes/nodejs-kms.git',
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
       'google.cloud.kms.v1',
+      'nodejs-kms',
+      'soficodes',
       octokit
     );
 
     const expectation = {
       language: Language.Nodejs,
-      repoToCloneUrl: 'github.com/soficodes/nodejs-kms.git',
+      repoToCloneUrl: 'git@github.com/soficodes/nodejs-kms.git',
       githubToken: 'ghs_1234',
-      octokit,
       repoName: 'nodejs-kms',
+      repoOrg: 'soficodes',
+      octokit,
     };
 
     assert.deepStrictEqual(monoRepo.language, expectation.language);
     assert.deepStrictEqual(monoRepo.repoToCloneUrl, expectation.repoToCloneUrl);
     assert.deepStrictEqual(monoRepo.githubToken, expectation.githubToken);
     assert.deepStrictEqual(monoRepo.octokit, expectation.octokit);
+    assert.deepStrictEqual(monoRepo.repoName, expectation.repoName);
+    assert.deepStrictEqual(monoRepo.repoOrg, expectation.repoOrg);
     assert.deepStrictEqual(monoRepo.repoName, 'nodejs-kms');
   });
 
   it('should clone a given repo', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      'github.com/soficodes/nodejs-kms.git',
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
+      'nodejs-kms',
+      'soficodes',
       'google.cloud.kms.v1',
       octokit
     );
 
-    await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
+    await monoRepo._cloneRepo(
+      'ab123',
+      repoToClonePath,
+      directoryPath,
+      'monoRepoDir',
+      'monoRepoName'
+    );
 
     assert.ok(fs.statSync(`${directoryPath}/${FAKE_REPO_NAME}`));
   });
 
   it('opens a PR against the main branch', async () => {
     const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/nodejs-kms')
+      .reply(200, {default_branch: 'main'})
       .post('/repos/googleapis/nodejs-kms/pulls')
       .reply(201);
 
@@ -117,27 +132,40 @@ describe('MonoRepo class', async () => {
   it('should open a branch, then commit and push to that branch', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      'github.com/soficodes/nodejs-kms.git',
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
+      'nodejs-kms',
+      'soficodes',
       'google.cloud.kms.v1',
       octokit
     );
 
-    await monoRepo._cloneRepo('ab123', repoToClonePath, directoryPath);
-    await utils.openABranch(FAKE_REPO_NAME, directoryPath);
+    await monoRepo._cloneRepo(
+      'ab123',
+      repoToClonePath,
+      directoryPath,
+      'monoRepoDir',
+      'monoRepoName'
+    );
+    const branchName = await utils.openABranch(
+      FAKE_REPO_NAME,
+      `${directoryPath}/${FAKE_REPO_NAME}`
+    );
+    await utils.writeToWellKnownFile(
+      {branchName},
+      `${directoryPath}/interContainerVars.json`
+    );
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
     const contents = utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+      `${directoryPath}/interContainerVars.json`
     );
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
-      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      `${directoryPath}/interContainerVars.json`,
       JSON.stringify(contents, null, 4)
     );
     const interContainerVars = utils.getWellKnownFileContents(
-      directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+      `${directoryPath}/interContainerVars.json`
     );
     const copyTagInfo = utils.getCopyTagText(
       '6dcb09b5b57875f334f61aebed695e2e4193db5e',
@@ -145,8 +173,7 @@ describe('MonoRepo class', async () => {
     );
     await monoRepo._commitAndPushToBranch(
       interContainerVars.branchName,
-      FAKE_REPO_NAME,
-      directoryPath,
+      `${directoryPath}/${FAKE_REPO_NAME}`,
       copyTagInfo
     );
 
@@ -182,33 +209,44 @@ describe('MonoRepo class', async () => {
   it('should open a branch, then commit and push to that branch in the composite workflow', async () => {
     const monoRepo = new MonoRepo(
       'nodejs' as Language,
-      repoToClonePath,
+      'git@github.com/soficodes/nodejs-kms.git',
       'ghs_1234',
+      'nodejs-kms',
+      'soficodes',
       'google.cloud.kms.v1',
       octokit
     );
     const scope = nock('https://api.github.com')
       .get('/repos/googleapis/googleapis-gen/commits')
       .reply(201, {sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'})
+      .get(`/repos/googleapis/${FAKE_REPO_NAME}`)
+      .reply(200, {default_branch: 'main'})
       .post(`/repos/googleapis/${FAKE_REPO_NAME}/pulls`)
       .reply(201, {number: 1})
       .post(`/repos/googleapis/${FAKE_REPO_NAME}/issues/1/labels`)
       .reply(201);
 
     monoRepo.repoName = FAKE_REPO_NAME;
-    await monoRepo.cloneRepoAndOpenBranch(directoryPath);
-    const contents = utils.getWellKnownFileContents(
+    monoRepo.repoToCloneUrl = repoToClonePath;
+    await monoRepo.cloneRepoAndOpenBranch(
       directoryPath,
-      utils.INTER_CONTAINER_VARS_FILE
+      `${directoryPath}/${FAKE_REPO_NAME}`,
+      `${directoryPath}/interContainerVars.json`
+    );
+    const contents = utils.getWellKnownFileContents(
+      `${directoryPath}/interContainerVars.json`
     );
     contents.owlbotYamlPath = 'packages/google-cloud-kms/.github/.OwlBot.yaml';
     fs.writeFileSync(
-      `${directoryPath}/${utils.INTER_CONTAINER_VARS_FILE}`,
+      `${directoryPath}/interContainerVars.json`,
       JSON.stringify(contents, null, 4)
     );
 
     fs.writeFileSync(`${directoryPath}/${FAKE_REPO_NAME}/README.md`, 'hello!');
-    await monoRepo.pushToBranchAndOpenPR(directoryPath);
+    await monoRepo.pushToBranchAndOpenPR(
+      `${directoryPath}/${FAKE_REPO_NAME}`,
+      `${directoryPath}/interContainerVars.json`
+    );
 
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,

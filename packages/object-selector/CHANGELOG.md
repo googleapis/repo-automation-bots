@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.0.2](https://github.com/googleapis/repo-automation-bots/compare/object-selector-v3.0.1...object-selector-v3.0.2) (2023-01-10)
+
+
+### Bug Fixes
+
+* update gcf-utils to update dependency on jsonwebtoken ([#4919](https://github.com/googleapis/repo-automation-bots/issues/4919)) ([b1d4e4b](https://github.com/googleapis/repo-automation-bots/commit/b1d4e4bb9253420cfa8f8ad13f4ec3e9bb9548a3))
+
+## [3.0.1](https://github.com/googleapis/repo-automation-bots/compare/object-selector-v3.0.0...object-selector-v3.0.1) (2023-01-04)
+
+
+### Bug Fixes
+
+* upgrade jsonwebtoken to 9.0.0 ([#4820](https://github.com/googleapis/repo-automation-bots/issues/4820)) ([ab1314f](https://github.com/googleapis/repo-automation-bots/commit/ab1314f4b72a86ec90ddf785d7a939ff5877153e))
+
 ## [3.0.0](https://github.com/googleapis/repo-automation-bots/compare/object-selector-v2.0.0...object-selector-v3.0.0) (2022-08-15)
 
 

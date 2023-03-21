@@ -35,6 +35,20 @@ steps:
     - "$_INSTALLATION_ID'"
     - "--buildId"
     - "$BUILD_ID"
+    - "--monoRepoDir"
+    - "$_MONO_REPO_DIR"
+    - "--monoRepoPath"
+    - "$_MONO_REPO_PATH"
+    - "--monoRepoName"
+    - "$_MONO_REPO_NAME"
+    - "--monoRepoOrg"
+    - "$_MONO_REPO_ORG"
+    - "--serviceConfigPath"
+    - "$_SERVICE_CONFIG_PATH"
+    - "--interContainerVarsPath"
+    - "$_INTER_CONTAINER_VARS_PATH"
+    - "--skipIssueOnFailure"
+    - "$_SKIP_ISSUE_ON_FAILURE"
   # Generates the basic files necessary for a minimal implementation of a library
   # Current working directory contains the branch of the target repo in branchName.md
   # Keeping this as env variables so as to not force parsing on language-specific containers;
@@ -47,6 +61,9 @@ steps:
     - 'APP_INSTALLATION_ID=$_INSTALLATION_ID'
     - 'BUILD_ID=$BUILD_ID'
     - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+    - 'MONO_REPO_PATH=$_MONO_REPO_PATH'
+    - 'SERVICE_CONFIG_PATH=$_SERVICE_CONFIG_PATH'
+    - 'INTER_CONTAINER_VARS_PATH=$_INTER_CONTAINER_VARS_PATH'
   # Commits and pushes changes to a branch; if the repo is nonempty, opens a PR
   - name: ${_CONTAINER}
     args:
@@ -63,4 +80,18 @@ steps:
     - "$_INSTALLATION_ID'"
     - "--buildId"
     - "$BUILD_ID"
+    - "--monoRepoDir"
+    - "$_MONO_REPO_DIR"
+    - "--monoRepoPath"
+    - "$_MONO_REPO_PATH"
+    - "--monoRepoName"
+    - "$_MONO_REPO_NAME"
+    - "--monoRepoOrg"
+    - "$_MONO_REPO_ORG"
+    - "--serviceConfigPath"
+    - "$_SERVICE_CONFIG_PATH"
+    - "--interContainerVarsPath"
+    - "$_INTER_CONTAINER_VARS_PATH"
+    - "--skipIssueOnFailure"
+    - "$_SKIP_ISSUE_ON_FAILURE"
 

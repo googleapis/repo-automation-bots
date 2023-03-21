@@ -1,5 +1,26 @@
 # Changelog
 
+## [6.1.3](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.1.2...bot-config-utils-v6.1.3) (2023-01-10)
+
+
+### Bug Fixes
+
+* update gcf-utils to update dependency on jsonwebtoken ([#4919](https://github.com/googleapis/repo-automation-bots/issues/4919)) ([b1d4e4b](https://github.com/googleapis/repo-automation-bots/commit/b1d4e4bb9253420cfa8f8ad13f4ec3e9bb9548a3))
+
+## [6.1.2](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.1.1...bot-config-utils-v6.1.2) (2023-01-04)
+
+
+### Bug Fixes
+
+* upgrade jsonwebtoken to 9.0.0 ([#4820](https://github.com/googleapis/repo-automation-bots/issues/4820)) ([ab1314f](https://github.com/googleapis/repo-automation-bots/commit/ab1314f4b72a86ec90ddf785d7a939ff5877153e))
+
+## [6.1.1](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.1.0...bot-config-utils-v6.1.1) (2022-12-22)
+
+
+### Bug Fixes
+
+* pin typescript to 4.8.4 for four more bots ([#4806](https://github.com/googleapis/repo-automation-bots/issues/4806)) ([3f4d0b0](https://github.com/googleapis/repo-automation-bots/commit/3f4d0b03c14a80460d4269e174a3613454c7c530))
+
 ## [6.1.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.0.0...bot-config-utils-v6.1.0) (2022-08-19)
 
 

@@ -81,10 +81,10 @@ async function run(
     }
   ).argv;
 
-  const keyfile = argv.keyfile || 'key.pem';
+  const keyfile = (argv.keyfile as string) || 'key.pem';
   const project = argv.project as string;
-  const botname = argv.bot!;
-  const webhookSecret = argv.secret;
+  const botname = argv.bot! as string;
+  const webhookSecret = argv.secret as string;
   const id = Number(argv.id);
 
   await run(keyfile, webhookSecret, id, project, botname);

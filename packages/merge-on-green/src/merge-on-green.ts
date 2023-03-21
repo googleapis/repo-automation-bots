@@ -27,11 +27,11 @@ import {
   MERGE_ON_GREEN_LABEL_SECURE,
   MERGE_ON_GREEN_LABELS,
 } from './labels';
+import {forAllInAsyncGroups} from './parallel-work';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
-const WORKER_SIZE = 4;
 const MAX_ENTRIES = 25;
 
 handler.allowlist = [
@@ -392,30 +392,52 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
   watchedPRs: DatastorePR[],
   logger: GCFLogger
 ) {
-  while (watchedPRs.length) {
-    const work = watchedPRs.splice(0, WORKER_SIZE);
-    await Promise.all(
-      work.map(async wp => {
-        logger.info(`checking ${wp.url}, ${wp.installationId} for cleanup`);
-        if (!wp.installationId) {
-          logger.warn(`installationId is not provided for ${wp.url}, skipping`);
-          return;
-        }
-        const octokit = await getAuthenticatedOctokit(wp.installationId);
-        await handler.checkIfPRIsInvalid(
-          wp.owner,
-          wp.repo,
-          wp.number,
-          wp.label,
-          wp.reactionId,
-          wp.url,
-          octokit,
-          logger
-        );
-      })
+  async function cleanDatastoreItem(wp: DatastorePR) {
+    logger.info(`checking ${wp.url}, ${wp.installationId} for cleanup`);
+    if (!wp.installationId) {
+      logger.warn(`installationId is not provided for ${wp.url}, skipping`);
+      return;
+    }
+    const octokit = await getAuthenticatedOctokit(wp.installationId);
+    await handler.checkIfPRIsInvalid(
+      wp.owner,
+      wp.repo,
+      wp.number,
+      wp.label,
+      wp.reactionId,
+      wp.url,
+      octokit,
+      logger
     );
   }
+  await forAllInAsyncGroups(watchedPRs, cleanDatastoreItem, {
+    throwOnError: true,
+  });
 };
+
+/**
+ * Returns a new child logger with added PR contexst.
+ * @param {GCFLogger} logger The base logger
+ * @param {DatastorePR} watchedPR The pull request
+ * @returns {GCFLogger} New logger with added context
+ */
+function addPullRequestLoggerContext(
+  logger: GCFLogger,
+  watchedPR: DatastorePR
+): GCFLogger {
+  // deep copy base logger bindings
+  const bindings = JSON.parse(JSON.stringify(logger.getBindings()));
+  if (!bindings.trigger) {
+    bindings.trigger = {};
+  }
+  bindings.trigger.trigger_source_repo = {
+    owner: watchedPR.owner,
+    repo_name: watchedPR.repo,
+    url: `https://github.com/${watchedPR.owner}/${watchedPR.repo}`,
+  };
+  bindings.pull_request_url = watchedPR.url;
+  return logger.child(bindings);
+}
 
 /**
  * Calls the main MOG logic, either deletes or keeps that PR in the Datastore table
@@ -429,49 +451,47 @@ handler.checkPRMergeability = async function checkPRMergeability(
   octokit: Octokit,
   logger: GCFLogger
 ) {
-  while (watchedPRs.length) {
-    const work = watchedPRs.splice(0, WORKER_SIZE);
-    await Promise.all(
-      work.map(async wp => {
-        logger.info(`checking ${wp.url}, ${wp.installationId}`);
+  async function checkSinglePR(wp: DatastorePR): Promise<void> {
+    const prLogger = addPullRequestLoggerContext(logger, wp);
+    prLogger.info(`checking ${wp.url}, ${wp.installationId}`);
+    try {
+      const remove = await mergeOnGreen(
+        wp.owner,
+        wp.repo,
+        wp.number,
+        [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
+        wp.state,
+        wp.branchProtection!,
+        wp.label,
+        wp.author,
+        octokit,
+        prLogger
+      );
+      if (remove || wp.state === 'stop') {
+        await handler.removePR(wp.url, prLogger);
         try {
-          const remove = await mergeOnGreen(
+          await handler.cleanUpPullRequest(
             wp.owner,
             wp.repo,
             wp.number,
-            [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
-            wp.state,
-            wp.branchProtection!,
             wp.label,
-            wp.author,
-            octokit,
-            logger
+            wp.reactionId,
+            octokit
           );
-          if (remove || wp.state === 'stop') {
-            await handler.removePR(wp.url, logger);
-            try {
-              await handler.cleanUpPullRequest(
-                wp.owner,
-                wp.repo,
-                wp.number,
-                wp.label,
-                wp.reactionId,
-                octokit
-              );
-            } catch (err) {
-              logger.warn(
-                `Failed to delete reaction and label on ${wp.owner}/${wp.repo}/${wp.number}`
-              );
-            }
-          }
-        } catch (e) {
-          const err = e as Error;
-          err.message = `Error in merge-on-green: \n\n${err.message}`;
-          logger.error(err);
+        } catch (err) {
+          prLogger.warn(
+            `Failed to delete reaction and label on ${wp.owner}/${wp.repo}/${wp.number}`
+          );
         }
-      })
-    );
+      }
+    } catch (e) {
+      const err = e as Error;
+      err.message = `Error in merge-on-green: \n\n${err.message}`;
+      prLogger.error(err);
+      throw e;
+    }
   }
+  await forAllInAsyncGroups(watchedPRs, checkSinglePR, {throwOnError: true});
 };
 
 /**

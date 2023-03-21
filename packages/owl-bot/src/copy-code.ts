@@ -29,12 +29,12 @@ import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {
   createPullRequestFromLastCommit,
-  EMPTY_REGENERATE_CHECKBOX_TEXT,
   Force,
-  REGENERATE_CHECKBOX_TEXT,
   resplit,
   WithRegenerateCheckbox,
   insertApiName,
+  prependCommitMessage,
+  WithNestedCommitDelimiters,
 } from './create-pr';
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {CopyStateStore} from './copy-state-store';
@@ -280,7 +280,8 @@ export function branchNameForCopies(yamlPaths: string[]): string {
 async function findAndAppendPullRequest(
   params: WorkingCopyParams,
   yamlPaths: string[],
-  logger: Logger = console
+  logger: Logger = console,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
 ): Promise<boolean> {
   const cmd = newCmd(logger);
   const octokit = await params.octokitFactory.getShortLivedOctokit();
@@ -301,7 +302,9 @@ async function findAndAppendPullRequest(
   }
 
   // Yes, there's a pull request.  Append a new commit to it.
-  logger.info(`Appending ${pull.html_url} with a new commit.`);
+  logger.info(
+    `Appending ${pull.html_url} with a new commit. Nested commit delimiters: ${withNestedCommitDelimiters}`
+  );
   cmd(`git checkout -t origin/${destBranch}`, {cwd: params.destDir});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -372,14 +375,11 @@ async function findAndAppendPullRequest(
   })
     .toString('utf8')
     .trim();
-  const {title, body} = resplit(
-    `${commitBody}\n\n` +
-      `${pull.title}\n` +
-      pull.body
-        ?.replace(REGENERATE_CHECKBOX_TEXT, '')
-        .replace(EMPTY_REGENERATE_CHECKBOX_TEXT, '')
-        .trim() ?? '',
-    WithRegenerateCheckbox.Yes
+  const {title, body} = prependCommitMessage(
+    commitBody,
+    {title: pull.title, body: pull.body ?? ''},
+    WithRegenerateCheckbox.Yes,
+    withNestedCommitDelimiters
   );
   const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
   const apiList = abbreviateApiListForTitle(apiNames as string[]);
@@ -403,6 +403,8 @@ export interface CopyParams {
   /** where to record pull requests appended by this function */
   copyStateStore: CopyStateStore;
   octokitFactory: OctokitFactory;
+  /** maximum number of yamls (APIs) to combine in a single pull request */
+  maxYamlCountPerPullRequest: number;
 }
 
 interface WorkingCopyParams extends CopyParams {
@@ -422,7 +424,8 @@ interface WorkingCopyParams extends CopyParams {
 export async function copyCodeAndAppendOrCreatePullRequest(
   params: CopyParams,
   yamlPaths: string[],
-  logger: Logger = console
+  logger: Logger = console,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
 ): Promise<void> {
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
@@ -444,47 +447,71 @@ export async function copyCodeAndAppendOrCreatePullRequest(
     .toString('utf-8')
     .trim();
 
-  // Examine all the yaml paths, looking for pull requests that are already
-  // open.
+  // Examine each yaml path, looking for an open pull request to append.
   const leftOvers: string[] = [];
   const wparams: WorkingCopyParams = {...params, destDir, workDir};
   for (const yamlPath of yamlPaths) {
-    if (!(await findAndAppendPullRequest(wparams, [yamlPath], logger))) {
+    if (
+      !(await findAndAppendPullRequest(
+        wparams,
+        [yamlPath],
+        logger,
+        withNestedCommitDelimiters
+      ))
+    ) {
       leftOvers.push(yamlPath);
     }
   }
   if (leftOvers.length === 0) {
     return; // Nothing more to do.
   }
+  // Look for a single, open pull request with the same set of yaml paths.
+  // Append it.
   if (isDeepStrictEqual(yamlPaths, leftOvers)) {
     // Don't repeat exactly the same search
   } else {
-    if (await findAndAppendPullRequest(wparams, leftOvers, logger)) {
+    if (
+      await findAndAppendPullRequest(
+        wparams,
+        leftOvers,
+        logger,
+        withNestedCommitDelimiters
+      )
+    ) {
       return; // Appended a pull request for all the left-over APIs.  Done.
     }
   }
 
   //////////////////////////////////////////////////////////////////
-  // Appended all the pull requests we could.  Create a pull request
+  // Appended all the pull requests we could.  Create pull requests
   // for the remaining yamls.
 
-  if (leftOvers.length === 0) {
-    return;
-  }
-  const destBranch = branchNameForCopies(leftOvers);
-  cmd(`git checkout ${defaultBranch}`, {cwd: destDir});
-  cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
+  leftOvers.sort(); // To make the batches more predictable for humans.
+  for (
+    let i = 0;
+    i < leftOvers.length;
+    i += params.maxYamlCountPerPullRequest
+  ) {
+    // Split the left overs into batches no larger than maxYamlCount APIs.
+    const leftOverBatch = leftOvers.slice(
+      i,
+      i + params.maxYamlCountPerPullRequest
+    );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reportError = async (e: any, yamlPath: string) => {
-    console.error(`Error parsing ${yamlPath}: ${e}`);
-    const sourceLink = sourceLinkFrom(params.sourceRepoCommitHash);
-    const octokit = await params.octokitFactory.getShortLivedOctokit();
-    const issue = await octokit.issues.create({
-      owner: params.destRepo.owner,
-      repo: params.destRepo.repo,
-      title: `${yamlPath} is missing or defective`,
-      body: `While attempting to copy files from
+    const destBranch = branchNameForCopies(leftOverBatch);
+    cmd(`git checkout ${defaultBranch}`, {cwd: destDir});
+    cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const reportError = async (e: any, yamlPath: string) => {
+      console.error(`Error parsing ${yamlPath}: ${e}`);
+      const sourceLink = sourceLinkFrom(params.sourceRepoCommitHash);
+      const octokit = await params.octokitFactory.getShortLivedOctokit();
+      const issue = await octokit.issues.create({
+        owner: params.destRepo.owner,
+        repo: params.destRepo.repo,
+        title: `${yamlPath} is missing or defective`,
+        body: `While attempting to copy files from
 ${sourceLink}
 
 After fixing ${yamlPath}, re-attempt this copy by running the following
@@ -493,54 +520,57 @@ command in a local clone of this repo:
   docker run -v /repo:$(pwd) -w /repo gcr.io/repo-automation-bots/owl-bot -- copy-code \
     --source-repo-commit-hash ${params.sourceRepoCommitHash}
 \`\`\``,
-    });
-    const copyTag = copyTagFrom(yamlPath, params.sourceRepoCommitHash);
-    console.log(`Created issue ${issue.data.html_url}`);
-    await params.copyStateStore.recordBuildForCopy(
-      params.destRepo,
-      copyTag,
-      issue.data.html_url
+      });
+      const copyTag = copyTagFrom(yamlPath, params.sourceRepoCommitHash);
+      console.log(`Created issue ${issue.data.html_url}`);
+      await params.copyStateStore.recordBuildForCopy(
+        params.destRepo,
+        copyTag,
+        issue.data.html_url
+      );
+    };
+
+    // Copy the code from googleapis-gen.
+    const copiedYamls = await copyCodeIntoCommit(
+      wparams,
+      leftOverBatch,
+      reportError,
+      logger
     );
-  };
 
-  // Copy the code from googleapis-gen.
-  const copiedYamls = await copyCodeIntoCommit(
-    wparams,
-    leftOvers,
-    reportError,
-    logger
-  );
+    if (copiedYamls.length === 0) {
+      continue; // Nothing was copied; don't create a pull request.
+    }
 
-  if (copiedYamls.length === 0) {
-    return; // Nothing was copied; don't create a pull request.
-  }
-
-  // Create a pull request.
-  const apiNames = copiedYamls.map(tag => tag.yaml['api-name']).filter(Boolean);
-  const apiList = abbreviateApiListForTitle(apiNames as string[]);
-  const token = await params.octokitFactory.getGitHubShortLivedAccessToken();
-  const pushUrl = params.destRepo.getCloneUrl(token);
-  const pull = await createPullRequestFromLastCommit(
-    params.destRepo.owner,
-    params.destRepo.repo,
-    destDir,
-    destBranch,
-    pushUrl,
-    [OWL_BOT_COPY],
-    await params.octokitFactory.getShortLivedOctokit(token),
-    WithRegenerateCheckbox.Yes,
-    apiList,
-    Force.Yes,
-    logger
-  );
-
-  // Record that we've copied the code.
-  for (const yaml of copiedYamls) {
-    await params.copyStateStore.recordBuildForCopy(
-      params.destRepo,
-      yaml.copyTag,
-      pull
+    // Create a pull request.
+    const apiNames = copiedYamls
+      .map(tag => tag.yaml['api-name'])
+      .filter(Boolean);
+    const apiList = abbreviateApiListForTitle(apiNames as string[]);
+    const token = await params.octokitFactory.getGitHubShortLivedAccessToken();
+    const pushUrl = params.destRepo.getCloneUrl(token);
+    const pull = await createPullRequestFromLastCommit(
+      params.destRepo.owner,
+      params.destRepo.repo,
+      destDir,
+      destBranch,
+      pushUrl,
+      [OWL_BOT_COPY],
+      await params.octokitFactory.getShortLivedOctokit(token),
+      WithRegenerateCheckbox.Yes,
+      apiList,
+      Force.Yes,
+      logger
     );
+
+    // Record that we've copied the code.
+    for (const yaml of copiedYamls) {
+      await params.copyStateStore.recordBuildForCopy(
+        params.destRepo,
+        yaml.copyTag,
+        pull
+      );
+    }
   }
 }
 

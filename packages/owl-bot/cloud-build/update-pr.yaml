@@ -49,7 +49,8 @@ steps:
       - -b
       - ${_PR_BRANCH}
       - --depth
-      - '2'
+      - '100'
+      - --no-single-branch
       - https://github.com/${_PR_OWNER}/${_PR_REPOSITORY}.git
     env:
       - 'HOME=/workspace'
@@ -59,6 +60,7 @@ steps:
     dir: '${_PR_REPOSITORY}'
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
+      - 'NEW_PULL_REQUEST_TEXT_PATH=/workspace/new_pull_request_text.txt'
 
   # Install credentials *after* running the container.
   - name: 'bash'
@@ -91,10 +93,13 @@ steps:
       - ${_PR}
       - --github-token
       - ${_GITHUB_TOKEN}
+      - --new-pull-request-text-path
+      - /workspace/new_pull_request_text.txt
+
     dir: ${_PR_REPOSITORY}
     env:
       - 'HOME=/workspace'
 
-# allow 80 minutes for the post-processor image to run
-timeout: '4800s'
+# allow 180 minutes (3 hours) for the post-processor image to run
+timeout: '10800s'
 logsBucket: 'gs://repo-automation-bots-post-processor-logs'

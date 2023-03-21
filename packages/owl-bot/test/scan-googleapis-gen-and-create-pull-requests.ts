@@ -34,7 +34,10 @@ import {
 } from './fake-octokit';
 import tmp from 'tmp';
 import {copyTagFrom} from '../src/copy-code';
-import {EMPTY_REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
+import {
+  EMPTY_REGENERATE_CHECKBOX_TEXT,
+  WithNestedCommitDelimiters,
+} from '../src/create-pr';
 import {FakeCopyStateStore} from '../src/fake-copy-state-store';
 
 // Use anys to mock parts of the octokit API.
@@ -315,6 +318,48 @@ Copy-Tag: ${copyTag}`
     assert.strictEqual(copyStateStore.store.size, 2);
   });
 
+  it('copies files and creates 2 pull requests when maxYamlCountPerPullRequest=1', async () => {
+    const anotherYaml: OwlBotYaml = {
+      'deep-copy-regex': [
+        {
+          source: '/b.txt',
+          dest: '/another/b.txt',
+        },
+      ],
+    };
+    const [, configsStore] = makeDestRepoAndConfigsStore(bYaml, [
+      {
+        yaml: anotherYaml,
+        path: 'SpellCheck/.OwlBot.yaml',
+      },
+    ]);
+
+    const pulls = new FakePulls();
+    pulls.list = () => {
+      return Promise.resolve({data: []});
+    };
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore,
+      1, // combinePullsThreshold
+      undefined,
+      undefined,
+      1 // maxYamlCountPerPullRequest
+    );
+
+    // Confirm it created two pull requests.
+    assert.strictEqual(pulls.pulls.length, 2);
+
+    // Confirm both were recorded in the copy state store.
+    assert.strictEqual(copyStateStore.store.size, 2);
+  });
+
   it('copies files and appends a pull request', async () => {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 
@@ -380,6 +425,78 @@ Copy-Tag: ${copyTag}`
       configsStore,
       undefined,
       copyStateStore
+    );
+    assert.strictEqual(prCount, 0);
+  });
+
+  it('copies files and appends a pull request with nested commit tags', async () => {
+    const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+
+    // Create a branch in the dest dir for the existing pull request.
+    const destDir = destRepo.getCloneUrl();
+    cmd('git branch owl-bot-copy', {cwd: destDir});
+
+    // Create an existing pull request to be appended.
+    const pullBody = 'This is the greatest pull request ever.';
+    const pulls = new FakePulls();
+    pulls.create({
+      owner: 'googleapis',
+      repo: 'nodejs-spell-check',
+      title: 'q',
+      body: pullBody,
+      head: 'owl-bot-copy',
+    });
+
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore
+    );
+
+    // Confirm it updated the body.
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
+    assert.strictEqual(pulls.updates.length, 1);
+    assert.deepStrictEqual(pulls.updates, [
+      {
+        owner: 'googleapis',
+        repo: 'nodejs-spell-check',
+        pull_number: 1,
+        body:
+          '- [ ] Regenerate this pull request now.\n\n' +
+          `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}\n` +
+          `Copy-Tag: ${copyTag}\n\nq\nThis is the greatest pull request ever.`,
+        title: 'b',
+      },
+    ]);
+
+    // Confirm the pull request branch contains the new file.
+    cmd(`git checkout ${pulls.pulls[0].head}`, {cwd: destDir});
+    const bpath = path.join(destDir, 'src', 'b.txt');
+    assert.strictEqual(fs.readFileSync(bpath).toString('utf8'), '2');
+
+    // But of course the main branch doesn't have it until the PR is merged.
+    cmd('git checkout main', {cwd: destDir});
+    assert.ok(!cc.stat(bpath));
+
+    // Confirm the PR was recorded in firestore.
+    assert.ok(await copyStateStore.findBuildForCopy(destRepo, copyTag));
+
+    // Because the PR is recorded in firestore, a second call should skip
+    // creating a new one.
+    const prCount = await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore,
+      undefined,
+      undefined,
+      WithNestedCommitDelimiters.Yes
     );
     assert.strictEqual(prCount, 0);
   });

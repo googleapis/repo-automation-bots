@@ -55,9 +55,12 @@ export async function scanPullRequest(
   context: Context<'pull_request'> | Context<'issue_comment'>,
   pull_request: PullRequest,
   logger: GCFLogger,
-  octokit: Octokit
+  octokit: Octokit,
+  always_check_pr_title = false
 ) {
   // Fetch last 100 commits stored on a specific PR.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const commitParams = context.repo({
     pull_number: pull_request.number,
     per_page: 100,
@@ -81,6 +84,7 @@ export async function scanPullRequest(
   }
 
   let message = pull_request.title;
+  let target = 'The PR title';
 
   const hasAutomergeLabel = pull_request.labels
     .map((label: Label) => {
@@ -108,9 +112,15 @@ export async function scanPullRequest(
   // This is done becaues GitHub uses the commit title, rather than the
   // issue title, if there is only one commit:
   let usingCommitMessage = false;
-  if (commits.length === 1 && !hasAutomergeLabel && !hasAutoMergeEnabled) {
+  if (
+    commits.length === 1 &&
+    !hasAutomergeLabel &&
+    !hasAutoMergeEnabled &&
+    always_check_pr_title !== true
+  ) {
     message = commits[0].commit.message;
     usingCommitMessage = true;
+    target = 'Some of your commit messages';
   }
 
   let text = '';
@@ -180,9 +190,8 @@ export async function scanPullRequest(
   });
 
   if (lintError) {
-    let summary =
-      'Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\n';
-    if (commits.length === 1) {
+    let summary = `${target} failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\n`;
+    if (usingCommitMessage) {
       summary +=
         'Run `git commit --amend` and edit your message to match Conventional Commit guidelines.';
     } else {

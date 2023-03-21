@@ -36,6 +36,7 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   allowedCopyrightHolders: ['Google LLC'],
   allowedLicenses: ['Apache-2.0', 'MIT', 'BSD-3'],
   ignoreFiles: [],
+  ignoreLicenseYear: false,
   sourceFileExtensions: ['ts', 'js', 'java'],
 };
 
@@ -61,6 +62,10 @@ class Configuration {
     });
   }
 
+  ignoreLicenseYear(): boolean {
+    return this.options.ignoreLicenseYear;
+  }
+
   allowedLicense(license: LicenseType): boolean {
     return this.options.allowedLicenses.includes(license);
   }
@@ -70,7 +75,11 @@ class Configuration {
   }
 }
 
-export = (app: Probot) => {
+export default (app: Probot) => {
+  return appMain(app, () => new Date().getFullYear());
+};
+
+export const appMain = (app: Probot, getCurrentYear: () => number) => {
   app.on(
     [
       'pull_request.opened',
@@ -204,12 +213,14 @@ export = (app: Probot) => {
 
             // for new files, ensure the license year is the current year for new
             // files
-            const currentYear = new Date().getFullYear();
-            if (detectedLicense.year !== currentYear) {
-              lintError = true;
-              failureMessages.push(
-                `\`${file.filename}\` should have a copyright year of ${currentYear}`
-              );
+            if (!configuration.ignoreLicenseYear()) {
+              const currentYear = getCurrentYear();
+              if (detectedLicense.year !== currentYear) {
+                lintError = true;
+                failureMessages.push(
+                  `\`${file.filename}\` should have a copyright year of ${currentYear}`
+                );
+              }
             }
           }
         }

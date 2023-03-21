@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/cron-utils",
-  "version": "3.2.0",
+  "version": "3.2.2",
   "description": "Utilities for setting up bot crons",
   "scripts": {
     "compile": "tsc -p .",
@@ -17,7 +17,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@google-cloud/run": "^0.2.2",
+    "@google-cloud/run": "^0.3.0",
     "@google-cloud/scheduler": "^3.0.3",
     "google-auth-library": "^8.5.1",
     "js-yaml": "^4.1.0",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@octokit/rest": "^19.0.4",
     "@types/js-yaml": "^4.0.5",
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.12",
@@ -36,9 +36,9 @@
     "gts": "^4.0.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
-    "sinon": "^14.0.0",
+    "sinon": "^15.0.0",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.8.2"
+    "typescript": "^4.9.4"
   },
   "engines": {
     "node": ">= 14"

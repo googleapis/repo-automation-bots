@@ -17,6 +17,7 @@ import {GCFLogger} from '../src/logging/gcf-logger';
 import {describe, beforeEach, it} from 'mocha';
 import {ObjectWritableMock} from 'stream-mock';
 import {validateLogs, LogLine, logLevels} from './test-helpers';
+import assert from 'assert';
 
 describe('GCFLogger', () => {
   describe('gcf-util', () => {
@@ -26,7 +27,16 @@ describe('GCFLogger', () => {
   });
   describe('logger instance', () => {
     let destination: ObjectWritableMock;
-    let logger: GCFLogger & {[key: string]: Function};
+    let logger: GCFLogger;
+
+    beforeEach(() => {
+      destination = new ObjectWritableMock();
+      logger = new GCFLogger(destination) as GCFLogger & {
+        [key: string]: Function;
+      };
+    });
+
+    testAllLevels();
 
     function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
       try {
@@ -124,13 +134,30 @@ describe('GCFLogger', () => {
       });
     });
 
-    beforeEach(() => {
-      destination = new ObjectWritableMock();
-      logger = new GCFLogger(destination) as GCFLogger & {
-        [key: string]: Function;
-      };
+    describe('child', () => {
+      let childLogger: GCFLogger;
+      beforeEach(() => {
+        logger.addBindings({foo: 'bar'});
+        childLogger = logger.child({asdf: 'qwer'});
+      });
+      it('inherits destination from parent', () => {
+        logger.info('this is a test message');
+        childLogger.info('another test message');
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        assert.equal(loggedLines.length, 2);
+      });
+      it('does not affect original logger', () => {
+        logger.info('this is a test message');
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        assert.equal(loggedLines[0]['foo'], 'bar');
+        assert.equal(loggedLines[0]['asdf'], undefined);
+      });
+      it('preserves existing bindings', () => {
+        childLogger.warn('this is a child message');
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        assert.equal(loggedLines[0]['foo'], 'bar');
+        assert.equal(loggedLines[0]['asdf'], 'qwer');
+      });
     });
-
-    testAllLevels();
   });
 });

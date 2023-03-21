@@ -30,7 +30,7 @@ import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as gcfUtilsModule from 'gcf-utils';
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
-import myProbotApp from '../src/header-checker-lint';
+import {appMain} from '../src/header-checker-lint';
 import schema from '../src/config-schema.json';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -48,6 +48,7 @@ describe('HeaderCheckerLint', () => {
         }),
       },
     });
+    const myProbotApp = (app: Probot) => appMain(app, () => 2022);
     probot.load(myProbotApp);
   });
 
@@ -596,6 +597,37 @@ describe('HeaderCheckerLint', () => {
         .reply(200);
 
       await probot.receive({name: 'pull_request', payload, id: '867'});
+      requests.done();
+    });
+
+    it('sets a "success" context on PR, on wrong year with ignore flag set', async () => {
+      getConfigStub.resolves(null);
+      const config = {
+        ignoreLicenseYear: true,
+      };
+      getConfigStub.resolves(config);
+
+      const validFiles = require(resolve(
+        fixturesPath,
+        './valid_license_added'
+      ));
+      const blob = require(resolve(fixturesPath, './wrong_year'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, validFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/b1e607d638896d18374123d85e1021584d551354'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
   });

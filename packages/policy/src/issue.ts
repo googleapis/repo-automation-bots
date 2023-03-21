@@ -30,7 +30,6 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
 [Policy Bot](https://github.com/googleapis/repo-automation-bots/tree/main/packages/policy#policy-bot) found one or more issues with this repository.
 - [${result.hasMainDefault ? 'x' : ' '}] Default branch is 'main'
 - [${result.hasBranchProtection ? 'x' : ' '}] Branch protection is enabled
-- [${result.hasRenovateConfig ? 'x' : ' '}] Renovate bot is enabled
 - [${result.hasMergeCommitsDisabled ? 'x' : ' '}] Merge commits disabled
 - [${result.hasCodeowners ? 'x' : ' '}] There is a CODEOWNERS file
 - [${
@@ -66,7 +65,6 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
     result.hasCodeowners &&
     result.hasContributing &&
     result.hasMergeCommitsDisabled &&
-    result.hasRenovateConfig &&
     result.hasSecurityPolicy &&
     result.hasValidLicense &&
     result.hasCodeOfConduct &&

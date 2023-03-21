@@ -15,12 +15,10 @@
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
 import {Octokit} from '@octokit/rest';
-/* eslint-disable-next-line node/no-extraneous-import */
-import {RequestError} from '@octokit/request-error';
 import {getAuthenticatedOctokit, getContextLogger} from 'gcf-utils';
-import * as fileIterator from './file-iterator';
-import {Validate, ValidationResult} from './validate';
-import {IssueOpener} from './issue-opener';
+import {scanRepoAndOpenIssues} from './core';
+
+const DEFAULT_PRIMARY_BRANCH = 'main';
 
 /**
  * Main function, run on schedule and on PRs, checking validity of .repo-metadata.json.
@@ -32,6 +30,9 @@ export function handler(app: Probot) {
     const logger = getContextLogger(context);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
+    const branch =
+      context.payload.repository.default_branch ?? DEFAULT_PRIMARY_BRANCH;
+
     let octokit: Octokit;
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
@@ -41,39 +42,8 @@ export function handler(app: Probot) {
           ' We cannot authenticate Octokit.'
       );
     }
-    const iterator = new fileIterator.FileIterator(
-      owner,
-      repo,
-      octokit,
-      logger
-    );
-    const results: Array<ValidationResult> = [];
-    const validate = new Validate(octokit);
-    for await (const [path, metadata] of iterator.repoMetadata()) {
-      const result = await validate.validate(path, metadata);
-      if (result.status === 'error') {
-        results.push(result);
-      }
-    }
-    if (results.length === 0) {
-      logger.info(`no validation errors found for ${owner}/${repo}`);
-    } else {
-      logger.info(
-        `${results.length} validation errors found for ${owner}/${repo}`
-      );
-    }
-    const opener = new IssueOpener(owner, repo, octokit, logger);
-    try {
-      await opener.open(results);
-    } catch (e) {
-      if (e instanceof RequestError && e.status === 410) {
-        logger.warn(
-          `Issues are disabled on repo: ${owner}/${repo}, but would have opened an issue: ${e.request.body}`
-        );
-        return;
-      }
-      throw e;
-    }
+
+    await scanRepoAndOpenIssues(octokit, owner, repo, branch, logger);
   });
 
   // Adds failing check to pull requests if .repo-metadata.json is invalid.

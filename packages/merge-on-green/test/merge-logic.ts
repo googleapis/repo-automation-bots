@@ -24,6 +24,7 @@ import {
   Reviews,
   Comment,
   getLatestCommit,
+  cleanGHLinks,
 } from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import * as gcfUtilsModule from 'gcf-utils';
@@ -134,13 +135,14 @@ function getPR(
   mergeable: boolean,
   mergeableState: string,
   state: string,
-  labels: {name: string}[] = []
+  labels: {name: string}[] = [],
+  body: string | null | undefined = 'Test Body'
 ) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1')
     .reply(200, {
       title: 'Test PR',
-      body: 'Test Body',
+      body,
       state,
       mergeable,
       mergeable_state: mergeableState,
@@ -242,6 +244,43 @@ describe('merge-logic', () => {
       scopes.forEach(s => s.done());
     });
 
+    it('merges a PR with empty body on green', async () => {
+      const scopes = [
+        getRateLimit(5000),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        getPR(true, 'clean', 'open', [], /* body: */ null),
+        getCommentsOnPr([]),
+        merge(),
+        removeMogLabel('automerge'),
+        removeReaction(),
+      ];
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
     it('fails when a review has not been approved', async () => {
       const scopes = [
         getRateLimit(5000),
@@ -1017,6 +1056,69 @@ describe('merge-logic', () => {
       );
       lastCommitRequest.done();
       assert.match(lastCommit, /lastcommit/);
+    });
+  });
+
+  describe('cleans GH links from GH body', () => {
+    it('converts GH links to togithub.gom', async () => {
+      const bodyToClean =
+        'Reactor-Core 3.4.16 is part of 2020.0.17 Release Train (Europium SR17).' +
+        'This service release contains a few bugfixes and improvements.' +
+        "What's Changed" +
+        '✨ New features and improvements' +
+        'Improve BoundedElasticScheduler to be less blocking by @​simonbasle in https://github.com/reactor/reactor-core/pull/2909' +
+        'Add EmitFailureHandler.busyLoop flavor by @​Animesh27 in https://github.com/reactor/reactor-core/pull/2943' +
+        '🐞 Bug fixes' +
+        'Fix Mono.then not cancelling between Callable sources by @​simonbasle in https://github.com/reactor/reactor-core/pull/2934' +
+        '📖 Documentation, Tests and Build' +
+        'Update Gradle to v7.4 in https://github.com/reactor/reactor-core/pull/2922' +
+        '[doc] Correct flux subscribe example in faq by @​liukun2634 in https://github.com/reactor/reactor-core/pull/2924' +
+        'Show how-to-fix hints in CI when preliminary steps fail (check of license headers, api compatibility) by @​simonbasle in https://github.com/reactor/reactor-core/pull/2932' +
+        '[guide] Remove ref to Swing/SwtScheduler in addons appendix by @​simonbasle in https://github.com/reactor/reactor-core/pull/2959' +
+        '[build] Have jcstress part of slowerChecks by @​simonbasle in https://github.com/reactor/reactor-core/pull/2958' +
+        '🆙 Dependency Upgrades' +
+        'Update plugin spotless to v6.3.0 in https://github.com/reactor/reactor-core/pull/2925' +
+        'Update plugin bnd to v6.2.0 in https://github.com/reactor/reactor-core/pull/2941' +
+        'Update dependency org.awaitility:awaitility to v4.2.0 in https://github.com/reactor/reactor-core/pull/2945' +
+        'Update dependency ch.qos.logback:logback-classic to v1.2.11 in https://github.com/reactor/reactor-core/pull/2946' +
+        'Update dependency com.tngtech.archunit:archunit to v0.23.1 in https://github.com/reactor/reactor-core/pull/2940' +
+        'Update plugin japicmp to v0.4.0 in https://github.com/reactor/reactor-core/pull/2948' +
+        'Update dependency org.mockito:mockito-core to v4.4.0 in https://github.com/reactor/reactor-core/pull/2951' +
+        'Update plugin download to v5.0.2 in https://github.com/reactor/reactor-core/pull/2950' +
+        'New Contributors' +
+        '@​Animesh27 made their first contribution in https://github.com/reactor/reactor-core/pull/2943 👍' +
+        'Full Changelog: reactor/reactor-core@v3.4.15...v3.4.16';
+      const messageWithoutGHLinks = cleanGHLinks(bodyToClean);
+
+      const cleanedBody =
+        'Reactor-Core 3.4.16 is part of 2020.0.17 Release Train (Europium SR17).' +
+        'This service release contains a few bugfixes and improvements.' +
+        "What's Changed" +
+        '✨ New features and improvements' +
+        'Improve BoundedElasticScheduler to be less blocking by @​simonbasle in https://togithub.com/reactor/reactor-core/pull/2909' +
+        'Add EmitFailureHandler.busyLoop flavor by @​Animesh27 in https://togithub.com/reactor/reactor-core/pull/2943' +
+        '🐞 Bug fixes' +
+        'Fix Mono.then not cancelling between Callable sources by @​simonbasle in https://togithub.com/reactor/reactor-core/pull/2934' +
+        '📖 Documentation, Tests and Build' +
+        'Update Gradle to v7.4 in https://togithub.com/reactor/reactor-core/pull/2922' +
+        '[doc] Correct flux subscribe example in faq by @​liukun2634 in https://togithub.com/reactor/reactor-core/pull/2924' +
+        'Show how-to-fix hints in CI when preliminary steps fail (check of license headers, api compatibility) by @​simonbasle in https://togithub.com/reactor/reactor-core/pull/2932' +
+        '[guide] Remove ref to Swing/SwtScheduler in addons appendix by @​simonbasle in https://togithub.com/reactor/reactor-core/pull/2959' +
+        '[build] Have jcstress part of slowerChecks by @​simonbasle in https://togithub.com/reactor/reactor-core/pull/2958' +
+        '🆙 Dependency Upgrades' +
+        'Update plugin spotless to v6.3.0 in https://togithub.com/reactor/reactor-core/pull/2925' +
+        'Update plugin bnd to v6.2.0 in https://togithub.com/reactor/reactor-core/pull/2941' +
+        'Update dependency org.awaitility:awaitility to v4.2.0 in https://togithub.com/reactor/reactor-core/pull/2945' +
+        'Update dependency ch.qos.logback:logback-classic to v1.2.11 in https://togithub.com/reactor/reactor-core/pull/2946' +
+        'Update dependency com.tngtech.archunit:archunit to v0.23.1 in https://togithub.com/reactor/reactor-core/pull/2940' +
+        'Update plugin japicmp to v0.4.0 in https://togithub.com/reactor/reactor-core/pull/2948' +
+        'Update dependency org.mockito:mockito-core to v4.4.0 in https://togithub.com/reactor/reactor-core/pull/2951' +
+        'Update plugin download to v5.0.2 in https://togithub.com/reactor/reactor-core/pull/2950' +
+        'New Contributors' +
+        '@​Animesh27 made their first contribution in https://togithub.com/reactor/reactor-core/pull/2943 👍' +
+        'Full Changelog: reactor/reactor-core@v3.4.15...v3.4.16';
+
+      assert.deepStrictEqual(cleanedBody, messageWithoutGHLinks);
     });
   });
 });

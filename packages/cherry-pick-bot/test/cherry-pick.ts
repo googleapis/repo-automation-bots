@@ -21,6 +21,7 @@ import {
   parseCherryPickComment,
   cherryPickAsPullRequest,
   cherryPickCommits,
+  MergeConflictError,
 } from '../src/cherry-pick';
 import * as CherryPickModule from '../src/cherry-pick';
 import sinon from 'sinon';
@@ -43,6 +44,11 @@ describe('parseCherryPickComment', () => {
   it('handles version format', () => {
     const branch = parseCherryPickComment('\n/cherry-pick 2.1.x   ');
     assert.strictEqual(branch, '2.1.x');
+  });
+
+  it('handles forward slash format', () => {
+    const branch = parseCherryPickComment('\n/cherry-pick release/2.1.x   ');
+    assert.strictEqual(branch, 'release/2.1.x');
   });
 });
 
@@ -130,6 +136,60 @@ describe('cherryPickCommits', () => {
     assert.strictEqual(newCommits.length, 1);
     assert.strictEqual(newCommits[0].message, 'commit message for abc123');
     assert.strictEqual(newCommits[0].sha, 'newcommitsha2');
+    req.done();
+  });
+
+  it('should throw a MergeConflictError if there is a conflict', async () => {
+    const req = nock('https://api.github.com')
+      .get('/repos/testOwner/testRepo/git/ref/heads%2Ftarget-branch')
+      .reply(200, {object: {sha: 'devbranchsha'}})
+      .post('/repos/testOwner/testRepo/git/refs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200)
+      .get('/repos/testOwner/testRepo/git/commits/devbranchsha')
+      .reply(200, {
+        tree: {
+          sha: 'treesha',
+        },
+      })
+      .get('/repos/testOwner/testRepo/git/commits/abc123')
+      .reply(200, {
+        message: 'commit message for abc123',
+        author: {name: 'author-name', email: 'author@email.com'},
+        committer: {name: 'committer-name', email: 'committer@email.com'},
+        parents: [{sha: 'parentsha'}],
+      })
+      .post('/repos/testOwner/testRepo/git/commits', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200, {sha: 'newcommitsha'})
+      .patch(
+        '/repos/testOwner/testRepo/git/refs/heads%2Ftemp-target-branch',
+        body => {
+          snapshot(body);
+          return true;
+        }
+      )
+      .reply(200)
+      .post('/repos/testOwner/testRepo/merges', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(409, {message: 'Merge Conflict'});
+
+    const commits = ['abc123'];
+    await assert.rejects(async () => {
+      await cherryPickCommits(
+        octokit,
+        'testOwner',
+        'testRepo',
+        commits,
+        'target-branch'
+      );
+    }, MergeConflictError);
     req.done();
   });
 });

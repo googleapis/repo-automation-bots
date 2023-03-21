@@ -15,7 +15,7 @@ import {exec} from 'child_process';
 import {promisify} from 'util';
 const execAsync = promisify(exec);
 import {load} from 'js-yaml';
-import {logger} from 'gcf-utils';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
@@ -84,10 +84,15 @@ interface Token {
 
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
+// Check back on the build every 1/3 of a minute (20000ms)
+const PING_DELAY = 20000;
+// 60 min * 3 hours * 3 * 1/3s of a minute (3 hours)
+const TOTAL_PINGS = 3 * 60 * 3;
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
-  octokit?: Octokit
+  octokit?: Octokit,
+  logger: GCFLogger = defaultLogger
 ): Promise<BuildResponse | null> {
   const token = await core.getGitHubShortLivedAccessToken(
     args.privateKey,
@@ -155,7 +160,7 @@ export async function triggerPostProcessBuild(
     logger.error(`triggerPostProcessBuild: ${err.message}`, {
       stack: err.stack,
     });
-    return buildFailureFrom(detailsURL);
+    return buildFailureFrom(err, detailsURL);
   }
 }
 
@@ -185,13 +190,23 @@ function summarizeBuild(
   };
 }
 
-function buildFailureFrom(detailsUrl: string): BuildResponse {
-  return {
-    conclusion: 'failure',
-    summary: 'unknown build failure',
-    text: 'unknown build failure',
-    detailsURL: detailsUrl,
-  };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildFailureFrom(error: any, detailsUrl: string): BuildResponse {
+  if (typeof error.name === 'string' && typeof error.message === 'string') {
+    return {
+      conclusion: 'failure',
+      summary: error.name,
+      text: error.message,
+      detailsURL: detailsUrl,
+    };
+  } else {
+    return {
+      conclusion: 'failure',
+      summary: 'unknown build failure',
+      text: 'unknown build failure',
+      detailsURL: detailsUrl,
+    };
+  }
 }
 
 // Helper to build a link to the Cloud Build job, which peers in DPE
@@ -200,25 +215,31 @@ function detailsUrlFrom(buildID: string, project: string): string {
   return `https://console.cloud.google.com/cloud-build/builds;region=global/${buildID}?project=${project}`;
 }
 
+class TimeoutError extends Error {
+  name = 'TimeoutError';
+}
+
 async function waitForBuild(
   projectId: string,
   id: string,
   client: CloudBuildClient
 ): Promise<google.devtools.cloudbuild.v1.IBuild> {
-  for (let i = 0; i < 60; i++) {
+  // This loop is set to equal a total of 3 hours, which should
+  // match the timeout in cloud-build/update-pr.yaml's timeout
+  for (let i = 0; i < TOTAL_PINGS; i++) {
     const [build] = await client.getBuild({projectId, id});
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
       return build;
     }
     // Wait a few seconds before checking the build status again:
     await new Promise(resolve => {
-      const delay = 20000;
+      const delay = PING_DELAY;
       setTimeout(() => {
         return resolve(undefined);
       }, delay);
     });
   }
-  throw Error(`timed out waiting for build ${id}`);
+  throw new TimeoutError(`timed out waiting for build ${id}`);
 }
 
 export async function getHeadCommit(
@@ -242,7 +263,11 @@ export async function getHeadCommit(
   return headCommit;
 }
 
-export async function createCheck(args: CheckArgs, octokit?: Octokit) {
+export async function createCheck(
+  args: CheckArgs,
+  octokit?: Octokit,
+  logger: GCFLogger = defaultLogger
+) {
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit({
       privateKey: args.privateKey,
@@ -587,7 +612,8 @@ async function updatePullRequestAfterPostProcessor(
   owner: string,
   repo: string,
   prNumber: number,
-  octokit: Octokit
+  octokit: Octokit,
+  logger: GCFLogger = defaultLogger
 ): Promise<void> {
   const {data: pull} = await octokit.pulls.get({
     owner,

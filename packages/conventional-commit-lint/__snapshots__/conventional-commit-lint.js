@@ -33,7 +33,7 @@ exports['ConventionalCommitLint PR With Multiple Commits has an invalid pull req
   "name": "conventionalcommits.org",
   "output": {
     "title": "Commit message did not follow Conventional Commits",
-    "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nedit your pull request title to match Conventional Commit guidelines.",
+    "summary": "The PR title failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nedit your pull request title to match Conventional Commit guidelines.",
     "text": ":x: The following linting errors found:\n* subject may not be empty\n* type may not be empty\nfor the following input:\n\"*this is not a conventional commit*\"\n\n"
   }
 }

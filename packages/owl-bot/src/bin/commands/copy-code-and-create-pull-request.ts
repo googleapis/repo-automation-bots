@@ -19,12 +19,15 @@ import * as cc from '../../copy-code';
 import {octokitFactoryFrom, OctokitParams} from '../../octokit-util';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {FakeCopyStateStore} from '../../fake-copy-state-store';
+import {WithNestedCommitDelimiters} from '../../create-pr';
 
 interface Args extends OctokitParams {
   'source-repo': string;
   'source-repo-commit-hash': string;
   'dest-repo': string;
   'dest-owlbot-yaml': string;
+  'use-nested-commit-delimiters': boolean;
+  'max-yaml-count-per-pull-request': number;
 }
 
 export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
@@ -74,6 +77,20 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
         type: 'string',
         default: '.github/.OwlBot.yaml',
         demand: false,
+      })
+      .option('use-nested-commit-delimiters', {
+        describe:
+          'Whether to use BEGIN_NESTED_COMMIT delimiters when separating multiple commit messages',
+        type: 'boolean',
+        default: true,
+        demand: false,
+      })
+      .option('max-yaml-count-per-pull-request', {
+        describe:
+          'maximum number of yamls (APIs) to combine in a single pull request',
+        type: 'number',
+        default: Number.MAX_SAFE_INTEGER,
+        demand: false,
       });
   },
   async handler(argv) {
@@ -86,9 +103,15 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
       // and it shouldn't interfere with Owl Bot state.
       copyStateStore: new FakeCopyStateStore(),
       octokitFactory,
+      maxYamlCountPerPullRequest: argv['max-yaml-count-per-pull-request'],
     };
-    await cc.copyCodeAndAppendOrCreatePullRequest(params, [
-      argv['dest-owlbot-yaml'],
-    ]);
+    await cc.copyCodeAndAppendOrCreatePullRequest(
+      params,
+      [argv['dest-owlbot-yaml']],
+      undefined /* logger */,
+      argv['use-nested-commit-delimiters']
+        ? WithNestedCommitDelimiters.Yes
+        : WithNestedCommitDelimiters.No
+    );
   },
 };

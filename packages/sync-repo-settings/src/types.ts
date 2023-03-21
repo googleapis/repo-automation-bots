@@ -14,6 +14,10 @@
 
 export interface RepoConfig {
   /**
+   * Whether or not the sync-repo-settings bot is enabled.
+   */
+  enabled?: boolean;
+  /**
    * Whether or not squash-merging is enabled on this repository.
    */
   squashMergeAllowed?: boolean;
