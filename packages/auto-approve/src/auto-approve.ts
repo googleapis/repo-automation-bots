@@ -48,7 +48,9 @@ export async function authenticateWithSecret(
   projectId: String,
   secretName: String
 ): Promise<Octokit> {
-  const secretsClient = new SecretManagerV1.SecretManagerServiceClient();
+  const secretsClient = new SecretManagerV1.SecretManagerServiceClient({
+    fallback: 'rest',
+  });
   const name = `projects/${projectId}/secrets/${secretName}/versions/latest`;
   const [version] = await secretsClient.accessSecretVersion({
     name,
