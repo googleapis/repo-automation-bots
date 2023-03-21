@@ -47,7 +47,7 @@ export async function getServerlessSchedulerProxyUrl(
   projectId: string,
   region: string
 ): Promise<string | null> {
-  const client = new CloudRunV2Client.ServicesClient();
+  const client = new CloudRunV2Client.ServicesClient({fallback: 'rest'});
   const name = `projects/${projectId}/locations/${region}/services/serverless-scheduler-proxy`;
   const [service] = await client.getService({
     name,
@@ -93,7 +93,7 @@ export async function createOrUpdateCron(
   targetType = 'function'
 ): Promise<string | null> {
   console.log('creating or updating cron', cronEntry);
-  const client = new v1.CloudSchedulerClient();
+  const client = new v1.CloudSchedulerClient({fallback: 'rest'});
   const parent = client.locationPath(projectId, schedulerRegion);
   const jobName = client.jobPath(projectId, schedulerRegion, cronEntry.name);
   const targetUrl = `${baseTargetUrl}/v0`;

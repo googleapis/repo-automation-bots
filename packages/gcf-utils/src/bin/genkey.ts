@@ -29,8 +29,11 @@ async function run(
   const opts = project
     ? {
         projectId: project,
+        fallback: 'rest' as const,
       }
-    : undefined;
+    : {
+        fallback: 'rest' as const,
+      };
   const smclient = new v1.SecretManagerServiceClient(opts);
   await create(smclient, project, botname, blob);
 }
@@ -78,10 +81,10 @@ async function run(
     }
   ).argv;
 
-  const keyfile = argv.keyfile || 'key.pem';
+  const keyfile = (argv.keyfile as string) || 'key.pem';
   const project = argv.project as string;
-  const botname = argv.bot!;
-  const webhookSecret = argv.secret;
+  const botname = argv.bot! as string;
+  const webhookSecret = argv.secret as string;
   const id = Number(argv.id);
 
   await run(keyfile, webhookSecret, id, project, botname);
