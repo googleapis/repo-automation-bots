@@ -15,6 +15,8 @@
 import {Octokit} from '@octokit/rest';
 import {basename, extname} from 'path';
 import {Minimatch} from 'minimatch';
+/* eslint-disable-next-line node/no-extraneous-import */
+import {RequestError} from '@octokit/request-error';
 
 export const DEFAULT_FILE_MODE = '100644';
 
@@ -24,6 +26,15 @@ export class FileNotFoundError extends Error {
     super(`Failed to find file: ${path}`);
     this.path = path;
     this.name = FileNotFoundError.name;
+  }
+}
+
+export class BranchNotFoundError extends FileNotFoundError {
+  originalError: RequestError;
+  constructor(path: string, originalError: RequestError) {
+    super(path);
+    this.originalError = originalError;
+    this.name = BranchNotFoundError.name;
   }
 }
 
@@ -215,9 +226,18 @@ export class BranchFileCache {
     if (cached) {
       return cached;
     }
-    const fetched = await this.fetchFileContents(path);
-    this.cache.set(path, fetched);
-    return fetched;
+    try {
+      const fetched = await this.fetchFileContents(path);
+      this.cache.set(path, fetched);
+      return fetched;
+    } catch (e) {
+      const err = e as RequestError;
+      if (err.status === 404) {
+        throw new BranchNotFoundError(path, err);
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**
@@ -401,19 +421,30 @@ export class BranchFileCache {
     sha: string,
     recursive: boolean
   ): Promise<TreeResponse> {
-    const {
-      data: {tree, truncated},
-    } = await this.octokit.git.getTree({
-      owner: this.repository.owner,
-      repo: this.repository.repo,
-      tree_sha: sha,
-      // fetching tree non-recursively requires omitting the param
-      recursive: recursive ? 'true' : undefined,
-    });
-    return {
-      tree,
-      truncated,
-    };
+    try {
+      const {
+        data: {tree, truncated},
+      } = await this.octokit.git.getTree({
+        owner: this.repository.owner,
+        repo: this.repository.repo,
+        tree_sha: sha,
+        // fetching tree non-recursively requires omitting the param
+        recursive: recursive ? 'true' : undefined,
+      });
+      return {
+        tree,
+        truncated,
+      };
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 409) {
+        // handle empty repository
+        return {
+          tree: [],
+          truncated: false,
+        };
+      }
+      throw e;
+    }
   }
 
   /**

@@ -26,6 +26,7 @@ import {Octokit} from '@octokit/rest';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
+import * as assert from 'assert';
 import * as gcfUtilsModule from 'gcf-utils';
 import * as sinon from 'sinon';
 import yaml from 'js-yaml';
@@ -48,13 +49,13 @@ describe('ConventionalCommitLint', () => {
   let getAuthenticatedOctokitStub: sinon.SinonStub;
   const pr11 = require(resolve(fixturesPath, './pr11'));
 
-  function stubGoodConfig() {
+  function stubConfig(config_file = 'valid.yaml') {
     // Stub loading valid config from repository:
     const getConfigWithDefaultStub = sandbox.stub(
       configUtilsModule,
       'getConfigWithDefault'
     );
-    getConfigWithDefaultStub.resolves(loadConfig('valid.yaml'));
+    getConfigWithDefaultStub.resolves(loadConfig(config_file));
     // Stub a valid config update in the PR:
     const validateConfigStub = sandbox.stub(
       ConfigChecker.prototype,
@@ -89,7 +90,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('sets a "failure" context on PR, if commits fail linting', async () => {
-    stubGoodConfig();
+    stubConfig();
     addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithBadMessage = require(resolve(
       fixturesPath,
@@ -118,7 +119,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('adds a comment when the commit message and the PR title differ', async () => {
-    stubGoodConfig();
+    stubConfig();
     addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithCorrectMessage = require(resolve(
       fixturesPath,
@@ -146,8 +147,59 @@ describe('ConventionalCommitLint', () => {
     sinon.assert.calledOnce(addOrUpdateIssueCommentStub);
   });
 
+  it('should post "success" context on PR with always_check_pr_title set to true', async () => {
+    stubConfig('always_check_pr_title.yaml');
+    addOrUpdateIssueCommentStub.resolves(null);
+    const pr11WithCorrectMessage = require(resolve(
+      fixturesPath,
+      './pr11WithCorrectMessage'
+    ));
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize_valid_message'
+    ));
+    const invalidCommits = [
+      ...require(resolve(fixturesPath, './invalid_commit')),
+    ];
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, invalidCommits)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11WithCorrectMessage)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        assert.equal(body.conclusion, 'success');
+        return true;
+      })
+      .reply(200);
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+  });
+
+  it('should post "failure" context on PR with always_check_pr_title set to true', async () => {
+    stubConfig('always_check_pr_title.yaml');
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize_bad_message'
+    ));
+    const validCommits = [...require(resolve(fixturesPath, './valid_commit'))];
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, validCommits)
+      .get('/repos/bcoe/test-release-please/pulls/11')
+      .reply(200, pr11)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        assert.equal(body.conclusion, 'failure');
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+  });
+
   it('sets a "success" context on PR, if commit lint succeeds', async () => {
-    stubGoodConfig();
+    stubConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -170,7 +222,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('should handle a PR with no commits', async () => {
-    stubGoodConfig();
+    stubConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -184,7 +236,7 @@ describe('ConventionalCommitLint', () => {
 
   describe('PR With Multiple Commits', () => {
     it('has a valid pull request title', async () => {
-      stubGoodConfig();
+      stubConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_synchronize'
@@ -215,7 +267,7 @@ describe('ConventionalCommitLint', () => {
     });
 
     it('has an invalid pull request title', async () => {
-      stubGoodConfig();
+      stubConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_synchronize_invalid_title'
@@ -246,7 +298,7 @@ describe('ConventionalCommitLint', () => {
     });
 
     it('has a valid title, invalid commit, automerge label', async () => {
-      stubGoodConfig();
+      stubConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_automerge'
@@ -269,7 +321,7 @@ describe('ConventionalCommitLint', () => {
     });
 
     it('has a valid title, invalid commit, automerge enabled', async () => {
-      stubGoodConfig();
+      stubConfig();
       const payload = require(resolve(
         fixturesPath,
         './pull_request_synchronize'
@@ -293,7 +345,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('sets a "success" context on PR with very long lines', async () => {
-    stubGoodConfig();
+    stubConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
@@ -318,7 +370,7 @@ describe('ConventionalCommitLint', () => {
   });
 
   it('sets a "success" context on PR, if subject contains a full stop', async () => {
-    stubGoodConfig();
+    stubConfig();
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'

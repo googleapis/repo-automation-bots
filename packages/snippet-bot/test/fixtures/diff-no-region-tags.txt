@@ -1,0 +1,38 @@
+diff --git a/test.py b/test.py
+index 198d0257595..6048151ca9f 100644
+--- a/test.py
++++ b/test.py
+@@ -21,28 +21,28 @@
+
+
+ def incomplete_key(client):
+-    # It's not a region tag
++    # No region tags are edited
+     key = client.key('Task')
+-    # It's not a region tag
++    # No region tags are edited
+
+     return key
+
+
+ def named_key(client):
+-    # Not a region tag
++    # No region tags are edited
+     key = client.key('Task', 'sample_task')
+-    # Not a region tag
++    # No region tags are edited
+
+     return key
+
+
+ def key_with_parent(client):
+-    # Not a region tag
++    # No region tags are edited
+     key = client.key('TaskList', 'default', 'Task', 'sample_task')
+     # Alternatively
+     parent_key = client.key('TaskList', 'default')
+     key = client.key('Task', 'sample_task', parent=parent_key)
+-    # Not a region tag
++    # No region tags are edited
+
+     return key

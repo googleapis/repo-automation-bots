@@ -27,6 +27,7 @@ import {newCmd} from './cmd';
 import {CopyStateStore} from './copy-state-store';
 import {GithubRepo} from './github-repo';
 import {Logger, LoggerWithTimestamp} from './logger';
+import {WithNestedCommitDelimiters} from './create-pr';
 
 interface Todo {
   repo: GithubRepo;
@@ -71,6 +72,8 @@ function isCommitHashTooOld(
  * @param combinePullsThreshold when the number of APIs (.OwlBot.yamls) affected
  *    by a single commit to googleapis-gen exceeds this threshold, combine
  *    the all the changes into a single pull request.
+ * @param maxYamlCountPerPullRequest maximum number of yamls (APIs) to combine
+ *    in a single pull request.
  */
 export async function scanGoogleapisGenAndCreatePullRequests(
   sourceRepo: string,
@@ -79,7 +82,9 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   cloneDepth = 100,
   copyStateStore: CopyStateStore,
   combinePullsThreshold = Number.MAX_SAFE_INTEGER,
-  logger: Logger = console
+  logger: Logger = console,
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No,
+  maxYamlCountPerPullRequest: number = Number.MAX_SAFE_INTEGER
 ): Promise<number> {
   logger = new LoggerWithTimestamp(logger);
   // Clone the source repo.
@@ -183,8 +188,14 @@ export async function scanGoogleapisGenAndCreatePullRequests(
       destRepo: todo.repo,
       copyStateStore,
       octokitFactory,
+      maxYamlCountPerPullRequest,
     };
-    await copyCodeAndAppendOrCreatePullRequest(params, todo.yamlPaths, logger);
+    await copyCodeAndAppendOrCreatePullRequest(
+      params,
+      todo.yamlPaths,
+      logger,
+      withNestedCommitDelimiters
+    );
   }
   return todoStack.length;
 }

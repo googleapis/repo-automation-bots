@@ -91,3 +91,41 @@ exports['cherryPickAsPullRequest opens a pull request with title preserved 2'] =
     title: 'title from original PR (cherry-pick #1234)',
     body: '\n\nCherry-picked commit message for abc123',
   };
+
+exports[
+  'cherryPickCommits should throw a MergeConflictError if there is a conflict 1'
+] = {
+  ref: 'refs/heads/temp-target-branch',
+  sha: 'devbranchsha',
+};
+
+exports[
+  'cherryPickCommits should throw a MergeConflictError if there is a conflict 2'
+] = {
+  author: {
+    name: 'author-name',
+    email: 'author@email.com',
+  },
+  committer: {
+    name: 'committer-name',
+    email: 'committer@email.com',
+  },
+  message: 'sibling of abc123',
+  parents: ['parentsha'],
+  tree: 'treesha',
+};
+
+exports[
+  'cherryPickCommits should throw a MergeConflictError if there is a conflict 3'
+] = {
+  force: true,
+  sha: 'newcommitsha',
+};
+
+exports[
+  'cherryPickCommits should throw a MergeConflictError if there is a conflict 4'
+] = {
+  base: 'temp-target-branch',
+  commit_message: 'Merge abc123 into temp-target-branch',
+  head: 'abc123',
+};

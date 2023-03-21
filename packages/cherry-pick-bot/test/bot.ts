@@ -381,6 +381,47 @@ describe('cherry-pick-bot', () => {
       sinon.assert.notCalled(cherryPickPullRequestStub);
       requests.done();
     });
+
+    it('comments on a merge conflict', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_comment_created_command'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1')
+        .reply(200, {
+          merge_commit_sha: 'abc123',
+          base: {ref: 'main'},
+          merged: true,
+        })
+        .post('/repos/Codertocat/Hello-World/issues/1/comments')
+        .reply(200);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
+      cherryPickPullRequestStub.rejects(
+        new cherryPickModule.MergeConflictError('foo', 'abc123', new Error())
+      );
+
+      await probot.receive({
+        name: 'issue_comment',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(cherryPickPullRequestStub);
+      requests.done();
+    });
   });
 
   describe('pull_request_closed', () => {
@@ -683,6 +724,45 @@ describe('cherry-pick-bot', () => {
       });
 
       sinon.assert.calledOnce(cherryPickPullRequestStub);
+      requests.done();
+    });
+
+    it('comments on a merge conflict', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_merged'
+      ));
+      const comments = require(resolve(fixturesPath, 'data', 'issue_comments'));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/issues/2/comments')
+        .reply(200, comments)
+        .post('/repos/Codertocat/Hello-World/issues/2/comments')
+        .twice()
+        .reply(200);
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({enabled: true});
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
+      cherryPickPullRequestStub.rejects(
+        new cherryPickModule.MergeConflictError('foo', 'abc123', new Error())
+      );
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledTwice(cherryPickPullRequestStub);
       requests.done();
     });
   });

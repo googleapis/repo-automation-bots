@@ -24,6 +24,15 @@ export interface CliArgs {
   installationId: string;
   container?: string;
   languageContainer?: string;
+  monoRepoDir?: string;
+  serviceConfigPath?: string;
+  interContainerVarsPath?: string;
+  skipIssueOnFailure: boolean;
+}
+
+export interface MonoRepo {
+  owner: string;
+  repo: string;
 }
 
 const languageContainers = [
@@ -42,6 +51,18 @@ export function getLanguageSpecificValues(language: string) {
     }
   }
   throw new Error('No language-specific container specified');
+}
+
+export function parseRepoNameAndOrg(repoToClone: string | undefined): MonoRepo {
+  // find the repo name from git@github.com/googleapis/google-cloud-node.git
+  const repoName = repoToClone?.match(/git@github.com[/|:](.*?)\/(.*?).git/);
+  if (!repoName) {
+    throw new Error(
+      "Repo to clone arg is malformed; should be in form of ssh address,' git@github.com:googleapis/google-cloud-node.git'"
+    );
+  }
+
+  return {owner: repoName[1], repo: repoName[2]};
 }
 
 export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
@@ -88,14 +109,37 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         describe: 'language-specific container image',
         type: 'string',
         demand: false,
+      })
+      .option('monoRepoDir', {
+        describe: 'path to the directory in which the mono repo will be cloned',
+        type: 'string',
+        demand: false,
+      })
+      .option('serviceConfigPath', {
+        describe: 'path to save the service config file',
+        type: 'string',
+        demand: false,
+      })
+      .option('interContainerVarsPath', {
+        describe: 'path to save the inter container variables',
+        type: 'string',
+        demand: false,
+      })
+      .option('skipIssueOnFailure', {
+        describe: 'does not create issues if failure',
+        type: 'boolean',
+        default: false,
       });
   },
   async handler(argv) {
-    const cb = new CloudBuildClient();
+    const cb = new CloudBuildClient({projectId: argv.projectId});
     let languageValues;
     if (!argv.languageContainer) {
       languageValues = getLanguageSpecificValues(argv.language);
     }
-    await runTrigger(argv, cb, languageValues);
+    const monoRepo = parseRepoNameAndOrg(
+      argv.repoToClone ?? languageValues?.repoToClone
+    );
+    await runTrigger(argv, cb, monoRepo, languageValues);
   },
 };

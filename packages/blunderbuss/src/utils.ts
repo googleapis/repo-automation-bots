@@ -114,9 +114,12 @@ export async function assign(
   let refreshedIssueResponse: getIssueResponse | null = null;
 
   try {
-    refreshedIssueResponse = (await context.octokit.issues.get(
-      context.repo({issue_number: issueOrPRNumber as number})
-    )) as getIssueResponse;
+    refreshedIssueResponse = (await context.octokit.issues.get({
+      // @ts-ignore typescript 4.9.4 blows up trying to figure out the
+      // return type of context.repo().
+      ...context.repo(),
+      issue_number: issueOrPRNumber as number,
+    })) as getIssueResponse;
   } catch (e) {
     const err = e as RequestError;
     if (err.status === 404) {

@@ -18,13 +18,18 @@
 // for a mono repo-type object. This will be invoked by the Cloud Build file,
 // which will in turn be invoked manually until it is invoked by a github webhook event.
 
-import {openAnIssue, setConfig, DIRECTORY_PATH} from './utils';
+import {openAnIssue, setConfig, ORG, writeToWellKnownFile} from './utils';
 import {logger} from 'gcf-utils';
 import {MonoRepo} from './mono-repo';
 import {GithubAuthenticator} from './github-authenticator';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {CliArgs, Language} from './interfaces';
+import {loadApiFields} from './fetch-api-info';
+import {Storage} from '@google-cloud/storage';
+import {RepositoryFileCache} from '@google-automations/git-file-utils';
+import {sign} from 'jsonwebtoken';
 
+const GOOGLEAPIS_REPO_NAME = 'googleapis';
 export async function preProcess(argv: CliArgs) {
   logger.info(`Entering pre-process for ${argv.apiId}/${argv.language}`);
 
@@ -43,36 +48,50 @@ export async function preProcess(argv: CliArgs) {
     throw new Error('No repo to clone specified');
   }
 
-  await setConfig(DIRECTORY_PATH);
+  await setConfig();
 
   try {
     // Pre-process (before language specific-container)
     const monoRepo = new MonoRepo(
       argv.language as Language,
-      argv.repoToClone!,
+      argv.repoToClone,
       githubToken,
       argv.apiId,
+      argv.monoRepoName,
+      argv.monoRepoOrg,
       octokit
     );
 
-    await monoRepo.cloneRepoAndOpenBranch(DIRECTORY_PATH);
-    logger.info(`Repo ${monoRepo.repoName} cloned`);
-  } catch (err) {
-    logger.info(
-      `Pre process failed; opening an issue on googleapis/${
-        argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1] ?? 'googleapis'
-      }`
+    await monoRepo.cloneRepoAndOpenBranch(
+      argv.monoRepoDir,
+      argv.monoRepoPath,
+      argv.interContainerVarsPath
+    );
+    const apiFields = await loadApiFields(
+      argv.apiId,
+      new Storage(),
+      new RepositoryFileCache(octokit, {owner: ORG, repo: GOOGLEAPIS_REPO_NAME})
     );
 
-    await openAnIssue(
-      octokit,
-      argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1] ?? 'googleapis',
-      argv.apiId,
-      argv.buildId,
-      argv.projectId,
-      argv.language,
-      (err as any).toString()
-    );
+    writeToWellKnownFile(apiFields, argv.serviceConfigPath);
+    logger.info(`Repo ${monoRepo.repoName} cloned`);
+  } catch (err) {
+    if (argv.skipIssueOnFailure === 'false') {
+      logger.info(
+        `Pre process failed; opening an issue on ${argv.monoRepoOrg}/${argv.monoRepoName}`
+      );
+
+      await openAnIssue(
+        octokit,
+        argv.monoRepoOrg,
+        argv.monoRepoName,
+        argv.apiId,
+        argv.buildId,
+        argv.projectId,
+        argv.language,
+        (err as any).toString()
+      );
+    }
     throw err;
   }
 }

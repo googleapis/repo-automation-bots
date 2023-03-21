@@ -21,7 +21,7 @@ import {preProcess} from '../pre-process';
 import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {Octokit} from '@octokit/rest';
-import {ORG} from '../utils';
+import * as fetchApiInfo from '../fetch-api-info';
 
 nock.disableNetConnect();
 
@@ -30,6 +30,8 @@ let authenticateOctokitStub: sinon.SinonStub;
 let cloneRepoAndOpenBranchStub: sinon.SinonStub;
 let pushToBranchAndOpenPRStub: sinon.SinonStub;
 let setConfigStub: sinon.SinonStub;
+let loadApiFieldsStub: sinon.SinonStub;
+let writeToWellKnownFileStub: sinon.SinonStub;
 
 describe('pre processing', async () => {
   let argv: CliArgs;
@@ -56,6 +58,10 @@ describe('pre processing', async () => {
     );
 
     setConfigStub = sinon.stub(utils, 'setConfig');
+
+    loadApiFieldsStub = sinon.stub(fetchApiInfo, 'loadApiFields');
+
+    writeToWellKnownFileStub = sinon.stub(utils, 'writeToWellKnownFile');
   });
 
   afterEach(() => {
@@ -64,21 +70,34 @@ describe('pre processing', async () => {
     cloneRepoAndOpenBranchStub.restore();
     pushToBranchAndOpenPRStub.restore();
     setConfigStub.restore();
+    loadApiFieldsStub.restore();
+    writeToWellKnownFileStub.restore();
+    nock.cleanAll();
   });
 
   it('assert right stubs are called during pre-process, monorepo', async () => {
     argv = {
       projectId: 'myprojects',
-      repoToClone: 'github.com/googleapis/nodejs-kms.git',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
       apiId: 'google.cloud.kms.v1',
       language: 'nodejs',
       installationId: '12345',
+      monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoDir: 'MONO_REPO_DIR',
+      monoRepoName: 'nodejs-kms',
+      monoRepoOrg: 'googleapis',
+      serviceConfigPath: 'SERVICE_CONFIG_PATH',
+      interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
+      skipIssueOnFailure: 'false',
     };
 
     await preProcess(argv);
     assert.ok(getGitHubShortLivedAccessTokenStub.calledOnce);
     assert.ok(authenticateOctokitStub.calledOnce);
     assert.ok(cloneRepoAndOpenBranchStub.calledOnce);
+    assert.ok(writeToWellKnownFileStub.calledOnce);
+    assert.ok(loadApiFieldsStub.calledOnce);
   });
 
   it('attempts to open an issue in monorepo if any part of main fails', async () => {
@@ -87,7 +106,15 @@ describe('pre processing', async () => {
       apiId: 'google.cloud.kms.v1',
       language: 'nodejs',
       installationId: '12345',
-      repoToClone: 'github.com/googleapis/nodejs-kms.git',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
+      monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoName: 'nodejs-kms',
+      monoRepoOrg: 'googleapis',
+      monoRepoDir: 'MONO_REPO_DIR',
+      serviceConfigPath: 'SERVICE_CONFIG_PATH',
+      interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
+      skipIssueOnFailure: 'false',
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -95,14 +122,40 @@ describe('pre processing', async () => {
     cloneRepoAndOpenBranchStub.rejects();
 
     const scope = nock('https://api.github.com')
-      .post(
-        `/repos/${ORG}/${
-          argv.repoToClone?.match(/\/([\w-]*)(.git|$)/)![1]
-        }/issues`
-      )
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
       .reply(201);
 
     await assert.rejects(() => preProcess(argv));
     scope.done();
+  });
+
+  it('does not open an issue if skipIssueOnFailure = true', async () => {
+    argv = {
+      projectId: 'myprojects',
+      apiId: 'google.cloud.kms.v1',
+      language: 'nodejs',
+      installationId: '12345',
+      repoToClone: 'git@github.com/googleapis/nodejs-kms.git',
+      monoRepoPath: 'MONO_REPO_PATH',
+      monoRepoName: 'nodejs-kms',
+      monoRepoOrg: 'googleapis',
+      monoRepoDir: 'MONO_REPO_DIR',
+      serviceConfigPath: 'SERVICE_CONFIG_PATH',
+      interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
+      buildId: '1234',
+      skipIssueOnFailure: 'true',
+    };
+
+    const octokit = new Octokit({auth: 'abc1234'});
+    authenticateOctokitStub.returns(octokit);
+    cloneRepoAndOpenBranchStub.rejects();
+
+    const scope = nock('https://api.github.com')
+      .post(`/repos/${argv.monoRepoOrg}/${argv.monoRepoName}/issues`)
+      .reply(201);
+
+    await assert.rejects(() => preProcess(argv));
+
+    assert.deepStrictEqual(scope.isDone(), false);
   });
 });

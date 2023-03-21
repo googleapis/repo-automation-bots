@@ -33,7 +33,7 @@ interface Commit {
   sha: string;
 }
 
-const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w[.-\w]*)/;
+const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w[./-\w]*)/;
 
 /**
  * Parse a comment string to see if it matches the expected cherry-pick
@@ -222,19 +222,13 @@ export async function cherryPickCommits(
 
     // merge
     logger.debug(`merge ${sha} into ${temporaryRefName}`);
-    const {
-      data: {
-        commit: {
-          tree: {sha: mergedTree},
-        },
-      },
-    } = await octokit.repos.merge({
-      base: temporaryRefName,
-      commit_message: `Merge ${sha} into ${temporaryRefName}`,
-      head: sha,
+    const mergedTree = await mergeBranch(
+      octokit,
       owner,
       repo,
-    });
+      temporaryRefName,
+      sha
+    );
     logger.debug('creating commit with different tree');
     const newHeadSha = await createCommit(
       octokit,
@@ -273,6 +267,56 @@ export async function cherryPickCommits(
   });
 
   return newCommits;
+}
+
+/**
+ * Attempt to merge the provided SHA into the provided base branch.
+ *
+ * @param {OctokitType} octokit An authenticated Octokit instance
+ * @param {string} owner The repository owner
+ * @param {string} repo The repository name
+ * @param {string} baseBranchName The target branch
+ * @param {string} sha The SHA to merge into the base branch
+ * @throws {MergeConflictError} if there is a merge conflict
+ */
+export class MergeConflictError extends Error {
+  cause: Error;
+  constructor(baseBranchName: string, sha: string, cause: Error) {
+    super(`Merge error ${sha} into ${baseBranchName}`);
+    this.cause = cause;
+  }
+}
+
+async function mergeBranch(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  baseBranchName: string,
+  sha: string
+): Promise<string> {
+  try {
+    const {
+      data: {
+        commit: {
+          tree: {sha: mergedTree},
+        },
+      },
+    } = await octokit.repos.merge({
+      base: baseBranchName,
+      commit_message: `Merge ${sha} into ${baseBranchName}`,
+      head: sha,
+      owner,
+      repo,
+    });
+    return mergedTree;
+  } catch (e) {
+    if (e instanceof RequestError) {
+      if (e.status === 409) {
+        throw new MergeConflictError(baseBranchName, sha, e);
+      }
+    }
+    throw e;
+  }
 }
 
 /**

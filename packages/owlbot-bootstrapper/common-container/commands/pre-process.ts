@@ -34,7 +34,7 @@ export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('repoToClone', {
         describe: 'monorepo to clone',
         type: 'string',
-        demand: false,
+        demand: true,
       })
       .option('language', {
         describe: 'language for which to generate a library',
@@ -49,7 +49,45 @@ export const preProcessCommand: yargs.CommandModule<{}, CliArgs> = {
       .option('buildId', {
         describe: 'build id of given build',
         type: 'string',
-        demand: false,
+        demand: true,
+      })
+      .option('monoRepoOrg', {
+        describe: 'org for mono repo name',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoName', {
+        describe: 'name of mono repo',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoPath', {
+        describe:
+          'full path to the mono repo (if relative, will be in the context of the container)',
+        type: 'string',
+        demand: true,
+      })
+      .option('monoRepoDir', {
+        describe: 'path in which to save the mono repo',
+        type: 'string',
+        demand: true,
+      })
+      .option('serviceConfigPath', {
+        describe:
+          'path in which to save the service config file (if relative, will be in the context of the container)',
+        type: 'string',
+        demand: true,
+      })
+      .option('interContainerVarsPath', {
+        describe:
+          'path in which to save the inter container variables (if relative, will be in the context of the container)',
+        type: 'string',
+        demand: true,
+      })
+      .option('skipIssueOnFailure', {
+        describe: 'does not create issues if failure',
+        type: 'string',
+        default: 'false',
       });
   },
   async handler(argv: CliArgs) {

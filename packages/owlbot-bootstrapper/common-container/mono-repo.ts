@@ -20,10 +20,10 @@ import {
   openAPR,
   cmd,
   checkIfGitIsInstalled,
-  INTER_CONTAINER_VARS_FILE,
   getCopyTagText,
   getLatestShaGoogleapisGen,
   addOwlBotLabel,
+  writeToWellKnownFile,
 } from './utils';
 import {logger} from 'gcf-utils';
 
@@ -42,6 +42,7 @@ export class MonoRepo {
   repoName: string;
   githubToken: string;
   apiId: string;
+  repoOrg: string;
   octokit: Octokit;
 
   constructor(
@@ -49,13 +50,14 @@ export class MonoRepo {
     repoToCloneUrl: string,
     githubToken: string,
     apiId: string,
+    monoRepoName: string,
+    monoRepoOrg: string,
     octokit: Octokit
   ) {
     this.language = language;
     this.repoToCloneUrl = repoToCloneUrl;
-    // Get the repo name from the repoToCloneUrl, i.e. github.com/googleapis/nodejs-kms.git becomes nodejs-kms
-    // Or /googleapis/nodejs-kms becomes nodejs-kms
-    this.repoName = repoToCloneUrl.match(/\/([\w-]*)(.git|$)/)![1];
+    this.repoName = monoRepoName;
+    this.repoOrg = monoRepoOrg;
     this.githubToken = githubToken;
     this.apiId = apiId;
     this.octokit = octokit;
@@ -66,26 +68,26 @@ export class MonoRepo {
    *
    * @param githubToken a short-lived access Github access token
    * @param repoToCloneUrl from where to clone the repo
-   * @param directoryPath where to clone the repo to
+   * @param monoRepoPath where to clone the repo to
+   * @param repoOrg: repo org name
+   * @param repoName: repo name
    */
   public async _cloneRepo(
     githubToken: string,
     repoToCloneUrl: string,
-    directoryPath: string
+    monoRepoDir: string,
+    repoOrg: string,
+    repoName: string
   ) {
-    const repoToCloneRegexp = /github\.com\/[a-z-]*\/[a-z-]*\.git/;
-    const repoToClone = repoToCloneUrl.match(repoToCloneRegexp)?.[0];
-    if (!repoToClone) {
-      logger.error(
-        'repoToClone arg is in the wrong format; must include github.com:orgName/repoName.git'
-      );
-    }
     if (repoToCloneUrl.includes('github')) {
-      cmd(`git clone https://x-access-token:${githubToken}@${repoToClone}`, {
-        cwd: directoryPath,
-      });
+      cmd(
+        `git clone https://x-access-token:${githubToken}@github.com/${repoOrg}/${repoName}`,
+        {
+          cwd: monoRepoDir,
+        }
+      );
     } else {
-      cmd(`git clone ${repoToCloneUrl}`, {cwd: directoryPath});
+      cmd(`git clone ${repoToCloneUrl}`, {cwd: monoRepoDir});
     }
     logger.info(`Repo ${repoToCloneUrl} cloned`);
   }
@@ -94,31 +96,33 @@ export class MonoRepo {
    * Commits changes and pushes them to a new branch in github
    *
    * @param branchName the name of the branch with a UUID
-   * @param repoName the name of the repo containing the branch
-   * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
+   * @param monoRepoPath path to monorepo
+   * @param copyTagText the commit tag text for owlbot
    */
   public async _commitAndPushToBranch(
     branchName: string,
-    repoName: string,
-    directoryPath: string,
+    monoRepoPath: string,
     copyTagText: string
   ) {
     cmd(
       `git add .; git commit -m "feat: initial generation of library\n${copyTagText}"; git push -u origin ${branchName}`,
       {
-        cwd: `${directoryPath}/${repoName}`,
+        cwd: monoRepoPath,
       }
     );
   }
 
   /**
    * Commits changes to a branch, then opens a PR with those changes
-   * @param directoryPath name of the directory in which the process is running (i.e., 'workspace' for a container)
+   * @param monoRepoPath path to monorepo
+   * @param interContainerVarsFilePath path to where the intercontainervars file is saved
    */
-  public async pushToBranchAndOpenPR(directoryPath: string) {
+  public async pushToBranchAndOpenPR(
+    monoRepoPath: string,
+    interContainerVarsFilePath: string
+  ) {
     const interContainerVars = getWellKnownFileContents(
-      directoryPath,
-      INTER_CONTAINER_VARS_FILE
+      interContainerVarsFilePath
     );
     const latestSha = await getLatestShaGoogleapisGen(this.octokit);
     const copyTagText = getCopyTagText(
@@ -128,8 +132,7 @@ export class MonoRepo {
     checkIfGitIsInstalled(cmd);
     await this._commitAndPushToBranch(
       interContainerVars.branchName,
-      this.repoName,
-      directoryPath,
+      monoRepoPath,
       copyTagText
     );
     const prNumber = await openAPR(
@@ -146,9 +149,20 @@ export class MonoRepo {
   /**
    * Clones a repository and opens an empty branch in it
    */
-  public async cloneRepoAndOpenBranch(directoryPath: string) {
+  public async cloneRepoAndOpenBranch(
+    monoRepoDir: string,
+    monoRepoPath: string,
+    interContainerVarsFilePath: string
+  ) {
     checkIfGitIsInstalled(cmd);
-    await this._cloneRepo(this.githubToken, this.repoToCloneUrl, directoryPath);
-    await openABranch(this.repoName, directoryPath);
+    await this._cloneRepo(
+      this.githubToken,
+      this.repoToCloneUrl,
+      monoRepoDir,
+      this.repoOrg,
+      this.repoName
+    );
+    const branchName = await openABranch(this.repoName, monoRepoPath);
+    await writeToWellKnownFile({branchName}, interContainerVarsFilePath);
   }
 }

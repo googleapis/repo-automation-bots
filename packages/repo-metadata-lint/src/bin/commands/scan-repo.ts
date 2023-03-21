@@ -14,9 +14,7 @@
 
 import yargs = require('yargs');
 import {octokitFrom} from '../../utils/octokit-util';
-import {FileIterator} from '../../file-iterator';
-import {IssueOpener} from '../../issue-opener';
-import {Validate, ValidationResult} from '../../validate';
+import {scanRepoAndOpenIssues} from '../../core';
 
 interface Args {
   'pem-path': string;
@@ -24,6 +22,7 @@ interface Args {
   installation: number;
   owner: string;
   repo: string;
+  branch: string;
 }
 
 export const scanRepo: yargs.CommandModule<{}, Args> = {
@@ -56,20 +55,15 @@ export const scanRepo: yargs.CommandModule<{}, Args> = {
         describe: 'repo to lint .repo-metadata.json for',
         type: 'string',
         demand: true,
+      })
+      .option('branch', {
+        describe: 'branch to scan',
+        type: 'string',
+        default: 'main',
       });
   },
   async handler(argv) {
     const octokit = await octokitFrom(argv);
-    const iterator = new FileIterator(argv.owner, argv.repo, octokit);
-    const results: Array<ValidationResult> = [];
-    const validate = new Validate(octokit);
-    for await (const [path, metadata] of iterator.repoMetadata()) {
-      const result = await validate.validate(path, metadata);
-      if (result.status === 'error') {
-        results.push(result);
-      }
-    }
-    const opener = new IssueOpener(argv.owner, argv.repo, octokit);
-    await opener.open(results);
+    await scanRepoAndOpenIssues(octokit, argv.owner, argv.repo, argv.branch);
   },
 };

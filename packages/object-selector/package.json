@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/object-selector",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "description": "Utilities for selecting objects",
   "scripts": {
     "compile": "tsc -p .",
@@ -21,10 +21,11 @@
     "easy-object-selector": "^1.3.0",
     "gcf-utils": "^14.0.1",
     "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.0",
     "yargs": "^17.5.1"
   },
   "devDependencies": {
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.12",
@@ -35,7 +36,7 @@
     "mocha": "^10.0.0",
     "mocked-env": "^1.3.5",
     "nock": "^13.2.9",
-    "sinon": "^14.0.0",
+    "sinon": "^15.0.0",
     "snap-shot-it": "^7.9.6",
     "typescript": "~4.8.2"
   },

@@ -357,6 +357,25 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
+      it('should allow alternate initial version', async () => {
+        getConfigStub.resolves(loadConfig('alternate_initial_version.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('initialVersion', '0.1.0'),
+          sinon.match.any,
+          undefined
+        );
+      });
+
       it('should allow configuring patch bump for feature changes pre 1.0', async () => {
         getConfigStub.resolves(loadConfig('patch_pre_major.yml'));
         await probot.receive(

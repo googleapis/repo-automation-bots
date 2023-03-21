@@ -20,6 +20,7 @@ import {resolve} from 'path';
 import {
   BranchFileCache,
   FileNotFoundError,
+  BranchNotFoundError,
   RepositoryFileCache,
 } from '../src/git-file-utils';
 import * as assert from 'assert';
@@ -112,6 +113,30 @@ describe('BranchFileCache', () => {
             'github-data-api/data-api-trees-successful-response-recursive'
           ))
         );
+      await assert.rejects(async () => {
+        await cache.getFileContents('missing-file');
+      }, FileNotFoundError);
+      req.done();
+    });
+
+    it('throws on missing branch', async () => {
+      const req = nock('https://api.github.com')
+        .get(
+          '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+        )
+        .reply(404);
+      await assert.rejects(async () => {
+        await cache.getFileContents('missing-commit');
+      }, BranchNotFoundError);
+      req.done();
+    });
+
+    it('throws on empty repository', async () => {
+      const req = nock('https://api.github.com')
+        .get(
+          '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+        )
+        .reply(409);
       await assert.rejects(async () => {
         await cache.getFileContents('missing-file');
       }, FileNotFoundError);

@@ -146,6 +146,61 @@ describe('bot', () => {
       requests.done();
     });
 
+    it('should comment on pull request after triggering job', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/release_published'
+      ));
+      const pull1 = buildFakePullRequest('Codertocat', 'Hello-World', 1234);
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1234')
+        .reply(200, pull1);
+
+      getConfigStub.resolves({enabled: true});
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const findPullRequestsStub = sandbox
+        .stub(releaseTriggerModule, 'findPendingReleasePullRequests')
+        .resolves([pull1]);
+      const triggerKokoroJobStub = sandbox
+        .stub(releaseTriggerModule, 'triggerKokoroJob')
+        .resolves({stdout: '', stderr: '', jobName: 'my-job-name'});
+      const markTriggeredStub = sandbox
+        .stub(releaseTriggerModule, 'markTriggered')
+        .resolves();
+      const commentStub = sandbox
+        .stub(gcfUtils, 'addOrUpdateIssueComment')
+        .resolves();
+
+      await probot.receive({
+        name: 'release',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getConfigStub);
+      sinon.assert.calledOnce(findPullRequestsStub);
+      sinon.assert.calledWith(
+        triggerKokoroJobStub,
+        'https://github.com/Codertocat/Hello-World/pull/1234'
+      );
+      sinon.assert.calledWith(
+        markTriggeredStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1234})
+      );
+      sinon.assert.calledWith(
+        commentStub,
+        sinon.match.any,
+        'Codertocat',
+        'Hello-World',
+        1234,
+        11835543,
+        sinon.match('Triggered job: my-job-name')
+      );
+      requests.done();
+    });
+
     it('should ignore if pull request already triggered', async () => {
       const payload = require(resolve(
         fixturesPath,

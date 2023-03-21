@@ -30,15 +30,15 @@
     "handlebars": "^4.7.7"
   },
   "devDependencies": {
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/recursive-readdir": "^2.2.1",
     "@types/rimraf": "^3.0.2",
     "c8": "^7.12.0",
     "gts": "^4.0.0",
     "mocha": "^10.0.0",
-    "recursive-readdir": "^2.2.2",
+    "recursive-readdir": "^2.2.3",
     "rimraf": "^3.0.2",
-    "typescript": "~4.8.2"
+    "typescript": "~4.9.0"
   },
   "engines": {
     "node": ">=12.18.2"

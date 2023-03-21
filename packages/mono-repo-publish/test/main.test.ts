@@ -160,4 +160,13 @@ describe('mono-repo publish', () => {
       'npm publish --access=public'
     );
   });
+
+  it('skips package if package is set to private', () => {
+    const output = core.publishSubmodules(
+      ['test/sample-private-package'],
+      false
+    );
+    console.log(output);
+    assert.deepStrictEqual(output, []);
+  });
 });

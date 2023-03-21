@@ -440,6 +440,10 @@ async function checkReviews(
   return reviewsPassed;
 }
 
+export function cleanGHLinks(ghBody: string): string {
+  return ghBody.replace(/https:\/\/github.com/g, 'https://togithub.com');
+}
+
 /**
  * Function merges a pr
  * @param owner of pr (from Watch PR)
@@ -462,7 +466,7 @@ async function merge(
       repo,
       pull_number: pr,
       commit_title: `${prInfo.title} (#${pr})`,
-      commit_message: prInfo.body || '',
+      commit_message: cleanGHLinks(prInfo.body || '') || '',
       merge_method: 'squash',
     })
   ).data as Merge;

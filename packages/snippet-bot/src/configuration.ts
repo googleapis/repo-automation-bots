@@ -37,6 +37,8 @@ export class Configuration {
     this.minimatches = options.ignoreFiles.map(pattern => {
       return new minimatch.Minimatch(pattern);
     });
+    // Always ignore files under "owl-bot-staging"
+    this.minimatches.push(new minimatch.Minimatch('owl-bot-staging/**/*'));
   }
 
   ignoredFile(filename: string): boolean {

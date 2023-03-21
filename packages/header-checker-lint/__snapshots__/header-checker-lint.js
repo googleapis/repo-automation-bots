@@ -195,3 +195,14 @@ exports['HeaderCheckerLint opened pull request ignores due to the config from th
     "text": "Header check successful"
   }
 }
+
+exports['HeaderCheckerLint updated pull request sets a "success" context on PR, on wrong year with ignore flag set 1'] = {
+  "name": "header-check",
+  "conclusion": "success",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c",
+  "output": {
+    "title": "Headercheck",
+    "summary": "Header check successful",
+    "text": "Header check successful"
+  }
+}

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  MAX_BODY_SIZE_FOR_CLOUD_TASK,
   DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
   GCFBootstrapper,
   WrapOptions,
@@ -20,6 +21,7 @@ import {
   HandlerFunction,
   RequestWithRawBody,
   getContextLogger,
+  ServiceUnavailable,
 } from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
@@ -479,10 +481,52 @@ describe('GCFBootstrapper', () => {
       assert.strictEqual(response.statusCode, 500);
     });
 
-    it('logs errors for single handler errors', async () => {
+    it('reports to error reporting on final retry', async () => {
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
+      const childSpy = sandbox.spy(GCFLogger.prototype, 'child');
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new SyntaxError('Some error message');
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      req.headers['x-cloudtasks-taskretrycount'] = '10';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      sinon.assert.calledOnce(childSpy);
+      sinon.assert.calledWith(
+        childSpy,
+        sinon.match({
+          '@type':
+            'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent',
+        })
+      );
+      sinon.assert.calledOnce(errorStub);
+      sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
+    });
+
+    it('logs errors for single handler errors', async () => {
       const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
+      const childSpy = sandbox.spy(GCFLogger.prototype, 'child');
+      const fakeLogger = new GCFLogger();
+      sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -506,14 +550,15 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.called(sendStub);
 
+      sinon.assert.notCalled(childSpy);
       sinon.assert.calledOnce(errorStub);
       sinon.assert.calledWith(errorStub, sinon.match.instanceOf(SyntaxError));
     });
 
     it('logs errors for multiple handler errors', async () => {
+      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       const fakeLogger = new GCFLogger();
       sandbox.stub(loggerModule, 'buildRequestLogger').returns(fakeLogger);
-      const errorStub = sandbox.stub(GCFLogger.prototype, 'error');
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {
           throw new SyntaxError('Some error message');
@@ -687,6 +732,33 @@ describe('GCFBootstrapper', () => {
       assert.strictEqual(response.statusCode, 503);
     });
 
+    it('returns 503 on ServiceUnavailable', async () => {
+      await mockBootstrapper(undefined, async app => {
+        app.on('issues', async () => {
+          throw new ServiceUnavailable('', new Error('An error happened'));
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 503);
+    });
+
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
       await mockBootstrapper();
       req.body = {
@@ -743,7 +815,27 @@ describe('GCFBootstrapper', () => {
           .reply(200, {access_token: 'abc123'});
       });
 
-      it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
+      it('does not store task payload in Cloud Storage even if WEBHOOK_TMP set when the body is small enough', async () => {
+        await mockBootstrapper();
+        req.body = {
+          installation: {id: 1},
+          repo: 'myRepo',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('stores task payload in Cloud Storage if WEBHOOK_TMP set and the body size is big', async () => {
         await mockBootstrapper();
         let uploaded: {[key: string]: {[key: string]: number}} | undefined;
         // Fake an upload to Cloud Storage. It seemed worthwhile mocking this
@@ -767,7 +859,7 @@ describe('GCFBootstrapper', () => {
           .reply(200, {});
         req.body = {
           installation: {id: 1},
-          repo: 'firstRepo',
+          repo: 'x'.repeat(MAX_BODY_SIZE_FOR_CLOUD_TASK),
         };
         req.headers = {};
         req.headers['x-github-event'] = 'schedule.repository';
@@ -1791,7 +1883,7 @@ describe('GCFBootstrapper', () => {
       });
     });
 
-    it('queues a Cloud Run URL', async () => {
+    it('queues a Cloud Run URL with caching', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
         functionName: 'my-function-name',
@@ -1831,6 +1923,16 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnceWithExactly(getServiceStub as any, {
         name: 'projects/my-project/locations/my-location/services/my-function-name',
       });
+      // Make sure the Cloud Run service URL is cached.
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      const getServiceCalls = getServiceStub.getCalls();
+      assert.equal(getServiceCalls.length, 1);
+      const createTaskCalls = createTask.getCalls();
+      assert.equal(createTaskCalls.length, 2);
     });
 
     it('queues a Cloud Run URL with underscored bot name', async () => {

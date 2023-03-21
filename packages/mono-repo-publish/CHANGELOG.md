@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.6.4](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.3...mono-repo-publish-v1.6.4) (2023-03-15)
+
+
+### Bug Fixes
+
+* **logging:** better logging for publication failures ([#4999](https://github.com/googleapis/repo-automation-bots/issues/4999)) ([10ac19e](https://github.com/googleapis/repo-automation-bots/commit/10ac19e46eb17f169ff6b87bf257941dc1dd8910))
+
+## [1.6.3](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.2...mono-repo-publish-v1.6.3) (2023-03-14)
+
+
+### Bug Fixes
+
+* skip publishing private packages ([d982753](https://github.com/googleapis/repo-automation-bots/commit/d982753b2bdc68564e83a0d5dc31165affa8482c))
+
+## [1.6.2](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.1...mono-repo-publish-v1.6.2) (2023-01-19)
+
+
+### Bug Fixes
+
+* **deps:** npm audit fixes for several packages ([#4939](https://github.com/googleapis/repo-automation-bots/issues/4939)) ([a9a6755](https://github.com/googleapis/repo-automation-bots/commit/a9a67552a1cd0278a1b74383c988f099082e949f))
+
+## [1.6.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.0...mono-repo-publish-v1.6.1) (2023-01-04)
+
+
+### Bug Fixes
+
+* upgrade jsonwebtoken to 9.0.0 ([#4820](https://github.com/googleapis/repo-automation-bots/issues/4820)) ([ab1314f](https://github.com/googleapis/repo-automation-bots/commit/ab1314f4b72a86ec90ddf785d7a939ff5877153e))
+
+## [1.6.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.5.0...mono-repo-publish-v1.6.0) (2022-11-08)
+
+
+### Features
+
+* allow unauthentiated GitHub API usage ([#4666](https://github.com/googleapis/repo-automation-bots/issues/4666)) ([4dd4b8d](https://github.com/googleapis/repo-automation-bots/commit/4dd4b8d96f255c063c9ae39a5bd3a278db40a86d))
+
 ## [1.5.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.4.1...mono-repo-publish-v1.5.0) (2022-09-08)
 
 
