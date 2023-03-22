@@ -180,7 +180,9 @@ export interface BotSecrets {
 export async function getBotSecrets(): Promise<BotSecrets> {
   const projectId = process.env.PROJECT_ID;
   const functionName = process.env.GCF_SHORT_FUNCTION_NAME;
-  const secretsClient = new SecretManagerV1.SecretManagerServiceClient();
+  const secretsClient = new SecretManagerV1.SecretManagerServiceClient({
+    fallback: 'rest',
+  });
   const [version] = await secretsClient.accessSecretVersion({
     name: `projects/${projectId}/secrets/${functionName}/versions/latest`,
   });
@@ -342,11 +344,13 @@ export class GCFBootstrapper {
 
     this.secretsClient =
       options?.secretsClient ||
-      new SecretManagerV1.SecretManagerServiceClient();
+      new SecretManagerV1.SecretManagerServiceClient({fallback: 'rest'});
     this.cloudTasksClient =
-      options?.tasksClient || new CloudTasksV2.CloudTasksClient();
+      options?.tasksClient ||
+      new CloudTasksV2.CloudTasksClient({fallback: 'rest'});
     this.cloudRunClient =
-      options?.cloudRunClient || new CloudRunV2.ServicesClient();
+      options?.cloudRunClient ||
+      new CloudRunV2.ServicesClient({fallback: 'rest'});
     this.storage = new Storage({retryOptions: {autoRetry: !RUNNING_IN_TEST}});
     this.taskTargetEnvironment =
       options.taskTargetEnvironment || defaultTaskEnvironment();

@@ -116,6 +116,11 @@ const publishCustomCommand: yargs.CommandModule<{}, PublishCustomArgs> = {
     const submodules = core.listChangedSubmodules(files, argv['exclude-files']);
     const errors = core.publishCustom(submodules, argv['script']);
     if (errors.length) {
+      for (const error of errors) {
+        console.error('----- publication failure -----');
+        console.error(error);
+        console.error('-----');
+      }
       throw Error('some publications failed, see logs');
     }
   },
