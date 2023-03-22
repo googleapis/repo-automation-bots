@@ -244,10 +244,18 @@ export function doesDependencyChangeMatchPRTitle(
   return false;
 }
 
-export function doesDependencyAgainstRegexes(
+/**
+ * This function checks whether the dependency changed matches a regex to include, and doesn't match a regex to exclude
+ *
+ * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+ * @param regexToInclude an array of regexes to search for
+ * @param regexToExclude an array of regexes to exclude (if there's a match, return false)
+ * @returns whether the dependencies match to the given regexes
+ */
+export function doesDependencyMatchAgainstRegexes(
   versions: Versions,
-  regexToInclude: RegExp[] | undefined,
-  regexToExclude: RegExp[] | undefined
+  regexToInclude?: RegExp[],
+  regexToExclude?: RegExp[]
 ): boolean {
   let doesDepIncludeRegexToInclude = true;
   regexToInclude?.forEach(regex => {
