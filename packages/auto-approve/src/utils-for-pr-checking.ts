@@ -249,29 +249,20 @@ export function doesDependencyChangeMatchPRTitle(
  *
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
  * @param regexToInclude an array of regexes to search for
- * @param regexToExclude an array of regexes to exclude (if there's a match, return false)
  * @returns whether the dependencies match to the given regexes
  */
 export function doesDependencyMatchAgainstRegexes(
   versions: Versions,
-  regexToInclude?: RegExp[],
-  regexToExclude?: RegExp[]
+  regexToInclude: RegExp[]
 ): boolean {
-  let doesDepIncludeRegexToInclude = true;
+  let doesDepIncludeRegexToInclude = false;
   regexToInclude?.forEach(regex => {
-    if (!versions.newDependencyName.match(regex)) {
-      doesDepIncludeRegexToInclude = false;
-    }
-  });
-
-  let doesDepExcludeRegexToExclude = true;
-  regexToExclude?.forEach(regex => {
     if (versions.newDependencyName.match(regex)) {
-      doesDepExcludeRegexToExclude = false;
+      doesDepIncludeRegexToInclude = true;
     }
   });
 
-  return doesDepExcludeRegexToExclude && doesDepIncludeRegexToInclude;
+  return doesDepIncludeRegexToInclude;
 }
 
 /**

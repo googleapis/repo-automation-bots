@@ -22,7 +22,7 @@ import {
   runVersioningValidation,
   isOneDependencyChanged,
   reportIndividualChecks,
-  doesDependencyAgainstRegexes,
+  doesDependencyMatchAgainstRegexes,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 
@@ -147,10 +147,9 @@ export class PythonSampleDependency extends Process implements LanguageRule {
         this.incomingPR.title
       );
 
-      const doesDependencyConformToRegexes = doesDependencyAgainstRegexes(
+      const doesDependencyConformToRegexes = doesDependencyMatchAgainstRegexes(
         versions,
-        fileMatch.regexForDepToInclude,
-        undefined
+        fileMatch.regexForDepToInclude
       );
 
       const isVersionValid = runVersioningValidation(versions);
