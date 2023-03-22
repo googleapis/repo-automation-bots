@@ -245,11 +245,11 @@ export function doesDependencyChangeMatchPRTitle(
 }
 
 /**
- * This function checks whether the dependency changed matches a regex to include, and doesn't match a regex to exclude
+ * This function checks whether the dependency changed matches a regex to include
  *
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
  * @param regexToInclude an array of regexes to search for
- * @returns whether the dependencies match to the given regexes
+ * @returns whether the dependencies match to any of the given regexesß
  */
 export function doesDependencyMatchAgainstRegexes(
   versions: Versions,
