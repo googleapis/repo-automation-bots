@@ -31,6 +31,9 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
+// Some configs are not intended to be valid .OwlBot.yaml files (for example,
+// template files). This list will keep .OwlBot from providing error messages for
+// those files.
 export const CONFIG_PATHS_TO_SKIP = [
   'packages/gapic-node-templating/templates/bootstrap-templates/.OwlBot.yaml',
 ];
@@ -314,6 +317,10 @@ export async function refreshConfigs(
             'This repo will not receive automatic updates until this issue is fixed.\n',
             ...badConfig.errorMessages,
           ].join('\n* ')
+        );
+      } else {
+        logger.info(
+          `Skipping creating an issue for ${badConfig.path} as it is listed as a config to skip`
         );
       }
     }
