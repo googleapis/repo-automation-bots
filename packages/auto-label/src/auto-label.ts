@@ -235,7 +235,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
     pull_number,
   });
   const labels = context.payload.pull_request.labels;
-  let new_labels: string[] = [];
+  const new_labels: string[] = [];
 
   // If user has turned on path labels by configuring {path: {pullrequest: false, }}
   // By default, this feature is turned off
@@ -246,7 +246,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       logger.info(
         `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
       );
-      new_labels = path_label;
+      new_labels.push(...path_label);
     }
   }
 
@@ -265,7 +265,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       logger.info(
         `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
       );
-      new_labels.concat(language_label);
+      new_labels.push(...language_label);
     }
   }
 
