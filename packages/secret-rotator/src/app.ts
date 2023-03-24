@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import express, {Request, Response} from 'express';
-import {GoogleAuth} from 'google-auth-library';
 import {SecretRotator} from './secret-rotator';
-import {iam} from '@googleapis/iam';
+import {iam, auth as authlibv7} from '@googleapis/iam';
+import * as authlibv8 from 'google-auth-library';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {logger} from 'gcf-utils';
 export const app = express();
@@ -46,14 +46,20 @@ app.post('/rotate-service-account-key', async (req: Request, res: Response) => {
     return;
   }
 
-  const auth = await new GoogleAuth({
+  const authv7 = new authlibv7.GoogleAuth({
+    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+  });
+  const authv8 = new authlibv8.GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/cloud-platform'],
   });
   const iamClient = await iam({
     version: 'v1',
-    auth,
+    auth: authv7,
   });
-  const secretManagerClient = new SecretManagerServiceClient({auth});
+  const secretManagerClient = new SecretManagerServiceClient({
+    auth: authv8,
+    fallback: 'rest',
+  });
 
   const helper = new SecretRotator(iamClient, secretManagerClient);
 
