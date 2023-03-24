@@ -31,6 +31,12 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
+// Some configs are not intended to be valid .OwlBot.yaml files (for example,
+// template files). This list will keep .OwlBot from providing error messages for
+// those files.
+export const CONFIG_PATHS_TO_SKIP = [
+  'packages/gapic-node-templating/templates/bootstrap-templates/.OwlBot.yaml',
+];
 /**
  * Invoked when a new pubsub message arrives because a new post processor
  * docker image has been published to Google Container Registry.
@@ -301,16 +307,22 @@ export async function refreshConfigs(
   if (stored) {
     logger.info(`Stored new configs for ${repoFull}`);
     for (const badConfig of badConfigs) {
-      await createIssueIfTitleDoesntExist(
-        octokit,
-        githubRepo.owner,
-        githubRepo.repo,
-        badConfig.path + ' is broken.',
-        [
-          'This repo will not receive automatic updates until this issue is fixed.\n',
-          ...badConfig.errorMessages,
-        ].join('\n* ')
-      );
+      if (!CONFIG_PATHS_TO_SKIP.includes(badConfig.path)) {
+        await createIssueIfTitleDoesntExist(
+          octokit,
+          githubRepo.owner,
+          githubRepo.repo,
+          badConfig.path + ' is broken.',
+          [
+            'This repo will not receive automatic updates until this issue is fixed.\n',
+            ...badConfig.errorMessages,
+          ].join('\n* ')
+        );
+      } else {
+        logger.info(
+          `Skipping creating an issue for ${badConfig.path} as it is listed as a config to skip`
+        );
+      }
     }
   } else {
     logger.info(
