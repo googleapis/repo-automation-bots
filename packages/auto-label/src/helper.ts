@@ -455,5 +455,5 @@ export function getLabel(
     label = [label[0]];
   }
 
-  return label;
+  return label[0] ? label : undefined;
 }

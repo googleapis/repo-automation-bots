@@ -389,7 +389,10 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.deepStrictEqual(helper.getLabel(data, path_config, 'path'), ['']);
+      assert.deepStrictEqual(
+        helper.getLabel(data, path_config, 'path'),
+        undefined
+      );
     });
   });
 });
