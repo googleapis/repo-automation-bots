@@ -533,6 +533,32 @@ describe('refreshConfigs', () => {
       )
     );
   });
+
+  it('does not create issues if the path is set to ignore', async () => {
+    const configsStore = new FakeConfigsStore();
+    const invalidConfig =
+      'deep-copy-regex:\n - source: /(*foo)\n   dest: missing/leading/slash';
+
+    const zip = new AdmZip();
+    zip.addFile(
+      'nodejs-vision/packages/gapic-node-templating/templates/bootstrap-templates/.OwlBot.yaml',
+      Buffer.from(invalidConfig)
+    );
+
+    const octokit = octokitSha123(zip);
+    const issuesCreateSpy = sandbox.spy(octokit.issues, 'create');
+
+    await refreshConfigs(
+      configsStore,
+      undefined,
+      octokit,
+      repoFromZip('nodejs-vision', zip),
+      'main',
+      42
+    );
+
+    assert.strictEqual(issuesCreateSpy.callCount, 0);
+  });
 });
 
 describe('scanGithubForConfigs', () => {
