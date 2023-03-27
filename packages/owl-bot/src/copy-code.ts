@@ -771,12 +771,36 @@ export async function copyCodeIntoPullRequest(
   token = await octokitFactory.getGitHubShortLivedAccessToken();
   octokit = await octokitFactory.getShortLivedOctokit(token);
 
-  // Force push the code to the pull request branch.
+  // Prepare to push code to the pull request branch.
   const pushUrl = destRepo.getCloneUrl(token);
   cmd(`git remote set-url origin ${pushUrl}`, {cwd: destDir});
-  cmd(`git push -f origin ${destBranch}`, {cwd: destDir});
 
   if (action === 'regenerate') {
+    // Minimize a race between our commits and others' commits to the PR's
+    // branch while we were copying code.
+    const originalDestHead = cmd(
+      `git log -1 --format=%H  origin/${destBranch}`,
+      {
+        cwd: destDir,
+      }
+    )
+      .toString('utf-8')
+      .trim();
+    cmd(`git fetch origin ${destBranch}`, {cwd: destDir});
+    const originDestHead = cmd(`git log -1 --format=%H  origin/${destBranch}`, {
+      cwd: destDir,
+    })
+      .toString('utf-8')
+      .trim();
+    if (originDestHead !== originalDestHead) {
+      reportError(
+        `New commit ${originDestHead} added to ` +
+          `origin/${destBranch} while I was coping code.`
+      );
+      return;
+    }
+    // Force push the code to the pull request branch.
+    cmd(`git push -f origin ${destBranch}`, {cwd: destDir});
     // Update the PR body with the full commit history.
     const {title, body} = resplit(commitMsg, WithRegenerateCheckbox.Yes);
 
@@ -788,6 +812,9 @@ export async function copyCodeIntoPullRequest(
       title: insertApiName(title, apiList),
       body,
     });
+  } else {
+    // Appending the branch, so push without forcing.
+    cmd(`git push origin ${destBranch}`, {cwd: destDir});
   }
 }
 

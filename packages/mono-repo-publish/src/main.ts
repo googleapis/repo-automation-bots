@@ -90,7 +90,6 @@ export function listChangedSubmodules(
   excludeGlobs: string[] = []
 ): string[] {
   const globs = excludeGlobs.map(glob => new mm.Minimatch(glob));
-  // Only checking for package.jsons in submodules that were changed
   // Not checking the top-level package.json
   let files = prFiles.filter(file =>
     file.match(/\/package\.json$|^package\.json$/)
@@ -123,6 +122,16 @@ function publish(
   execSync: typeof childProcess.execSync,
   rmSync: typeof fs.rmSync
 ): ExecutionOutput {
+  if (fs.existsSync(resolve(directory, 'package.json'))) {
+    const pkg = JSON.parse(
+      fs.readFileSync(resolve(directory, 'package.json'), 'utf-8')
+    );
+    if (pkg.private) {
+      return {
+        output: 'skipping publication ${directory}/package.json is private',
+      };
+    }
+  }
   const installCommand = stat(resolve(directory, 'package-lock.json'))
     ? 'ci'
     : 'i';

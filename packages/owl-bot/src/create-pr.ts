@@ -113,7 +113,7 @@ export function prependCommitMessage(
             bodyParts[0]
           }\nEND_NESTED_COMMIT\n${NESTED_COMMIT_SEPARATOR}\n${bodyParts
             .slice(1)
-            .join(NESTED_COMMIT_SEPARATOR)}`;
+            .join(`\n${NESTED_COMMIT_SEPARATOR}\n`)}`;
 
     // prepend the new commit message and use original title truncation logic
     return resplit(
