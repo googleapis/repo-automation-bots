@@ -36,6 +36,7 @@ For local testing purposes, you may want to check the policy of a single reposit
 ```
 cd packages/policy
 npm install
+npm run compile
 npm link
 ```
 
