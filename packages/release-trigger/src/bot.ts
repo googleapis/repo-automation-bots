@@ -64,7 +64,8 @@ async function doTriggerWithLock(
   pullRequest: PullRequest,
   token: string,
   logger: GCFLogger,
-  installationId: number
+  installationId: number,
+  multiScmName?: string
 ) {
   const lock = new DatastoreLock(
     TRIGGER_LOCK_ID,
@@ -91,7 +92,14 @@ async function doTriggerWithLock(
   try {
     // double-check that the pull request is triggerable
     if (isReleasePullRequest(pullRequest)) {
-      await doTrigger(octokit, pullRequest, token, logger, installationId);
+      await doTrigger(
+        octokit,
+        pullRequest,
+        token,
+        logger,
+        installationId,
+        multiScmName
+      );
     } else {
       logger.warn(`Skipping triggering release PR: ${pullRequest.html_url}`);
     }
@@ -112,7 +120,8 @@ async function doTrigger(
   pullRequest: PullRequest,
   token: string,
   logger: GCFLogger,
-  installationId: number
+  installationId: number,
+  multiScmName?: string
 ) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
@@ -125,7 +134,8 @@ async function doTrigger(
     const {jobName} = await triggerKokoroJob(
       pullRequest.html_url,
       token,
-      logger
+      logger,
+      multiScmName
     );
     if (jobName) {
       const commentBody = `Triggered job: ${jobName} (${new Date().toISOString()})\n\nTo trigger again, remove the ${TRIGGERED_LABEL} label (in a few minutes).`;
@@ -255,7 +265,8 @@ export = (app: Probot) => {
         pullRequest,
         token,
         logger,
-        context.payload.installation!.id
+        context.payload.installation!.id,
+        configuration.multiScmName
       );
     }
   });
@@ -383,7 +394,8 @@ export = (app: Probot) => {
       context.payload.pull_request,
       token,
       logger,
-      context.payload.installation!.id
+      context.payload.installation!.id,
+      configuration.multiScmName
     );
   });
 
@@ -487,7 +499,8 @@ export = (app: Probot) => {
         pullRequest,
         token,
         logger,
-        context.payload.installation!.id
+        context.payload.installation!.id,
+        configuration.multiScmName
       );
     }
   });
