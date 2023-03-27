@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {describe, it, before} from 'mocha';
-import admin from 'firebase-admin';
+import {Firestore} from '@google-cloud/firestore';
 import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../src/database';
 import {Configs} from '../src/configs-store';
 import {v4 as uuidv4} from 'uuid';
@@ -27,10 +27,7 @@ describe('database', () => {
     const timeOutPromise = new Promise((resolve, reject) => {
       setTimeout(() => reject('Timed out!'), 10000);
     });
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-    });
-    const db = admin.firestore();
+    const db = new Firestore({preferRest: true});
     try {
       await Promise.race([
         timeOutPromise,
@@ -43,7 +40,7 @@ describe('database', () => {
   });
 
   it('stores and retrieves copy state', async () => {
-    const db = admin.firestore();
+    const db = new Firestore({preferRest: true});
     const store = new FirestoreCopyStateStore(db, 'test-' + uuidv4() + '-');
     const copyTag = uuidv4();
     const buildId = uuidv4();
@@ -80,7 +77,7 @@ describe('database', () => {
   });
 
   it('stores and retrieves configs', async () => {
-    const db = admin.firestore();
+    const db = new Firestore({preferRest: true});
     const store = new FirestoreConfigsStore(db, 'test-' + uuidv4() + '-');
     const repoA = 'googleapis/' + uuidv4();
     const repoB = 'googleapis/' + uuidv4();
@@ -198,7 +195,7 @@ describe('database', () => {
   });
 
   it('stores and retrieves PRs for lock updates', async () => {
-    const db = admin.firestore();
+    const db = new Firestore({preferRest: true});
     const store = new FirestoreConfigsStore(db, 'test-');
     const repoA = 'googleapis/' + uuidv4();
     const dockerImageA = uuidv4();
