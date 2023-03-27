@@ -367,7 +367,7 @@ export async function getAuthenticatedOctokit(
 }
 
 function getCloudBuildInstance() {
-  return new CloudBuildClient();
+  return new CloudBuildClient({fallback: 'rest'});
 }
 
 /*
