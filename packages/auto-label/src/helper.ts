@@ -408,7 +408,7 @@ export function getLabel(
   data: FileData[],
   config: LanguageConfig,
   type: string
-): string[] {
+): string[] | undefined {
   const counted: {[key: string]: number} = {};
   const countedArray: {[key: string]: number}[] = [];
   for (const file of data) {
