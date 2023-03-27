@@ -387,15 +387,17 @@ describe('bot', () => {
         triggerKokoroJobStub,
         'https://github.com/Codertocat/Hello-World/pull/1234',
         sinon.match.string,
-        sinon.match.any,
-        'Hello-World'
+        sinon.match({
+          multiScmName: 'Hello-World',
+        })
       );
       sinon.assert.calledWith(
         triggerKokoroJobStub,
         'https://github.com/Codertocat/Hello-World/pull/1235',
         sinon.match.string,
-        sinon.match.any,
-        'Hello-World'
+        sinon.match({
+          multiScmName: 'Hello-World',
+        })
       );
       sinon.assert.calledWith(
         markTriggeredStub,

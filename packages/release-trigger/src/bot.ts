@@ -131,12 +131,10 @@ async function doTrigger(
   const repo = pullRequest.base.repo.name;
   const number = pullRequest.number;
   try {
-    const {jobName} = await triggerKokoroJob(
-      pullRequest.html_url,
-      token,
+    const {jobName} = await triggerKokoroJob(pullRequest.html_url, token, {
       logger,
-      multiScmName
-    );
+      multiScmName,
+    });
     if (jobName) {
       const commentBody = `Triggered job: ${jobName} (${new Date().toISOString()})\n\nTo trigger again, remove the ${TRIGGERED_LABEL} label (in a few minutes).`;
       await addOrUpdateIssueComment(

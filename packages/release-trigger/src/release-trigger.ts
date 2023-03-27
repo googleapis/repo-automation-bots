@@ -155,12 +155,17 @@ export async function findPendingReleasePullRequests(
   return found;
 }
 
+export interface TriggerKokoroOptions {
+  logger?: GCFLogger;
+  multiScmName?: string;
+}
 export async function triggerKokoroJob(
   pullRequestUrl: string,
   token: string,
-  logger: GCFLogger = defaultLogger,
-  multiScmName?: string
+  options: TriggerKokoroOptions = {}
 ): Promise<{stdout: string; stderr: string; jobName?: string}> {
+  const logger = options.logger || defaultLogger;
+  const multiScmName = options.multiScmName;
   logger.info(`triggering job for ${pullRequestUrl}`);
 
   let command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;

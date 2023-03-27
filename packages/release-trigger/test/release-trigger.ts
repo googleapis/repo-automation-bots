@@ -256,8 +256,9 @@ describe('release-trigger', () => {
       const {stdout, stderr} = await triggerKokoroJob(
         'https://github.com/testOwner/testRepo/pull/1234',
         'fake-token',
-        logger,
-        'some-multi-scm-name'
+        {
+          multiScmName: 'some-multi-scm-name',
+        }
       );
       assert.strictEqual(stdout, 'some output');
       assert.strictEqual(stderr, 'some error output');
