@@ -15,6 +15,9 @@
 import {Storage} from '@google-cloud/storage';
 import {GCFLogger} from 'gcf-utils';
 
+const PRODUCTS_FILE = 'products.json';
+const SERVICE_CONFIG_PRODUCTS_FILE = 'service-config-products.json';
+
 const storage = new Storage();
 
 export interface ApiLabel {
@@ -28,15 +31,51 @@ export interface ApiLabels {
   products: Array<ApiLabel>;
 }
 
+export const getDriftApiLabels = async (
+  dataBucket: string,
+  logger: GCFLogger
+): Promise<ApiLabels> => {
+  const apis = await storage.bucket(dataBucket).file(PRODUCTS_FILE).download();
+  const parsedResponse = JSON.parse(apis[0].toString()) as ApiLabels;
+  logger.debug({apiLabels: parsedResponse});
+  return parsedResponse;
+};
+
+export const mergeApiLabels = (...labels: ApiLabels[]): ApiLabels => {
+  const apisByPrefix = new Map<string, ApiLabel>();
+  for (const apiLabels of labels) {
+    for (const apiLabel of apiLabels.products) {
+      if (!apisByPrefix.get(apiLabel.region_tag_prefix)) {
+        apisByPrefix.set(apiLabel.region_tag_prefix, apiLabel);
+      }
+    }
+  }
+
+  return {
+    products: Array(...apisByPrefix.values()),
+  };
+};
+
 export const getApiLabels = async (
   dataBucket: string,
   logger: GCFLogger
 ): Promise<ApiLabels> => {
   const apis = await storage
     .bucket(dataBucket)
-    .file('products.json')
+    .file(SERVICE_CONFIG_PRODUCTS_FILE)
     .download();
   const parsedResponse = JSON.parse(apis[0].toString()) as ApiLabels;
   logger.debug({apiLabels: parsedResponse});
   return parsedResponse;
+};
+
+export const setApiLabels = async (
+  dataBucket: string,
+  apiLabels: ApiLabels
+): Promise<void> => {
+  const contents = JSON.stringify(apiLabels);
+  await storage
+    .bucket(dataBucket)
+    .file(SERVICE_CONFIG_PRODUCTS_FILE)
+    .save(contents);
 };

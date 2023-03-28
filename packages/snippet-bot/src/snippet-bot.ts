@@ -63,11 +63,23 @@ import tmp from 'tmp-promise';
 import tar from 'tar';
 import {promises as pfs} from 'fs';
 import path from 'path';
+import {scanServiceConfigsForApiLabels} from './service-configs';
+import {
+  getDriftApiLabels,
+  getApiLabels,
+  setApiLabels,
+  mergeApiLabels,
+} from './api-labels';
 
 // Solely for avoid using `any` type.
 interface Label {
   name: string;
 }
+
+const DEVREL_SETTINGS_BUCKET =
+  process.env.DEVREL_SETTINGS_BUCKET || 'devrel-prod-settings';
+const SERVICE_CONFIG_BUCKET =
+  process.env.SERVICE_CONFIG_BUCKET || 'drift-product-sync';
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
@@ -371,13 +383,15 @@ async function scanPullRequest(
   // Add or update a comment on the PR.
   const prNumber = pull_request.number;
 
+  const apiLabels = await getApiLabels(SERVICE_CONFIG_BUCKET, logger);
+
   // First check product prefix for added region tags.
   let productPrefixViolations: Array<Violation> = [];
   if (!noPrefixReq) {
     productPrefixViolations = await checkProductPrefixViolations(
       result,
       configuration,
-      logger
+      apiLabels
     );
   }
 
@@ -686,6 +700,40 @@ export = (app: Probot) => {
       return;
     }
     await syncLabels(octokit, owner, repo, SNIPPET_BOT_LABELS);
+  });
+
+  // Nightly, regenerate the allowed product list and cache into a GCS bucket
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.global' as any, async context => {
+    let octokit: Octokit;
+    if (context.payload.installation?.id) {
+      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+    } else {
+      throw new Error(
+        'Installation ID not provided in schedule.repository event.' +
+          ' We cannot authenticate Octokit.'
+      );
+    }
+    const logger = getContextLogger(context);
+    const apiLabels = await scanServiceConfigsForApiLabels(octokit, {
+      branch: 'master',
+      logger,
+    });
+    logger.info(
+      `Found ${apiLabels.products.length} products from service configs.`
+    );
+    const driftApiLabels = await getDriftApiLabels(
+      DEVREL_SETTINGS_BUCKET,
+      logger
+    );
+    logger.info(
+      `Found ${driftApiLabels.products.length} products from drift product export.`
+    );
+    const mergedApiLabels = mergeApiLabels(apiLabels, driftApiLabels);
+    logger.info(
+      `${mergedApiLabels.products.length} products from combined sources.`
+    );
+    await setApiLabels(SERVICE_CONFIG_BUCKET, mergedApiLabels);
   });
   app.on('issue_comment.edited', async context => {
     let octokit: Octokit;

@@ -1,0 +1,11 @@
+type: google.api.Service
+config_version: 3
+name: bar.googleapis.com
+title: Bar API
+
+publishing:
+  organization: CLOUD
+  api_short_name: 'bar'
+  github_label: 'api: bar'
+  doc_tag_prefix: 'bar'
+  codeowner_github_teams:
