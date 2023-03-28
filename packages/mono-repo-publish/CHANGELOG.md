@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.4...mono-repo-publish-v1.7.0) (2023-03-28)
+
+
+### Features
+
+* update mono-repo-publish to leave a tarball for archiving ([#5015](https://github.com/googleapis/repo-automation-bots/issues/5015)) ([07e6b56](https://github.com/googleapis/repo-automation-bots/commit/07e6b56ae00b50b4ace823fa4f4c63e48570c7b1))
+
 ## [1.6.4](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.3...mono-repo-publish-v1.6.4) (2023-03-15)
 
 
