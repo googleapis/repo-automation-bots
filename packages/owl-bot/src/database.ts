@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Firestore} from '@google-cloud/firestore';
+import admin from 'firebase-admin';
 import {OwlBotLock, toFrontMatchRegExp} from './config-files';
 import {AffectedRepo, Configs, ConfigsStore} from './configs-store';
 import {CopyStateStore} from './copy-state-store';
 import {githubRepoFromOwnerSlashName} from './github-repo';
 
-export type Db = Firestore;
+export type Db = admin.firestore.Firestore;
 
 /**
  * A google cloud build that updates ta repo.
@@ -55,7 +55,7 @@ function unpackConfigs(packed: PackedConfigs): Configs {
 }
 
 /**
- * When firestore sees a / in a doc id, it interprets it as a collection name.
+ * When firebase sees a / in a doc id, it interprets it as a collection name.
  * So, we have to escape them.  Also escape +s because we use them for combining
  * strings into keys.  And use a format that can be decoded by decodeURIComponent().
  */
