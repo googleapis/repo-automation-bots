@@ -137,6 +137,7 @@ function publish(
     : 'i';
   const output: string[] = [];
   try {
+    // Install dependencies.
     output.push(
       execSync(`npm ${installCommand} --registry=https://registry.npmjs.org`, {
         cwd: directory,
@@ -144,13 +145,35 @@ function publish(
         stdio: 'inherit',
       })
     );
+
+    // Pack a tarball and leave it behind so we can archive what we've
+    // published.
     output.push(
-      execSync(`npm publish --access=public${dryRun ? ' --dry-run' : ''}`, {
+      execSync('npm pack .', {
         cwd: directory,
         encoding: 'utf-8',
         stdio: 'inherit',
       })
     );
+
+    // npm pack creates a tarball, but its name is unpredictable.  So we have to
+    // find the most recent tarball in the directory and assume that's the one
+    // created by npm pack.
+    const tarball = findMostRecentTarBall(directory);
+
+    // Publish the tarball to npmjs.org.
+    output.push(
+      execSync(
+        `npm publish --access=public${dryRun ? ' --dry-run' : ''} ${tarball}`,
+        {
+          cwd: directory,
+          encoding: 'utf-8',
+          stdio: 'inherit',
+        }
+      )
+    );
+
+    // Clean out the node_modules directory.
     rmSync(join(directory, 'node_modules'), {
       recursive: true,
       force: true,
@@ -165,6 +188,25 @@ function publish(
   return {
     output: output.join('\n'),
   };
+}
+
+/// Finds the most recently created file in the directory with extension .tgz.
+function findMostRecentTarBall(directory: string): string | undefined {
+  return (
+    fs
+      // Collect tarballs.
+      .readdirSync(directory)
+      .filter(fname => fname.endsWith('.tgz'))
+      // Lookup each tarball's creation time.
+      .map(fname => {
+        return {
+          fname,
+          stats: fs.statSync(join(directory, fname)),
+        };
+      })
+      // Choose the tarball with the most recent creation time.
+      .reduce((a, b) => (a.stats.ctimeMs > b.stats.ctimeMs ? a : b))?.fname
+  );
 }
 
 export function publishSubmodules(directories: string[], dryRun: boolean) {

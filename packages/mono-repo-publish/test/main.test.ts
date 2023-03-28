@@ -19,6 +19,7 @@ import nock from 'nock';
 import * as sinon from 'sinon';
 import * as path from 'path';
 import {Octokit} from '@octokit/rest';
+import {makeTempDirWithTarballs} from './util';
 
 const sandbox = sinon.createSandbox();
 
@@ -96,57 +97,75 @@ describe('mono-repo publish', () => {
     assert.deepStrictEqual(submodules, ['packages/secondPackage', '.']);
   });
 
-  it('passes in the right arguments for npm publish', () => {
-    core.publishSubmodules(['foo'], false);
-    sandbox.assert.calledWith(
-      execSync.firstCall,
-      'npm i --registry=https://registry.npmjs.org'
-    );
-    sandbox.assert.calledWith(
-      execSync.secondCall,
-      'npm publish --access=public'
-    );
-  });
+  describe('with temp dir', () => {
+    let tmpDir;
+    let runDir: string;
 
-  it('passes in --dry-run option', () => {
-    core.publishSubmodules(['foo'], true);
-    sandbox.assert.calledWith(
-      execSync.firstCall,
-      'npm i --registry=https://registry.npmjs.org'
-    );
-    sandbox.assert.calledWith(
-      execSync.secondCall,
-      'npm publish --access=public --dry-run'
-    );
-  });
-
-  // A node_modules folder existing in the root directory was preventing
-  // google-api-nodejs-client from publishing.
-  it('it removes node_modules after publish', () => {
-    const errors = core.publishSubmodules(['foo'], true);
-    sandbox.assert.calledWith(
-      execSync.firstCall,
-      'npm i --registry=https://registry.npmjs.org'
-    );
-    sandbox.assert.calledWith(
-      execSync.secondCall,
-      'npm publish --access=public --dry-run'
-    );
-    sandbox.assert.calledWith(rmdirSync, 'foo/node_modules', {
-      force: true,
-      recursive: true,
+    before(async () => {
+      tmpDir = await makeTempDirWithTarballs('foo');
+      runDir = process.cwd();
+      process.chdir(tmpDir);
     });
-    assert.strictEqual(errors.length, 0);
-  });
 
-  it('returns array of errors after attempting all publications', () => {
-    execSync.throws(Error('publish fail'));
-    const errors = core.publishSubmodules(['foo'], true);
-    sandbox.assert.calledWith(
-      execSync.firstCall,
-      'npm i --registry=https://registry.npmjs.org'
-    );
-    assert.strictEqual(errors.length, 1);
+    after(() => {
+      process.chdir(runDir);
+    });
+
+    it('passes in the right arguments for npm publish', () => {
+      core.publishSubmodules(['foo'], false);
+      sandbox.assert.calledWith(
+        execSync.firstCall,
+        'npm i --registry=https://registry.npmjs.org'
+      );
+      sandbox.assert.calledWith(execSync.secondCall, 'npm pack .');
+      sandbox.assert.calledWith(
+        execSync.thirdCall,
+        'npm publish --access=public newer.tgz'
+      );
+    });
+
+    it('passes in --dry-run option', () => {
+      core.publishSubmodules(['foo'], true);
+      sandbox.assert.calledWith(
+        execSync.firstCall,
+        'npm i --registry=https://registry.npmjs.org'
+      );
+      sandbox.assert.calledWith(execSync.secondCall, 'npm pack .');
+      sandbox.assert.calledWith(
+        execSync.thirdCall,
+        'npm publish --access=public --dry-run newer.tgz'
+      );
+    });
+
+    // A node_modules folder existing in the root directory was preventing
+    // google-api-nodejs-client from publishing.
+    it('it removes node_modules after publish', () => {
+      const errors = core.publishSubmodules(['foo'], true);
+      sandbox.assert.calledWith(
+        execSync.firstCall,
+        'npm i --registry=https://registry.npmjs.org'
+      );
+      sandbox.assert.calledWith(execSync.secondCall, 'npm pack .');
+      sandbox.assert.calledWith(
+        execSync.thirdCall,
+        'npm publish --access=public --dry-run newer.tgz'
+      );
+      sandbox.assert.calledWith(rmdirSync, 'foo/node_modules', {
+        force: true,
+        recursive: true,
+      });
+      assert.strictEqual(errors.length, 0);
+    });
+
+    it('returns array of errors after attempting all publications', () => {
+      execSync.throws(Error('publish fail'));
+      const errors = core.publishSubmodules(['foo'], true);
+      sandbox.assert.calledWith(
+        execSync.firstCall,
+        'npm i --registry=https://registry.npmjs.org'
+      );
+      assert.strictEqual(errors.length, 1);
+    });
   });
 
   it('uses npm ci, if package-lock.json exists', () => {
@@ -154,10 +173,6 @@ describe('mono-repo publish', () => {
     sandbox.assert.calledWith(
       execSync.firstCall,
       'npm ci --registry=https://registry.npmjs.org'
-    );
-    sandbox.assert.calledWith(
-      execSync.secondCall,
-      'npm publish --access=public'
     );
   });
 
