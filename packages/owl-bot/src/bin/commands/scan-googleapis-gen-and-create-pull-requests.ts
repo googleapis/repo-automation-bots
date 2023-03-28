@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import admin from 'firebase-admin';
 import yargs = require('yargs');
-import {Firestore} from '@google-cloud/firestore';
 import {scanGoogleapisGenAndCreatePullRequests} from '../../scan-googleapis-gen-and-create-pull-requests';
 import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../../database';
 import {OctokitParams, octokitFactoryFrom} from '../../octokit-util';
@@ -96,10 +96,11 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       });
   },
   async handler(argv) {
-    const db = new Firestore({
-      projectId: argv.project as string,
-      preferRest: true,
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: argv['firestore-project'],
     });
+    const db = admin.firestore();
     const configsStore = new FirestoreConfigsStore(db!);
     const copyStateStore = new FirestoreCopyStateStore(db!);
     await scanGoogleapisGenAndCreatePullRequests(
