@@ -46,7 +46,7 @@ export async function getDriftApiLabels(
   const parsedResponse = JSON.parse(apis[0].toString()) as ApiLabels;
   logger.debug({apiLabels: parsedResponse});
   return parsedResponse;
-};
+}
 
 /**
  * Helper function to merge multiple lists of products, de-duplicating by
@@ -68,7 +68,7 @@ export function mergeApiLabels(...labels: ApiLabels[]): ApiLabels {
   return {
     products: Array(...apisByPrefix.values()),
   };
-};
+}
 
 /**
  * Helper to fetch cached list of products from our cache bucket.
@@ -88,11 +88,11 @@ export async function getApiLabels(
   const parsedResponse = JSON.parse(apis[0].toString()) as ApiLabels;
   logger.debug({apiLabels: parsedResponse});
   return parsedResponse;
-};
+}
 
 /**
  * Helper function to store a list of products into our cache bucket.
- * 
+ *
  * @param {string} dataBucket Name of the GCS bucket
  * @param {GCFLogger} logger Context logger
  */
@@ -105,4 +105,4 @@ export async function setApiLabels(
     .bucket(dataBucket)
     .file(SERVICE_CONFIG_PRODUCTS_FILE)
     .save(contents);
-};
+}
