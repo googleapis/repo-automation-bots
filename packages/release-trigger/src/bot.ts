@@ -57,6 +57,9 @@ const TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
  * @param {Octokit} octokit An authenticated octokit instance
  * @param {PullRequest} pullRequest The release pull request
  * @param {string} token An authenticated auth token for releasetool to use
+ * @param {GCFLogger} logger A context logger
+ * @param {number} installationId The GitHub app installation id, used for authentication
+ * @param {string} multiScmName Optional. If provided, trigger the Kokoro job as a multi_scm job
  * @throws {Error} if we fail to acquire the lock
  */
 async function doTriggerWithLock(
@@ -64,7 +67,8 @@ async function doTriggerWithLock(
   pullRequest: PullRequest,
   token: string,
   logger: GCFLogger,
-  installationId: number
+  installationId: number,
+  multiScmName?: string
 ) {
   const lock = new DatastoreLock(
     TRIGGER_LOCK_ID,
@@ -91,7 +95,14 @@ async function doTriggerWithLock(
   try {
     // double-check that the pull request is triggerable
     if (isReleasePullRequest(pullRequest)) {
-      await doTrigger(octokit, pullRequest, token, logger, installationId);
+      await doTrigger(
+        octokit,
+        pullRequest,
+        token,
+        logger,
+        installationId,
+        multiScmName
+      );
     } else {
       logger.warn(`Skipping triggering release PR: ${pullRequest.html_url}`);
     }
@@ -106,13 +117,17 @@ async function doTriggerWithLock(
  * @param {Octokit} octokit An authenticated octokit instance
  * @param {PullRequest} pullRequest The release pull request
  * @param {string} token An authenticated auth token for releasetool to use
+ * @param {GCFLogger} logger A context logger
+ * @param {number} installationId The GitHub app installation id, used for authentication
+ * @param {string} multiScmName Optional. If provided, trigger the Kokoro job as a multi_scm job
  */
 async function doTrigger(
   octokit: Octokit,
   pullRequest: PullRequest,
   token: string,
   logger: GCFLogger,
-  installationId: number
+  installationId: number,
+  multiScmName?: string
 ) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
@@ -122,11 +137,10 @@ async function doTrigger(
   const repo = pullRequest.base.repo.name;
   const number = pullRequest.number;
   try {
-    const {jobName} = await triggerKokoroJob(
-      pullRequest.html_url,
-      token,
-      logger
-    );
+    const {jobName} = await triggerKokoroJob(pullRequest.html_url, token, {
+      logger,
+      multiScmName,
+    });
     if (jobName) {
       const commentBody = `Triggered job: ${jobName} (${new Date().toISOString()})\n\nTo trigger again, remove the ${TRIGGERED_LABEL} label (in a few minutes).`;
       await addOrUpdateIssueComment(
@@ -255,7 +269,8 @@ export = (app: Probot) => {
         pullRequest,
         token,
         logger,
-        context.payload.installation!.id
+        context.payload.installation!.id,
+        configuration.multiScmName
       );
     }
   });
@@ -383,7 +398,8 @@ export = (app: Probot) => {
       context.payload.pull_request,
       token,
       logger,
-      context.payload.installation!.id
+      context.payload.installation!.id,
+      configuration.multiScmName
     );
   });
 
@@ -487,7 +503,8 @@ export = (app: Probot) => {
         pullRequest,
         token,
         logger,
-        context.payload.installation!.id
+        context.payload.installation!.id,
+        configuration.multiScmName
       );
     }
   });

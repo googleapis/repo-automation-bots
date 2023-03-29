@@ -15,6 +15,7 @@
 export interface ConfigurationOptions {
   jobName?: string;
   enabled?: boolean;
+  multiScmName?: string;
 }
 
 export const WELL_KNOWN_CONFIGURATION_FILE = 'release-trigger.yml';
