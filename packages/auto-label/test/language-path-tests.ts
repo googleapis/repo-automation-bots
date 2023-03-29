@@ -189,10 +189,9 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        helper.getLabel(data, config, 'language'),
-        'javascript'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, config, 'language'), [
+        'javascript',
+      ]);
     });
 
     it('labels with user defined language mapping', async () => {
@@ -209,10 +208,9 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        helper.getLabel(data, lang_config, 'language'),
-        'lang: typescript'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, lang_config, 'language'), [
+        'lang: typescript',
+      ]);
     });
 
     it('labels with user defined paths', async () => {
@@ -229,10 +227,9 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        helper.getLabel(data, lang_config, 'language'),
-        'lang: c++'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, lang_config, 'language'), [
+        'lang: c++',
+      ]);
     });
 
     it('labels with user defined path even if upstream', async () => {
@@ -249,10 +246,9 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        helper.getLabel(data, lang_config, 'language'),
-        'lang: foo'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, lang_config, 'language'), [
+        'lang: foo',
+      ]);
     });
 
     it('labels with user defined path on the deepest path', async () => {
@@ -270,10 +266,9 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        helper.getLabel(data, lang_config, 'language'),
-        'lang: bar'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, lang_config, 'language'), [
+        'lang: bar',
+      ]);
     });
 
     it('labels with user defined path according to example on README', async () => {
@@ -308,10 +303,9 @@ describe('language-and-path-labeling', () => {
           changes: 1,
         },
       ];
-      assert.deepStrictEqual(
-        helper.getLabel(data, path_config, 'path'),
-        'api: run'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, path_config, 'path'), [
+        'api: run',
+      ]);
     });
 
     it('lets users customize label prefix', async () => {
@@ -325,10 +319,9 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        helper.getLabel(data, lang_config, 'language'),
-        'hello: javascript'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, lang_config, 'language'), [
+        'hello: javascript',
+      ]);
     });
   });
 
@@ -347,10 +340,42 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        helper.getLabel(data, path_config, 'path'),
-        'path: my-app'
-      );
+      assert.deepStrictEqual(helper.getLabel(data, path_config, 'path'), [
+        'path: my-app',
+      ]);
+    });
+
+    it('labels with user defined paths when there are many', async () => {
+      const path_config = {
+        pullrequest: true,
+        multipleLabelPaths: [
+          {
+            labelprefix: 'api: ',
+            paths: {
+              recaptcha_enterprise: 'recaptchaenterprise',
+            },
+          },
+          {
+            labelprefix: 'asset: ',
+            paths: {
+              recaptcha_enterprise: {
+                demosite: 'flagship',
+              },
+            },
+          },
+        ],
+      };
+      const data = [
+        {
+          filename:
+            'python-docs-samples/recaptcha_enterprise/demosite/README.md',
+          changes: 15,
+        },
+      ];
+      assert.deepStrictEqual(helper.getLabel(data, path_config, 'path'), [
+        'api: recaptchaenterprise',
+        'asset: flagship',
+      ]);
     });
 
     it('label is nil if path is not user defined', async () => {
@@ -364,7 +389,10 @@ describe('language-and-path-labeling', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(helper.getLabel(data, path_config, 'path'), undefined);
+      assert.deepStrictEqual(
+        helper.getLabel(data, path_config, 'path'),
+        undefined
+      );
     });
   });
 });

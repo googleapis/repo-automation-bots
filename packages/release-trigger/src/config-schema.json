@@ -10,6 +10,9 @@
         },
         "enabled": {
             "type": "boolean"
+        },
+        "multiScmName": {
+            "type": "string"
         }
     }
 }

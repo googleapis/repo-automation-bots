@@ -348,6 +348,69 @@ describe('bot', () => {
       );
       requests.done();
     });
+
+    it('should trigger a multi_scm job via releasetool', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/release_published'
+      ));
+      const pull1 = buildFakePullRequest('Codertocat', 'Hello-World', 1234);
+      const pull2 = buildFakePullRequest('Codertocat', 'Hello-World', 1235);
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1234')
+        .reply(200, pull1)
+        .get('/repos/Codertocat/Hello-World/pulls/1235')
+        .reply(200, pull2);
+
+      getConfigStub.resolves({enabled: true, multiScmName: 'Hello-World'});
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const findPullRequestsStub = sandbox
+        .stub(releaseTriggerModule, 'findPendingReleasePullRequests')
+        .resolves([pull1, pull2]);
+      const triggerKokoroJobStub = sandbox
+        .stub(releaseTriggerModule, 'triggerKokoroJob')
+        .resolves({stdout: '', stderr: ''});
+      const markTriggeredStub = sandbox
+        .stub(releaseTriggerModule, 'markTriggered')
+        .resolves();
+
+      await probot.receive({
+        name: 'release',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getConfigStub);
+      sinon.assert.calledOnce(findPullRequestsStub);
+      sinon.assert.calledWith(
+        triggerKokoroJobStub,
+        'https://github.com/Codertocat/Hello-World/pull/1234',
+        sinon.match.string,
+        sinon.match({
+          multiScmName: 'Hello-World',
+        })
+      );
+      sinon.assert.calledWith(
+        triggerKokoroJobStub,
+        'https://github.com/Codertocat/Hello-World/pull/1235',
+        sinon.match.string,
+        sinon.match({
+          multiScmName: 'Hello-World',
+        })
+      );
+      sinon.assert.calledWith(
+        markTriggeredStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1234})
+      );
+      sinon.assert.calledWith(
+        markTriggeredStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1235})
+      );
+      requests.done();
+    });
   });
 
   describe('on pull request unlabeled', () => {

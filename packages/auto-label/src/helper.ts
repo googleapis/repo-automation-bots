@@ -104,14 +104,27 @@ export const PULL_REQUEST_SIZE_LABELS = [
 /**
  * Checks whether the intended label already exists
  */
-export function labelExists(labels: Label[], new_label: string): Label | null {
+export function labelExists(
+  labels: Label[],
+  new_labels: string | string[]
+): Label[] | null {
+  const returnLabels = [];
   for (const label of labels) {
-    if (label.name === new_label) {
-      logger.info(`Exiting: label ${new_label} already exists`);
-      return label;
+    if (Array.isArray(new_labels)) {
+      for (const new_label of new_labels) {
+        if (label.name === new_label) {
+          logger.info(`Exiting: label ${new_label} already exists`);
+          returnLabels.push(label);
+        }
+      }
+    } else {
+      if (label.name === new_labels) {
+        logger.info(`Exiting: label ${new_labels} already exists`);
+        returnLabels.push(label);
+      }
     }
   }
-  return null;
+  return returnLabels.length ? returnLabels : null;
 }
 
 /**
@@ -171,6 +184,15 @@ export interface PathConfig {
 
 export interface LanguageConfig {
   pullrequest?: boolean;
+  labelprefix?: string;
+  extensions?: {
+    [index: string]: string[];
+  };
+  paths?: PathConfig;
+  multipleLabelPaths?: LabelPrefixAndPaths[];
+}
+
+export interface LabelPrefixAndPaths {
   labelprefix?: string;
   extensions?: {
     [index: string]: string[];
@@ -318,16 +340,33 @@ function getFileLabel(
   filename: string,
   config: LanguageConfig,
   type: string
-): string {
+): string | string[] {
+  let lang: string | string[];
   // Return a path based label, if user defined a path configuration
   if (config.paths) {
-    const lang = getLabelFromPathConfig(filename, config.paths);
+    lang = '';
+    lang = getLabelFromPathConfig(filename, config.paths);
     if (lang) {
       if (config.labelprefix) {
         return config.labelprefix + lang;
       }
       return lang;
     }
+  } else if (config.multipleLabelPaths) {
+    lang = [];
+    for (const prefix of config.multipleLabelPaths) {
+      if (prefix.paths) {
+        const label = getLabelFromPathConfig(filename, prefix.paths);
+        if (label) {
+          if (prefix.labelprefix) {
+            lang.push(prefix.labelprefix + label);
+          } else {
+            lang.push(label);
+          }
+        }
+      }
+    }
+    return lang;
   }
 
   // Default to extension.json mapping since user didn't configure this file ext
@@ -369,22 +408,52 @@ export function getLabel(
   data: FileData[],
   config: LanguageConfig,
   type: string
-): string {
-  const counts = data.reduce((counted: {[key: string]: number}, file) => {
-    const l = getFileLabel(file.filename, config, type);
-    if (l) {
-      if (!counted[l]) {
-        counted[l] = file.changes;
+): string[] | undefined {
+  const counted: {[key: string]: number} = {};
+  const countedArray: {[key: string]: number}[] = [];
+  for (const file of data) {
+    const label = getFileLabel(file.filename, config, type);
+    if (typeof label === 'string') {
+      if (!counted[label]) {
+        counted[label] = file.changes;
       } else {
-        counted[l] += file.changes;
+        counted[label] += file.changes;
+      }
+    } else if (Array.isArray(label) && label.length > 0) {
+      for (const l of label) {
+        if (!counted[l]) {
+          counted[l] = file.changes;
+        } else {
+          counted[l] += file.changes;
+        }
+        countedArray.push(counted);
       }
     }
-    return counted;
-  }, {});
+  }
+  let label: string[] = [];
+  if (countedArray.length) {
+    // countedArray is an array of objects with different labels' frequency.
+    // We need to find the highest frequency-occurring label within an object,
+    // And then compare that highest-occuring label with the other highest-occurring
+    // labels in the other objects. For example:
+    // [{ 'api: recaptchaenterprise': 15, 'asset: flagship': 15 }]
+    // [{ 'api: compute': 14, 'asset: another': 21 }]
+    // In this case, we will select the second array, since its highest value label
+    // is more than any frquency of any label in the other array
+    let max = 0;
+    for (const count of countedArray) {
+      const maxValue = Object.values(count).reduce((a, b) => Math.max(a, b), 0);
+      if (maxValue > max) {
+        max = maxValue;
+        label = Object.keys(count);
+      }
+    }
+  } else {
+    label = Object.keys(counted).sort((a, b) => {
+      return counted[b] - counted[a];
+    });
+    label = [label[0]];
+  }
 
-  const label = Object.keys(counts).sort((a, b) => {
-    return counts[b] - counts[a];
-  });
-  logger.info('Detected labels based on files extensions are: ' + label);
-  return label[0];
+  return label[0] ? label : undefined;
 }
