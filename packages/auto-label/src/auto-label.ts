@@ -114,15 +114,15 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   if (githubLabel) {
     if (labelsOnIssue) {
-      const foundAPIName = helper.labelExists(labelsOnIssue, githubLabel);
-
+      const foundAPINames = helper.labelExists(labelsOnIssue, githubLabel);
       const cleanUpOtherLabels = labelsOnIssue.filter(
         (element: Label) =>
           element.name?.startsWith('api') &&
-          element.name !== foundAPIName?.name &&
+          !foundAPINames?.find(x => x.name === element.name) &&
           element.name !== autoDetectedLabel
       );
-      if (!foundAPIName) {
+
+      if (!foundAPINames) {
         await context.octokit.issues
           .addLabels({
             owner,
@@ -235,7 +235,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
     pull_number,
   });
   const labels = context.payload.pull_request.labels;
-  const new_labels = [];
+  const new_labels: string[] = [];
 
   // If user has turned on path labels by configuring {path: {pullrequest: false, }}
   // By default, this feature is turned off
@@ -246,7 +246,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       logger.info(
         `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
       );
-      new_labels.push(path_label);
+      new_labels.push(...path_label);
     }
   }
 
@@ -265,7 +265,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       logger.info(
         `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
       );
-      new_labels.push(language_label);
+      new_labels.push(...language_label);
     }
   }
 

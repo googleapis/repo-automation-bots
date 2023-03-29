@@ -16,6 +16,7 @@ import {parser} from '../src/bin/mono-repo-publish';
 import * as core from '../src/main';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
+import {makeTempDirWithTarballs} from './util';
 
 const sandbox = sinon.createSandbox();
 
@@ -31,97 +32,131 @@ describe('CLI', () => {
     getFilesStub = sandbox.stub(core, 'getsPRFiles');
     execSync = sandbox.stub(core.methodOverrides, 'execSyncOverride');
   });
-  describe('default', () => {
-    it('handles explicit credentials', async () => {
-      getOctokitStub.resolves(sandbox.spy());
-      getFilesStub.resolves(['packages/pkg1/package.json']);
-      await parser.parseAsync(
-        '--pr-url=https://github.com/testOwner/testRepo/pull/1234 --app-id-path=./test/fixtures/app-id --installation-id-path=./test/fixtures/installation-id --private-key-path=./test/fixtures/private-key'
-      );
 
-      sinon.assert.calledOnceWithExactly(
-        getOctokitStub,
-        './test/fixtures/app-id',
-        './test/fixtures/private-key',
-        './test/fixtures/installation-id'
-      );
-      sinon.assert.calledOnce(getFilesStub);
-      sinon.assert.calledTwice(execSync);
-      sinon.assert.calledWith(
-        execSync.firstCall,
-        'npm i --registry=https://registry.npmjs.org',
-        sinon.match({cwd: 'packages/pkg1'})
-      );
-      sinon.assert.calledWith(
-        execSync.secondCall,
-        'npm publish --access=public',
-        sinon.match({cwd: 'packages/pkg1'})
-      );
+  describe('with temp package dir', () => {
+    let tmpDir;
+    let runDir: string;
+
+    before(async () => {
+      tmpDir = await makeTempDirWithTarballs('packages/pkg1');
+      runDir = process.cwd();
+      process.chdir(tmpDir);
     });
-    it('handles credentials from the environment', async () => {
-      getOctokitStub.resolves(sandbox.spy());
-      getFilesStub.resolves(['packages/pkg1/package.json']);
-      sandbox.stub(process, 'env').value({
-        APP_ID_PATH: './test/fixtures/app-id',
-        INSTALLATION_ID_PATH: './test/fixtures/installation-id',
-        GITHUB_PRIVATE_KEY_PATH: './test/fixtures/private-key',
+
+    after(() => {
+      process.chdir(runDir);
+    });
+
+    describe('default', () => {
+      it('handles explicit credentials', async () => {
+        getOctokitStub.resolves(sandbox.spy());
+        getFilesStub.resolves(['packages/pkg1/package.json']);
+        await parser.parseAsync(
+          '--pr-url=https://github.com/testOwner/testRepo/pull/1234 --app-id-path=./test/fixtures/app-id --installation-id-path=./test/fixtures/installation-id --private-key-path=./test/fixtures/private-key'
+        );
+
+        sinon.assert.calledOnceWithExactly(
+          getOctokitStub,
+          './test/fixtures/app-id',
+          './test/fixtures/private-key',
+          './test/fixtures/installation-id'
+        );
+        sinon.assert.calledOnce(getFilesStub);
+        sinon.assert.calledThrice(execSync);
+        sinon.assert.calledWith(
+          execSync.firstCall,
+          'npm i --registry=https://registry.npmjs.org',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
+        sinon.assert.calledWith(
+          execSync.secondCall,
+          'npm pack .',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
+        sinon.assert.calledWith(
+          execSync.thirdCall,
+          'npm publish --access=public newer.tgz',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
       });
-      await parser.parseAsync(
-        '--pr-url=https://github.com/testOwner/testRepo/pull/1234'
-      );
 
-      sinon.assert.calledOnceWithExactly(
-        getOctokitStub,
-        './test/fixtures/app-id',
-        './test/fixtures/private-key',
-        './test/fixtures/installation-id'
-      );
-      sinon.assert.calledOnce(getFilesStub);
-      sinon.assert.calledWith(
-        execSync.firstCall,
-        'npm i --registry=https://registry.npmjs.org',
-        sinon.match({cwd: 'packages/pkg1'})
-      );
-      sinon.assert.calledWith(
-        execSync.secondCall,
-        'npm publish --access=public',
-        sinon.match({cwd: 'packages/pkg1'})
-      );
-    });
-    it('uses executes a dry run', async () => {
-      getOctokitStub.resolves(sandbox.spy());
-      getFilesStub.resolves([
-        'packages/pkg1/package.json',
-        'packages/pkg1/package-lock.json',
-      ]);
-      sandbox.stub(process, 'env').value({
-        APP_ID_PATH: './test/fixtures/app-id',
-        INSTALLATION_ID_PATH: './test/fixtures/installation-id',
-        GITHUB_PRIVATE_KEY_PATH: './test/fixtures/private-key',
+      it('handles credentials from the environment', async () => {
+        getOctokitStub.resolves(sandbox.spy());
+        getFilesStub.resolves(['packages/pkg1/package.json']);
+        sandbox.stub(process, 'env').value({
+          APP_ID_PATH: './test/fixtures/app-id',
+          INSTALLATION_ID_PATH: './test/fixtures/installation-id',
+          GITHUB_PRIVATE_KEY_PATH: './test/fixtures/private-key',
+        });
+        await parser.parseAsync(
+          '--pr-url=https://github.com/testOwner/testRepo/pull/1234'
+        );
+
+        sinon.assert.calledOnceWithExactly(
+          getOctokitStub,
+          './test/fixtures/app-id',
+          './test/fixtures/private-key',
+          './test/fixtures/installation-id'
+        );
+        sinon.assert.calledOnce(getFilesStub);
+        sinon.assert.calledWith(
+          execSync.firstCall,
+          'npm i --registry=https://registry.npmjs.org',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
+        sinon.assert.calledWith(
+          execSync.secondCall,
+          'npm pack .',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
+        sinon.assert.calledWith(
+          execSync.thirdCall,
+          'npm publish --access=public newer.tgz',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
       });
-      await parser.parseAsync(
-        '--pr-url=https://github.com/testOwner/testRepo/pull/1234 --dry-run'
-      );
 
-      sinon.assert.calledOnceWithExactly(
-        getOctokitStub,
-        './test/fixtures/app-id',
-        './test/fixtures/private-key',
-        './test/fixtures/installation-id'
-      );
-      sinon.assert.calledOnce(getFilesStub);
-      sinon.assert.calledTwice(execSync);
-      sinon.assert.calledWith(
-        execSync.firstCall,
-        'npm i --registry=https://registry.npmjs.org',
-        sinon.match({cwd: 'packages/pkg1'})
-      );
-      sinon.assert.calledWith(
-        execSync.secondCall,
-        'npm publish --access=public --dry-run',
-        sinon.match({cwd: 'packages/pkg1'})
-      );
+      it('uses executes a dry run', async () => {
+        getOctokitStub.resolves(sandbox.spy());
+        getFilesStub.resolves([
+          'packages/pkg1/package.json',
+          'packages/pkg1/package-lock.json',
+        ]);
+        sandbox.stub(process, 'env').value({
+          APP_ID_PATH: './test/fixtures/app-id',
+          INSTALLATION_ID_PATH: './test/fixtures/installation-id',
+          GITHUB_PRIVATE_KEY_PATH: './test/fixtures/private-key',
+        });
+        await parser.parseAsync(
+          '--pr-url=https://github.com/testOwner/testRepo/pull/1234 --dry-run'
+        );
+
+        sinon.assert.calledOnceWithExactly(
+          getOctokitStub,
+          './test/fixtures/app-id',
+          './test/fixtures/private-key',
+          './test/fixtures/installation-id'
+        );
+        sinon.assert.calledOnce(getFilesStub);
+        sinon.assert.calledThrice(execSync);
+        sinon.assert.calledWith(
+          execSync.firstCall,
+          'npm i --registry=https://registry.npmjs.org',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
+        sinon.assert.calledWith(
+          execSync.secondCall,
+          'npm pack .',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
+        sinon.assert.calledWith(
+          execSync.thirdCall,
+          'npm publish --access=public --dry-run newer.tgz',
+          sinon.match({cwd: 'packages/pkg1'})
+        );
+      });
     });
+
     it('excludes files', async () => {
       getOctokitStub.resolves(sandbox.spy());
       getFilesStub.resolves([
