@@ -16,6 +16,7 @@
           "RegenerateReadme",
           "DiscoveryDocUpdate",
           "PythonDependency",
+          "PythonSampleDependency",
           "NodeDependency",
           "NodeRelease",
           "JavaApiaryCodegen",
