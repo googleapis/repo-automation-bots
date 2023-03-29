@@ -18,6 +18,8 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
+import * as semver from 'semver';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -290,6 +292,21 @@ export function isMajorVersionChanging(versions: Versions): boolean {
  */
 export function isMinorVersionUpgraded(versions: Versions): boolean {
   return Number(versions.newMinorVersion) > Number(versions.oldMinorVersion);
+}
+
+/**
+ * This function determines whether a package was upgraded, regardless of whether or not it was a major bump.
+ *
+ * @param versions an object containing the previous and newer versions of the package being updated
+ * @returns whether the minor version was upgraded.
+ */
+export function isVersionBumped(versions: Versions): boolean {
+  return (
+    semver.compare(
+      versions.oldMajorVersion + '.' + versions.oldMinorVersion,
+      versions.newMajorVersion + '.' + versions.newMinorVersion
+    ) === -1
+  );
 }
 
 /**

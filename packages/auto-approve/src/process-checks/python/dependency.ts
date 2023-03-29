@@ -21,9 +21,9 @@ import {
   getVersionsV2,
   isOneDependencyChanged,
   reportIndividualChecks,
+  isVersionBumped,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
-import * as semver from 'semver';
 export class PythonDependency extends Process implements LanguageRule {
   classRule: {
     author: string;
@@ -129,10 +129,7 @@ export class PythonDependency extends Process implements LanguageRule {
         this.incomingPR.title
       );
 
-      const oldNum = versions.oldMajorVersion + '.' + versions.oldMinorVersion;
-      const newNum = versions.newMajorVersion + '.' + versions.newMinorVersion;
-
-      const isVersionValid = semver.compare(oldNum, newNum) === -1;
+      const isVersionValid = isVersionBumped(versions);
       const oneDependencyChanged = isOneDependencyChanged(file);
 
       if (!(doesDependencyMatch && isVersionValid && oneDependencyChanged)) {
