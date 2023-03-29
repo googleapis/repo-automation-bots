@@ -57,6 +57,9 @@ const TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
  * @param {Octokit} octokit An authenticated octokit instance
  * @param {PullRequest} pullRequest The release pull request
  * @param {string} token An authenticated auth token for releasetool to use
+ * @param {GCFLogger} logger A context logger
+ * @param {number} installationId The GitHub app installation id, used for authentication
+ * @param {string} multiScmName Optional. If provided, trigger the Kokoro job as a multi_scm job
  * @throws {Error} if we fail to acquire the lock
  */
 async function doTriggerWithLock(
@@ -114,6 +117,9 @@ async function doTriggerWithLock(
  * @param {Octokit} octokit An authenticated octokit instance
  * @param {PullRequest} pullRequest The release pull request
  * @param {string} token An authenticated auth token for releasetool to use
+ * @param {GCFLogger} logger A context logger
+ * @param {number} installationId The GitHub app installation id, used for authentication
+ * @param {string} multiScmName Optional. If provided, trigger the Kokoro job as a multi_scm job
  */
 async function doTrigger(
   octokit: Octokit,
