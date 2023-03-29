@@ -31,17 +31,31 @@ export interface ApiLabels {
   products: Array<ApiLabel>;
 }
 
-export const getDriftApiLabels = async (
+/**
+ * Helper to fetch the list of products from DRIFT's GCS bucket.
+ *
+ * @param {string} dataBucket Name of the GCS bucket
+ * @param {GCFLogger} logger Context logger
+ * @returns {ApiLables} Parsed product definitions
+ */
+export async function getDriftApiLabels(
   dataBucket: string,
   logger: GCFLogger
-): Promise<ApiLabels> => {
+): Promise<ApiLabels> {
   const apis = await storage.bucket(dataBucket).file(PRODUCTS_FILE).download();
   const parsedResponse = JSON.parse(apis[0].toString()) as ApiLabels;
   logger.debug({apiLabels: parsedResponse});
   return parsedResponse;
 };
 
-export const mergeApiLabels = (...labels: ApiLabels[]): ApiLabels => {
+/**
+ * Helper function to merge multiple lists of products, de-duplicating by
+ * region_tag_prefix.
+ *
+ * @param {ApiLabels[]} labels Lists of product definitions
+ * @return {ApiLabel} Merged list of product definitions
+ */
+export function mergeApiLabels(...labels: ApiLabels[]): ApiLabels {
   const apisByPrefix = new Map<string, ApiLabel>();
   for (const apiLabels of labels) {
     for (const apiLabel of apiLabels.products) {
@@ -56,10 +70,17 @@ export const mergeApiLabels = (...labels: ApiLabels[]): ApiLabels => {
   };
 };
 
-export const getApiLabels = async (
+/**
+ * Helper to fetch cached list of products from our cache bucket.
+ *
+ * @param {string} dataBucket Name of the GCS bucket
+ * @param {GCFLogger} logger Context logger
+ * @returns {ApiLables} Parsed product definitions
+ */
+export async function getApiLabels(
   dataBucket: string,
   logger: GCFLogger
-): Promise<ApiLabels> => {
+): Promise<ApiLabels> {
   const apis = await storage
     .bucket(dataBucket)
     .file(SERVICE_CONFIG_PRODUCTS_FILE)
@@ -69,10 +90,16 @@ export const getApiLabels = async (
   return parsedResponse;
 };
 
-export const setApiLabels = async (
+/**
+ * Helper function to store a list of products into our cache bucket.
+ * 
+ * @param {string} dataBucket Name of the GCS bucket
+ * @param {GCFLogger} logger Context logger
+ */
+export async function setApiLabels(
   dataBucket: string,
   apiLabels: ApiLabels
-): Promise<void> => {
+): Promise<void> {
   const contents = JSON.stringify(apiLabels);
   await storage
     .bucket(dataBucket)
