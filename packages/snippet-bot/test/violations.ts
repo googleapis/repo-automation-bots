@@ -153,36 +153,33 @@ describe('checkProductPrefixViolations', () => {
     files: ['file'],
   };
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
-
-  let getApiLabelsStub: sinon.SinonStub<
-    [string, GCFLogger],
-    Promise<ApiLabels>
-  >;
-
-  const sandbox = sinon.createSandbox();
-
-  afterEach(() => {
-    sandbox.restore();
-  });
-
+  let apiLabels: ApiLabels;
   beforeEach(() => {
-    const apiLabels = require(resolve(
-      fixturesPath,
-      './violations-test-apiLabels'
-    ));
-    getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
-    getApiLabelsStub.resolves(apiLabels);
+    apiLabels = require(resolve(fixturesPath, './violations-test-apiLabels'));
   });
+
   it('should warn missing region_tag_prefix', async () => {
-    const result = await checkProductPrefixViolations(changes1, config);
+    const result = await checkProductPrefixViolations(
+      changes1,
+      config,
+      apiLabels
+    );
     assert(result.length === 1);
   });
   it('should allow api_shortname for samplegen', async () => {
-    const result = await checkProductPrefixViolations(changes2, config);
+    const result = await checkProductPrefixViolations(
+      changes2,
+      config,
+      apiLabels
+    );
     assert(result.length === 0);
   });
   it('should allow region_tag_prefix for non samplegen sample', async () => {
-    const result = await checkProductPrefixViolations(changes3, config);
+    const result = await checkProductPrefixViolations(
+      changes3,
+      config,
+      apiLabels
+    );
     assert(result.length === 0);
   });
 });
