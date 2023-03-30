@@ -710,7 +710,7 @@ export = (app: Probot) => {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
       throw new Error(
-        'Installation ID not provided in schedule.repository event.' +
+        'Installation ID not provided in schedule.global event.' +
           ' We cannot authenticate Octokit.'
       );
     }
