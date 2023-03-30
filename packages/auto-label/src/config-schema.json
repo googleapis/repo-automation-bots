@@ -33,13 +33,13 @@
 		    "type": "boolean"
 		},
 		"multipleLabelPaths": {
-			"type": "array"
-		},
-		"labelprefix": {
-		    "type": "string",
+			"type": "array",
 			"items": {
 				"type": "object"
 			}
+		},
+		"labelprefix": {
+		    "type": "string",
 		},
 		"paths": {"$ref": "#/definitions/path"}
 	    }
