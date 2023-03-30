@@ -124,12 +124,10 @@ To define multiple different labels for different paths:
 path:
   pullrequest: true
   multipleLabelPaths:
-    path:
-      labelprefix: "api: "
+    - labelprefix: "api: "
       paths:
         recaptcha_enterprise: "recaptchaenterprise"
-    path:
-      labelprefix: "asset: "
+    - labelprefix: "asset: "
       paths:
         recaptcha_enterprise:
           demosite: "flagship"

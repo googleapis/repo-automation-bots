@@ -28,6 +28,9 @@
 	"path": {
 	    "type": "object",
 	    "additionalProperties": false,
+		"multipleLabelPaths": {
+			"type": "array"
+		},
 	    "properties": {
 		"pullrequest": {
 		    "type": "boolean"
