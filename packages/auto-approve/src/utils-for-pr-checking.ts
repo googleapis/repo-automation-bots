@@ -301,11 +301,9 @@ export function isMinorVersionUpgraded(versions: Versions): boolean {
  * @returns whether the minor version was upgraded.
  */
 export function isVersionBumped(versions: Versions): boolean {
-  return (
-    semver.compare(
-      versions.oldMajorVersion + '.' + versions.oldMinorVersion,
-      versions.newMajorVersion + '.' + versions.newMinorVersion
-    ) === -1
+  return semver.lt(
+    versions.oldMajorVersion + '.' + versions.oldMinorVersion,
+    versions.newMajorVersion + '.' + versions.newMinorVersion
   );
 }
 
