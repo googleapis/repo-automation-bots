@@ -30,11 +30,12 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^6.1.0",
-    "@google-automations/git-file-utils": "^1.2.1",
+    "@google-automations/git-file-utils": "^1.2.6",
     "@google-automations/label-utils": "^3.0.0",
     "@google-cloud/storage": "^6.4.2",
     "follow-redirects": "^1.15.1",
     "gcf-utils": "^14.4.0",
+    "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
     "lru-cache": "^7.14.0",
     "minimatch": "^5.1.0",

@@ -118,6 +118,25 @@ path:
       # i.e. label all files in ./test/fixtures and down as "testfixtures"
 ```
 
+To define multiple different labels for different paths:
+```yaml
+# In .github/auto-label.yaml
+path:
+  pullrequest: true
+  multipleLabelPaths:
+    path:
+      labelprefix: "api: "
+      paths:
+        recaptcha_enterprise: "recaptchaenterprise"
+    path:
+      labelprefix: "asset: "
+      paths:
+        recaptcha_enterprise:
+          demosite: "flagship"
+```
+
+This will label any incoming PRs that touch recaptcha_enterprise/demosite files with both an `api: recaptchaenterprise` label and an `asset: flagship` label
+
 -------------------
 
 ## Staleness Label

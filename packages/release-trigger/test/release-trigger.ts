@@ -248,6 +248,26 @@ describe('release-trigger', () => {
         sinon.match('error executing command')
       );
     });
+
+    it('should trigger multi-scm job', async () => {
+      const execStub = sandbox
+        .stub(releaseTriggerModule, 'exec')
+        .resolves({stdout: 'some output', stderr: 'some error output'});
+      const {stdout, stderr} = await triggerKokoroJob(
+        'https://github.com/testOwner/testRepo/pull/1234',
+        'fake-token',
+        {
+          multiScmName: 'some-multi-scm-name',
+        }
+      );
+      assert.strictEqual(stdout, 'some output');
+      assert.strictEqual(stderr, 'some error output');
+      sinon.assert.calledOnce(execStub);
+      sinon.assert.calledWith(
+        execStub,
+        'python3 -m autorelease trigger-single --pull=https://github.com/testOwner/testRepo/pull/1234 --multi-scm-name=some-multi-scm-name'
+      );
+    });
   });
 
   describe('markTriggered', () => {

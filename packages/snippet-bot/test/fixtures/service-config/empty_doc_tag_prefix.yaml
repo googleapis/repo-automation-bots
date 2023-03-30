@@ -1,0 +1,11 @@
+type: google.api.Service
+config_version: 3
+name: foo.googleapis.com
+title: Foo API
+
+publishing:
+  organization: CLOUD
+  api_short_name: ''
+  github_label: ''
+  doc_tag_prefix: ''
+  codeowner_github_teams:

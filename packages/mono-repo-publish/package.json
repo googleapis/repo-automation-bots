@@ -1,6 +1,6 @@
 {
   "name": "@google-cloud/mono-repo-publish",
-  "version": "1.6.4",
+  "version": "1.7.0",
   "description": "publishes submodules based on the last merged release PR",
   "main": "build/src/main.js",
   "bin": "build/src/bin/mono-repo-publish.js",
@@ -33,6 +33,7 @@
     "nock": "^13.2.9",
     "semistandard": "^16.0.1",
     "sinon": "^15.0.0",
+    "ts-node": "^10.9.1",
     "typescript": "^4.8.2"
   },
   "dependencies": {

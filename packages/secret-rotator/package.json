@@ -44,11 +44,11 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "@google-cloud/secret-manager": "^3.12.0",
+    "@google-cloud/secret-manager": "^4.1.2",
     "@googleapis/iam": "^3.0.1",
     "express": "^4.18.1",
     "gcf-utils": "^14.2.0",
-    "google-auth-library": "^7.14.1",
+    "google-auth-library": "^8.7.0",
     "jsonwebtoken": "^9.0.0"
   },
   "optionalDependencies": {

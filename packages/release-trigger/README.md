@@ -18,9 +18,10 @@ To configure the bot, you can create a configuration file:
 `.github/release-trigger.yml`. The contents of this file allow for the following
 options:
 
-| Name | Description | Type | Default |
-| ---- | ----------- | ---- | ------- |
-| `enabled` | Whether this bot should run | `string` | `true`   
+| Name           | Description                                                            | Type     | Default     |
+| -------------- | ---------------------------------------------------------------------- | -------- | ----------- |
+| `enabled`      | Whether this bot should run                                            | `string` | `true`      |
+| `multiScmName` | If set, trigger the job as a `multi_scm` with this value as the `name` | `string` | `undefined` |
 
 ### Usage
 
