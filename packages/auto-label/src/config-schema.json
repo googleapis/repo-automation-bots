@@ -39,7 +39,7 @@
 			}
 		},
 		"labelprefix": {
-		    "type": "string",
+		    "type": "string"
 		},
 		"paths": {"$ref": "#/definitions/path"}
 	    }
