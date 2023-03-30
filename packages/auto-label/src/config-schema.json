@@ -36,7 +36,10 @@
 			"type": "array"
 		},
 		"labelprefix": {
-		    "type": "string"
+		    "type": "string",
+			"items": {
+				"type": "object"
+			}
 		},
 		"paths": {"$ref": "#/definitions/path"}
 	    }
