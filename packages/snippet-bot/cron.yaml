@@ -9,3 +9,7 @@ cron:
     description: snippet-bot cache products
     params:
       cron_type: "global"
+      # provide "googleapis" organization installation id so
+      # bot can have read access to googleapis/googleapis repo
+      installation:
+        id: 11299897
