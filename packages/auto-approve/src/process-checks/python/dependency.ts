@@ -16,21 +16,18 @@ import {LanguageRule, File, FileRule, Process} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
-  checkFileCount,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitleV2,
   getVersionsV2,
-  runVersioningValidation,
   isOneDependencyChanged,
   reportIndividualChecks,
+  isVersionBumped,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
-
 export class PythonDependency extends Process implements LanguageRule {
   classRule: {
     author: string;
     titleRegex?: RegExp;
-    maxFiles: number;
     fileNameRegex?: RegExp[];
     fileRules?: {
       oldVersion?: RegExp;
@@ -66,11 +63,13 @@ export class PythonDependency extends Process implements LanguageRule {
         author: 'renovate-bot',
         titleRegex:
           /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-        maxFiles: 3,
-        fileNameRegex: [/requirements.txt$/],
+        fileNameRegex: [
+          /^samples\/.*?\/.*?requirements.*?\.txt$/,
+          /requirements\.txt$/,
+        ],
         fileRules: [
           {
-            targetFileToCheck: /^samples\/snippets\/requirements.txt$/,
+            targetFileToCheck: /requirements.txt$/,
             // This would match: fix(deps): update dependency @octokit to v1
             dependencyTitle: new RegExp(
               /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
@@ -97,11 +96,6 @@ export class PythonDependency extends Process implements LanguageRule {
     const titleMatches = checkTitleOrBody(
       this.incomingPR.title,
       this.classRule.titleRegex
-    );
-
-    const fileCountMatch = checkFileCount(
-      this.incomingPR.fileCount,
-      this.classRule.maxFiles
     );
 
     const filePatternsMatch = checkFilePathsMatch(
@@ -135,8 +129,7 @@ export class PythonDependency extends Process implements LanguageRule {
         this.incomingPR.title
       );
 
-      const isVersionValid = runVersioningValidation(versions);
-
+      const isVersionValid = isVersionBumped(versions);
       const oneDependencyChanged = isOneDependencyChanged(file);
 
       if (!(doesDependencyMatch && isVersionValid && oneDependencyChanged)) {
@@ -153,19 +146,12 @@ export class PythonDependency extends Process implements LanguageRule {
     }
 
     reportIndividualChecks(
-      [
-        'authorshipMatches',
-        'titleMatches',
-        'fileCountMatches',
-        'filePatternsMatch',
-      ],
-      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      ['authorshipMatches', 'titleMatches', 'filePatternsMatch'],
+      [authorshipMatches, titleMatches, filePatternsMatch],
       this.incomingPR.repoOwner,
       this.incomingPR.repoName,
       this.incomingPR.prNumber
     );
-    return (
-      authorshipMatches && titleMatches && fileCountMatch && filePatternsMatch
-    );
+    return authorshipMatches && titleMatches && filePatternsMatch;
   }
 }
