@@ -51,11 +51,13 @@ describe('behavior of Python Dependency process', () => {
         author: 'renovate-bot',
         titleRegex:
           /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-        maxFiles: 3,
-        fileNameRegex: [/requirements.txt$/],
+        fileNameRegex: [
+          /^samples\/.*?\/.*?requirements.*?\.txt$/,
+          /requirements\.txt$/,
+        ],
         fileRules: [
           {
-            targetFileToCheck: /^samples\/snippets\/requirements.txt$/,
+            targetFileToCheck: /requirements.txt$/,
             // This would match: fix(deps): update dependency @octokit to v1
             dependencyTitle: new RegExp(
               /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
@@ -154,7 +156,7 @@ describe('behavior of Python Dependency process', () => {
             '@@ -1,2 +1,2 @@\n' +
             ' google-cloud-videointelligence==2.5.1\n' +
             '-google-cloud-storage==1.42.3\n' +
-            '+google-cloud-storage==1.43.0',
+            '+google-cloud-storage==2.0.0',
         },
       ],
       'testRepoName',
