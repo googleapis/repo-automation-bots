@@ -225,6 +225,26 @@ describe('validateConfigChanges', () => {
         sinon.match.instanceOf(GCFLogger)
       );
     });
+
+    it('does not create a failing status check for a multiple paths config', async () => {
+      const scope = fetchFilesInPR('valid-config-multiple-paths.yml');
+      const payload = require(resolve(fixturesPath, './events/pr_opened'));
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      scope.done();
+      sinon.assert.calledOnceWithExactly(
+        autoLabelOnPRStub,
+        sinon.match.instanceOf(Context),
+        'testOwner',
+        'testRepo',
+        sinon.match.any,
+        sinon.match.instanceOf(GCFLogger)
+      );
+    });
+
     it('creates a failing status check for a correct config', async () => {
       const scope = fetchFilesInPR('cloud-ops-sandbox-broken.yml');
       const payload = require(resolve(fixturesPath, './events/pr_opened'));
