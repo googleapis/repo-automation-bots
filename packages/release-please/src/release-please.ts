@@ -371,6 +371,17 @@ async function runBranchConfiguration(
 const handler = (app: Probot) => {
   app.on('push', async context => {
     const logger = getContextLogger(context);
+
+    // Skip archived and disabled repos
+    if (context.payload.repository.archived) {
+      logger.debug('Skipping archived repository');
+      return;
+    }
+    if (context.payload.repository.disabled) {
+      logger.debug('Skipping disabled repository');
+      return;
+    }
+
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoLanguage = context.payload.repository.language;
@@ -478,6 +489,17 @@ const handler = (app: Probot) => {
 
   app.on('pull_request.labeled', async context => {
     const logger = getContextLogger(context);
+
+    // Skip archived and disabled repos
+    if (context.payload.repository.archived) {
+      logger.debug('Skipping archived repository');
+      return;
+    }
+    if (context.payload.repository.disabled) {
+      logger.debug('Skipping disabled repository');
+      return;
+    }
+
     // if missing the label, skip
     if (
       // See: https://github.com/probot/probot/issues/1366

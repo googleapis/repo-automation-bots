@@ -735,6 +735,30 @@ describe('ReleasePleaseBot', () => {
       sinon.assert.calledOnce(fromManifestStub);
       sinon.assert.calledOnce(addIssueStub);
     });
+
+    it('ignores archived repositories', async () => {
+      payload = require(resolve(fixturesPath, './push_to_main_archived'));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+    });
+
+    it('ignores disabled repositories', async () => {
+      payload = require(resolve(fixturesPath, './push_to_main_disabled'));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+    });
   });
 
   describe('push to non-master branch', () => {
@@ -970,6 +994,36 @@ describe('ReleasePleaseBot', () => {
         id: 'abc123',
       });
 
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+    });
+
+    it('ignores archived repositories', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_labeled_archived'
+      ));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+    });
+
+    it('ignores disabled repositories', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_labeled_disabled'
+      ));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
       sinon.assert.notCalled(createPullRequestsStub);
       sinon.assert.notCalled(createReleasesStub);
     });
