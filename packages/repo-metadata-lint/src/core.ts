@@ -27,7 +27,7 @@ export async function scanRepoAndOpenIssues(
   branch: string,
   logger: GCFLogger = defaultLogger
 ) {
-  const results = await scanRepo(octokit, owner, repo, branch);
+  const results = await scanRepo(octokit, owner, repo, branch, logger);
   if (results.length === 0) {
     logger.info(`no validation errors found for ${owner}/${repo}`);
   } else {
@@ -50,14 +50,18 @@ export async function scanRepoAndOpenIssues(
   }
 }
 
+const SERVICE_CONFIG_BUCKET =
+  process.env.SERVICE_CONFIG_BUCKET || 'drift-product-sync';
+
 export async function scanRepo(
   octokit: Octokit,
   owner: string,
   repo: string,
-  branch: string
+  branch: string,
+  logger: GCFLogger = defaultLogger
 ): Promise<ValidationResult[]> {
   const results: ValidationResult[] = [];
-  const validate = new Validate(octokit);
+  const validate = await Validate.build(SERVICE_CONFIG_BUCKET, logger)
   const fileCache = new RepositoryFileCache(octokit, {owner, repo});
   const metadataFiles = await fileCache.findFilesByFilename(
     '.repo-metadata.json',
