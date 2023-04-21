@@ -31,6 +31,11 @@ const API_LIBRARY_TYPES = [
   'GAPIC_COMBO',
 ];
 
+// Manually curated list of allowed api_shortname entries
+const EXTRA_ALLOWED_API_SHORTNAMES = [
+  'bigquery', // handwritten client that has no protos
+];
+
 interface ApiIndex {
   apis: {hostName: string}[];
 }
@@ -102,6 +107,9 @@ export class Validate {
   async validApiShortNames() {
     const apiIndex = await this.getApiIndex();
     const apiShortNames = new Set<string>();
+    for (const shortname of EXTRA_ALLOWED_API_SHORTNAMES) {
+      apiShortNames.add(shortname);
+    }
     for (const api of apiIndex.apis) {
       const match = api.hostName.match(/(?<service>[^.]+)/);
       if (match && match.groups) {
