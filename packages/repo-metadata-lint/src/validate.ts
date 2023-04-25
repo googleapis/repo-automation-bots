@@ -106,10 +106,7 @@ export class Validate {
   // on googleapis/googleapis:
   async validApiShortNames() {
     const apiIndex = await this.getApiIndex();
-    const apiShortNames = new Set<string>();
-    for (const shortname of EXTRA_ALLOWED_API_SHORTNAMES) {
-      apiShortNames.add(shortname);
-    }
+    const apiShortNames = new Set<string>(EXTRA_ALLOWED_API_SHORTNAMES);
     for (const api of apiIndex.apis) {
       const match = api.hostName.match(/(?<service>[^.]+)/);
       if (match && match.groups) {
