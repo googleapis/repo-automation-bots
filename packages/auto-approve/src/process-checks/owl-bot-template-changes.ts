@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {LanguageRule, File, Process} from '../interfaces';
+import {PullRequest} from '../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
@@ -20,74 +20,43 @@ import {
 } from '../utils-for-pr-checking';
 import {getFileContent} from '../get-pr-info';
 import {Octokit} from '@octokit/rest';
+import {BaseLanguageRule} from './base';
 
-export class OwlBotTemplateChanges extends Process implements LanguageRule {
-  classRule: {
-    author: string;
-    titleRegex: RegExp;
-    titleRegexExclude: RegExp;
-    bodyRegex?: RegExp;
+export class OwlBotTemplateChanges extends BaseLanguageRule {
+  classRule = {
+    author: 'gcf-owl-bot[bot]',
+    // For this particular rule, we want to check a pattern and an antipattern;
+    // we want fix/feat/! to not be in the title, and we do want [autoapprove] to
+    // be in the title
+    titleRegex: /\[autoapprove\]/,
+    titleRegexExclude: /(fix|feat|!)/,
+    bodyRegex: /PiperOrigin-RevId/,
   };
 
-  constructor(
-    incomingPrAuthor: string,
-    incomingTitle: string,
-    incomingFileCount: number,
-    incomingChangedFiles: File[],
-    incomingRepoName: string,
-    incomingRepoOwner: string,
-    incomingPrNumber: number,
-    incomingOctokit: Octokit,
-    incomingBody?: string
-  ) {
-    super(
-      incomingPrAuthor,
-      incomingTitle,
-      incomingFileCount,
-      incomingChangedFiles,
-      incomingRepoName,
-      incomingRepoOwner,
-      incomingPrNumber,
-      incomingOctokit,
-      incomingBody
-    ),
-      (this.classRule = {
-        author: 'gcf-owl-bot[bot]',
-        // For this particular rule, we want to check a pattern and an antipattern;
-        // we want fix/feat/! to not be in the title, and we do want [autoapprove] to
-        // be in the title
-        titleRegex: /\[autoapprove\]/,
-        titleRegexExclude: /(fix|feat|!)/,
-        bodyRegex: /PiperOrigin-RevId/,
-      });
+  constructor(octokit: Octokit) {
+    super(octokit);
   }
 
-  public async checkPR(): Promise<boolean> {
+  public async checkPR(incomingPR: PullRequest): Promise<boolean> {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
-      this.incomingPR.author
+      incomingPR.author
     );
 
     const titleMatches =
       // We don't want it to include fix, feat, or !
-      !checkTitleOrBody(
-        this.incomingPR.title,
-        this.classRule.titleRegexExclude
-      ) &&
+      !checkTitleOrBody(incomingPR.title, this.classRule.titleRegexExclude) &&
       // We do want it to include [autoapprove] in title
-      checkTitleOrBody(this.incomingPR.title, this.classRule.titleRegex);
+      checkTitleOrBody(incomingPR.title, this.classRule.titleRegex);
 
     let bodyMatches = true;
-    if (this.incomingPR.body) {
-      bodyMatches = checkTitleOrBody(
-        this.incomingPR.body,
-        this.classRule.bodyRegex
-      );
+    if (incomingPR.body) {
+      bodyMatches = checkTitleOrBody(incomingPR.body, this.classRule.bodyRegex);
     }
 
     const fileContent = await getFileContent(
-      this.incomingPR.repoOwner,
-      this.incomingPR.repoName,
+      incomingPR.repoOwner,
+      incomingPR.repoName,
       '.repo-metadata.json',
       this.octokit
     );
@@ -97,9 +66,9 @@ export class OwlBotTemplateChanges extends Process implements LanguageRule {
     reportIndividualChecks(
       ['authorshipMatches', 'titleMatches', 'bodyMatches', 'isGAPIC'],
       [authorshipMatches, titleMatches, !bodyMatches, isGAPIC],
-      this.incomingPR.repoOwner,
-      this.incomingPR.repoName,
-      this.incomingPR.prNumber
+      incomingPR.repoOwner,
+      incomingPR.repoName,
+      incomingPR.prNumber
     );
 
     // We are looking for an antipattern, i.e., if title does not include fix or feat, and if body dodes not include PiperOrigin

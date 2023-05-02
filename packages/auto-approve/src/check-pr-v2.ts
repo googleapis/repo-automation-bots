@@ -28,6 +28,7 @@ import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
 import {OwlBotAPIChanges} from './process-checks/owl-bot-api-changes';
 import {JavaApiaryCodegen} from './process-checks/java/apiary-codegen';
 import {PHPApiaryCodegen} from './process-checks/php/apiary-codegen';
+import {PythonSampleDependency} from './process-checks/python/sample-dependency';
 import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 // This file manages the logic to check whether a given PR matches the config in the repository
 
@@ -44,6 +45,10 @@ const typeMap = [
   {
     configValue: 'DiscoveryDocUpdate',
     configType: DiscoveryDocUpdate,
+  },
+  {
+    configValue: 'PythonSampleDependency',
+    configType: PythonSampleDependency,
   },
   {
     configValue: 'PythonDependency',
@@ -94,8 +99,8 @@ export async function checkPRAgainstConfigV2(
   logger: GCFLogger = defaultLogger
 ): Promise<Boolean> {
   const repoOwner = pr.repository.owner.login;
-  const prAuthor = pr.pull_request.user.login;
-  const repo = pr.pull_request.base.repo.name;
+  const author = pr.pull_request.user.login;
+  const repoName = pr.pull_request.base.repo.name;
   const prNumber = pr.number;
   const title = pr.pull_request.title;
   const fileCount = pr.pull_request.changed_files;
@@ -105,14 +110,14 @@ export async function checkPRAgainstConfigV2(
   const changedFiles = await getChangedFiles(
     octokit,
     repoOwner,
-    repo,
+    repoName,
     prNumber,
     logger
   );
 
   if (!changedFiles) {
     logger.info(
-      `Config does not exist in PR or repo, skipping execution for ${repoOwner}/${repo}/${prNumber}`
+      `Config does not exist in PR or repo, skipping execution for ${repoOwner}/${repoName}/${prNumber}`
     );
     return false;
   }
@@ -121,19 +126,18 @@ export async function checkPRAgainstConfigV2(
     const Rule = typeMap.find(x => x.configValue === rule);
     // We can assert we'll find a match, since the config has already passed
     // a check that it corresponds to one of the processes
-    const instantiatedRule = new Rule!.configType(
-      prAuthor,
+    const instantiatedRule = new Rule!.configType(octokit);
+
+    const passed = await instantiatedRule.checkPR({
+      repoOwner,
+      author,
+      repoName,
+      prNumber,
       title,
       fileCount,
+      body,
       changedFiles,
-      repo,
-      repoOwner,
-      prNumber,
-      octokit,
-      body ?? undefined
-    );
-
-    const passed = await instantiatedRule.checkPR();
+    });
 
     // Stop early if the PR passes for one of the cases allowed by the config
     if (passed === true) {

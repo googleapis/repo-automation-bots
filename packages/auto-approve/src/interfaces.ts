@@ -73,27 +73,22 @@ export interface FileAndMetadata {
  * checks, and then overall confirms if that PR passes additional checks for its given language.
  */
 export interface LanguageRule {
-  checkPR(): Promise<boolean>;
-  incomingPR: {
-    author: string;
-    title: string;
-    fileCount: number;
-    changedFiles: File[];
-    repoName: string;
-    repoOwner: string;
-    prNumber: number;
-    body?: string;
-  };
-  classRule: {
-    author: string;
-    titleRegex?: RegExp;
-    titleRegexExclude?: RegExp;
-    fileNameRegex?: RegExp[];
-    maxFiles?: number;
-    fileRules?: FileRule[];
-    bodyRegex?: RegExp;
-  };
+  checkPR(pullRequest: PullRequest): Promise<boolean>;
   octokit: Octokit;
+}
+
+/**
+ * Interface for the information in a Pull Request
+ */
+export interface PullRequest {
+  author: string;
+  title: string;
+  fileCount: number;
+  changedFiles: File[];
+  repoName: string;
+  repoOwner: string;
+  prNumber: number;
+  body?: string | null;
 }
 
 /**

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {LanguageRule, File, Process} from '../interfaces';
+import {PullRequest} from '../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
@@ -20,68 +20,36 @@ import {
   reportIndividualChecks,
 } from '../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
+import {BaseLanguageRule} from './base';
 
-export class UpdateDiscoveryArtifacts extends Process implements LanguageRule {
-  classRule: {
-    author: string;
-    titleRegex?: RegExp;
-    fileNameRegex?: RegExp[];
-    fileRules?: [
-      {
-        oldVersion?: RegExp;
-        newVersion?: RegExp;
-        dependencyTitle?: RegExp;
-        targetFileToCheck: RegExp;
-      }
-    ];
+export class UpdateDiscoveryArtifacts extends BaseLanguageRule {
+  classRule = {
+    author: 'yoshi-code-bot',
+    titleRegex: /^chore: Update discovery artifacts/,
+    fileNameRegex: [
+      /^docs\/dyn\/index\.md$/,
+      /^docs\/dyn\/.*\.html$/,
+      /^googleapiclient\/discovery_cache\/documents\/.*\.json$/,
+    ],
   };
 
-  constructor(
-    incomingPrAuthor: string,
-    incomingTitle: string,
-    incomingFileCount: number,
-    incomingChangedFiles: File[],
-    incomingRepoName: string,
-    incomingRepoOwner: string,
-    incomingPrNumber: number,
-    incomingOctokit: Octokit,
-    incomingBody?: string
-  ) {
-    super(
-      incomingPrAuthor,
-      incomingTitle,
-      incomingFileCount,
-      incomingChangedFiles,
-      incomingRepoName,
-      incomingRepoOwner,
-      incomingPrNumber,
-      incomingOctokit,
-      incomingBody
-    ),
-      (this.classRule = {
-        author: 'yoshi-code-bot',
-        titleRegex: /^chore: Update discovery artifacts/,
-        fileNameRegex: [
-          /^docs\/dyn\/index\.md$/,
-          /^docs\/dyn\/.*\.html$/,
-          /^googleapiclient\/discovery_cache\/documents\/.*\.json$/,
-        ],
-      });
+  constructor(octokit: Octokit) {
+    super(octokit);
   }
 
-  public async checkPR(): Promise<boolean> {
+  public async checkPR(incomingPR: PullRequest): Promise<boolean> {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
-      this.incomingPR.author
+      incomingPR.author
     );
 
     const titleMatches = checkTitleOrBody(
-      this.incomingPR.title,
+      incomingPR.title,
       this.classRule.titleRegex
     );
 
     const filePatternsMatch = checkFilePathsMatch(
-      this.incomingPR.changedFiles.map(x => x.filename),
+      incomingPR.changedFiles.map(x => x.filename),
       this.classRule.fileNameRegex
     );
 
@@ -93,9 +61,9 @@ export class UpdateDiscoveryArtifacts extends Process implements LanguageRule {
         'filePatternsMatch',
       ],
       [authorshipMatches, titleMatches, filePatternsMatch],
-      this.incomingPR.repoOwner,
-      this.incomingPR.repoName,
-      this.incomingPR.prNumber
+      incomingPR.repoOwner,
+      incomingPR.repoName,
+      incomingPR.prNumber
     );
 
     return authorshipMatches && titleMatches && filePatternsMatch;
