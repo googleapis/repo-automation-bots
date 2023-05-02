@@ -30,7 +30,7 @@ describe('behavior of Java Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const javaDependency = new JavaDependency(octokit);
 
@@ -77,7 +77,7 @@ describe('behavior of Java Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const javaDependency = new JavaDependency(octokit);
 
@@ -110,7 +110,7 @@ describe('behavior of Java Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const javaDependency = new JavaDependency(octokit);
 
@@ -144,7 +144,7 @@ describe('behavior of Java Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const javaDependency = new JavaDependency(octokit);
 
@@ -178,7 +178,7 @@ describe('behavior of Java Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const javaDependency = new JavaDependency(octokit);
 
@@ -209,7 +209,7 @@ describe('behavior of Java Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const javaDependency = new JavaDependency(octokit);
 
@@ -243,7 +243,7 @@ describe('behavior of Java Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const javaDependency = new JavaDependency(octokit);
 

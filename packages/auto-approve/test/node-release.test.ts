@@ -41,7 +41,7 @@ describe('behavior of Node Release process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const nodeRelease = new NodeRelease(octokit);
 
@@ -92,7 +92,7 @@ describe('behavior of Node Release process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const nodeRelease = new NodeRelease(octokit);
 
@@ -126,7 +126,7 @@ describe('behavior of Node Release process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const nodeRelease = new NodeRelease(octokit);
 

@@ -32,7 +32,7 @@ describe('behavior of Python Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const pythonDependency = new PythonDependency(octokit);
 
@@ -75,7 +75,7 @@ describe('behavior of Python Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const pythonDependency = new PythonDependency(octokit);
 
@@ -104,7 +104,7 @@ describe('behavior of Python Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const pythonDependency = new PythonDependency(octokit);
 

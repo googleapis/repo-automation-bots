@@ -32,7 +32,7 @@ describe('behavior of RegenerateReadme process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const regenerateReadme = new RegenerateReadme(octokit);
 
@@ -53,7 +53,7 @@ describe('behavior of RegenerateReadme process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
 
     const regenerateReadme = new RegenerateReadme(octokit);

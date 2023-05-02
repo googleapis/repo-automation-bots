@@ -64,7 +64,7 @@ describe('behavior of OwlBotAPIChanges process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const owlBotAPIChanges = new OwlBotAPIChanges(octokit);
 
@@ -95,7 +95,7 @@ describe('behavior of OwlBotAPIChanges process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody:
+      body:
         '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'Regenerate this pull request now.' +
         'PiperOrigin-RevId: 413686247' +
@@ -135,7 +135,7 @@ describe('behavior of OwlBotAPIChanges process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody:
+      body:
         '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'Regenerate this pull request now.' +
         'Source-Link: googleapis/googleapis@244a89d' +
@@ -175,7 +175,7 @@ describe('behavior of OwlBotAPIChanges process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody:
+      body:
         '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +
@@ -216,7 +216,7 @@ describe('behavior of OwlBotAPIChanges process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody:
+      body:
         '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +
@@ -257,7 +257,7 @@ describe('behavior of OwlBotAPIChanges process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody:
+      body:
         '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +
@@ -297,7 +297,7 @@ describe('behavior of OwlBotAPIChanges process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody:
+      body:
         '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +

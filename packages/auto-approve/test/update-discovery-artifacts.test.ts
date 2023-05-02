@@ -32,7 +32,7 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(octokit);
 
@@ -56,7 +56,7 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(octokit);
 

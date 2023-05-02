@@ -32,7 +32,7 @@ describe('behavior of Node Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const nodeDependency = new NodeDependency(octokit);
 
@@ -83,7 +83,7 @@ describe('behavior of Node Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const nodeDependency = new NodeDependency(octokit);
 
@@ -117,7 +117,7 @@ describe('behavior of Node Dependency process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const nodeDependency = new NodeDependency(octokit);
 

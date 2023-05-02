@@ -30,7 +30,7 @@ describe('PHPApiaryCodegen', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
 
     const rule = new PHPApiaryCodegen(octokit);
@@ -52,7 +52,7 @@ describe('PHPApiaryCodegen', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
 
     const rule = new PHPApiaryCodegen(octokit);

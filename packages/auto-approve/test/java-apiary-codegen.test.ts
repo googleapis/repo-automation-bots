@@ -30,7 +30,7 @@ describe('JavaApiaryCodegen', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const rule = new JavaApiaryCodegen(octokit);
 
@@ -51,7 +51,7 @@ describe('JavaApiaryCodegen', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      prBody: 'body',
+      body: 'body',
     };
     const rule = new JavaApiaryCodegen(octokit);
 
