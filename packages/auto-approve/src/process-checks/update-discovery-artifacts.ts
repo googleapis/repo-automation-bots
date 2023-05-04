@@ -22,6 +22,17 @@ import {
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from './base';
 
+/**
+ * The UpdateDiscoveryArtifacts class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'yoshi-code-bot'
+  - has a title that starts with 'chore: Update discovery artifacts'
+  - has Max 2 files changed
+  - Each file path must match one of these regexps:
+    - /^docs\/dyn\/index\.md$/
+    - /^docs\/dyn\/.*\.html$/
+    - /^googleapiclient\/discovery_cache\/documents\/.*\.json$/
+ */
 export class UpdateDiscoveryArtifacts extends BaseLanguageRule {
   classRule = {
     author: 'yoshi-code-bot',

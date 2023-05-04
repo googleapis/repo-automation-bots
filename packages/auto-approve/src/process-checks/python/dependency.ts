@@ -25,6 +25,21 @@ import {
   isVersionBumped,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
+
+/**
+ * The PythonDependency class's checkPR function returns
+ * true if the PR:
+    - has an author that is 'renovate-bot'
+    - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+    - Each file path must match one of these regexps:
+    - /requirements.txt$/
+    - /^samples/wildcard/requirements(wildcard).txt$/
+  - All files must:
+    - Match this regexp: /requirements.txt$/
+    - Increase the package version of a dependency (major or nonmajor)
+    - Only change one dependency
+    - Change the dependency that was there previously, and that is on the title of the PR
+ */
 export class PythonDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',

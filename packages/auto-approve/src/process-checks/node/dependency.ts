@@ -27,6 +27,22 @@ import {
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
 
+/**
+ * The NodeDependency class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'renovate-bot'
+  - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  - has max 3 files changed in the PR
+  - Each file path must match one of these regexps:
+    - /package\.json$/
+  - All files must:
+    - Match either these regexp:
+      - /^samples\/package.json$/
+      - /^\/package.json$/
+    - Increase the non-major package version of a dependency
+    - Only change one dependency
+    - Change the dependency that was there previously, and that is on the title of the PR
+ */
 export class NodeDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',

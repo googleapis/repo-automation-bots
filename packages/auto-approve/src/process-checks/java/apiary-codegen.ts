@@ -21,6 +21,12 @@ import {
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
 
+/**
+ * The JavaApiaryCodegen class's checkPR function returns
+ * true if the PR:
+   - has the author 'yoshi-code-bot'
+   - has the title that matches the regexp: /^Regenerate .* client$/
+ */
 export class JavaApiaryCodegen extends BaseLanguageRule {
   classRule = {
     author: 'yoshi-code-bot',

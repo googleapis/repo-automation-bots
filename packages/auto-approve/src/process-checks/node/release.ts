@@ -27,6 +27,21 @@ import {
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
 
+/**
+ * The NodeRelease class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'release-please'
+  - has a title that matches the regexp: /^chore: release/
+  - has max 2 files changed in the PR
+  - Each file path must match one of these regexps:
+    - /^package.json$/
+    - /^CHANGELOG.md$/
+  - At least one file must:
+    - Match either this regexp: /^package.json$/
+    - Increase the non-major package version
+    - Only change the top-level package
+    - Approve on a day between Mon - Thurs PST (so as to not trigger a weekend release)
+ */
 export class NodeRelease extends BaseLanguageRule {
   classRule = {
     author: 'release-please',

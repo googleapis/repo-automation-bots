@@ -22,6 +22,15 @@ import {getFileContent} from '../get-pr-info';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from './base';
 
+/**
+ * The OwlBotTemplateChanges class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'gcf-owl-bot[bot]'
+  - has a title that does NOT include feat, fix, or !
+  - has a title that contains `[autoapprove]` somewhere inside it
+  - has a PR body that contains 'PiperOrigin-RevId'
+  - is in a repo that has a .repo-metadata.json that contains "library_type": "GAPIC_AUTO"
+ */
 export class OwlBotTemplateChanges extends BaseLanguageRule {
   classRule = {
     author: 'gcf-owl-bot[bot]',

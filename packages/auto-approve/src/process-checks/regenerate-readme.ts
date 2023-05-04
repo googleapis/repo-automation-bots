@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {LanguageRule, File, Process, PullRequest} from '../interfaces';
+import {PullRequest} from '../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
@@ -23,6 +23,16 @@ import {
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from './base';
 
+/**
+ * The RegenerateReadme class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'yoshi-automation'
+  - has a title that is 'chore: regenerate README'
+  - has Max 2 files changed
+  - Each file path must match one of these regexps:
+    - /^README.md$/
+    - /\.github\/readme\/synth.metadata\/synth\.metadata$/
+ */
 export class RegenerateReadme extends BaseLanguageRule {
   classRule = {
     author: 'yoshi-automation',

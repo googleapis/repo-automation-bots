@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {LanguageRule, File, Process, PullRequest} from '../interfaces';
+import {PullRequest} from '../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
@@ -23,6 +23,16 @@ import {getFileContent, listCommitsOnAPR} from '../get-pr-info';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from './base';
 
+/**
+ * The OwlBotAPIChanges class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'gcf-owl-bot[bot]'
+  - has a title that does NOT include breaking, BREAKING, or !
+  - has a PR body that DOES contain 'PiperOrigin-RevId'
+  - has a .repo-metadata.json that contains "library_type": "GAPIC_AUTO"
+  - is in a repository that has no other PRs that have been opened by gcf-owl-bot[bot]
+  - has no other commits from any other authors other than gcf-owl-bot[bot]
+ */
 export class OwlBotAPIChanges extends BaseLanguageRule {
   classRule = {
     author: 'gcf-owl-bot[bot]',

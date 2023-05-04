@@ -21,6 +21,12 @@ import {
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
 
+/**
+ * The PHPApiaryCodegen class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'yoshi-code-bot'
+  - has a title that matches the regexp: /^Regenerate .* client$/
+ */
 export class PHPApiaryCodegen extends BaseLanguageRule {
   classRule = {
     author: 'yoshi-code-bot',

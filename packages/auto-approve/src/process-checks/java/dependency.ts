@@ -27,6 +27,20 @@ import {
 } from '../../utils-for-pr-checking';
 import {BaseLanguageRule} from '../base';
 
+/**
+ * The JavaDependency class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'renovate-bot'
+  - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  - has max 3 files changed
+  - Each file path must match one of these regexps:
+    - /pom.xml$/
+  - All files must:
+    - Match this regexp: /pom.xml$/
+    - Increase the non-major package version of a dependency
+    - Only change one dependency
+    - Change the dependency that was there previously, and that is on the title of the PR, and is a Google dependency
+ */
 export class JavaDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
