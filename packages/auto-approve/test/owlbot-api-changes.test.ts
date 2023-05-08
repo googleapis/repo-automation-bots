@@ -55,61 +55,18 @@ function listCommitsOnAPR(
 }
 
 describe('behavior of OwlBotAPIChanges process', () => {
-  it('should get constructed with the appropriate values', () => {
-    const owlBotTemplateChanges = new OwlBotAPIChanges(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
-
-    const expectation = {
-      incomingPR: {
-        author: 'testAuthor',
-        title: 'testTitle',
-        fileCount: 3,
-        changedFiles: [{filename: 'hello', sha: '2345'}],
-        repoName: 'testRepoName',
-        repoOwner: 'testRepoOwner',
-        prNumber: 1,
-        body: 'body',
-      },
-      classRule: {
-        author: 'gcf-owl-bot[bot]',
-        titleRegex: /(breaking|BREAKING|!)/,
-        bodyRegex: /PiperOrigin-RevId/,
-      },
-      octokit,
-    };
-
-    assert.deepStrictEqual(
-      owlBotTemplateChanges.incomingPR,
-      expectation.incomingPR
-    );
-    assert.deepStrictEqual(
-      owlBotTemplateChanges.classRule,
-      expectation.classRule
-    );
-    assert.deepStrictEqual(owlBotTemplateChanges.octokit, octokit);
-  });
-
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
-    const owlBotAPIChanges = new OwlBotAPIChanges(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+    const incomingPR = {
+      author: 'testAuthor',
+      title: 'testTitle',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const owlBotAPIChanges = new OwlBotAPIChanges(octokit);
 
     const scopes = [
       getFileOnARepo('testRepoOwner', 'testRepoName', '.repo-metadata.json', {
@@ -125,27 +82,28 @@ describe('behavior of OwlBotAPIChanges process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(await owlBotAPIChanges.checkPR(), false);
+    assert.deepStrictEqual(await owlBotAPIChanges.checkPR(incomingPR), false);
     scopes.forEach(scope => scope.done());
   });
 
   it('should return false in checkPR if incoming PR includes a breaking change', async () => {
-    const owlBotTemplateChanges = new OwlBotAPIChanges(
-      'gcf-owl-bot[bot]',
-      'breaking change: a thing',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
+    const incomingPR = {
+      author: 'gcf-owl-bot[bot]',
+      title: 'breaking change: a thing',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body:
+        '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'Regenerate this pull request now.' +
         'PiperOrigin-RevId: 413686247' +
         'Source-Link: googleapis/googleapis@244a89d' +
         'Source-Link: googleapis/googleapis-gen@c485e44' +
-        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9'
-    );
+        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9',
+    };
+    const owlBotTemplateChanges = new OwlBotAPIChanges(octokit);
 
     const scopes = [
       getFileOnARepo('testRepoOwner', 'testRepoName', '.repo-metadata.json', {
@@ -161,26 +119,31 @@ describe('behavior of OwlBotAPIChanges process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(await owlBotTemplateChanges.checkPR(), false);
+    assert.deepStrictEqual(
+      await owlBotTemplateChanges.checkPR(incomingPR),
+      false
+    );
     scopes.forEach(scope => scope.done());
   });
 
   it('should return false in checkPR if incoming PR does not include PiperOrigin-RevId', async () => {
-    const owlBotTemplateChanges = new OwlBotAPIChanges(
-      'gcf-owl-bot[bot]',
-      'a fine title',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
+    const incomingPR = {
+      author: 'gcf-owl-bot[bot]',
+      title: 'a fine title',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body:
+        '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'Regenerate this pull request now.' +
         'Source-Link: googleapis/googleapis@244a89d' +
         'Source-Link: googleapis/googleapis-gen@c485e44' +
-        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9'
-    );
+        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9',
+    };
+
+    const owlBotTemplateChanges = new OwlBotAPIChanges(octokit);
 
     const scopes = [
       getFileOnARepo('testRepoOwner', 'testRepoName', '.repo-metadata.json', {
@@ -196,27 +159,32 @@ describe('behavior of OwlBotAPIChanges process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(await owlBotTemplateChanges.checkPR(), false);
+    assert.deepStrictEqual(
+      await owlBotTemplateChanges.checkPR(incomingPR),
+      false
+    );
     scopes.forEach(scope => scope.done());
   });
 
   it('should return false in checkPR if incoming PR is not GAPIC_AUTO', async () => {
-    const owlBotTemplateChanges = new OwlBotAPIChanges(
-      'gcf-owl-bot[bot]',
-      'a fine title',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
+    const incomingPR = {
+      author: 'gcf-owl-bot[bot]',
+      title: 'a fine title',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body:
+        '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +
         'Source-Link: googleapis/googleapis@244a89d' +
         'Source-Link: googleapis/googleapis-gen@c485e44' +
-        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9'
-    );
+        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9',
+    };
+
+    const owlBotTemplateChanges = new OwlBotAPIChanges(octokit);
 
     const scopes = [
       getFileOnARepo('testRepoOwner', 'testRepoName', '.repo-metadata.json', {
@@ -232,27 +200,31 @@ describe('behavior of OwlBotAPIChanges process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(await owlBotTemplateChanges.checkPR(), false);
+    assert.deepStrictEqual(
+      await owlBotTemplateChanges.checkPR(incomingPR),
+      false
+    );
     scopes.forEach(scope => scope.done());
   });
 
   it('should return false in checkPR if incoming PR has other PRs that are also from owl-bot', async () => {
-    const owlBotTemplateChanges = new OwlBotAPIChanges(
-      'gcf-owl-bot[bot]',
-      'a fine title',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
+    const incomingPR = {
+      author: 'gcf-owl-bot[bot]',
+      title: 'a fine title',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body:
+        '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +
         'Source-Link: googleapis/googleapis@244a89d' +
         'Source-Link: googleapis/googleapis-gen@c485e44' +
-        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9'
-    );
+        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9',
+    };
+    const owlBotTemplateChanges = new OwlBotAPIChanges(octokit);
 
     const scopes = [
       getFileOnARepo('testRepoOwner', 'testRepoName', '.repo-metadata.json', {
@@ -269,27 +241,31 @@ describe('behavior of OwlBotAPIChanges process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(await owlBotTemplateChanges.checkPR(), false);
+    assert.deepStrictEqual(
+      await owlBotTemplateChanges.checkPR(incomingPR),
+      false
+    );
     scopes.forEach(scope => scope.done());
   });
 
   it('should return false in checkPR if incoming PR has commits from other authors', async () => {
-    const owlBotTemplateChanges = new OwlBotAPIChanges(
-      'gcf-owl-bot[bot]',
-      'a fine title',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
+    const incomingPR = {
+      author: 'gcf-owl-bot[bot]',
+      title: 'a fine title',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body:
+        '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +
         'Source-Link: googleapis/googleapis@244a89d' +
         'Source-Link: googleapis/googleapis-gen@c485e44' +
-        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9'
-    );
+        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9',
+    };
+    const owlBotTemplateChanges = new OwlBotAPIChanges(octokit);
 
     const scopes = [
       getFileOnARepo('testRepoOwner', 'testRepoName', '.repo-metadata.json', {
@@ -305,27 +281,31 @@ describe('behavior of OwlBotAPIChanges process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(await owlBotTemplateChanges.checkPR(), false);
+    assert.deepStrictEqual(
+      await owlBotTemplateChanges.checkPR(incomingPR),
+      false
+    );
     scopes.forEach(scope => scope.done());
   });
 
   it('should return true in checkPR if incoming PR does match classRules', async () => {
-    const owlBotTemplateChanges = new OwlBotAPIChanges(
-      'gcf-owl-bot[bot]',
-      'a fine title',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
+    const incomingPR = {
+      author: 'gcf-owl-bot[bot]',
+      title: 'a fine title',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body:
+        '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'PiperOrigin-RevId: 413686247' +
         'Regenerate this pull request now.' +
         'Source-Link: googleapis/googleapis@244a89d' +
         'Source-Link: googleapis/googleapis-gen@c485e44' +
-        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9'
-    );
+        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9',
+    };
+    const owlBotTemplateChanges = new OwlBotAPIChanges(octokit);
 
     const scopes = [
       getFileOnARepo('testRepoOwner', 'testRepoName', '.repo-metadata.json', {
@@ -341,7 +321,10 @@ describe('behavior of OwlBotAPIChanges process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(await owlBotTemplateChanges.checkPR(), true);
+    assert.deepStrictEqual(
+      await owlBotTemplateChanges.checkPR(incomingPR),
+      true
+    );
     scopes.forEach(scope => scope.done());
   });
 });

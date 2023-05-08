@@ -23,86 +23,28 @@ const octokit = new Octokit({
 });
 
 describe('behavior of Python Dependency process', () => {
-  it('should get constructed with the appropriate values', () => {
-    const pythonDependency = new PythonDependency(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
-
-    const expectation = {
-      incomingPR: {
-        author: 'testAuthor',
-        title: 'testTitle',
-        fileCount: 3,
-        changedFiles: [{filename: 'hello', sha: '2345'}],
-        repoName: 'testRepoName',
-        repoOwner: 'testRepoOwner',
-        prNumber: 1,
-        body: 'body',
-      },
-      classRule: {
-        author: 'renovate-bot',
-        titleRegex:
-          /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-        fileNameRegex: [
-          /^samples\/.*?\/.*?requirements.*?\.txt$/,
-          /requirements\.txt$/,
-        ],
-        fileRules: [
-          {
-            targetFileToCheck: /requirements.txt$/,
-            // This would match: fix(deps): update dependency @octokit to v1
-            dependencyTitle: new RegExp(
-              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-            ),
-            // This would match: '-google-cloud-storage==1.39.0
-            oldVersion: new RegExp(
-              /[\s]-(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/
-            ),
-            // This would match: '+google-cloud-storage==1.40.0
-            newVersion: new RegExp(
-              /[\s]\+(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/
-            ),
-          },
-        ],
-      },
-      octokit,
-    };
-
-    assert.deepStrictEqual(pythonDependency.incomingPR, expectation.incomingPR);
-    assert.deepStrictEqual(pythonDependency.classRule, expectation.classRule);
-    assert.deepStrictEqual(pythonDependency.octokit, octokit);
-  });
-
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
-    const pythonDependency = new PythonDependency(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+    const incomingPR = {
+      author: 'testAuthor',
+      title: 'testTitle',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const pythonDependency = new PythonDependency(octokit);
 
-    assert.deepStrictEqual(await pythonDependency.checkPR(), false);
+    assert.deepStrictEqual(await pythonDependency.checkPR(incomingPR), false);
   });
 
   it('should return false in checkPR if one of the files did not match additional rules in fileRules', async () => {
-    const pythonDependency = new PythonDependency(
-      'renovate-bot',
-      'fix(deps): update dependency cloud.google.com to v16',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'fix(deps): update dependency cloud.google.com to v16',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'requirements.txt',
@@ -130,22 +72,22 @@ describe('behavior of Python Dependency process', () => {
             '     </dependency>\n',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const pythonDependency = new PythonDependency(octokit);
 
-    assert.deepStrictEqual(await pythonDependency.checkPR(), false);
+    assert.deepStrictEqual(await pythonDependency.checkPR(incomingPR), false);
   });
 
   it('should return true in checkPR if incoming PR does match classRules', async () => {
-    const pythonDependency = new PythonDependency(
-      'renovate-bot',
-      'fix(deps): update dependency google-cloud-storage to v16',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'fix(deps): update dependency google-cloud-storage to v16',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'samples/snippets/requirements.txt',
@@ -159,13 +101,13 @@ describe('behavior of Python Dependency process', () => {
             '+google-cloud-storage==2.0.0',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const pythonDependency = new PythonDependency(octokit);
 
-    assert.ok(await pythonDependency.checkPR());
+    assert.ok(await pythonDependency.checkPR(incomingPR));
   });
 });

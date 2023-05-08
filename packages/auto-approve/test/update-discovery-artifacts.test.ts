@@ -23,87 +23,43 @@ const octokit = new Octokit({
 });
 
 describe('behavior of UpdateDiscoveryArtifacts process', () => {
-  it('should get constructed with the appropriate values', () => {
-    const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
-
-    const expectation = {
-      incomingPR: {
-        author: 'testAuthor',
-        title: 'testTitle',
-        fileCount: 3,
-        changedFiles: [{filename: 'hello', sha: '2345'}],
-        repoName: 'testRepoName',
-        repoOwner: 'testRepoOwner',
-        prNumber: 1,
-        body: 'body',
-      },
-      classRule: {
-        author: 'yoshi-code-bot',
-        titleRegex: /^chore: Update discovery artifacts/,
-        fileNameRegex: [
-          /^docs\/dyn\/index\.md$/,
-          /^docs\/dyn\/.*\.html$/,
-          /^googleapiclient\/discovery_cache\/documents\/.*\.json$/,
-        ],
-      },
-      octokit,
-    };
-
-    assert.deepStrictEqual(
-      updateDiscoveryArtifacts.incomingPR,
-      expectation.incomingPR
-    );
-    assert.deepStrictEqual(
-      updateDiscoveryArtifacts.classRule,
-      expectation.classRule
-    );
-    assert.deepStrictEqual(updateDiscoveryArtifacts.octokit, octokit);
-  });
-
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
-    const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+    const incomingPR = {
+      author: 'testAuthor',
+      title: 'testTitle',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(octokit);
 
-    assert.deepStrictEqual(await updateDiscoveryArtifacts.checkPR(), false);
+    assert.deepStrictEqual(
+      await updateDiscoveryArtifacts.checkPR(incomingPR),
+      false
+    );
   });
 
   it('should return true in checkPR if incoming PR does match classRules', async () => {
-    const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(
-      'yoshi-code-bot',
-      'chore: Update discovery artifacts',
-      2,
-      [
+    const incomingPR = {
+      author: 'yoshi-code-bot',
+      title: 'chore: Update discovery artifacts',
+      fileCount: 2,
+      changedFiles: [
         {
           filename: 'googleapiclient/discovery_cache/documents/.testing.json',
           sha: '2345',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(octokit);
 
-    assert.ok(await updateDiscoveryArtifacts.checkPR());
+    assert.ok(await updateDiscoveryArtifacts.checkPR(incomingPR));
   });
 });
