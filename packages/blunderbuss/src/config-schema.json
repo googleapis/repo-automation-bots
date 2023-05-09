@@ -42,6 +42,12 @@
 		"type": "string"
 	    }
 	},
+	"assign_prs_always": {
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
 	"assign_prs_by": {
 	    "type": "array",
 	    "items": {"$ref": "#/definitions/ByConfig"},

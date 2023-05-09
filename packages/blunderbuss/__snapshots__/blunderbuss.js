@@ -1,24 +1,25 @@
+exports['Blunderbuss pr tests assigns pr by label and always 1'] = {
+  "assignees": [
+    "java-samples-reviewers",
+    "prs-always"
+  ]
+}
+
 exports['Blunderbuss issue tests assigns opened issues with no assignees 1'] = {
   "assignees": [
     "issues1"
   ]
 }
 
+exports['Blunderbuss issue tests assigns opened issues to reporter 1'] = {
+  "assignees": [
+    "testuser2"
+  ]
+}
+
 exports['Blunderbuss issue tests assigns issue when correct label 1'] = {
   "assignees": [
     "issues1"
-  ]
-}
-
-exports['Blunderbuss pr tests assigns user to a PR when opened with no assignee 1'] = {
-  "assignees": [
-    "prs1"
-  ]
-}
-
-exports['Blunderbuss pr tests assigns issue when correct label 1'] = {
-  "assignees": [
-    "prs1"
   ]
 }
 
@@ -40,21 +41,33 @@ exports['Blunderbuss issue tests assigns labeled issue by label 1'] = {
   ]
 }
 
-exports['Blunderbuss pr tests assigns user to a PR when opened with no assignee, ignoring assign_issues_by 1'] = {
-  "assignees": [
-    "prs1"
-  ]
-}
-
 exports['Blunderbuss issue tests expands teams for an issue 1'] = {
   "assignees": [
     "user123"
   ]
 }
 
+exports['Blunderbuss pr tests assigns user to a PR when opened with no assignee 1'] = {
+  "assignees": [
+    "prs1"
+  ]
+}
+
 exports['Blunderbuss pr tests expands teams for a PR 1'] = {
   "assignees": [
     "user123"
+  ]
+}
+
+exports['Blunderbuss pr tests assigns user to a PR when opened with no assignee, ignoring assign_issues_by 1'] = {
+  "assignees": [
+    "prs1"
+  ]
+}
+
+exports['Blunderbuss pr tests assigns issue when correct label 1'] = {
+  "assignees": [
+    "prs1"
   ]
 }
 
@@ -73,10 +86,4 @@ exports['Blunderbuss validateConfigChanges creates a failing status check for a 
     "summary": "An error found in the config file",
     "text": "[\n    {\n        \"instancePath\": \"/assign_issues_by/0/to\",\n        \"schemaPath\": \"#/definitions/ByConfig/properties/to/type\",\n        \"keyword\": \"type\",\n        \"params\": {\n            \"type\": \"array\"\n        },\n        \"message\": \"must be array\"\n    }\n]"
   }
-}
-
-exports['Blunderbuss issue tests assigns opened issues to reporter 1'] = {
-  "assignees": [
-    "testuser2"
-  ]
 }
