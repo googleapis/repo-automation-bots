@@ -55,8 +55,8 @@ export interface Versions {
   oldMinorVersion: string;
   newMajorVersion: string;
   newMinorVersion: string;
-  oldVersionDockerSha?: string;
-  newVersionDockerSha?: string;
+  oldShaOrRevTag?: string;
+  newShaOrRevTag?: string;
 }
 
 /**

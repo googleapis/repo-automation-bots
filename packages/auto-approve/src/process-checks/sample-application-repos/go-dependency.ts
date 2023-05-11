@@ -18,10 +18,9 @@ import {
   checkTitleOrBody,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitleV2,
-  getVersionsV2,
-  isOneDependencyChanged,
   reportIndividualChecks,
-  runVersioningValidation,
+  getGoVersions,
+  runVersioningValidationWithShaOrRev,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
@@ -33,7 +32,7 @@ export class GoDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
     titleRegex: /^(fix|chore)\(deps\): update module (\D*?) to v(\S*)$/,
-    fileNameRegex: [/go\.sum$, go\.mod$/],
+    fileNameRegex: [/go\.sum$/, /go\.mod$/],
   };
   fileRules = [
     {
@@ -44,10 +43,14 @@ export class GoDependency extends BaseLanguageRule {
       ),
 
       // TODO: figure out how to confirm revs are changing if versions aren't
-      // This would match: '-FROM cypress/included:12.11.0@sha256:29dfeed99db7a9678a4402f9175c98074c23bbb5ad109058702bc401fc3cdd02'
-      oldVersion: new RegExp(/[\s]-(\D*?)[\s]v([0-9])*\.([0-9]*\.[0-9]*)/),
-      // This would match: '+FROM cypress/included:12.11.0@sha256:29dfeed99db7a9678a4402f9175c98074c23bbb5ad109058702bc401fc3cdd02'
-      newVersion: new RegExp(/[\s]+(\D*?)[\s]v([0-9])*\.([0-9]*\.[0-9]*)/),
+      // This would match: '-google.golang.org/grpc v1.50.0' or '-golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
+      oldVersion: new RegExp(
+        /-\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v[0-9]*\.[0-9]*\.[0-9]*-([a-z0-9-]*))/
+      ),
+      // This would match: '+google.golang.org/grpc v1.50.0' or '+golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
+      newVersion: new RegExp(
+        /\+\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v[0-9]*\.[0-9]*\.[0-9]*-([a-z0-9-]*))/
+      ),
     },
   ];
 
@@ -86,7 +89,7 @@ export class GoDependency extends BaseLanguageRule {
         return false;
       }
 
-      const versions = getVersionsV2(
+      const versions = getGoVersions(
         file,
         fileMatch.oldVersion,
         fileMatch.newVersion
@@ -103,11 +106,11 @@ export class GoDependency extends BaseLanguageRule {
         incomingPR.title
       );
 
-      const isVersionValid = runVersioningValidation(versions);
+      const isVersionValid = runVersioningValidationWithShaOrRev(versions);
 
       if (!(doesDependencyMatch && isVersionValid)) {
         reportIndividualChecks(
-          ['doesDependencyMatch', 'isVersionValid', 'oneDependencyChanged'],
+          ['doesDependencyMatch', 'isVersionValid'],
           [doesDependencyMatch, isVersionValid],
           incomingPR.repoOwner,
           incomingPR.repoName,

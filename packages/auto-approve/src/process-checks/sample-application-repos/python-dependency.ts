@@ -40,18 +40,26 @@ import {Octokit} from '@octokit/rest';
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
  */
-export class PythonDependency extends BaseLanguageRule {
+export class PythonSampleAppDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
     titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-    fileNameRegex: [
-      /^samples\/.*?\/.*?requirements.*?\.txt$/,
-      /requirements\.txt$/,
-    ],
+    fileNameRegex: [/requirements\.txt$/, /requirements\.in$/],
   };
   fileRules = [
     {
       targetFileToCheck: /requirements.txt$/,
+      // This would match: fix(deps): update dependency @octokit to v1
+      dependencyTitle: new RegExp(
+        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+      ),
+      // This would match: '-google-cloud-storage==1.39.0
+      oldVersion: new RegExp(/[\s]-(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+      // This would match: '+google-cloud-storage==1.40.0
+      newVersion: new RegExp(/[\s]\+(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+    },
+    {
+      targetFileToCheck: /requirements.in$/,
       // This would match: fix(deps): update dependency @octokit to v1
       dependencyTitle: new RegExp(
         /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
