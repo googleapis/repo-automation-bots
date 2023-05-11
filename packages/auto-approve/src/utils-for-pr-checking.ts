@@ -146,7 +146,7 @@ export function getVersions(
 /**
  * Given a patch for a file that was changed in a PR, and a regular expression to search
  * for the old version number and a regular expression to search for the new version number,
- * this function will return the old and new versions of a package for not-Java (see getJavaVersions for other function).
+ * this function will return the old and new versions of a non-Java package (see getJavaVersions for other function).
  *
  * @param versionFile the changed file that has additional rules to conform to
  * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
@@ -168,19 +168,24 @@ export function getVersionsV2(
   let oldMinorVersion;
   let newMajorVersion;
   let newMinorVersion;
+  let oldVersionDockerSha;
+  let newVersionDockerSha;
 
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
+
   if (oldVersions) {
     oldDependencyName = oldVersions[1];
     oldMajorVersion = oldVersions[2];
     oldMinorVersion = oldVersions[3];
+    oldVersionDockerSha = oldVersions[4];
   }
 
   if (newVersions) {
     newDependencyName = newVersions[1];
     newMajorVersion = newVersions[2];
     newMinorVersion = newVersions[3];
+    newVersionDockerSha = newVersions[4];
   }
 
   // If there is a change with a file that requires special validation checks,
@@ -209,6 +214,8 @@ export function getVersionsV2(
     oldMinorVersion,
     newMajorVersion,
     newMinorVersion,
+    oldVersionDockerSha,
+    newVersionDockerSha,
   };
 }
 
@@ -273,6 +280,8 @@ export function doesDependencyMatchAgainstRegexes(
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
  * @param dependencyRegex the regular exp to find the dependency within the title of the PR
  * @param title the title of the PR
+ * @param loose whether or not the title in the dependency should strictly match what is changed in the file, or loosely
+ * for example
  * @returns whether the old dependency, new dependency, and dependency in the title all match
  */
 export function doesDependencyChangeMatchPRTitleV2(
@@ -280,12 +289,13 @@ export function doesDependencyChangeMatchPRTitleV2(
   dependencyRegex: RegExp,
   title: string
 ): boolean {
-  let dependencyName;
+  let dependencyName = '';
   const titleRegex = title.match(dependencyRegex);
 
   if (titleRegex) {
     dependencyName = titleRegex[2];
   }
+
   return (
     versions.newDependencyName === versions.oldDependencyName &&
     dependencyName === versions.newDependencyName
@@ -411,6 +421,23 @@ export function checkFileCount(
  */
 export function runVersioningValidation(versions: Versions): boolean {
   return !isMajorVersionChanging(versions) && isMinorVersionUpgraded(versions);
+}
+
+/**
+ * Runs additional validation checks when a version is upgraded to ensure that the
+ * version is only upgraded, not downgraded, and that the major version is not bumped.
+ *
+ * @param versions the versions object returned from getVersions, getVersionsV2, and getJavaVersions
+ * @returns true if the version is only bumped a minor, not a major
+ */
+export function runVersioningValidationDockerContainer(
+  versions: Versions
+): boolean {
+  return (
+    !isMajorVersionChanging(versions) &&
+    (versions.oldVersionDockerSha !== versions.newVersionDockerSha ||
+      isMinorVersionUpgraded(versions))
+  );
 }
 
 /**

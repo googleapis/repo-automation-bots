@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,59 +16,44 @@ import {FileRule, PullRequest} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
-  checkFileCount,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitleV2,
   getVersionsV2,
-  runVersioningValidation,
   isOneDependencyChanged,
   reportIndividualChecks,
+  runVersioningValidationDockerContainer,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
 
 /**
- * The NodeDependency class's checkPR function returns
- * true if the PR:
-  - has an author that is 'renovate-bot'
-  - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-  - has max 3 files changed in the PR
-  - Each file path must match one of these regexps:
-    - /package\.json$/
-  - All files must:
-    - Match either these regexp:
-      - /^samples\/package.json$/
-      - /^\/package.json$/
-    - Increase the non-major package version of a dependency
-    - Only change one dependency
-    - Change the dependency that was there previously, and that is on the title of the PR
+//TODO
  */
-export class NodeDependency extends BaseLanguageRule {
+export class DockerDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
-    titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-    fileNameRegex: [/package\.json$/],
+    titleRegex:
+      /^(fix|chore)\(deps\): update (\D[^:?]*).* docker (digest|tag) to (.*)$/,
+    fileNameRegex: [/Dockerfile$/],
   };
   fileRules = [
     {
-      dependencyTitle:
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-      targetFileToCheck: /^samples\/package.json$/,
-      // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-      oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
-      // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
-      newVersion: /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
-    },
-    {
-      dependencyTitle:
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-      targetFileToCheck: /^package.json$/,
-      // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-      oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
-      // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
-      newVersion: /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
+      targetFileToCheck: /Dockerfile$/,
+      // This would match: chore(deps): update cypress/included docker tag to v12.12.0
+      dependencyTitle: new RegExp(
+        /^(fix|chore)\(deps\): update (\D[^:?]*).* docker (digest|tag) to (.*)$/
+      ),
+      // This would match: '-FROM cypress/included:12.11.0@sha256:29dfeed99db7a9678a4402f9175c98074c23bbb5ad109058702bc401fc3cdd02'
+      oldVersion: new RegExp(
+        /[\s]-FROM[\s](\D*):([0-9]*)\.([0-9]*\.[0-9]*).*@sha256:([a-z0-9]{64})/
+      ),
+      // This would match: '+FROM cypress/included:12.11.0@sha256:29dfeed99db7a9678a4402f9175c98074c23bbb5ad109058702bc401fc3cdd02'
+      newVersion: new RegExp(
+        /[\s]+FROM[\s](\D*):([0-9])*\.([0-9]*\.[0-9]*).*@sha256:([a-z0-9]{64})/
+      ),
     },
   ];
+
   constructor(octokit: Octokit) {
     super(octokit);
   }
@@ -85,11 +70,13 @@ export class NodeDependency extends BaseLanguageRule {
     );
 
     const filePatternsMatch = checkFilePathsMatch(
-      incomingPR.changedFiles.map((x: {filename: string}) => x.filename),
+      incomingPR.changedFiles.map(x => x.filename),
       this.classRule.fileNameRegex
     );
 
     for (const file of incomingPR.changedFiles) {
+      // Each file must conform to at least one file rule, or else we could
+      // be allowing a random file to be approved
       const fileMatch = this.fileRules?.find((x: FileRule) =>
         x.targetFileToCheck.test(file.filename)
       );
@@ -115,14 +102,11 @@ export class NodeDependency extends BaseLanguageRule {
         incomingPR.title
       );
 
-      const isVersionValid = runVersioningValidation(versions);
+      const isVersionValid = runVersioningValidationDockerContainer(versions);
 
       const oneDependencyChanged = isOneDependencyChanged(file);
 
-      if (
-        (doesDependencyMatch && isVersionValid && oneDependencyChanged) ===
-        false
-      ) {
+      if (!(doesDependencyMatch && isVersionValid && oneDependencyChanged)) {
         reportIndividualChecks(
           ['doesDependencyMatch', 'isVersionValid', 'oneDependencyChanged'],
           [doesDependencyMatch, isVersionValid, oneDependencyChanged],
