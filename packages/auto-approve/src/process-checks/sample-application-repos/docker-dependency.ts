@@ -27,8 +27,17 @@ import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
 
 /**
-//TODO
- */
+ * The DockerDependency class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'renovate-bot'
+  - has a title of the PR matches the regexp: /^(fix|chore)\(deps\): update (\D[^:?]*).* docker (digest|tag) to (.*)$/
+  - Each file path must match this regexp:
+    - /Dockerfile$/
+  - All files must:
+    - Match this regexp: /Dockerfile$/
+    - Increase the non-major package version of a dependency or the tag
+    - Only change one dependency
+    - Change the dependency that was there previously, and that is on the title of the PR */
 export class DockerDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',

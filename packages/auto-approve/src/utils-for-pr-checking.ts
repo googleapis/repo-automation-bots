@@ -143,6 +143,18 @@ export function getVersions(
   };
 }
 
+/**
+ * Given a patch for a file that was changed in a PR for a go.mod file, and a regular expression to search
+ * for the old version number and a regular expression to search for the new version number,
+ * this function will return the old and new versions of a package.
+ * This function is different from above, since Go packages sometimes will have a rev tag, which changes the grouping
+ * for the regular expressions.
+ *
+ * @param versionFile the changed file that has additional rules to conform to
+ * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
+ * @param newVersionRegex the regular exp to find the new version number of whatever is being changed
+ * @returns the previous and new major and minor versions of a package in an object containing those 4 properties.
+ */
 export function getGoVersions(
   versionFile: File | undefined,
   oldVersionRegex?: RegExp,
@@ -346,8 +358,6 @@ export function doesDependencyMatchAgainstRegexes(
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
  * @param dependencyRegex the regular exp to find the dependency within the title of the PR
  * @param title the title of the PR
- * @param loose whether or not the title in the dependency should strictly match what is changed in the file, or loosely
- * for example
  * @returns whether the old dependency, new dependency, and dependency in the title all match
  */
 export function doesDependencyChangeMatchPRTitleV2(
@@ -368,13 +378,13 @@ export function doesDependencyChangeMatchPRTitleV2(
 }
 
 /**
- * This function checks whether the dependency stated in a given title was the one that was changed (not Java, see doesDependencyChangeMatchPRTitleJava)
+ * This function checks whether the dependency stated in a given title was the one that was changed for Go
+ * This function is different from doesDependencyChangeMatchPRTitle as it is specific to Go, since those titles
+ * vary in their regex.
  *
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
  * @param dependencyRegex the regular exp to find the dependency within the title of the PR
  * @param title the title of the PR
- * @param loose whether or not the title in the dependency should strictly match what is changed in the file, or loosely
- * for example
  * @returns whether the old dependency, new dependency, and dependency in the title all match
  */
 export function doesDependencyChangeMatchPRTitleGo(
@@ -386,6 +396,7 @@ export function doesDependencyChangeMatchPRTitleGo(
 
   const titleRegex = title.match(dependencyRegex);
   if (titleRegex) {
+    // Go titles can vary by either: `module NAME` or `NAME digest`
     dependencyName = titleRegex[3] || titleRegex[2];
   }
 
@@ -519,6 +530,8 @@ export function runVersioningValidation(versions: Versions): boolean {
 /**
  * Runs additional validation checks when a version is upgraded to ensure that the
  * version is only upgraded, not downgraded, and that the major version is not bumped.
+ * If the PR could have a rev or sha (as in Docker or Go PRs), this checks that
+ * the minor version is bumped, and/or the rev or sha is upgraded
  *
  * @param versions the versions object returned from getVersions, getVersionsV2, and getJavaVersions
  * @returns true if the version is only bumped a minor, not a major

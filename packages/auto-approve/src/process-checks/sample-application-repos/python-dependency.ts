@@ -27,17 +27,16 @@ import {
 import {Octokit} from '@octokit/rest';
 
 /**
- * The PythonDependency class's checkPR function returns
+ * The PythonSampleAppDependency class's checkPR function returns
  * true if the PR:
-    - has an author that is 'renovate-bot'
-    - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-    - Each file path must match one of these regexps:
-    - /requirements.txt$/
-    - /^samples/wildcard/requirements(wildcard).txt$/
+  - has an author that is 'renovate-bot'
+  - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  - Each file path must match one of these regexp:
+    - /requirements\.txt$/
+    - /requirements\.in$/
   - All files must:
-    - Match this regexp: /requirements.txt$/
-    - Increase the package version of a dependency (major or nonmajor)
-    - Only change one dependency
+    - Match this regexp: /requirements.txt$/ or /requirements\.in$/
+    - Increase the non-major package version of a dependency or digest
     - Change the dependency that was there previously, and that is on the title of the PR
  */
 export class PythonSampleAppDependency extends BaseLanguageRule {

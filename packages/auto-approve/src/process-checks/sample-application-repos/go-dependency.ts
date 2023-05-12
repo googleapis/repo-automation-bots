@@ -26,7 +26,17 @@ import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
 
 /**
-//TODO
+ * The GoDependency class's checkPR function returns
+ * true if the PR:
+  - has an author is 'renovate-bot'
+  - has a title that matches the regexp: /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/
+  - Each file path must match one of these regexp:
+    - /go\.sum$/
+    - /go\.mod$/
+  - All files must:
+    - Match this regexp: /go\.mod$/ (if it's go.sum, there are no additional checks, but it passes)
+    - Increase the non-major package version of a dependency or digest
+    - Change the dependency that was there previously, and that is on the title of the PR
  */
 export class GoDependency extends BaseLanguageRule {
   classRule = {

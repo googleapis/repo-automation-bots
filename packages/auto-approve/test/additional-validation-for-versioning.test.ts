@@ -30,6 +30,9 @@ import {
   checkFileCount,
   runVersioningValidation,
   getOpenPRsInRepoFromSameAuthor,
+  getGoVersions,
+  doesDependencyChangeMatchPRTitleGo,
+  runVersioningValidationWithShaOrRev,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -39,6 +42,7 @@ import {JavaDependency} from '../src/process-checks/java/dependency';
 import {NodeDependency} from '../src/process-checks/node/dependency';
 import {NodeRelease} from '../src/process-checks/node/release';
 import nock from 'nock';
+import {GoDependency} from '../src/process-checks/sample-application-repos/go-dependency';
 const {Octokit} = require('@octokit/rest');
 
 const octokit = new Octokit({
@@ -468,6 +472,99 @@ describe('run additional versioning checks', () => {
         PRFile,
         fileRule.fileRules![1].oldVersion,
         fileRule.fileRules![1].newVersion
+      );
+
+      assert.deepStrictEqual(versions, getVersionsExpectation);
+    });
+
+    it('should return the correct versions and dependency from a go.mod with a rev or sha', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 2,
+        patch:
+          '@@ -7,7 +7,7 @@ require (\n' +
+          ' \tgithub.com/golang/protobuf v1.5.2\n' +
+          ' \tgithub.com/google/uuid v1.3.0\n' +
+          ' \tgithub.com/sirupsen/logrus v1.9.0\n' +
+          '-\tgolang.org/x/net v0.0.0-20221014081412-f15817d10f9b\n' +
+          '+\tgolang.org/x/net v0.0.0-20221017152216-f25eb7ecb193\n' +
+          ' \tgoogle.golang.org/grpc v1.50.1\n' +
+          ' )\n' +
+          ' \n' +
+          '@@ -20,7 +20,7 @@ require (\n' +
+          ' \tgithub.com/googleapis/gax-go/v2 v2.4.0 // indirect\n' +
+          ' \tgo.opencensus.io v0.23.0 // indirect\n' +
+          ' \tgolang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect\n' +
+          '-\tgolang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect\n' +
+          '+\tgolang.org/x/sys v0.0.0-20221010170243-090e33056c14 // indirect\n' +
+          ' \tgolang.org/x/text v0.3.7 // indirect\n' +
+          ' \tgoogle.golang.org/api v0.78.0 // indirect\n' +
+          ' \tgoogle.golang.org/appengine v1.6.7 // indirect',
+      };
+
+      const getVersionsExpectation = {
+        oldDependencyName: 'golang.org/x/net',
+        newDependencyName: 'golang.org/x/net',
+        oldMajorVersion: '0',
+        oldMinorVersion: '0.0',
+        newMajorVersion: '0',
+        newMinorVersion: '0.0',
+        oldShaOrRevTag: '20221014081412-f15817d10f9b',
+        newShaOrRevTag: '20221017152216-f25eb7ecb193',
+      };
+
+      const fileRule = new GoDependency(octokit);
+
+      const versions = getGoVersions(
+        PRFile,
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
+      );
+
+      assert.deepStrictEqual(versions, getVersionsExpectation);
+    });
+
+    it('should return the correct versions and dependency from a go.mod without a rev or sha', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 2,
+        patch:
+          '@@ -4,7 +4,7 @@ go 1.19\n' +
+          ' \n' +
+          ' require (\n' +
+          ' \tcloud.google.com/go/profiler v0.3.1\n' +
+          '-\tgithub.com/golang/protobuf v1.5.2\n' +
+          '+\tgithub.com/golang/protobuf v1.5.3\n' +
+          ' \tgithub.com/sirupsen/logrus v1.9.0\n' +
+          ' \tgolang.org/x/net v0.7.0\n' +
+          ' \tgoogle.golang.org/grpc v1.53.0',
+      };
+
+      const getVersionsExpectation = {
+        oldDependencyName: 'github.com/golang/protobuf',
+        newDependencyName: 'github.com/golang/protobuf',
+        oldMajorVersion: '1',
+        oldMinorVersion: '5.2',
+        newMajorVersion: '1',
+        newMinorVersion: '5.3',
+        oldShaOrRevTag: undefined,
+        newShaOrRevTag: undefined,
+      };
+
+      const fileRule = new GoDependency(octokit);
+
+      const versions = getGoVersions(
+        PRFile,
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -915,6 +1012,76 @@ describe('run additional versioning checks', () => {
     });
   });
 
+  describe('whether the dependency names match for Go', () => {
+    it('should return false if the title does not match the dependency changed', () => {
+      const versions = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '1.0',
+        oldShaOrRevTag: undefined,
+        newShaOrRevTag: undefined,
+      };
+
+      const goDependency = new GoDependency(octokit);
+
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleGo(
+        versions,
+        goDependency.fileRules![0].dependencyTitle!,
+        'fix(deps): update module github.com/golang/protobuf to v1.5.3'
+      );
+
+      assert.strictEqual(doesDependencyMatch, false);
+    });
+
+    it('should return true if the title matches the dependency changed with `module`', () => {
+      const versions = {
+        oldDependencyName: 'github.com/golang/protobuf',
+        newDependencyName: 'github.com/golang/protobuf',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '1.0',
+        oldShaOrRevTag: undefined,
+        newShaOrRevTag: undefined,
+      };
+
+      const goDependency = new GoDependency(octokit);
+
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleGo(
+        versions,
+        goDependency.fileRules![0].dependencyTitle!,
+        'fix(deps): update module github.com/golang/protobuf to v1.5.3'
+      );
+
+      assert.ok(doesDependencyMatch);
+    });
+    it('should return true if the title matches the dependency changed with `digest`', () => {
+      const versions = {
+        oldDependencyName: 'golang.org/x/net',
+        newDependencyName: 'golang.org/x/net',
+        oldMajorVersion: '0',
+        oldMinorVersion: '0.0',
+        newMajorVersion: '0',
+        newMinorVersion: '0.0',
+        oldShaOrRevTag: 'f25eb7e',
+        newShaOrRevTag: '325eb7e',
+      };
+
+      const goDependency = new GoDependency(octokit);
+
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleGo(
+        versions,
+        goDependency.fileRules![0].dependencyTitle!,
+        'fix(deps): update golang.org/x/net digest to f25eb7e'
+      );
+
+      assert.ok(doesDependencyMatch);
+    });
+  });
+
   describe('whether the dependency names match Java', () => {
     it('should return false if the dependency changed for Java does not include `.google.`', () => {
       const versions = {
@@ -1098,6 +1265,42 @@ describe('run additional versioning checks', () => {
       };
 
       assert.deepStrictEqual(runVersioningValidation(versions), false);
+    });
+
+    it('should return true if one of sha and/or minor is bumped', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '2.1',
+        newShaOrRevTag: '20221014081412-f15817d10f9b',
+        oldShaOrRevTag: '20221017152216-f25eb7ecb193',
+      };
+
+      assert.deepStrictEqual(
+        runVersioningValidationWithShaOrRev(versions),
+        true
+      );
+    });
+
+    it('should return false if neither the sha nor the minor are bumped', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '2.0',
+        newShaOrRevTag: '20221014081412-f15817d10f9b',
+        oldShaOrRevTag: '20221014081412-f15817d10f9b',
+      };
+
+      assert.deepStrictEqual(
+        runVersioningValidationWithShaOrRev(versions),
+        false
+      );
     });
   });
 
