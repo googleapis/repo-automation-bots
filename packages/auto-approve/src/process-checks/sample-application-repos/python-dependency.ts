@@ -54,9 +54,9 @@ export class PythonSampleAppDependency extends BaseLanguageRule {
         /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
       ),
       // This would match: '-google-cloud-storage==1.39.0
-      oldVersion: new RegExp(/[\s]-(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+      oldVersion: new RegExp(/\n-(.*?)==([0-9])*\.([0-9]*\.[0-9]*)/),
       // This would match: '+google-cloud-storage==1.40.0
-      newVersion: new RegExp(/[\s]\+(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+      newVersion: new RegExp(/\n\+(.*?)==([0-9])*\.([0-9]*\.[0-9]*)/),
     },
     {
       targetFileToCheck: /requirements.in$/,
@@ -65,9 +65,9 @@ export class PythonSampleAppDependency extends BaseLanguageRule {
         /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
       ),
       // This would match: '-google-cloud-storage==1.39.0
-      oldVersion: new RegExp(/[\s]-(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+      oldVersion: new RegExp(/\n-(.*?)==([0-9])*\.([0-9]*\.[0-9]*)/),
       // This would match: '+google-cloud-storage==1.40.0
-      newVersion: new RegExp(/[\s]\+(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+      newVersion: new RegExp(/\n\+(.*?)==([0-9])*\.([0-9]*\.[0-9]*)/),
     },
   ];
   constructor(octokit: Octokit) {

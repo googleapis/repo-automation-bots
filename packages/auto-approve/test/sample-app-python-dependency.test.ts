@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {PythonDependency} from '../src/process-checks/python/dependency';
+import {PythonSampleAppDependency} from '../src/process-checks/sample-application-repos/python-dependency';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 
@@ -22,7 +22,7 @@ const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
 });
 
-describe('behavior of Python Dependency process', () => {
+describe('behavior of Python Sample App Dependency process', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const incomingPR = {
       author: 'testAuthor',
@@ -34,42 +34,91 @@ describe('behavior of Python Dependency process', () => {
       prNumber: 1,
       body: 'body',
     };
-    const pythonDependency = new PythonDependency(octokit);
+    const pythonSampleAppDependency = new PythonSampleAppDependency(octokit);
 
-    assert.deepStrictEqual(await pythonDependency.checkPR(incomingPR), false);
+    assert.deepStrictEqual(
+      await pythonSampleAppDependency.checkPR(incomingPR),
+      false
+    );
   });
 
   it('should return false in checkPR if one of the files did not match additional rules in fileRules', async () => {
     const incomingPR = {
       author: 'renovate-bot',
-      title: 'fix(deps): update dependency cloud.google.com to v16',
+      title: 'chore(deps): update dependency urllib3 to v1.26.15',
       fileCount: 3,
       changedFiles: [
         {
-          sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
-          filename: 'requirements.txt',
+          sha: '8133bad3cd1959eab88184d08a4d7688cc4f3080',
+          filename: 'src/loadgenerator/requirements.exe',
+          status: 'modified',
           additions: 1,
           deletions: 1,
           changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Floadgenerator%2Frequirements.txt',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Floadgenerator%2Frequirements.txt',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Floadgenerator%2Frequirements.txt?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
           patch:
-            '@@ -71,7 +71,7 @@\n' +
-            '-      google-cloud-storage==1.42.3' +
-            '+      google-cloud-storage==1.43.0',
+            '@@ -61,7 +61,7 @@ six==1.16.0\n' +
+            '     #   geventhttpclient\n' +
+            ' typing-extensions==4.5.0\n' +
+            '     # via locust\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            '     # via requests\n' +
+            ' werkzeug==2.2.3\n' +
+            '     # via',
         },
         {
-          sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
-          filename: 'maliciousFile',
+          sha: '53f548499f42c6e2c5c32a2e11ccf79cd3c45a35',
+          filename: 'src/userservice/requirements.in',
+          status: 'modified',
           additions: 1,
           deletions: 1,
           changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.in',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.in',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Fuserservice%2Frequirements.in?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
           patch:
-            '@@ -71,7 +71,7 @@\n' +
-            '     <dependency>\n' +
-            '       <groupId>com.google.cloud</groupId>\n' +
-            '       <artifactId>google-cloud-datacatalog</artifactId>\n' +
-            '-      <version>v1-rev20210319-1.31.5</version>\n' +
-            '+      <version>v1-rev20210319-1.32.1</version>\n' +
-            '     </dependency>\n',
+            '@@ -44,7 +44,7 @@ requests==2.28.2\n' +
+            ' rsa==4.9\n' +
+            ' six==1.16.0\n' +
+            ' sqlalchemy==1.4.46\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            ' wcwidth==0.2.6\n' +
+            ' webencodings==0.5.1\n' +
+            ' werkzeug==2.2.3',
+        },
+        {
+          sha: '1f060821cf73adf8c503ebcaff209a45b17db170',
+          filename: 'src/userservice/requirements.txt',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.txt',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.txt',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Fuserservice%2Frequirements.txt?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
+          patch:
+            '@@ -200,7 +200,7 @@ sqlalchemy==1.4.46\n' +
+            '     # via -r requirements.in\n' +
+            ' typing-extensions==4.5.0\n' +
+            '     # via opentelemetry-sdk\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            '     # via\n' +
+            '     #   -r requirements.in\n' +
+            '     #   requests',
         },
       ],
       repoName: 'testRepoName',
@@ -77,28 +126,186 @@ describe('behavior of Python Dependency process', () => {
       prNumber: 1,
       body: 'body',
     };
-    const pythonDependency = new PythonDependency(octokit);
+    const pythonSampleAppDependency = new PythonSampleAppDependency(octokit);
 
-    assert.deepStrictEqual(await pythonDependency.checkPR(incomingPR), false);
+    assert.deepStrictEqual(
+      await pythonSampleAppDependency.checkPR(incomingPR),
+      false
+    );
   });
 
   it('should return true in checkPR if incoming PR does match classRules', async () => {
     const incomingPR = {
       author: 'renovate-bot',
-      title: 'fix(deps): update dependency google-cloud-storage to v16',
-      fileCount: 3,
+      title: 'chore(deps): update dependency urllib3 to v1.26.15',
+      fileCount: 7,
       changedFiles: [
         {
-          sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
-          filename: 'samples/snippets/requirements.txt',
+          sha: '53f548499f42c6e2c5c32a2e11ccf79cd3c45a35',
+          filename: 'src/contacts/requirements.in',
+          status: 'modified',
           additions: 1,
           deletions: 1,
           changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fcontacts%2Frequirements.in',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fcontacts%2Frequirements.in',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Fcontacts%2Frequirements.in?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
           patch:
-            '@@ -1,2 +1,2 @@\n' +
-            ' google-cloud-videointelligence==2.5.1\n' +
-            '-google-cloud-storage==1.42.3\n' +
-            '+google-cloud-storage==2.0.0',
+            '@@ -44,7 +44,7 @@ requests==2.28.2\n' +
+            ' rsa==4.9\n' +
+            ' six==1.16.0\n' +
+            ' sqlalchemy==1.4.46\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            ' wcwidth==0.2.6\n' +
+            ' webencodings==0.5.1\n' +
+            ' werkzeug==2.2.3',
+        },
+        {
+          sha: '1f060821cf73adf8c503ebcaff209a45b17db170',
+          filename: 'src/contacts/requirements.txt',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fcontacts%2Frequirements.txt',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fcontacts%2Frequirements.txt',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Fcontacts%2Frequirements.txt?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
+          patch:
+            '@@ -200,7 +200,7 @@ sqlalchemy==1.4.46\n' +
+            '     # via -r requirements.in\n' +
+            ' typing-extensions==4.5.0\n' +
+            '     # via opentelemetry-sdk\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            '     # via\n' +
+            '     #   -r requirements.in\n' +
+            '     #   requests',
+        },
+        {
+          sha: '6919d313cc2023c66a5da15c1a9e3d1193331b99',
+          filename: 'src/frontend/requirements.in',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Ffrontend%2Frequirements.in',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Ffrontend%2Frequirements.in',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Ffrontend%2Frequirements.in?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
+          patch:
+            '@@ -1,6 +1,6 @@\n' +
+            ' flask==2.2.3\n' +
+            ' requests==2.28.2\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            ' pyjwt==2.6.0\n' +
+            ' cryptography==39.0.2\n' +
+            ' gunicorn==20.1.0',
+        },
+        {
+          sha: '0b3daec5e1e293eb73f2af17fc4de918f419c5ce',
+          filename: 'src/frontend/requirements.txt',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Ffrontend%2Frequirements.txt',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Ffrontend%2Frequirements.txt',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Ffrontend%2Frequirements.txt?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
+          patch:
+            '@@ -120,7 +120,7 @@ six==1.16.0\n' +
+            '     # via google-auth\n' +
+            ' typing-extensions==4.5.0\n' +
+            '     # via opentelemetry-sdk\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            '     # via\n' +
+            '     #   -r requirements.in\n' +
+            '     #   requests',
+        },
+        {
+          sha: '8133bad3cd1959eab88184d08a4d7688cc4f3080',
+          filename: 'src/loadgenerator/requirements.txt',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Floadgenerator%2Frequirements.txt',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Floadgenerator%2Frequirements.txt',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Floadgenerator%2Frequirements.txt?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
+          patch:
+            '@@ -61,7 +61,7 @@ six==1.16.0\n' +
+            '     #   geventhttpclient\n' +
+            ' typing-extensions==4.5.0\n' +
+            '     # via locust\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            '     # via requests\n' +
+            ' werkzeug==2.2.3\n' +
+            '     # via',
+        },
+        {
+          sha: '53f548499f42c6e2c5c32a2e11ccf79cd3c45a35',
+          filename: 'src/userservice/requirements.in',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.in',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.in',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Fuserservice%2Frequirements.in?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
+          patch:
+            '@@ -44,7 +44,7 @@ requests==2.28.2\n' +
+            ' rsa==4.9\n' +
+            ' six==1.16.0\n' +
+            ' sqlalchemy==1.4.46\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            ' wcwidth==0.2.6\n' +
+            ' webencodings==0.5.1\n' +
+            ' werkzeug==2.2.3',
+        },
+        {
+          sha: '1f060821cf73adf8c503ebcaff209a45b17db170',
+          filename: 'src/userservice/requirements.txt',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.txt',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/6389eea9f9e2f10cbb1ce82db51786b9611fd7d8/src%2Fuserservice%2Frequirements.txt',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Fuserservice%2Frequirements.txt?ref=6389eea9f9e2f10cbb1ce82db51786b9611fd7d8',
+          patch:
+            '@@ -200,7 +200,7 @@ sqlalchemy==1.4.46\n' +
+            '     # via -r requirements.in\n' +
+            ' typing-extensions==4.5.0\n' +
+            '     # via opentelemetry-sdk\n' +
+            '-urllib3==1.26.14\n' +
+            '+urllib3==1.26.15\n' +
+            '     # via\n' +
+            '     #   -r requirements.in\n' +
+            '     #   requests',
         },
       ],
       repoName: 'testRepoName',
@@ -106,8 +313,8 @@ describe('behavior of Python Dependency process', () => {
       prNumber: 1,
       body: 'body',
     };
-    const pythonDependency = new PythonDependency(octokit);
+    const pythonSampleAppDependency = new PythonSampleAppDependency(octokit);
 
-    assert.ok(await pythonDependency.checkPR(incomingPR));
+    assert.ok(await pythonSampleAppDependency.checkPR(incomingPR));
   });
 });

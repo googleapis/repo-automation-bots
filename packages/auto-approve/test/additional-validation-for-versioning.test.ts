@@ -420,6 +420,8 @@ describe('run additional versioning checks', () => {
         oldMinorVersion: '3.0',
         newMajorVersion: '2',
         newMinorVersion: '3.1',
+        newShaOrRevTag: undefined,
+        oldShaOrRevTag: undefined,
       };
       const versions = getVersionsV2(
         PRFile,
@@ -459,6 +461,8 @@ describe('run additional versioning checks', () => {
         oldMinorVersion: '3.0',
         newMajorVersion: '2',
         newMinorVersion: '3.1',
+        newShaOrRevTag: undefined,
+        oldShaOrRevTag: undefined,
       };
       const versions = getVersionsV2(
         PRFile,

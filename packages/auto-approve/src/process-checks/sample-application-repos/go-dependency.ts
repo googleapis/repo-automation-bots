@@ -17,10 +17,10 @@ import {
   checkAuthor,
   checkTitleOrBody,
   checkFilePathsMatch,
-  doesDependencyChangeMatchPRTitleV2,
   reportIndividualChecks,
   getGoVersions,
   runVersioningValidationWithShaOrRev,
+  doesDependencyChangeMatchPRTitleGo,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
@@ -31,7 +31,8 @@ import {BaseLanguageRule} from '../base';
 export class GoDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
-    titleRegex: /^(fix|chore)\(deps\): update module (\D*?) to v(\S*)$/,
+    titleRegex:
+      /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/,
     fileNameRegex: [/go\.sum$/, /go\.mod$/],
   };
   fileRules = [
@@ -39,17 +40,16 @@ export class GoDependency extends BaseLanguageRule {
       targetFileToCheck: /go\.mod$/,
       // This would match: chore(deps): update cypress/included docker tag to v12.12.0
       dependencyTitle: new RegExp(
-        /^(fix|chore)\(deps\): update module (\D*?) to v(\S*)$/
+        /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/
       ),
 
-      // TODO: figure out how to confirm revs are changing if versions aren't
       // This would match: '-google.golang.org/grpc v1.50.0' or '-golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
       oldVersion: new RegExp(
-        /-\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v[0-9]*\.[0-9]*\.[0-9]*-([a-z0-9-]*))/
+        /-\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v([0-9]*)\.([0-9]*\.[0-9]*)-([a-z0-9-]*))/
       ),
       // This would match: '+google.golang.org/grpc v1.50.0' or '+golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
       newVersion: new RegExp(
-        /\+\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v[0-9]*\.[0-9]*\.[0-9]*-([a-z0-9-]*))/
+        /\+\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v([0-9]*)\.([0-9]*\.[0-9]*)-([a-z0-9-]*))/
       ),
     },
   ];
@@ -99,7 +99,7 @@ export class GoDependency extends BaseLanguageRule {
         return false;
       }
 
-      const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleGo(
         versions,
         // We can assert this exists since we're in the class rule that contains it
         fileMatch.dependencyTitle!,

@@ -19,7 +19,6 @@ import timezone from 'dayjs/plugin/timezone';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 import * as semver from 'semver';
-import { version } from 'os';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -358,9 +357,36 @@ export function doesDependencyChangeMatchPRTitleV2(
 ): boolean {
   let dependencyName = '';
   const titleRegex = title.match(dependencyRegex);
-
   if (titleRegex) {
     dependencyName = titleRegex[2];
+  }
+
+  return (
+    versions.newDependencyName === versions.oldDependencyName &&
+    dependencyName === versions.newDependencyName
+  );
+}
+
+/**
+ * This function checks whether the dependency stated in a given title was the one that was changed (not Java, see doesDependencyChangeMatchPRTitleJava)
+ *
+ * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+ * @param dependencyRegex the regular exp to find the dependency within the title of the PR
+ * @param title the title of the PR
+ * @param loose whether or not the title in the dependency should strictly match what is changed in the file, or loosely
+ * for example
+ * @returns whether the old dependency, new dependency, and dependency in the title all match
+ */
+export function doesDependencyChangeMatchPRTitleGo(
+  versions: Versions,
+  dependencyRegex: RegExp,
+  title: string
+): boolean {
+  let dependencyName = '';
+
+  const titleRegex = title.match(dependencyRegex);
+  if (titleRegex) {
+    dependencyName = titleRegex[3] || titleRegex[2];
   }
 
   return (

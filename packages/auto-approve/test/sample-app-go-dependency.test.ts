@@ -22,7 +22,7 @@ const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
 });
 
-describe('behavior of Python Dependency process', () => {
+describe('behavior of Go Dependency process', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const incomingPR = {
       author: 'testAuthor',
@@ -132,7 +132,7 @@ describe('behavior of Python Dependency process', () => {
     assert.deepStrictEqual(await goDependency.checkPR(incomingPR), false);
   });
 
-  it.only('should return true in checkPR if incoming PR does match classRules, including having go.sum', async () => {
+  it('should return true in checkPR if incoming PR does match classRules, including having go.sum', async () => {
     const incomingPR = {
       author: 'renovate-bot',
       title: 'fix(deps): update module github.com/golang/protobuf to v1.5.3',
@@ -225,7 +225,7 @@ describe('behavior of Python Dependency process', () => {
     assert.ok(await goDependency.checkPR(incomingPR));
   });
 
-  it('should return true in checkPR if incoming PR does match classRules, if rev or sha is changed', async () => {
+  it('should return true in checkPR if incoming PR does match classRules with rev or sha', async () => {
     const incomingPR = {
       author: 'renovate-bot',
       title: 'fix(deps): update golang.org/x/net digest to f25eb7e',
