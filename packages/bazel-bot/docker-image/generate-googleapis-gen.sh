@@ -26,6 +26,9 @@
 #
 # BAZEL_FLAGS: additional flags to pass to 'bazel query' and 'bazel build'.
 # Useful for setting a remote cache, coping with different versions of bazel, etc.
+#
+# LOCAL_MODE: if set to "true", then skip git pull and git push. Useful for generating
+# locally in docker with mounted directories.
 
 # Fail immediately.
 set -e
@@ -40,12 +43,14 @@ export GOOGLEAPIS_GEN=${GOOGLEAPIS_GEN:=`realpath googleapis-gen`}
 
 mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# Override in tests.
-INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:="$mydir/install-credentials.sh"}
+if [[ "${LOCAL_MODE}" != "true" ]]; then
+    # Override in tests.
+    INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:="$mydir/install-credentials.sh"}
 
-# Pull both repos to make sure we're up to date.
-git -C "$GOOGLEAPIS" pull
-git -C "$GOOGLEAPIS_GEN" pull
+    # Pull both repos to make sure we're up to date.
+    git -C "$GOOGLEAPIS" pull
+    git -C "$GOOGLEAPIS_GEN" pull
+fi
 
 # Collect the history of googleapis.
 shas=$(git -C "$GOOGLEAPIS" log --format=%H)
@@ -139,7 +144,9 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     if git -C "$GOOGLEAPIS_GEN" diff-index --quiet HEAD ; then
         # No changes to commit, so just push the tag.
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
-        git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
+        if [[ "${LOCAL_MODE}" != "true" ]]; then
+            git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
+        fi
     else
         # Determine the current branch so we can explicitly push to it
         # TODO(jskeet): use the commented-out line below; it requires
@@ -158,6 +165,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         # Commit changes and push them.
         git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
-        git -C "$GOOGLEAPIS_GEN" push origin "$googleapis_gen_branch" "googleapis-$sha"
+        if [[ "${LOCAL_MODE}" != "true" ]]; then
+            git -C "$GOOGLEAPIS_GEN" push origin "$googleapis_gen_branch" "googleapis-$sha"
+        fi
     fi
 done
