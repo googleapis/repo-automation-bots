@@ -52,19 +52,6 @@ export class GoDependency extends BaseLanguageRule {
   fileRules = [
     {
       targetFileToCheck: /go\.mod$/,
-      // This would match: chore(deps): update cypress/included docker tag to v12.12.0
-      dependencyTitle: new RegExp(
-        /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/
-      ),
-
-      // This would match: '-google.golang.org/grpc v1.50.0' or '-golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
-      oldVersion: new RegExp(
-        /-\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v([0-9]*)\.([0-9]*\.[0-9]*)-([a-z0-9-]*))/
-      ),
-      // This would match: '+google.golang.org/grpc v1.50.0' or '+golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
-      newVersion: new RegExp(
-        /\+\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v([0-9]*)\.([0-9]*\.[0-9]*)-([a-z0-9-]*))/
-      ),
     },
   ];
 
@@ -84,12 +71,14 @@ export class GoDependency extends BaseLanguageRule {
    */
   public doesDependencyChangeMatchPRTitleGo(
     versions: VersionsWithShaDiff,
-    dependencyTitleRegex: RegExp,
     title: string
   ): boolean {
     let dependencyName = '';
 
-    const titleRegex = title.match(dependencyTitleRegex);
+    // This would match: chore(deps): update cypress/included docker tag to v12.12.0
+    const titleRegex = title.match(
+      /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/
+    );
     if (titleRegex) {
       // Go titles can vary by either: `module NAME` or `NAME digest`
       dependencyName = titleRegex[3] || titleRegex[2];
@@ -114,11 +103,9 @@ export class GoDependency extends BaseLanguageRule {
    * @returns the previous and new major and minor versions of a package in an object containing those 4 properties.
    */
   public getGoVersions(
-    versionFile: File | undefined,
-    oldVersionRegex?: RegExp,
-    newVersionRegex?: RegExp
+    versionFile: File | undefined
   ): VersionsWithShaDiff | undefined {
-    if (!versionFile || !oldVersionRegex || !newVersionRegex) {
+    if (!versionFile) {
       return undefined;
     }
 
@@ -131,8 +118,14 @@ export class GoDependency extends BaseLanguageRule {
     let oldShaOrRevTag;
     let newShaOrRevTag;
 
-    const oldVersions = versionFile.patch?.match(oldVersionRegex);
-    const newVersions = versionFile.patch?.match(newVersionRegex);
+    // This would match: '-google.golang.org/grpc v1.50.0' or '-golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
+    const oldVersions = versionFile.patch?.match(
+      /-\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v([0-9]*)\.([0-9]*\.[0-9]*)-([a-z0-9-]*))/
+    );
+    // This would match: '+google.golang.org/grpc v1.50.0' or '+golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458'
+    const newVersions = versionFile.patch?.match(
+      /\+\t(\D*?)[\s](?:v([0-9])*\.([0-9]*\.[0-9]*)\n|v([0-9]*)\.([0-9]*\.[0-9]*)-([a-z0-9-]*))/
+    );
 
     if (oldVersions) {
       oldDependencyName = oldVersions[1];
@@ -210,11 +203,7 @@ export class GoDependency extends BaseLanguageRule {
         return false;
       }
 
-      const versions = this.getGoVersions(
-        file,
-        fileMatch.oldVersion,
-        fileMatch.newVersion
-      );
+      const versions = this.getGoVersions(file);
 
       if (!versions) {
         return false;
@@ -222,7 +211,6 @@ export class GoDependency extends BaseLanguageRule {
 
       const doesDependencyMatch = this.doesDependencyChangeMatchPRTitleGo(
         versions,
-        fileMatch.dependencyTitle,
         incomingPR.title
       );
 
