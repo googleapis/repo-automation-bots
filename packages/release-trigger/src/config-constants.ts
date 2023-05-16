@@ -16,6 +16,12 @@ export interface ConfigurationOptions {
   jobName?: string;
   enabled?: boolean;
   multiScmName?: string;
+  /// Trigger a new release even when there isn't a corresponding release
+  /// please pull request.
+  triggerWithoutPullRequest?: boolean;
+  /// The programming language whose publishing pipeline to invoke.
+  /// Required when triggerWithoutPullRequest is true.
+  lang?: string;
 }
 
 export const WELL_KNOWN_CONFIGURATION_FILE = 'release-trigger.yml';

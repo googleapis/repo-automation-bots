@@ -44,11 +44,43 @@ import {
   isReleasePullRequest,
   delay,
   TriggerError,
+  invokeAutoreleaseWithArgs,
 } from './release-trigger';
 
 const TRIGGER_LOCK_ID = 'release-trigger';
 const TRIGGER_LOCK_DURATION_MS = 60 * 1000;
 const TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
+
+/**
+ * Execute a function while holding a lock.
+ *
+ * @param targetUrl The lock's identifier.  Example: the pull request url.
+ * @param f The function to execute while holding the lock.
+ * @returns the value returned by f().
+ */
+async function withTriggerLock<R>(
+  targetUrl: string,
+  f: () => Promise<R>
+): Promise<R> {
+  const lock = new DatastoreLock(
+    TRIGGER_LOCK_ID,
+    targetUrl,
+    TRIGGER_LOCK_DURATION_MS,
+    TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS
+  );
+  const acquired = await lock.acquire();
+  if (!acquired) {
+    // throw an error and expect gcf-utils infrastructure to retry
+    throw new Error(
+      `Failed to acquire lock in ${TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS}ms for ${targetUrl}`
+    );
+  }
+  try {
+    return await f();
+  } finally {
+    lock.release();
+  }
+}
 
 /**
  * Try to trigger a the release job for a release pull request under
@@ -69,30 +101,17 @@ async function doTriggerWithLock(
   logger: GCFLogger,
   installationId: number,
   multiScmName?: string
-) {
-  const lock = new DatastoreLock(
-    TRIGGER_LOCK_ID,
-    pullRequest.html_url,
-    TRIGGER_LOCK_DURATION_MS,
-    TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS
-  );
-  const result = await lock.acquire();
-  if (!result) {
-    // throw an error and expect gcf-utils infrastructure to retry
-    throw new Error(
-      `Failed to acquire lock in ${TRIGGER_LOCK_ACQUIRE_TIMEOUT_MS}ms for ${pullRequest.html_url}`
-    );
-  }
-  // fetch the pull request and ensure it is triggerable
-  pullRequest = (
-    await octokit.pulls.get({
-      owner: pullRequest.base.repo.owner!.login!,
-      repo: pullRequest.base.repo.name,
-      pull_number: pullRequest.number,
-    })
-  ).data;
+): Promise<void> {
+  await withTriggerLock(pullRequest.html_url, async () => {
+    // fetch the pull request and ensure it is triggerable
+    pullRequest = (
+      await octokit.pulls.get({
+        owner: pullRequest.base.repo.owner!.login!,
+        repo: pullRequest.base.repo.name,
+        pull_number: pullRequest.number,
+      })
+    ).data;
 
-  try {
     // double-check that the pull request is triggerable
     if (isReleasePullRequest(pullRequest)) {
       await doTrigger(
@@ -106,9 +125,7 @@ async function doTriggerWithLock(
     } else {
       logger.warn(`Skipping triggering release PR: ${pullRequest.html_url}`);
     }
-  } finally {
-    await lock.release();
-  }
+  });
 }
 
 /**
@@ -253,6 +270,32 @@ export = (app: Probot) => {
       logger.warn(
         `Failed to find any pending pull requests for ${owner}/${repo}`
       );
+      /// Has this repo been configured to trigger without pull requests?
+      if (configuration.triggerWithoutPullRequest) {
+        const lang = configuration.lang;
+        if (!lang) {
+          logger.error(
+            'In the configuration, `lang` must be set when `triggerWithoutPullRequest` is true.'
+          );
+          return;
+        }
+        const releaseUrl = context.payload.release.html_url;
+        const options = {logger, multiScmName: configuration.multiScmName};
+        const metric = {owner, repo, releaseUrl};
+        await withTriggerLock(releaseUrl, async () => {
+          try {
+            logger.metric('release.triggered', metric);
+            await invokeAutoreleaseWithArgs(
+              releaseUrl,
+              token,
+              ['trigger-single', `--release=${releaseUrl}`, `--lang=${lang}`],
+              options
+            );
+          } catch (e) {
+            logger.metric('release.trigger_failed', metric);
+          }
+        });
+      }
     }
     for (const pullRequest of releasePullRequests) {
       if (

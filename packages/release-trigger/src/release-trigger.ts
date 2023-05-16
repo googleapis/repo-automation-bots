@@ -33,15 +33,17 @@ export class TriggerError extends Error {
   }
 }
 
-export const exec = function (
-  command: string,
+export const execFile = function (
+  file: string,
+  args: string[],
   token: string,
   logger: GCFLogger = defaultLogger
 ): Promise<{stdout: string; stderr: string; error?: Error}> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return new Promise((resolve, _reject) => {
-    child_process.exec(
-      command,
+    child_process.execFile(
+      file,
+      args,
       {
         env: {
           ...process.env,
@@ -164,16 +166,36 @@ export async function triggerKokoroJob(
   token: string,
   options: TriggerKokoroOptions = {}
 ): Promise<{stdout: string; stderr: string; jobName?: string}> {
-  const logger = options.logger || defaultLogger;
-  const multiScmName = options.multiScmName;
-  logger.info(`triggering job for ${pullRequestUrl}`);
+  return invokeAutoreleaseWithArgs(
+    pullRequestUrl,
+    token,
+    ['trigger-single', `--pull=${pullRequestUrl}`],
+    options
+  );
+}
 
-  let command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
-  if (multiScmName) {
-    command = `${command} --multi-scm-name=${multiScmName}`;
+/**
+ * Logs and runs a python3 -m autorelease command.
+ * @param someUrl Echoed in log.
+ * @param token Passed to autorelease via GITHUB_TOKEN environment variable.
+ * @param autoreleaseArgs Arguments to pass to command line.
+ * @returns process results
+ */
+export async function invokeAutoreleaseWithArgs(
+  someUrl: string,
+  token: string,
+  autoreleaseArgs: string[],
+  options: TriggerKokoroOptions = {}
+): Promise<{stdout: string; stderr: string; jobName?: string}> {
+  const logger = options.logger || defaultLogger;
+  logger.info(`triggering job for ${someUrl}`);
+  const args = ['-m', 'autorelease', ...autoreleaseArgs];
+  if (options.multiScmName) {
+    args.push(`--multi-scm-name=${options.multiScmName}`);
   }
-  logger.debug(`command: ${command}`);
-  const {stdout, stderr, error} = await exec(command, token);
+  const command = `python3 ${args.join(' ')}`;
+  logger.debug(`command:  ${command}`);
+  const {stdout, stderr, error} = await execFile('python3', args, token);
   if (error) {
     logger.error(`error executing command: ${command}`, error);
     throw new TriggerError(error, command, stdout, stderr);
