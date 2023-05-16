@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {FileRule, PullRequest} from '../../interfaces';
+import {
+  FileRule,
+  PullRequest,
+  File,
+  VersionsWithShaDiff,
+} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
   checkFilePathsMatch,
   reportIndividualChecks,
-  getGoVersions,
-  runVersioningValidationWithShaOrRev,
-  doesDependencyChangeMatchPRTitleGo,
+  isVersionValidWithShaOrRev,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
@@ -38,6 +41,7 @@ import {BaseLanguageRule} from '../base';
     - Increase the non-major package version of a dependency or digest
     - Change the dependency that was there previously, and that is on the title of the PR
  */
+
 export class GoDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
@@ -66,6 +70,113 @@ export class GoDependency extends BaseLanguageRule {
 
   constructor(octokit: Octokit) {
     super(octokit);
+  }
+
+  /**
+   * This function checks whether the dependency stated in a given title was the one that was changed for Go
+   * This function is different from doesDependencyChangeMatchPRTitle as it is specific to Go, since those titles
+   * vary in their regex.
+   *
+   * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+   * @param dependencyRegex the regular exp to find the dependency within the title of the PR
+   * @param title the title of the PR
+   * @returns whether the old dependency, new dependency, and dependency in the title all match
+   */
+  public doesDependencyChangeMatchPRTitleGo(
+    versions: VersionsWithShaDiff,
+    dependencyTitleRegex: RegExp,
+    title: string
+  ): boolean {
+    let dependencyName = '';
+
+    const titleRegex = title.match(dependencyTitleRegex);
+    if (titleRegex) {
+      // Go titles can vary by either: `module NAME` or `NAME digest`
+      dependencyName = titleRegex[3] || titleRegex[2];
+    }
+
+    return (
+      versions.newDependencyName === versions.oldDependencyName &&
+      dependencyName === versions.newDependencyName
+    );
+  }
+
+  /**
+   * Given a patch for a file that was changed in a PR for a go.mod file, and a regular expression to search
+   * for the old version number and a regular expression to search for the new version number,
+   * this function will return the old and new versions of a package.
+   * This function is different from above, since Go packages sometimes will have a rev tag, which changes the grouping
+   * for the regular expressions.
+   *
+   * @param versionFile the changed file that has additional rules to conform to
+   * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
+   * @param newVersionRegex the regular exp to find the new version number of whatever is being changed
+   * @returns the previous and new major and minor versions of a package in an object containing those 4 properties.
+   */
+  public getGoVersions(
+    versionFile: File | undefined,
+    oldVersionRegex?: RegExp,
+    newVersionRegex?: RegExp
+  ): VersionsWithShaDiff | undefined {
+    if (!versionFile || !oldVersionRegex || !newVersionRegex) {
+      return undefined;
+    }
+
+    let oldDependencyName;
+    let newDependencyName;
+    let oldMajorVersion;
+    let oldMinorVersion;
+    let newMajorVersion;
+    let newMinorVersion;
+    let oldShaOrRevTag;
+    let newShaOrRevTag;
+
+    const oldVersions = versionFile.patch?.match(oldVersionRegex);
+    const newVersions = versionFile.patch?.match(newVersionRegex);
+
+    if (oldVersions) {
+      oldDependencyName = oldVersions[1];
+      oldMajorVersion = oldVersions[2] || oldVersions[4];
+      oldMinorVersion = oldVersions[3] || oldVersions[5];
+      oldShaOrRevTag = oldVersions[6] || undefined;
+    }
+
+    if (newVersions) {
+      newDependencyName = newVersions[1];
+      newMajorVersion = newVersions[2] || newVersions[4];
+      newMinorVersion = newVersions[3] || newVersions[5];
+      newShaOrRevTag = newVersions[6] || undefined;
+    }
+
+    // If there is a change with a file that requires special validation checks,
+    // and we can't find these pieces of information, we should throw an error, and not
+    // perform any other checks, since that would open us up to potentially merging a
+    // sensitive file without having proper checks.
+    if (
+      !(
+        oldDependencyName &&
+        newDependencyName &&
+        oldMajorVersion &&
+        oldMinorVersion &&
+        newMajorVersion &&
+        newMinorVersion
+      )
+    ) {
+      this.logger.warn(
+        `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
+      );
+      return undefined;
+    }
+    return {
+      oldDependencyName,
+      newDependencyName,
+      oldMajorVersion,
+      oldMinorVersion,
+      newMajorVersion,
+      newMinorVersion,
+      oldShaOrRevTag,
+      newShaOrRevTag,
+    };
   }
 
   public async checkPR(incomingPR: PullRequest): Promise<boolean> {
@@ -99,7 +210,7 @@ export class GoDependency extends BaseLanguageRule {
         return false;
       }
 
-      const versions = getGoVersions(
+      const versions = this.getGoVersions(
         file,
         fileMatch.oldVersion,
         fileMatch.newVersion
@@ -109,14 +220,13 @@ export class GoDependency extends BaseLanguageRule {
         return false;
       }
 
-      const doesDependencyMatch = doesDependencyChangeMatchPRTitleGo(
+      const doesDependencyMatch = this.doesDependencyChangeMatchPRTitleGo(
         versions,
-        // We can assert this exists since we're in the class rule that contains it
-        fileMatch.dependencyTitle!,
+        fileMatch.dependencyTitle,
         incomingPR.title
       );
 
-      const isVersionValid = runVersioningValidationWithShaOrRev(versions);
+      const isVersionValid = isVersionValidWithShaOrRev(versions);
 
       if (!(doesDependencyMatch && isVersionValid)) {
         reportIndividualChecks(

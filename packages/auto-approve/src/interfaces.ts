@@ -55,6 +55,21 @@ export interface Versions {
   oldMinorVersion: string;
   newMajorVersion: string;
   newMinorVersion: string;
+}
+
+/**
+ * Interface for the versions found in the selected files. These versions are
+ * picked out based on the regex listed in `./language-versioning-rules.json` for
+ * that particular file. From there, you will get the previous dependency, new
+ * dependency, and previous version number and changed version number.
+ */
+export interface VersionsWithShaDiff {
+  oldDependencyName: string;
+  newDependencyName: string;
+  oldMajorVersion: string;
+  oldMinorVersion: string;
+  newMajorVersion: string;
+  newMinorVersion: string;
   oldShaOrRevTag?: string;
   newShaOrRevTag?: string;
 }

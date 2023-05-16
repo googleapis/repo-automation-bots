@@ -16,7 +16,6 @@ import {FileRule, PullRequest} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
-  checkFileCount,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitleV2,
   getVersionsV2,

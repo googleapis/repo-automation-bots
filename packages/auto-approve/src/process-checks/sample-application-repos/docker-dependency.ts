@@ -21,7 +21,7 @@ import {
   getVersionsV2,
   isOneDependencyChanged,
   reportIndividualChecks,
-  runVersioningValidationWithShaOrRev,
+  isVersionValidWithShaOrRev,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
@@ -111,7 +111,7 @@ export class DockerDependency extends BaseLanguageRule {
         incomingPR.title
       );
 
-      const isVersionValid = runVersioningValidationWithShaOrRev(versions);
+      const isVersionValid = isVersionValidWithShaOrRev(versions);
 
       const oneDependencyChanged = isOneDependencyChanged(file);
 
