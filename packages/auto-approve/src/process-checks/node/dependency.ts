@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {FileRule, PullRequest} from '../../interfaces';
+import {LanguageRule, File, FileRule, Process} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
+  checkFileCount,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitleV2,
   getVersionsV2,
@@ -24,71 +25,99 @@ import {
   reportIndividualChecks,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
-import {BaseLanguageRule} from '../base';
 
-/**
- * The NodeDependency class's checkPR function returns
- * true if the PR:
-  - has an author that is 'renovate-bot'
-  - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-  - Each file path must match one of these regexps:
-    - /package\.json$/
-  - All files must:
-    - Match either these regexp:
-      - /^samples\/package.json$/
-      - /^\/package.json$/
-    - Increase the non-major package version of a dependency
-    - Only change one dependency
-    - Change the dependency that was there previously, and that is on the title of the PR
- */
-export class NodeDependency extends BaseLanguageRule {
-  classRule = {
-    author: 'renovate-bot',
-    titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-    fileNameRegex: [/package\.json$/],
+export class NodeDependency extends Process implements LanguageRule {
+  classRule: {
+    author: string;
+    titleRegex?: RegExp;
+    maxFiles: number;
+    fileNameRegex?: RegExp[];
+    fileRules?: {
+      oldVersion?: RegExp;
+      newVersion?: RegExp;
+      dependencyTitle?: RegExp;
+      targetFileToCheck: RegExp;
+    }[];
   };
-  fileRules = [
-    {
-      dependencyTitle:
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-      targetFileToCheck: /^samples\/package.json$/,
-      // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-      oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
-      // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
-      newVersion: /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
-    },
-    {
-      dependencyTitle:
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-      targetFileToCheck: /^package.json$/,
-      // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-      oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
-      // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
-      newVersion: /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
-    },
-  ];
-  constructor(octokit: Octokit) {
-    super(octokit);
+
+  constructor(
+    incomingPrAuthor: string,
+    incomingTitle: string,
+    incomingFileCount: number,
+    incomingChangedFiles: File[],
+    incomingRepoName: string,
+    incomingRepoOwner: string,
+    incomingPrNumber: number,
+    incomingOctokit: Octokit,
+    incomingBody?: string
+  ) {
+    super(
+      incomingPrAuthor,
+      incomingTitle,
+      incomingFileCount,
+      incomingChangedFiles,
+      incomingRepoName,
+      incomingRepoOwner,
+      incomingPrNumber,
+      incomingOctokit,
+      incomingBody
+    ),
+      (this.classRule = {
+        author: 'renovate-bot',
+        titleRegex:
+          /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+        maxFiles: 3,
+        fileNameRegex: [/package\.json$/],
+        fileRules: [
+          {
+            dependencyTitle:
+              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+            targetFileToCheck: /^samples\/package.json$/,
+            // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
+            oldVersion:
+              /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
+            // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
+            newVersion:
+              /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
+          },
+          {
+            dependencyTitle:
+              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+            targetFileToCheck: /^package.json$/,
+            // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
+            oldVersion:
+              /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
+            // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
+            newVersion:
+              /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
+          },
+        ],
+      });
   }
 
-  public async checkPR(incomingPR: PullRequest): Promise<boolean> {
+  public async checkPR(): Promise<boolean> {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
-      incomingPR.author
+      this.incomingPR.author
     );
 
     const titleMatches = checkTitleOrBody(
-      incomingPR.title,
+      this.incomingPR.title,
       this.classRule.titleRegex
     );
 
+    const fileCountMatch = checkFileCount(
+      this.incomingPR.fileCount,
+      this.classRule.maxFiles
+    );
+
     const filePatternsMatch = checkFilePathsMatch(
-      incomingPR.changedFiles.map((x: {filename: string}) => x.filename),
+      this.incomingPR.changedFiles.map(x => x.filename),
       this.classRule.fileNameRegex
     );
 
-    for (const file of incomingPR.changedFiles) {
-      const fileMatch = this.fileRules?.find((x: FileRule) =>
+    for (const file of this.incomingPR.changedFiles) {
+      const fileMatch = this.classRule.fileRules?.find((x: FileRule) =>
         x.targetFileToCheck.test(file.filename)
       );
 
@@ -110,7 +139,7 @@ export class NodeDependency extends BaseLanguageRule {
         versions,
         // We can assert this exists since we're in the class rule that contains it
         fileMatch.dependencyTitle!,
-        incomingPR.title
+        this.incomingPR.title
       );
 
       const isVersionValid = runVersioningValidation(versions);
@@ -124,9 +153,9 @@ export class NodeDependency extends BaseLanguageRule {
         reportIndividualChecks(
           ['doesDependencyMatch', 'isVersionValid', 'oneDependencyChanged'],
           [doesDependencyMatch, isVersionValid, oneDependencyChanged],
-          incomingPR.repoOwner,
-          incomingPR.repoName,
-          incomingPR.prNumber,
+          this.incomingPR.repoOwner,
+          this.incomingPR.repoName,
+          this.incomingPR.prNumber,
           file.filename
         );
         return false;
@@ -134,12 +163,19 @@ export class NodeDependency extends BaseLanguageRule {
     }
 
     reportIndividualChecks(
-      ['authorshipMatches', 'titleMatches', 'filePatternsMatch'],
-      [authorshipMatches, titleMatches, filePatternsMatch],
-      incomingPR.repoOwner,
-      incomingPR.repoName,
-      incomingPR.prNumber
+      [
+        'authorshipMatches',
+        'titleMatches',
+        'fileCountMatches',
+        'filePatternsMatch',
+      ],
+      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      this.incomingPR.repoOwner,
+      this.incomingPR.repoName,
+      this.incomingPR.prNumber
     );
-    return authorshipMatches && titleMatches && filePatternsMatch;
+    return (
+      authorshipMatches && titleMatches && fileCountMatch && filePatternsMatch
+    );
   }
 }
