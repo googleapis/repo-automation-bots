@@ -22,6 +22,8 @@ options:
 | -------------- | ---------------------------------------------------------------------- | -------- | ----------- |
 | `enabled`      | Whether this bot should run                                            | `string` | `true`      |
 | `multiScmName` | If set, trigger the job as a `multi_scm` with this value as the `name` | `string` | `undefined` |
+| `triggerWithoutPullRequest` | Trigger a release even when there's no corresponding release-please pull request | `boolean`| `false`    |
+| `lang` | The programming language whose publishing pipeline to invoke.  Required when triggerWithoutPullRequest is true. | `string` | `undefined` |
 
 ### Usage
 
