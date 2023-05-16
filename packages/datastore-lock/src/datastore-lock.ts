@@ -212,7 +212,11 @@ export class DatastoreLock {
  * Parameters for creating a DatastoreLock.
  */
 export interface DatastoreLockDetails {
+  /** A unique identifier for the lock.
+   * This identifier is used to identify the lock in the datastore. */
   lockId: string;
+  /** The name of the resource that the lock is protecting.
+   * Usually a url of a github resource. */
   target: string;
   /** If the current process crashes or otherwise fails to release the lock,
    * it will be automatically released in lockExpiry milliseconds. */
