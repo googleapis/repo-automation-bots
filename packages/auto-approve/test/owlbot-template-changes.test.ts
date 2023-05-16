@@ -16,7 +16,6 @@ import {OwlBotTemplateChanges} from '../src/process-checks/owl-bot-template-chan
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import nock from 'nock';
-import {IncomingMessage} from 'http';
 
 const {Octokit} = require('@octokit/rest');
 

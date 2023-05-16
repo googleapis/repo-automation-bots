@@ -8,3 +8,7 @@ processes:
   - "JavaDependency"
   - "OwlBotTemplateChanges"
   - "OwlBotAPIChanges"
+  - "PythonSampleAppDependency"
+  - "PythonSampleDependency"
+  - "GoDependency"
+  - "DockerDependency"

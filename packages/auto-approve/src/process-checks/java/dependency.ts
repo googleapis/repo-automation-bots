@@ -32,7 +32,7 @@ import {BaseLanguageRule} from '../base';
  * true if the PR:
   - has an author that is 'renovate-bot'
   - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-  - has max 3 files changed
+  - has max 50 files changed
   - Each file path must match one of these regexps:
     - /pom.xml$/
   - All files must:

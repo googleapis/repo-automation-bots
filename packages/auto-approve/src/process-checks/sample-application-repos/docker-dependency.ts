@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {FileRule, PullRequest} from '../../interfaces';
-import {BaseLanguageRule} from '../base';
 import {
   checkAuthor,
   checkTitleOrBody,
@@ -22,46 +21,48 @@ import {
   getVersionsV2,
   isOneDependencyChanged,
   reportIndividualChecks,
-  isVersionBumped,
+  isVersionValidWithShaOrRev,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
+import {BaseLanguageRule} from '../base';
 
 /**
- * The PythonDependency class's checkPR function returns
+ * The DockerDependency class's checkPR function returns
  * true if the PR:
-    - has an author that is 'renovate-bot'
-    - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-    - Each file path must match one of these regexps:
-    - /requirements.txt$/
-    - /^samples/wildcard/requirements(wildcard).txt$/
+  - has an author that is 'renovate-bot'
+  - has a title of the PR matches the regexp: /^(fix|chore)\(deps\): update (\D[^:?]*).* docker (digest|tag) to (.*)$/
+  - Each file path must match this regexp:
+    - /Dockerfile$/
   - All files must:
-    - Match this regexp: /requirements.txt$/
-    - Increase the package version of a dependency (major or nonmajor)
+    - Match this regexp: /Dockerfile$/
+    - Increase the non-major package version of a dependency or the tag
     - Only change one dependency
-    - Change the dependency that was there previously, and that is on the title of the PR
- */
-export class PythonDependency extends BaseLanguageRule {
+    - Change the dependency that was there previously, and that is on the title of the PR */
+export class DockerDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
-    titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-    fileNameRegex: [
-      /^samples\/.*?\/.*?requirements.*?\.txt$/,
-      /requirements\.txt$/,
-    ],
+    titleRegex:
+      /^(fix|chore)\(deps\): update (\D[^:?]*).* docker (digest|tag) to (.*)$/,
+    fileNameRegex: [/Dockerfile$/],
   };
   fileRules = [
     {
-      targetFileToCheck: /requirements.txt$/,
-      // This would match: fix(deps): update dependency @octokit to v1
+      targetFileToCheck: /Dockerfile$/,
+      // This would match: chore(deps): update cypress/included docker tag to v12.12.0
       dependencyTitle: new RegExp(
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+        /^(fix|chore)\(deps\): update (\D[^:?]*).* docker (digest|tag) to (.*)$/
       ),
-      // This would match: '-google-cloud-storage==1.39.0
-      oldVersion: new RegExp(/[\s]-(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
-      // This would match: '+google-cloud-storage==1.40.0
-      newVersion: new RegExp(/[\s]\+(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+      // This would match: '-FROM cypress/included:12.11.0@sha256:29dfeed99db7a9678a4402f9175c98074c23bbb5ad109058702bc401fc3cdd02'
+      oldVersion: new RegExp(
+        /-FROM[\s](\D*):([0-9]*)\.([0-9]*\.[0-9]*).*@sha256:([a-z0-9]{64})/
+      ),
+      // This would match: '+FROM cypress/included:12.11.0@sha256:29dfeed99db7a9678a4402f9175c98074c23bbb5ad109058702bc401fc3cdd02'
+      newVersion: new RegExp(
+        /\+FROM[\s](\D*):([0-9])*\.([0-9]*\.[0-9]*).*@sha256:([a-z0-9]{64})/
+      ),
     },
   ];
+
   constructor(octokit: Octokit) {
     super(octokit);
   }
@@ -83,6 +84,8 @@ export class PythonDependency extends BaseLanguageRule {
     );
 
     for (const file of incomingPR.changedFiles) {
+      // Each file must conform to at least one file rule, or else we could
+      // be allowing a random file to be approved
       const fileMatch = this.fileRules?.find((x: FileRule) =>
         x.targetFileToCheck.test(file.filename)
       );
@@ -108,7 +111,8 @@ export class PythonDependency extends BaseLanguageRule {
         incomingPR.title
       );
 
-      const isVersionValid = isVersionBumped(versions);
+      const isVersionValid = isVersionValidWithShaOrRev(versions);
+
       const oneDependencyChanged = isOneDependencyChanged(file);
 
       if (!(doesDependencyMatch && isVersionValid && oneDependencyChanged)) {
