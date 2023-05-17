@@ -58,15 +58,7 @@ for sha in $shas; do
         # Found a sha we already generated.
         break
     else
-        # If as $sha is contained in a list of bad SHAs (SHAs that
-        # will cause bazel to fail) skip the sha. The variable $BROKEN_SHAS
-        # is defined in the Cloud Build UI, with the intention that it is only
-        # used for exceptional circumstances.
-        if echo $BROKEN_SHAS | grep $sha; then
-            echo "skipping $sha"
-        else
-            ungenerated_shas+=($sha)
-        fi
+        ungenerated_shas+=($sha)
     fi
 done
 
@@ -74,7 +66,19 @@ done
 for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     sha="${ungenerated_shas[idx]}"
 
-    # Rebuild at the sha.
+    # Collect the commit message from the commit in googleapis.  The commit
+    # messages from broken shas will accumulate in commit-msg.txt.
+    git -C "$GOOGLEAPIS" log -1 --format=%B $sha >> commit-msg.txt
+
+    # If as $sha is contained in a list of bad SHAs (SHAs that
+    # will cause bazel to fail) skip the sha. The variable $BROKEN_SHAS
+    # is defined in the Cloud Build Terraform config, with the intention that it
+    # is only used for exceptional circumstances.
+    if echo $BROKEN_SHAS | grep $sha; then
+        echo "skipping broken $sha"
+        continue
+    fi
+
     git -C "$GOOGLEAPIS" checkout "$sha"
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
@@ -142,22 +146,14 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
     else
         # Determine the current branch so we can explicitly push to it
-        # TODO(jskeet): use the commented-out line below; it requires
-        # a newer version of git (2.23.0) than we have (2.20.1).
-        # googleapis_gen_branch=$(git -C "$GOOGLEAPIS_GEN" branch --show-current)
-        if [[ $TARGET_BRANCH != "" ]]
-        then
-          googleapis_gen_branch=$TARGET_BRANCH
-        else
-          googleapis_gen_branch=master
-        fi
+        googleapis_gen_branch=$(git -C "$GOOGLEAPIS_GEN" rev-parse --abbrev-ref HEAD)
 
-        # Copy the commit message from the commit in googleapis.
-        git -C "$GOOGLEAPIS" log -1 --format=%B > commit-msg.txt
         echo "Source-Link: https://github.com/googleapis/googleapis/commit/$sha" >> commit-msg.txt
         # Commit changes and push them.
         git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
         git -C "$GOOGLEAPIS_GEN" push origin "$googleapis_gen_branch" "googleapis-$sha"
     fi
+    # Clean out the commit message so it's not used for the next sha.
+    rm commit-msg.txt
 done
