@@ -83,8 +83,7 @@ Below is what each process checks for:
     - /package\.json$/
   - All files must: 
     - Match either these regexp:
-      - /^samples\/package.json$/
-      - /^\/package.json$/
+      - /\/package.json$/
     - Increase the non-major package version of a dependency
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
