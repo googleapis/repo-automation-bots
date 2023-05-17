@@ -21,6 +21,9 @@ import {UpdateDiscoveryArtifacts} from './process-checks/update-discovery-artifa
 import {RegenerateReadme} from './process-checks/regenerate-readme';
 import {DiscoveryDocUpdate} from './process-checks/discovery-doc-update';
 import {PythonDependency} from './process-checks/python/dependency';
+import {PythonSampleAppDependency} from './process-checks/sample-application-repos/python-dependency';
+import {GoDependency} from './process-checks/sample-application-repos/go-dependency';
+import {DockerDependency} from './process-checks/sample-application-repos/docker-dependency';
 import {NodeDependency} from './process-checks/node/dependency';
 import {NodeRelease} from './process-checks/node/release';
 import {JavaDependency} from './process-checks/java/dependency';
@@ -81,6 +84,18 @@ const typeMap = [
   {
     configValue: 'PHPApiaryCodegen',
     configType: PHPApiaryCodegen,
+  },
+  {
+    configValue: 'PythonSampleAppDependency',
+    configType: PythonSampleAppDependency,
+  },
+  {
+    configValue: 'GoDependency',
+    configType: GoDependency,
+  },
+  {
+    configValue: 'DockerDependency',
+    configType: DockerDependency,
   },
 ];
 

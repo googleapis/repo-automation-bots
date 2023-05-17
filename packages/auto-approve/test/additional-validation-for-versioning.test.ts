@@ -30,6 +30,7 @@ import {
   checkFileCount,
   runVersioningValidation,
   getOpenPRsInRepoFromSameAuthor,
+  isVersionValidWithShaOrRev,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -420,6 +421,8 @@ describe('run additional versioning checks', () => {
         oldMinorVersion: '3.0',
         newMajorVersion: '2',
         newMinorVersion: '3.1',
+        newShaOrRevTag: undefined,
+        oldShaOrRevTag: undefined,
       };
       const versions = getVersionsV2(
         PRFile,
@@ -459,6 +462,8 @@ describe('run additional versioning checks', () => {
         oldMinorVersion: '3.0',
         newMajorVersion: '2',
         newMinorVersion: '3.1',
+        newShaOrRevTag: undefined,
+        oldShaOrRevTag: undefined,
       };
       const versions = getVersionsV2(
         PRFile,
@@ -1094,6 +1099,36 @@ describe('run additional versioning checks', () => {
       };
 
       assert.deepStrictEqual(runVersioningValidation(versions), false);
+    });
+
+    it('should return true if one of sha and/or minor is bumped', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '2.1',
+        newShaOrRevTag: '20221014081412-f15817d10f9b',
+        oldShaOrRevTag: '20221017152216-f25eb7ecb193',
+      };
+
+      assert.deepStrictEqual(isVersionValidWithShaOrRev(versions), true);
+    });
+
+    it('should return false if neither the sha nor the minor are bumped', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '2.0',
+        newShaOrRevTag: '20221014081412-f15817d10f9b',
+        oldShaOrRevTag: '20221014081412-f15817d10f9b',
+      };
+
+      assert.deepStrictEqual(isVersionValidWithShaOrRev(versions), false);
     });
   });
 
