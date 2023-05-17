@@ -16,7 +16,6 @@ import {FileRule, PullRequest} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
-  checkFileCount,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitleV2,
   getVersionsV2,
@@ -32,7 +31,6 @@ import {BaseLanguageRule} from '../base';
  * true if the PR:
   - has an author that is 'renovate-bot'
   - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-  - has max 3 files changed in the PR
   - Each file path must match one of these regexps:
     - /package\.json$/
   - All files must:
@@ -47,23 +45,13 @@ export class NodeDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
     titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-    maxFiles: 3,
     fileNameRegex: [/package\.json$/],
   };
   fileRules = [
     {
       dependencyTitle:
         /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-      targetFileToCheck: /^samples\/package.json$/,
-      // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-      oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
-      // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
-      newVersion: /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
-    },
-    {
-      dependencyTitle:
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-      targetFileToCheck: /^package.json$/,
+      targetFileToCheck: /package.json$/,
       // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
       oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
       // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
@@ -83,11 +71,6 @@ export class NodeDependency extends BaseLanguageRule {
     const titleMatches = checkTitleOrBody(
       incomingPR.title,
       this.classRule.titleRegex
-    );
-
-    const fileCountMatch = checkFileCount(
-      incomingPR.fileCount,
-      this.classRule.maxFiles
     );
 
     const filePatternsMatch = checkFilePathsMatch(
@@ -142,19 +125,12 @@ export class NodeDependency extends BaseLanguageRule {
     }
 
     reportIndividualChecks(
-      [
-        'authorshipMatches',
-        'titleMatches',
-        'fileCountMatches',
-        'filePatternsMatch',
-      ],
-      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      ['authorshipMatches', 'titleMatches', 'filePatternsMatch'],
+      [authorshipMatches, titleMatches, filePatternsMatch],
       incomingPR.repoOwner,
       incomingPR.repoName,
       incomingPR.prNumber
     );
-    return (
-      authorshipMatches && titleMatches && fileCountMatch && filePatternsMatch
-    );
+    return authorshipMatches && titleMatches && filePatternsMatch;
   }
 }

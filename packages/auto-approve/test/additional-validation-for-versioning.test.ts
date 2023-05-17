@@ -467,8 +467,8 @@ describe('run additional versioning checks', () => {
       };
       const versions = getVersionsV2(
         PRFile,
-        fileRule.fileRules![1].oldVersion,
-        fileRule.fileRules![1].newVersion
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -498,8 +498,8 @@ describe('run additional versioning checks', () => {
 
       const versions = getVersionsV2(
         PRFile,
-        fileRule.fileRules![1].oldVersion,
-        fileRule.fileRules![1].newVersion
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
       assert.strictEqual(versions, undefined);
     });
@@ -510,8 +510,8 @@ describe('run additional versioning checks', () => {
       assert.strictEqual(
         getVersionsV2(
           undefined,
-          fileRule.fileRules![1].oldVersion,
-          fileRule.fileRules![1].newVersion
+          fileRule.fileRules![0].oldVersion,
+          fileRule.fileRules![0].newVersion
         ),
         undefined
       );
