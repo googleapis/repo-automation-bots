@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.0.4...datastore-lock-v4.1.0) (2023-05-17)
+
+
+### Features
+
+* add `withDatastoreLock()` helper ([#5057](https://github.com/googleapis/repo-automation-bots/issues/5057)) ([ec2c8e3](https://github.com/googleapis/repo-automation-bots/commit/ec2c8e3b2c87223835a5d3a4b4b7ce6fc7fe9286))
+
 ## [4.0.4](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.0.3...datastore-lock-v4.0.4) (2023-01-10)
 
 
