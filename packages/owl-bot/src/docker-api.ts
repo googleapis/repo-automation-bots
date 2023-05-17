@@ -46,11 +46,11 @@ export async function fetchConfig(
   );
   const manifestUri = `https://${host}/v2/${image}/manifests/${digest}`;
   console.info(`fetching ${manifestUri}`);
-  const manifest = JSON.parse(await fetchURL(manifestUri)) as Manifest;
+  const manifest = JSON.parse(await fetchManifestJson(manifestUri)) as Manifest;
   const configDigest: string = manifest.config.digest;
   const configUri = `https://${host}/v2/${image}/blobs/${configDigest}`;
   console.info(`fetching ${configUri}`);
-  return JSON.parse(await fetchURL(configUri)) as Config;
+  return JSON.parse(await fetchManifestJson(configUri)) as Config;
 }
 
 /**
@@ -58,10 +58,14 @@ export async function fetchConfig(
  *
  * @param url It needs to be an https URL.
  */
-async function fetchURL(url: string): Promise<string> {
+async function fetchManifestJson(url: string): Promise<string> {
+  const headers = {
+    accept:
+      'application/vnd.docker.distribution.manifest.v2+json,application/json',
+  };
   return new Promise((resolve, reject) => {
     https
-      .get(url, response => {
+      .get(url, {headers}, response => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const chunks: any[] = [];
         response.on('data', chunk => {
