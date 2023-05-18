@@ -44,16 +44,19 @@ import {BaseLanguageRule} from '../base';
 export class NodeDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
-    titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+    titleRegex:
+      // This would match: fix(deps): update dependency @octokit/rest to v19.0.8 or ^0.23.0 or ~0.23.0
+      /^(fix|chore)\(deps\): update dependency (@?\S*) to v?\^?~?(\S*)$/,
     fileNameRegex: [/package\.json$/],
   };
   fileRules = [
     {
       dependencyTitle:
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+        // This would match: fix(deps): update dependency @octokit/rest to v19.0.8 or ^0.23.0 or ~0.23.0
+        /^(fix|chore)\(deps\): update dependency (@?\S*) to v?\^?~?(\S*)$/,
       targetFileToCheck: /package.json$/,
       // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-      oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
+      oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
       // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
       newVersion: /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
     },
