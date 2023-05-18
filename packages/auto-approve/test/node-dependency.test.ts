@@ -124,7 +124,7 @@ describe('behavior of Node Dependency process', () => {
     assert.ok(await nodeDependency.checkPR(incomingPR));
   });
 
-  it('should return true in checkPR if incoming PR has strange', async () => {
+  it('should return true in checkPR if incoming PR has ^ or ~ characters', async () => {
     const incomingPR = {
       author: 'renovate-bot',
       title: 'fix(deps): update dependency recast to ^0.23.0',
