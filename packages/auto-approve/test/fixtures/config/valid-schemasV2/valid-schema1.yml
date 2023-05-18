@@ -11,4 +11,5 @@ processes:
   - "PythonSampleAppDependency"
   - "PythonSampleDependency"
   - "GoDependency"
+  - "GoApiaryCodegen"
   - "DockerDependency"

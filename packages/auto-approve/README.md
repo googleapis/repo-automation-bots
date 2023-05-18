@@ -29,6 +29,7 @@ processes:
   - "PHPApiaryCodegen"
   - "DockerDependency"
   - "GoDependency"
+  - "GoApiaryCodegen"
   - "PythonSampleAppDependency"
 ```
 
@@ -139,6 +140,9 @@ Below is what each process checks for:
     - Increase the non-major package version of a dependency or the tag
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
+* GoApiaryCodegen
+  - Checks that the author is 'yoshi-automation'
+  - Checks that the title of the PR matches the regexp: /^feat\(all\): auto-regenerate discovery clients$/
 * GoDependency
   - Checks that the author is 'renovate-bot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/

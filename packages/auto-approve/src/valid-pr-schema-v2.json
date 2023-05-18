@@ -26,7 +26,8 @@
           "PHPApiaryCodegen",
           "PythonSampleAppDependency",
           "DockerDependency",
-          "GoDependency"
+          "GoDependency",
+          "GoApiaryCodegen"
         ]
       }
     }
