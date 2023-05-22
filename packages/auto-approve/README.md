@@ -29,6 +29,7 @@ processes:
   - "PHPApiaryCodegen"
   - "DockerDependency"
   - "GoDependency"
+  - "GoApiaryCodegen"
   - "PythonSampleAppDependency"
 ```
 
@@ -77,15 +78,13 @@ Below is what each process checks for:
     - Change the dependency that was there previously, and that is on the title of the PR
     - Not match any regexes in the 'excluded' list
 * NodeDependency:
-  - Max 3 files changed in the PR
   - Checks that the author is 'renovate-bot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
   - Each file path must match one of these regexps:
     - /package\.json$/
   - All files must: 
-    - Match either these regexp:
-      - /^samples\/package.json$/
-      - /^\/package.json$/
+    - Match this regexp:
+      - /package.json$/
     - Increase the non-major package version of a dependency
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
@@ -141,6 +140,9 @@ Below is what each process checks for:
     - Increase the non-major package version of a dependency or the tag
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
+* GoApiaryCodegen
+  - Checks that the author is 'yoshi-automation'
+  - Checks that the title of the PR matches the regexp: /^feat\(all\): auto-regenerate discovery clients$/
 * GoDependency
   - Checks that the author is 'renovate-bot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/
