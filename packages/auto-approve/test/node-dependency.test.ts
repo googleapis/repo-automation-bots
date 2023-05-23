@@ -123,4 +123,44 @@ describe('behavior of Node Dependency process', () => {
 
     assert.ok(await nodeDependency.checkPR(incomingPR));
   });
+
+  it('should return true in checkPR if incoming PR has ^ or ~ characters', async () => {
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'fix(deps): update dependency recast to ^0.23.0',
+      fileCount: 1,
+      changedFiles: [
+        {
+          sha: '64d9442dc0e7b39caafa07604186d58e57f1745d',
+          filename: 'packages/typeless-sample-bot/package.json',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/googleapis/google-cloud-node/blob/d17c6c9f32fc7c62a6d728969e4e6982766eb2d0/packages%2Ftypeless-sample-bot%2Fpackage.json',
+          raw_url:
+            'https://github.com/googleapis/google-cloud-node/raw/d17c6c9f32fc7c62a6d728969e4e6982766eb2d0/packages%2Ftypeless-sample-bot%2Fpackage.json',
+          contents_url:
+            'https://api.github.com/repos/googleapis/google-cloud-node/contents/packages%2Ftypeless-sample-bot%2Fpackage.json?ref=d17c6c9f32fc7c62a6d728969e4e6982766eb2d0',
+          patch:
+            '@@ -33,7 +33,7 @@\n' +
+            '     "@babel/traverse": "^7.18.10",\n' +
+            '     "chalk": "^5.0.1",\n' +
+            '     "debug": "^4.3.4",\n' +
+            '-    "recast": "^0.22.0",\n' +
+            '+    "recast": "^0.23.0"\n' +
+            '   },\n' +
+            '   "devDependencies": {',
+        },
+      ],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeDependency = new NodeDependency(octokit);
+
+    assert.ok(await nodeDependency.checkPR(incomingPR));
+  });
 });
