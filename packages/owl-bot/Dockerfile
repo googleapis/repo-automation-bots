@@ -33,7 +33,7 @@ RUN apk update && apk upgrade && \
 
 # TODO: remove when we find a better resolution.
 # See: https://github.com/orgs/community/discussions/55820
-RUN git config --global http.version HTTP/1.1 \
+RUN git config --global http.version HTTP/1.1 && \
     git config --global http.postBuffer 157286400
 
 # Install production dependencies.
