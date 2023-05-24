@@ -33,6 +33,28 @@ steps:
       - --global
       - user.name
       - 'Owl Bot'
+  # TODO: remove when we find a better resolution.
+  # See: https://github.com/orgs/community/discussions/55820
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - http.version
+      - 'HTTP/1.1'
+  # TODO: remove when we find a better resolution.
+  # See: https://github.com/orgs/community/discussions/55820
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - http.postBuffer
+      - '157286400'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - http.version
+      - 'HTTP/1.1'
   # main
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
