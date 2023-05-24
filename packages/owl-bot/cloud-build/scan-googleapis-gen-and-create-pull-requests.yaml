@@ -48,7 +48,7 @@ steps:
       - config
       - --global
       - http.postBuffer
-      - 157286400
+      - '157286400'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - config
