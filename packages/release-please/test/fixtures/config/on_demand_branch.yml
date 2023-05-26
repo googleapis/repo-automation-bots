@@ -1,0 +1,4 @@
+manifest: true
+branches:
+  - branch: feature
+    onDemand: true
