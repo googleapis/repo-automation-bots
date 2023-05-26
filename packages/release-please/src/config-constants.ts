@@ -41,6 +41,7 @@ export interface BranchOptions {
   versioning?: VersioningStrategyType;
   changelogType?: ChangelogNotesType;
   initialVersion?: string;
+  onDemand?: boolean;
 }
 
 export interface BranchConfiguration extends BranchOptions {
@@ -57,4 +58,5 @@ export const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 export const DEFAULT_CONFIGURATION: Partial<ConfigurationOptions> = {
   branches: [],
   manifest: false,
+  onDemand: false,
 };
