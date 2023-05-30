@@ -64,6 +64,7 @@ interface GitHubAPI {
 }
 const DEFAULT_RELEASE_PLEASE_CONFIG = 'release-please-config.json';
 const DEFAULT_RELEASE_PLEASE_MANIFEST = '.release-please-manifest.json';
+const BOT_NAME = 'release-please[bot]';
 
 class BotConfigurationError extends Error {}
 
@@ -370,11 +371,17 @@ async function runBranchConfiguration(
 
 interface GitHubCommit {
   message: string;
+  author: {
+    name: string;
+  };
 }
 // Helper function to determine if list of commits includes something that
 // looks like a release.
 function hasReleaseCommit(commits: GitHubCommit[]): boolean {
-  return !!commits.find(commit => commit.message.includes('release'));
+  return !!commits.find(
+    commit =>
+      commit.message.includes('release') && commit.author.name === BOT_NAME
+  );
 }
 
 const handler = (app: Probot) => {

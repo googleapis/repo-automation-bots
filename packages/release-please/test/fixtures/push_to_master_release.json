@@ -16,14 +16,14 @@
       "timestamp": "2019-08-23T12:39:55-07:00",
       "url": "https://github.com/chingor13/google-auth-library-java/commit/89fa4c2d94af7f3dd23224536eb80c10b6414766",
       "author": {
-        "name": "Jeff Ching",
-        "email": "chingor@google.com",
-        "username": "chingor13"
+        "name": "release-please[bot]",
+        "email": "55107282+release-please[bot]@users.noreply.github.com",
+        "username": "release-please[bot]"
       },
       "committer": {
-        "name": "Jeff Ching",
-        "email": "chingor@google.com",
-        "username": "chingor13"
+        "name": "release-please[bot]",
+        "email": "55107282+release-please[bot]@users.noreply.github.com",
+        "username": "release-please[bot]"
       },
       "added": [],
       "removed": [],
