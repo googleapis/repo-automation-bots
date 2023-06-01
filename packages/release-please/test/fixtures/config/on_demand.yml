@@ -1,0 +1,6 @@
+primaryBranch: master
+releaseLabels:
+  - foo
+  - bar
+handleGHRelease: true
+onDemand: true

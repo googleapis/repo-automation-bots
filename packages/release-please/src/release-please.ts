@@ -64,6 +64,7 @@ interface GitHubAPI {
 }
 const DEFAULT_RELEASE_PLEASE_CONFIG = 'release-please-config.json';
 const DEFAULT_RELEASE_PLEASE_MANIFEST = '.release-please-manifest.json';
+const BOT_NAME = 'release-please[bot]';
 
 class BotConfigurationError extends Error {}
 
@@ -368,6 +369,21 @@ async function runBranchConfiguration(
   await Runner.createPullRequests(manifest);
 }
 
+interface GitHubCommit {
+  message: string;
+  author: {
+    name: string;
+  };
+}
+// Helper function to determine if list of commits includes something that
+// looks like a release.
+function hasReleaseCommit(commits: GitHubCommit[]): boolean {
+  return !!commits.find(
+    commit =>
+      commit.message.includes('release') && commit.author.name === BOT_NAME
+  );
+}
+
 const handler = (app: Probot) => {
   app.on('push', async context => {
     const logger = getContextLogger(context);
@@ -434,6 +450,18 @@ const handler = (app: Probot) => {
     );
 
     for (const branchConfiguration of branchConfigurations) {
+      // if branch is configured for on-demand releases, then skip the push event
+      // unless it looks like a release (we)
+      if (
+        branchConfiguration.onDemand &&
+        !hasReleaseCommit(context.payload.commits)
+      ) {
+        logger.info(
+          `skipping push event for on-demand ${repoUrl}, ${branchConfiguration.branch}`
+        );
+        continue;
+      }
+
       logger.debug(branchConfiguration);
       await runBranchConfigurationWithConfigurationHandling(
         github,

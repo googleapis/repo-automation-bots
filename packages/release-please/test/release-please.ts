@@ -633,6 +633,29 @@ describe('ReleasePleaseBot', () => {
         sinon.assert.notCalled(createReleasesStub);
         sinon.assert.calledOnce(addIssueStub);
       });
+
+      it('ignores non-releases for on-demand repos', async () => {
+        getConfigStub.resolves(loadConfig('on_demand.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.notCalled(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+      });
+
+      it('handles releases for on-demand repos', async () => {
+        getConfigStub.resolves(loadConfig('on_demand.yml'));
+        payload = require(resolve(fixturesPath, './push_to_master_release'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.calledOnce(createReleasesStub);
+      });
     });
 
     describe('for manifest releases', () => {
@@ -896,6 +919,33 @@ describe('ReleasePleaseBot', () => {
       );
     });
 
+    it('should try to create a release pull request for on-demand repo', async () => {
+      const payload = require(resolve(fixturesPath, './pull_request_labeled'));
+      getConfigStub.resolves(loadConfig('on_demand.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+      sinon.assert.calledOnce(createPullRequestsStub);
+      sinon.assert.calledOnceWithExactly(
+        fromConfigStub,
+        sinon.match.instanceOf(GitHub),
+        'master',
+        sinon.match.has('releaseType', 'java-yoshi'),
+        sinon.match.any,
+        undefined
+      );
+    });
+
     it('should ignore failing to remove the label', async () => {
       const payload = require(resolve(fixturesPath, './pull_request_labeled'));
       getConfigStub.resolves(loadConfig('valid.yml'));
@@ -927,6 +977,34 @@ describe('ReleasePleaseBot', () => {
     it('should try to tag a GitHub release', async () => {
       const payload = require(resolve(fixturesPath, './pull_request_labeled'));
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+      sinon.assert.calledOnce(createPullRequestsStub);
+      sinon.assert.calledOnce(createReleasesStub);
+      sinon.assert.calledOnceWithExactly(
+        fromConfigStub,
+        sinon.match.instanceOf(GitHub),
+        'master',
+        sinon.match.has('releaseType', 'java-yoshi'),
+        sinon.match.any,
+        undefined
+      );
+    });
+
+    it('should try to tag a GitHub release for an on-demand repo', async () => {
+      const payload = require(resolve(fixturesPath, './pull_request_labeled'));
+      getConfigStub.resolves(loadConfig('on_demand.yml'));
       const requests = nock('https://api.github.com')
         .delete(
           '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
