@@ -13,7 +13,7 @@
 			"description": "Preserves the original PR title",
 			"type": "boolean"
 		},
-		"allowedAuthorAssociation": {
+		"allowedAuthorAssociations": {
 			"type": "array",
 			"items": {
 				"type": "string",

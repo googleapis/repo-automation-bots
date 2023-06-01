@@ -346,6 +346,51 @@ describe('cherry-pick-bot', () => {
       sinon.assert.notCalled(cherryPickPullRequestStub);
     });
 
+    it('allows overriding allow author association', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_comment_created_non_member'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1')
+        .reply(200, {
+          merge_commit_sha: 'abc123',
+          base: {ref: 'main'},
+          merged: true,
+        });
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({
+        enabled: true,
+        allowedAuthorAssociations: ['OWNER', 'FIRST_TIMER'],
+      });
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
+      cherryPickPullRequestStub.resolves({
+        number: 123,
+        html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
+        title: 'chore: cherry-pick abc123',
+        body: null,
+      });
+
+      await probot.receive({
+        name: 'issue_comment',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(cherryPickPullRequestStub);
+      requests.done();
+    });
+
     it('ignores issues', async () => {
       const payload = require(resolve(
         fixturesPath,
