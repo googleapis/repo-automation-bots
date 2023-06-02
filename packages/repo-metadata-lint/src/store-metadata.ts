@@ -38,9 +38,8 @@ export async function storeMetadata(
   logger: GCFLogger = defaultLogger
 ) {
   try {
-    const metadataRecord = {timestamp: new Date(), ...metadata};
-    logger.info('storing repo metadata', metadataRecord);
-    await bigquery.dataset(datasetId).table(tableId).insert([metadataRecord]);
+    logger.info('storing repo metadata', metadata);
+    await bigquery.dataset(datasetId).table(tableId).insert([metadata]);
   } catch (e) {
     // dumping the error like this is required because error objects from BigQuery
     // contain nested data, including insert errors in arrays.
