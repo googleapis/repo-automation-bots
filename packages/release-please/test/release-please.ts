@@ -653,7 +653,7 @@ describe('ReleasePleaseBot', () => {
           {name: 'push', payload: payload as any, id: 'abc123'}
         );
 
-        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
       });
     });
