@@ -17,6 +17,7 @@ import Ajv from 'ajv';
 import schema from './repo-metadata-schema.json';
 import {Octokit} from '@octokit/rest';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
+import * as StoreMetadata from './store-metadata';
 
 export interface ValidationResult {
   status: 'success' | 'error';
@@ -97,6 +98,17 @@ export class Validate {
           );
         }
       }
+    }
+
+    // On success, store an entry in a metadata table. This data is
+    // used to answer questions such as API coverage:
+    if (result.status === 'success') {
+      await StoreMetadata.storeMetadata({
+        release_level: repoMetadata.release_level,
+        language: repoMetadata.language,
+        repository: repoMetadata.repository,
+        api_service: `${repoMetadata.api_shortname}.googleapis.com`,
+      });
     }
 
     return result;
