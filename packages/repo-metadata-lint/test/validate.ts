@@ -15,7 +15,6 @@
 import {describe, it, afterEach} from 'mocha';
 import assert from 'assert';
 import {Validate} from '../src/validate';
-import * as StoreMetadata from '../src/store-metadata';
 import {Octokit} from '@octokit/rest';
 import {readFileSync} from 'fs';
 import * as sinon from 'sinon';
@@ -73,7 +72,6 @@ describe('validate', () => {
   });
 
   it('succeeds if api_shortname missing, but library type does not correspond to API', async () => {
-    const storeMetadataStub = sandbox.stub(StoreMetadata, 'storeMetadata');
     const file = JSON.stringify({
       name: 'bigquery',
       release_level: 'stable',
@@ -87,7 +85,6 @@ describe('validate', () => {
     );
     assert.strictEqual(result.status, 'success');
     assert.strictEqual(result.errors.length, 0);
-    sandbox.assert.calledOnce(storeMetadataStub);
   });
 
   it('returns validation error if library_type missing', async () => {
@@ -208,7 +205,6 @@ describe('validate', () => {
   });
 
   it('succeeds when all fields are valid for GAPIC libraries', async () => {
-    const storeMetadataStub = sandbox.stub(StoreMetadata, 'storeMetadata');
     const file = JSON.stringify({
       release_level: 'stable',
       library_type: 'GAPIC_AUTO',
@@ -221,11 +217,9 @@ describe('validate', () => {
       file
     );
     assert.strictEqual(result.status, 'success');
-    sandbox.assert.calledOnce(storeMetadataStub);
   });
 
   it('succeeds for release_level of unreleased', async () => {
-    const storeMetadataStub = sandbox.stub(StoreMetadata, 'storeMetadata');
     const file = JSON.stringify({
       release_level: 'unreleased',
       library_type: 'GAPIC_AUTO',
@@ -238,6 +232,5 @@ describe('validate', () => {
       file
     );
     assert.strictEqual(result.status, 'success');
-    sandbox.assert.calledOnce(storeMetadataStub);
   });
 });
