@@ -289,15 +289,20 @@ async function findAndAppendPullRequest(
   // Is there a pull request open with the branch name for this
   // yaml path set?
   const destBranch = branchNameForCopies(yamlPaths);
+  const head = `${params.destRepo.owner}:${destBranch}`;
+  logger.info(
+    `Looking for existing, open pull request on ${params.destRepo.owner}/${params.destRepo.repo} with head: ${head}`
+  );
   const pulls = await octokit.pulls.list({
     owner: params.destRepo.owner,
     repo: params.destRepo.repo,
     state: 'open',
-    head: `${params.destRepo.owner}:${destBranch}`,
+    head,
   });
   const pull = pulls.data.length > 0 ? pulls.data[0] : undefined;
 
   if (!pull) {
+    logger.info('No existing pull request found, should attempt to create a new one.');
     return false;
   }
 
