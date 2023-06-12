@@ -302,7 +302,9 @@ async function findAndAppendPullRequest(
   const pull = pulls.data.length > 0 ? pulls.data[0] : undefined;
 
   if (!pull) {
-    logger.info('No existing pull request found, should attempt to create a new one.');
+    logger.info(
+      'No existing pull request found, should attempt to create a new one.'
+    );
     return false;
   }
 
