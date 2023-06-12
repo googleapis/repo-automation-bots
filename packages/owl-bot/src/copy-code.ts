@@ -505,6 +505,19 @@ export async function copyCodeAndAppendOrCreatePullRequest(
       i + params.maxYamlCountPerPullRequest
     );
 
+    const wparams: WorkingCopyParams = {...params, destDir, workDir};
+    const updated = await findAndAppendPullRequest(
+      wparams,
+      leftOverBatch,
+      logger,
+      withNestedCommitDelimiters
+    );
+
+    if (updated) {
+      logger.info('Updated existing batch PR.');
+      continue;
+    }
+
     const destBranch = branchNameForCopies(leftOverBatch);
     cmd(`git checkout ${defaultBranch}`, {cwd: destDir});
     cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
