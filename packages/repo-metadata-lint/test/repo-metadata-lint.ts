@@ -75,9 +75,9 @@ describe('repo-metadata-lint', () => {
     it('opens an issue on failure', async () => {
       sandbox
         .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
-        .onCall(0)
+        .onCall(0) // fetch .repo-metadata.json.
         .resolves(['.repo-metadata.json'])
-        .onCall(1)
+        .onCall(1) // fetch .repo-metadata-full.json.
         .resolves([]);
       sandbox
         .stub(RepositoryFileCache.prototype, 'getFileContents')
@@ -119,9 +119,9 @@ describe('repo-metadata-lint', () => {
     it('handles repositories with issues disabled', async () => {
       sandbox
         .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
-        .onCall(0)
+        .onCall(0) // fetch .repo-metadata.json.
         .resolves(['.repo-metadata.json'])
-        .onCall(1)
+        .onCall(1) // fetch .repo-metadata-full.json.
         .resolves([]);
       sandbox
         .stub(RepositoryFileCache.prototype, 'getFileContents')
@@ -163,9 +163,9 @@ describe('repo-metadata-lint', () => {
     it('opens an issue on failure reading bulk .repo-metadata-full.json file', async () => {
       sandbox
         .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
-        .onCall(0)
+        .onCall(0) // fetch .repo-metadata.json.
         .resolves([])
-        .onCall(1)
+        .onCall(1) // fetch .repo-metadata-full.json.
         .resolves(['.repo-metadata-full.json']);
       sandbox
         .stub(RepositoryFileCache.prototype, 'getFileContents')
