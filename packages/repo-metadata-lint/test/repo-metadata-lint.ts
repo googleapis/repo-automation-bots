@@ -23,6 +23,7 @@ import {logger} from 'gcf-utils';
 import * as gcfUtils from 'gcf-utils';
 import {assert} from 'console';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
+import {readFileSync} from 'fs';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -74,7 +75,10 @@ describe('repo-metadata-lint', () => {
     it('opens an issue on failure', async () => {
       sandbox
         .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
-        .resolves(['.repo-metadata.json']);
+        .onCall(0) // fetch .repo-metadata.json.
+        .resolves(['.repo-metadata.json'])
+        .onCall(1) // fetch .repo-metadata-full.json.
+        .resolves([]);
       sandbox
         .stub(RepositoryFileCache.prototype, 'getFileContents')
         .withArgs('.repo-metadata.json', 'main')
@@ -115,7 +119,10 @@ describe('repo-metadata-lint', () => {
     it('handles repositories with issues disabled', async () => {
       sandbox
         .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
-        .resolves(['.repo-metadata.json']);
+        .onCall(0) // fetch .repo-metadata.json.
+        .resolves(['.repo-metadata.json'])
+        .onCall(1) // fetch .repo-metadata-full.json.
+        .resolves([]);
       sandbox
         .stub(RepositoryFileCache.prototype, 'getFileContents')
         .withArgs('.repo-metadata.json', 'main')
@@ -150,6 +157,51 @@ describe('repo-metadata-lint', () => {
         id: 'abc123',
       });
       sandbox.assert.calledWith(infoStub, sinon.match(/1 validation errors/));
+      githubApiRequests.done();
+    });
+
+    it('opens an issue on failure reading bulk .repo-metadata-full.json file', async () => {
+      sandbox
+        .stub(RepositoryFileCache.prototype, 'findFilesByFilename')
+        .onCall(0) // fetch .repo-metadata.json.
+        .resolves([])
+        .onCall(1) // fetch .repo-metadata-full.json.
+        .resolves(['.repo-metadata-full.json']);
+      sandbox
+        .stub(RepositoryFileCache.prototype, 'getFileContents')
+        .withArgs('.repo-metadata-full.json', 'main')
+        .resolves({
+          sha: 'abc123',
+          content: '',
+          mode: '100644',
+          parsedContent: readFileSync(
+            './test/fixtures/metadata-full-bad.json',
+            'utf8'
+          ),
+        });
+      const infoStub = sandbox.stub(logger, 'info');
+      const githubApiRequests = nock('https://api.github.com')
+        .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, [])
+        .post('/repos/foo-org/foo-repo/issues', (post: {body: string}) => {
+          assert(post.body.includes('library_type must be equal to one of'));
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'foo-org'},
+          repository: {name: 'foo-repo', owner: {login: 'bar-login'}},
+          cron_org: 'foo-org',
+          installation: {id: 1234},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      sandbox.assert.calledWith(infoStub, sinon.match(/2 validation errors/));
       githubApiRequests.done();
     });
   });
