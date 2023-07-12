@@ -25,7 +25,7 @@ async function main() {
   // 20 minutes * 60 seconds/min / 5 seconds per loop.
   const iterations = 20 * 60 / 5
   for (let i=0; i<iterations; i++) {
-    const url = `https://api.github.com/repos/${repo}/actions/runs/${runId}/jobs`;
+    const url = `https://api.github.com/repos/${repo}/actions/runs/${runId}/jobs?per_page=100`;
     const res = await request({
       url,
       headers: {
