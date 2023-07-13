@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3
         with:
-          node-version: 20
+          node-version: 16
       - id: interrogate
         run: node ./.github/workflows/interrogate.js
         env:
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
       - uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3
         with:
-          node-version: 20
+          node-version: 16
       - run: echo ./packages/${{ matrix.package }}
       - run: cd ./packages/${{ matrix.package }}
       - run: npm ci
@@ -90,6 +90,6 @@ jobs:
       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3
       - uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3
         with:
-          node-version: 20
+          node-version: 16
       - run: npm install
       - run: node ./.github/workflows/finale.js '${{needs.changeFinder.outputs.requiredJobs}}' ${{secrets.GITHUB_TOKEN}}
