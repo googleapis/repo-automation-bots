@@ -33,6 +33,7 @@ import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {hasGitChanges} from '../../git-utils';
 import * as fs from 'fs';
 import {resplit, WithRegenerateCheckbox} from '../../create-pr';
+import {OWL_BOT_COPY} from '../../core';
 
 interface Args {
   'dest-repo': string;
@@ -92,24 +93,16 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   if (['', '.'].includes(repoDir)) {
     repoDir = cwd();
   }
-  // Add all pending changes to the commit.
-  cmd('git add -A .', {cwd: repoDir});
-  if (!(await hasGitChanges(repoDir))) {
-    console.log(
-      "The post processor made no changes; I won't commit any changes."
-    );
-    return; // No changes made.  Nothing to do.
-  }
 
   // Check if the ignore label has been added during the post-processing.
   // If so, do not push changes.
   console.log(`Retrieving PR info for ${repo}`);
-  const prOwnerRepoPullNumber = {
+  const prLocator = {
     owner: repo.owner,
     repo: repo.repo,
     pull_number: args.pr,
   };
-  const {data: prData} = await octokit.pulls.get(prOwnerRepoPullNumber);
+  const {data: prData} = await octokit.pulls.get(prLocator);
   console.log(`Retrieved PR info for ${repo}`);
 
   if (prData.labels.find(label => label.name === OWL_BOT_IGNORE)) {
@@ -117,6 +110,23 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
       `Not making any changes to ${repo}#${args.pr} because it's labeled with ${OWL_BOT_IGNORE}.`
     );
     return;
+  }
+
+  // https://github.com/googleapis/repo-automation-bots/issues/5034
+  // explains why some pull requests are promoted from draft to full.
+  const shouldPromoteFromDraft =
+    prData.draft && prData.labels.some(label => label.name === OWL_BOT_COPY);
+
+  // Add all pending changes to the commit.
+  cmd('git add -A .', {cwd: repoDir});
+  if (!(await hasGitChanges(repoDir))) {
+    console.log(
+      "The post processor made no changes; I won't commit any changes."
+    );
+    if (shouldPromoteFromDraft) {
+      await octokit.pulls.update({...prLocator, draft: false});
+    }
+    return; // No changes made.  Nothing to do.
   }
 
   // Unpack the Copy-Tag.
@@ -134,6 +144,9 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
         cmd('git commit --no-verify --amend --no-edit', {cwd: repoDir});
         // Must force push back to origin.
         cmd('git push --no-verify -f', {cwd: repoDir});
+        if (shouldPromoteFromDraft) {
+          await octokit.pulls.update({...prLocator, draft: false});
+        }
         return;
       }
     } catch (e) {
@@ -150,11 +163,14 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   cmd('git push --no-verify', {cwd: repoDir});
 
   // Update the PR title and body if new ones were provided.
+  const prContent = shouldPromoteFromDraft ? {draft: false} : {};
   const text_path = args['new-pull-request-text-path'];
   if (text_path && fs.existsSync(text_path)) {
     const text = fs.readFileSync(text_path).toString();
-    const prContent = resplit(text, WithRegenerateCheckbox.No);
-    await octokit.pulls.update({...prOwnerRepoPullNumber, ...prContent});
+    Object.assign(prContent, resplit(text, WithRegenerateCheckbox.No));
+  }
+  if (Object.keys(prContent).length > 0) {
+    await octokit.pulls.update({...prLocator, ...prContent});
   }
 }
 
