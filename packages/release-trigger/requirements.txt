@@ -117,9 +117,9 @@ cryptography==41.0.2 \
     # via
     #   gcp-releasetool
     #   secretstorage
-gcp-releasetool==1.15.0 \
-    --hash=sha256:958bcff4b6d7bdf64551e9e45a6126900678643bed528b818c82ca036608e1da \
-    --hash=sha256:cd8cf525a34936ce5a500b98ba9e2807a62dde38c1a1671b1ee41c5eec9d40e9
+gcp-releasetool==1.16.0 \
+    --hash=sha256:27bf19d2e87aaa884096ff941aa3c592c482be3d6a2bfe6f06afafa6af2353e3 \
+    --hash=sha256:a316b197a543fd036209d0caba7a8eb4d236d8e65381c80cbc6d7efaa7606d63
     # via -r requirements.in
 google-auth==2.15.0 \
     --hash=sha256:6897b93556d8d807ad70701bb89f000183aea366ca7ed94680828b37437a4994 \
