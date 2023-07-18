@@ -109,12 +109,12 @@ Below is what each process checks for:
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
   - Max 50 files changed in the PR
   - Each file path must match one of these regexps:
-    - /pom.xml$/
+    - /pom.xml$/ or /build.gradle$/
   - All files must: 
-    - Match this regexp: /pom.xml$/
+    - Match this regexp: /pom.xml$/ or /build.gradle$/
     - Increase the non-major package version of a dependency
     - Only change one dependency
-    - Change the dependency that was there previously, and that is on the title of the PR, and is a Google dependency
+    - Change the dependency that was there previously, and that is on the title of the PR, and is a Google or grpc dependency
 * OwlBotTemplateChanges:
   - Checks that the author is 'gcf-owl-bot[bot]'
   - Checks that the title of the PR does NOT include feat, fix, or !
