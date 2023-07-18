@@ -298,7 +298,6 @@ export function doesDependencyChangeMatchPRTitleV2(
   if (titleRegex) {
     dependencyName = titleRegex[2];
   }
-
   return (
     versions.newDependencyName === versions.oldDependencyName &&
     dependencyName === versions.newDependencyName
