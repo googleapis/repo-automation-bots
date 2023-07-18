@@ -31,6 +31,7 @@ processes:
   - "GoDependency"
   - "GoApiaryCodegen"
   - "PythonSampleAppDependency"
+  - "JavaSampleAppDependency"
 ```
 
 These seven processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
@@ -162,6 +163,17 @@ Below is what each process checks for:
   - All files must: 
     - Match this regexp: /requirements.txt$/ or /requirements\.in$/
     - Increase the non-major package version of a dependency or digest
+    - Change the dependency that was there previously, and that is on the title of the PR
+* JavaSampleAppDependency:
+  - Checks that the author is 'renovate-bot'
+  - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  - Max 50 files changed in the PR
+  - Each file path must match one of these regexps:
+    - /pom.xml$/
+  - All files must: 
+    - Match this regexp: /pom.xml$/
+    - Increase the non-major package version of a dependency
+    - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
 
 

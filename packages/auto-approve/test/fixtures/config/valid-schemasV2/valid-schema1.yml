@@ -9,6 +9,7 @@ processes:
   - "OwlBotTemplateChanges"
   - "OwlBotAPIChanges"
   - "PythonSampleAppDependency"
+  - "JavaSampleAppDependency"
   - "PythonSampleDependency"
   - "GoDependency"
   - "GoApiaryCodegen"
