@@ -271,6 +271,29 @@ describe('commitPostProcessorUpdate', () => {
     assert.match(log, /Copy-Tag/);
   });
 
+  it('squashes commit and promotes from draft when .OwlBot.yaml contains flag', async () => {
+    const origin = makeOrigin();
+    const clone = cloneRepo(origin);
+    makeDirTree(clone, [`${yamlPath}:squash: true`]);
+    cmd(`git add ${yamlPath}`, {cwd: clone});
+    const copyTag = copyTagFrom(yamlPath, 'abc123');
+    cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
+    makeDirTree(clone, ['a.txt:The post processor ran.']);
+    prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
+    const scope = nock('https://api.github.com')
+    .patch(`/repos/${destRepo}/pulls/${pr}`, {
+      draft: false
+    })
+    .reply(204);
+    await commitPostProcessorUpdate(prepareArgs(clone));
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.doesNotMatch(log, /Updates from OwlBot/);
+    assert.match(log, /Copy-Tag/);
+    scope.done();
+  });
+
   it("doesn't create a commit when no changes are pending", async () => {
     prepareGitHubEndpoint();
     const origin = makeOrigin();
