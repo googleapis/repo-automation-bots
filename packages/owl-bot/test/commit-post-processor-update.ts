@@ -23,7 +23,7 @@ import sinon from 'sinon';
 import nock from 'nock';
 import {OWL_BOT_IGNORE, OWLBOT_RUN_LABEL} from '../src/labels';
 import * as fs from 'fs';
-import { OWL_BOT_COPY } from '../src/core';
+import {OWL_BOT_COPY} from '../src/core';
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -67,9 +67,10 @@ describe('commitPostProcessorUpdate', () => {
   let sandbox: sinon.SinonSandbox;
   let pr = 0;
 
-  function prepareGitHubEndpoint(
-    options?: {draft?: boolean, labels?: {name: string}[]} )
-  {
+  function prepareGitHubEndpoint(options?: {
+    draft?: boolean;
+    labels?: {name: string}[];
+  }) {
     const payload = {
       pull_request: {
         labels: [],
@@ -134,6 +135,24 @@ describe('commitPostProcessorUpdate', () => {
       'utf-8'
     );
     assert.match(log, /Updates from OwlBot/);
+  });
+
+  it('promotes pull request from draft', async () => {
+    prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
+    const origin = makeOrigin();
+    const clone = cloneRepo(origin);
+    makeDirTree(clone, ['a.txt:The post processor ran.']);
+    const scope = nock('https://api.github.com')
+      .patch(`/repos/${destRepo}/pulls/${pr}`, {
+        draft: false,
+      })
+      .reply(204);
+    await commitPostProcessorUpdate(prepareArgs(clone));
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.match(log, /Updates from OwlBot/);
+    scope.done();
   });
 
   it('adds commit when Copy-Tag is corrupt', async () => {
@@ -243,7 +262,7 @@ describe('commitPostProcessorUpdate', () => {
       .patch(`/repos/${destRepo}/pulls/${pr}`, {
         title: 'updated title',
         body: 'Updated body.',
-        draft: false
+        draft: false,
       })
       .reply(204);
     await commitPostProcessorUpdate(args);
@@ -281,10 +300,10 @@ describe('commitPostProcessorUpdate', () => {
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
     const scope = nock('https://api.github.com')
-    .patch(`/repos/${destRepo}/pulls/${pr}`, {
-      draft: false
-    })
-    .reply(204);
+      .patch(`/repos/${destRepo}/pulls/${pr}`, {
+        draft: false,
+      })
+      .reply(204);
     await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
