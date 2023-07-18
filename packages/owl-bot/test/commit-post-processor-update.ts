@@ -229,6 +229,31 @@ describe('commitPostProcessorUpdate', () => {
     scope.done();
   });
 
+  it('updates pr title and body and promotes from draft', async () => {
+    const {origin, clone} = makeRepoWithPendingCommit();
+    prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
+    const args = prepareArgs(clone);
+    args['new-pull-request-text-path'] = tmp.fileSync().name;
+    fs.writeFileSync(
+      args['new-pull-request-text-path'],
+      'updated title\n\nUpdated body.'
+    );
+    // commitPostProcessorUpdate() should issue a PATCH request to update the PR.
+    const scope = nock('https://api.github.com')
+      .patch(`/repos/${destRepo}/pulls/${pr}`, {
+        title: 'updated title',
+        body: 'Updated body.',
+        draft: false
+      })
+      .reply(204);
+    await commitPostProcessorUpdate(args);
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.match(log, /Updates from OwlBot/);
+    scope.done();
+  });
+
   it('squashes commit when .OwlBot.yaml contains flag', async () => {
     prepareGitHubEndpoint();
     const origin = makeOrigin();
