@@ -23,6 +23,7 @@ import sinon from 'sinon';
 import nock from 'nock';
 import {OWL_BOT_IGNORE, OWLBOT_RUN_LABEL} from '../src/labels';
 import * as fs from 'fs';
+import { OWL_BOT_COPY } from '../src/core';
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -65,12 +66,14 @@ describe('commitPostProcessorUpdate', () => {
   const gitHubToken = 'test-github-token';
   let sandbox: sinon.SinonSandbox;
   let pr = 0;
-  let labels: {name: string}[] = [];
 
-  function prepareGitHubEndpoint() {
+  function prepareGitHubEndpoint(
+    options?: {draft?: boolean, labels?: {name: string}[]} )
+  {
     const payload = {
       pull_request: {
-        labels,
+        labels: [],
+        ...options,
         number: pr,
         head: {
           repo: {
@@ -114,9 +117,6 @@ describe('commitPostProcessorUpdate', () => {
 
     /** Increments the counter so each test can have its own unique PR */
     pr++;
-    labels = [];
-
-    prepareGitHubEndpoint();
   });
 
   afterEach(() => {
@@ -125,6 +125,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it("adds commit when there's no Copy-Tag", async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
@@ -136,6 +137,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('adds commit when Copy-Tag is corrupt', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['c.txt:See the sea.']);
@@ -150,6 +152,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('adds commit when .OwlBot.yaml is missing', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['c.txt:See the sea.']);
@@ -165,6 +168,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('adds commit when .OwlBot.yaml is corrupt', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:corrupt`]);
@@ -180,6 +184,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   function makeRepoWithPendingCommit(): {origin: string; clone: string} {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:deep-remove-regex:\n  - /pasta.txt`]);
@@ -191,6 +196,7 @@ describe('commitPostProcessorUpdate', () => {
   }
 
   it('adds commit when .OwlBot.yaml contains no flag', async () => {
+    prepareGitHubEndpoint();
     const {origin, clone} = makeRepoWithPendingCommit();
     await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -200,6 +206,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('updates pr title and body', async () => {
+    prepareGitHubEndpoint();
     const {origin, clone} = makeRepoWithPendingCommit();
     const args = prepareArgs(clone);
     args['new-pull-request-text-path'] = tmp.fileSync().name;
@@ -223,6 +230,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('squashes commit when .OwlBot.yaml contains flag', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:squash: true`]);
@@ -239,6 +247,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it("doesn't create a commit when no changes are pending", async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     makeDirTree(origin, [`${yamlPath}:squash: true`]);
     cmd(`git add ${yamlPath}`, {cwd: origin});
@@ -262,15 +271,13 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it("Doesn't create a commit if the 'ignore' label is present", async () => {
+    prepareGitHubEndpoint({labels: [{name: OWL_BOT_IGNORE}]});
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     const head = cmd('git log -1 --format=%H main', {cwd: origin}).toString(
       'utf-8'
     );
-
-    labels.push({name: OWL_BOT_IGNORE});
-    prepareGitHubEndpoint();
 
     await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -285,12 +292,10 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('Creates a commit if labels other than ignore are present', async () => {
+    prepareGitHubEndpoint({labels: [{name: OWLBOT_RUN_LABEL}]});
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-
-    labels.push({name: OWLBOT_RUN_LABEL});
-    prepareGitHubEndpoint();
 
     await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
