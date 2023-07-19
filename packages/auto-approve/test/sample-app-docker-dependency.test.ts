@@ -370,4 +370,39 @@ describe('behavior of Docker Dependency process', () => {
 
     assert.ok(await dockerDependency.checkPR(incomingPR));
   });
+
+  it('should return true in checkPR if incoming PR changes revision tags and minor version', async () => {
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'chore(deps): update cypress/included docker tag to v12.17.0',
+      fileCount: 1,
+      changedFiles: [
+        {
+          sha: 'b8673c548ce9844b2520270ab226a1986272445b',
+          filename: '.github/workflows/ui-tests/Dockerfile',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          patch:
+            '@@ -9,7 +9,7 @@\n' +
+            ' # See the License for the specific language governing permissions and\n' +
+            ' # limitations under the License.\n' +
+            ' \n' +
+            '-FROM cypress/included:12.16.0@sha256:6d0d19471a66165c82760b1efc0dfad82ddd9d389ede1d7398a6b93f0e7b5278\n' +
+            '+FROM cypress/included:12.17.0@sha256:84eba545389701872b459338152ec92ab9942b499b1666a478c65f820f39ca5f\n' +
+            ' \n' +
+            ' WORKDIR /e2e\n' +
+            ' COPY . .',
+        },
+      ],
+      repoName: 'GoogleCloudPlatform',
+      repoOwner: 'bank-of-anthos',
+      prNumber: 1622,
+      body: 'body',
+    };
+    const dockerDependency = new DockerDependency(octokit);
+
+    assert.ok(await dockerDependency.checkPR(incomingPR));
+  });
 });
