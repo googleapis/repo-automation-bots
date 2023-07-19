@@ -74,6 +74,7 @@ function isCommitHashTooOld(
  *    the all the changes into a single pull request.
  * @param maxYamlCountPerPullRequest maximum number of yamls (APIs) to combine
  *    in a single pull request.
+ * @param draftPullRequests when creating pull requests, make them drafts
  */
 export async function scanGoogleapisGenAndCreatePullRequests(
   sourceRepo: string,
@@ -84,7 +85,8 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   combinePullsThreshold = Number.MAX_SAFE_INTEGER,
   logger: Logger = console,
   withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No,
-  maxYamlCountPerPullRequest: number = Number.MAX_SAFE_INTEGER
+  maxYamlCountPerPullRequest: number = Number.MAX_SAFE_INTEGER,
+  draftPullRequests = false
 ): Promise<number> {
   logger = new LoggerWithTimestamp(logger);
   // Clone the source repo.
@@ -194,7 +196,8 @@ export async function scanGoogleapisGenAndCreatePullRequests(
       params,
       todo.yamlPaths,
       logger,
-      withNestedCommitDelimiters
+      withNestedCommitDelimiters,
+      draftPullRequests
     );
   }
   return todoStack.length;
