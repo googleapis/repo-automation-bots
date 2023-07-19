@@ -426,13 +426,15 @@ interface WorkingCopyParams extends CopyParams {
  * googleapis-gen.  Creates pull request if there's none matching and open.
  *
  * @param yamlPaths .OwlBot.yaml paths that triggered this copy
+ * @param draftPullRequests when creating pull requests, make them drafts
  * @returns a subset of yamlPaths that didn't correspond to any open pull requests
  */
 export async function copyCodeAndAppendOrCreatePullRequest(
   params: CopyParams,
   yamlPaths: string[],
   logger: Logger = console,
-  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No,
+  draftPulledRequests = false
 ): Promise<void> {
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
@@ -580,7 +582,9 @@ command in a local clone of this repo:
       WithRegenerateCheckbox.Yes,
       apiList,
       Force.Yes,
-      logger
+      logger,
+      undefined,
+      draftPulledRequests
     );
 
     // Record that we've copied the code.
