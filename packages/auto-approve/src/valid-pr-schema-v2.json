@@ -25,6 +25,7 @@
           "OwlBotAPIChanges",
           "PHPApiaryCodegen",
           "PythonSampleAppDependency",
+          "JavaSampleAppDependency",
           "DockerDependency",
           "GoDependency",
           "GoApiaryCodegen"

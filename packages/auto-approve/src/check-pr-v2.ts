@@ -22,6 +22,7 @@ import {RegenerateReadme} from './process-checks/regenerate-readme';
 import {DiscoveryDocUpdate} from './process-checks/discovery-doc-update';
 import {PythonDependency} from './process-checks/python/dependency';
 import {PythonSampleAppDependency} from './process-checks/sample-application-repos/python-dependency';
+import {JavaSampleAppDependency} from './process-checks/sample-application-repos/java-dependency';
 import {GoDependency} from './process-checks/sample-application-repos/go-dependency';
 import {DockerDependency} from './process-checks/sample-application-repos/docker-dependency';
 import {NodeDependency} from './process-checks/node/dependency';
@@ -101,6 +102,10 @@ const typeMap = [
   {
     configValue: 'DockerDependency',
     configType: DockerDependency,
+  },
+  {
+    configValue: 'JavaSampleAppDependency',
+    configType: JavaSampleAppDependency,
   },
 ];
 
