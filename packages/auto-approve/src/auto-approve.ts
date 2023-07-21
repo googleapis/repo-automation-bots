@@ -357,11 +357,11 @@ export function handler(app: Probot) {
               await getReviewsCompleted(owner, repo, prNumber, octokit)
             );
 
-            const prIsApproved = reviewsOnPr.find(
+            const isPRApproved = reviewsOnPr.find(
               x => x.user.login === APPROVER && x.state === 'APPROVED'
             );
 
-            if (!prIsApproved) {
+            if (!isPRApproved) {
               await octokit.pulls.createReview({
                 owner,
                 repo,
