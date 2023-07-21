@@ -98,7 +98,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       .option('draft-pull-requests', {
         describe: 'When creating pull requests, make them drafts.',
         type: 'boolean',
-        default: true,
+        default: false,
         demand: false,
       });
   },
