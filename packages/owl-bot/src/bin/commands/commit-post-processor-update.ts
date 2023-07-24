@@ -80,10 +80,28 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
         default: cwd(),
       });
   },
-  handler: argv => commitPostProcessorUpdate(argv),
+  handler: async argv => {
+    const {pullRequestToPromote} = await commitPostProcessorUpdate(argv);
+    if (pullRequestToPromote) {
+      await promoteFromDraft(pullRequestToPromote, argv['github-token']);
+    }
+  },
 };
 
-export async function commitPostProcessorUpdate(args: Args): Promise<void> {
+interface PRLocator {
+  owner: string;
+  repo: string;
+  pull_number: number;
+}
+
+interface AfterCommitPostProcessorUpdate {
+  /// When present, the pull request should be marked ready for review.
+  pullRequestToPromote?: PRLocator;
+}
+
+export async function commitPostProcessorUpdate(
+  args: Args
+): Promise<AfterCommitPostProcessorUpdate> {
   const octokitFactory = octokitFactoryFromToken(args['github-token']);
   const octokit = await octokitFactory.getShortLivedOctokit();
   const repo = githubRepoFromOwnerSlashName(args['dest-repo']);
@@ -109,13 +127,17 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
     console.log(
       `Not making any changes to ${repo}#${args.pr} because it's labeled with ${OWL_BOT_IGNORE}.`
     );
-    return;
+    return {};
   }
 
   // https://github.com/googleapis/repo-automation-bots/issues/5034
   // explains why some pull requests are promoted from draft to full.
-  const shouldPromoteFromDraft =
-    prData.draft && prData.labels.some(label => label.name === OWL_BOT_COPY);
+  const result: AfterCommitPostProcessorUpdate = {
+    pullRequestToPromote:
+      prData.draft && prData.labels.some(label => label.name === OWL_BOT_COPY)
+        ? prLocator
+        : undefined,
+  };
 
   // Add all pending changes to the commit.
   cmd('git add -A .', {cwd: repoDir});
@@ -123,10 +145,7 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
     console.log(
       "The post processor made no changes; I won't commit any changes."
     );
-    if (shouldPromoteFromDraft) {
-      await octokit.pulls.update({...prLocator, draft: false});
-    }
-    return; // No changes made.  Nothing to do.
+    return result; // No changes made.  Nothing to do.
   }
 
   // Unpack the Copy-Tag.
@@ -144,10 +163,7 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
         cmd('git commit --no-verify --amend --no-edit', {cwd: repoDir});
         // Must force push back to origin.
         cmd('git push --no-verify -f', {cwd: repoDir});
-        if (shouldPromoteFromDraft) {
-          await octokit.pulls.update({...prLocator, draft: false});
-        }
-        return;
+        return result;
       }
     } catch (e) {
       console.error(e);
@@ -163,15 +179,13 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   cmd('git push --no-verify', {cwd: repoDir});
 
   // Update the PR title and body if new ones were provided.
-  const prContent = shouldPromoteFromDraft ? {draft: false} : {};
   const text_path = args['new-pull-request-text-path'];
   if (text_path && fs.existsSync(text_path)) {
     const text = fs.readFileSync(text_path).toString();
-    Object.assign(prContent, resplit(text, WithRegenerateCheckbox.No));
-  }
-  if (Object.keys(prContent).length > 0) {
+    const prContent = resplit(text, WithRegenerateCheckbox.No);
     await octokit.pulls.update({...prLocator, ...prContent});
   }
+  return result;
 }
 
 export function commitOwlbotUpdate(repoDir: string) {
@@ -180,4 +194,39 @@ export function commitOwlbotUpdate(repoDir: string) {
   const commitMessage = OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE;
   console.log(`git commit -m "${commitMessage}"`);
   proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
+}
+
+async function promoteFromDraft(
+  prLocator: PRLocator,
+  githubToken: string
+): Promise<void> {
+  const octokitFactory = octokitFactoryFromToken(githubToken);
+  const octokit = await octokitFactory.getShortLivedOctokit();
+  const found = (await octokit.graphql(
+    `
+    query findPullRequestID($owner: String!, $repo: String!, $pullNumber: Int!) {
+      repository(owner:$owner, name:$repo) {
+        pullRequest(number:$pullNumber) {
+          id
+        }
+      }
+    }`,
+    {
+      owner: prLocator.owner,
+      repo: prLocator.repo,
+      pullNumber: prLocator.pull_number,
+    }
+  )) as any;  // eslint-disable-line
+
+  await octokit.graphql(
+    `
+    mutation markPullRequestReadyForReview($pullRequestId: ID!) {
+      markPullRequestReadyForReview(input: { pullRequestId: $pullRequestId }) {
+        clientMutationId
+      }
+    }`,
+    {
+      pullRequestId: found.repository.pullRequest.id,
+    }
+  );
 }
