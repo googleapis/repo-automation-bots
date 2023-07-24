@@ -132,7 +132,7 @@ describe('commitPostProcessorUpdate', () => {
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     assert.deepStrictEqual(
       (await commitPostProcessorUpdate(prepareArgs(clone)))
-        .shouldPromoteFromDraft,
+        .pullRequestToPromote,
       undefined
     );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -148,7 +148,7 @@ describe('commitPostProcessorUpdate', () => {
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     assert.deepStrictEqual(
       (await commitPostProcessorUpdate(prepareArgs(clone)))
-        .shouldPromoteFromDraft,
+        .pullRequestToPromote,
       {
         owner: 'test-org',
         pull_number: pr,
@@ -247,7 +247,7 @@ describe('commitPostProcessorUpdate', () => {
       })
       .reply(204);
     assert.deepStrictEqual(
-      (await commitPostProcessorUpdate(args)).shouldPromoteFromDraft,
+      (await commitPostProcessorUpdate(args)).pullRequestToPromote,
       undefined
     );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -274,7 +274,7 @@ describe('commitPostProcessorUpdate', () => {
       })
       .reply(204);
     assert.deepStrictEqual(
-      (await commitPostProcessorUpdate(args)).shouldPromoteFromDraft,
+      (await commitPostProcessorUpdate(args)).pullRequestToPromote,
       {
         owner: 'test-org',
         pull_number: pr,
@@ -299,7 +299,7 @@ describe('commitPostProcessorUpdate', () => {
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     assert.deepStrictEqual(
       (await commitPostProcessorUpdate(prepareArgs(clone)))
-        .shouldPromoteFromDraft,
+        .pullRequestToPromote,
       undefined
     );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -320,7 +320,7 @@ describe('commitPostProcessorUpdate', () => {
     prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
     assert.deepStrictEqual(
       (await commitPostProcessorUpdate(prepareArgs(clone)))
-        .shouldPromoteFromDraft,
+        .pullRequestToPromote,
       {
         owner: 'test-org',
         pull_number: pr,

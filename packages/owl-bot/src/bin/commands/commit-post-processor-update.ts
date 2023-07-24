@@ -81,9 +81,9 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
       });
   },
   handler: async argv => {
-    const {shouldPromoteFromDraft} = await commitPostProcessorUpdate(argv);
-    if (shouldPromoteFromDraft) {
-      await promoteFromDraft(shouldPromoteFromDraft, argv['github-token']);
+    const {pullRequestToPromote} = await commitPostProcessorUpdate(argv);
+    if (pullRequestToPromote) {
+      await promoteFromDraft(pullRequestToPromote, argv['github-token']);
     }
   },
 };
@@ -96,7 +96,7 @@ interface PRLocator {
 
 interface AfterCommitPostProcessorUpdate {
   /// When present, the pull request should be marked ready for review.
-  shouldPromoteFromDraft?: PRLocator;
+  pullRequestToPromote?: PRLocator;
 }
 
 export async function commitPostProcessorUpdate(
@@ -133,7 +133,7 @@ export async function commitPostProcessorUpdate(
   // https://github.com/googleapis/repo-automation-bots/issues/5034
   // explains why some pull requests are promoted from draft to full.
   const result: AfterCommitPostProcessorUpdate = {
-    shouldPromoteFromDraft:
+    pullRequestToPromote:
       prData.draft && prData.labels.some(label => label.name === OWL_BOT_COPY)
         ? prLocator
         : undefined,
