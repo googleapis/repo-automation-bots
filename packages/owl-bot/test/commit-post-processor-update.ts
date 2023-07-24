@@ -131,8 +131,10 @@ describe('commitPostProcessorUpdate', () => {
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     assert.deepStrictEqual(
-      (await commitPostProcessorUpdate(prepareArgs(clone))).shouldPromoteFromDraft,
-      undefined);
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .shouldPromoteFromDraft,
+      undefined
+    );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -145,11 +147,12 @@ describe('commitPostProcessorUpdate', () => {
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     assert.deepStrictEqual(
-      (await commitPostProcessorUpdate(prepareArgs(clone))).shouldPromoteFromDraft,
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .shouldPromoteFromDraft,
       {
         owner: 'test-org',
         pull_number: pr,
-        repo: 'test-repo'
+        repo: 'test-repo',
       }
     );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -245,7 +248,8 @@ describe('commitPostProcessorUpdate', () => {
       .reply(204);
     assert.deepStrictEqual(
       (await commitPostProcessorUpdate(args)).shouldPromoteFromDraft,
-      undefined);
+      undefined
+    );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -274,7 +278,7 @@ describe('commitPostProcessorUpdate', () => {
       {
         owner: 'test-org',
         pull_number: pr,
-        repo: 'test-repo'
+        repo: 'test-repo',
       }
     );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -294,8 +298,10 @@ describe('commitPostProcessorUpdate', () => {
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     assert.deepStrictEqual(
-      (await commitPostProcessorUpdate(prepareArgs(clone))).shouldPromoteFromDraft,
-      undefined);
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .shouldPromoteFromDraft,
+      undefined
+    );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -313,11 +319,12 @@ describe('commitPostProcessorUpdate', () => {
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
     assert.deepStrictEqual(
-      (await commitPostProcessorUpdate(prepareArgs(clone))).shouldPromoteFromDraft,
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .shouldPromoteFromDraft,
       {
         owner: 'test-org',
         pull_number: pr,
-        repo: 'test-repo'
+        repo: 'test-repo',
       }
     );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(

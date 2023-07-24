@@ -34,7 +34,6 @@ import {hasGitChanges} from '../../git-utils';
 import * as fs from 'fs';
 import {resplit, WithRegenerateCheckbox} from '../../create-pr';
 import {OWL_BOT_COPY} from '../../core';
-import {graphql} from '@octokit/graphql';
 
 interface Args {
   'dest-repo': string;
@@ -217,7 +216,7 @@ async function promoteFromDraft(
       repo: prLocator.repo,
       pullNumber: prLocator.pull_number,
     }
-  )) as any;
+  )) as any;  // eslint-disable-line
 
   await octokit.graphql(
     `
