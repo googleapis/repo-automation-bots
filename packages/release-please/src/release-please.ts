@@ -33,6 +33,7 @@ import {
   getConfig,
   MultiConfigChecker,
 } from '@google-automations/bot-config-utils';
+import {withDatastoreLock} from '@google-automations/datastore-lock';
 import {syncLabels} from '@google-automations/label-utils';
 import {
   Errors,
@@ -254,11 +255,42 @@ async function buildManifest(
   );
 }
 
+const RP_LOCK_ID = 'release-please';
+const RP_LOCK_DURATION_MS = 60 * 1000;
+const RP_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
 interface RunBranchOptions {
   logger?: GCFLogger;
   skipPullRequest?: boolean;
 }
 async function runBranchConfigurationWithConfigurationHandling(
+  github: GitHub,
+  repoLanguage: string | null,
+  repoUrl: string,
+  branchConfiguration: BranchConfiguration,
+  octokit: Octokit,
+  options: RunBranchOptions
+) {
+  const target = `${repoUrl}---${branchConfiguration.branch}`;
+  await withDatastoreLock(
+    {
+      lockId: RP_LOCK_ID,
+      target,
+      lockExpiry: RP_LOCK_DURATION_MS,
+      lockAcquireTimeout: RP_LOCK_ACQUIRE_TIMEOUT_MS,
+    },
+    async () => {
+      await runBranchConfigurationWithConfigurationHandlingWithoutLock(
+        github,
+        repoLanguage,
+        repoUrl,
+        branchConfiguration,
+        octokit,
+        options
+      );
+    }
+  );
+}
+async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
   github: GitHub,
   repoLanguage: string | null,
   repoUrl: string,
