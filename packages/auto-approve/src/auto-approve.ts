@@ -357,31 +357,29 @@ export function handler(app: Probot) {
               await getReviewsCompleted(owner, repo, prNumber, octokit)
             );
 
-            const isApprovalNecessary = reviewsOnPr.find(
+            const isPRApproved = reviewsOnPr.find(
               x => x.user.login === APPROVER && x.state === 'APPROVED'
             );
 
-            if (isApprovalNecessary) {
-              return;
+            if (!isPRApproved) {
+              await octokit.pulls.createReview({
+                owner,
+                repo,
+                pull_number: prNumber,
+                event: 'APPROVE',
+              });
+
+              logger.metric('auto_approve.approved_tagged', {
+                repo: `${owner}/${repo}`,
+                pr: prNumber,
+                prAuthor: pr.pull_request.user.login,
+              });
+              logger.info(
+                `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
+              );
             }
 
-            await octokit.pulls.createReview({
-              owner,
-              repo,
-              pull_number: prNumber,
-              event: 'APPROVE',
-            });
-
             await retryAddLabel(3, owner, repo, prNumber, octokit);
-
-            logger.metric('auto_approve.approved_tagged', {
-              repo: `${owner}/${repo}`,
-              pr: prNumber,
-              prAuthor: pr.pull_request.user.login,
-            });
-            logger.info(
-              `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
-            );
           } else if (isConfigValid && !isPRValid) {
             // If config is valid but PR isn't, log that it is not valid, but don't comment on PR since that would be noisy
             logger.info(
