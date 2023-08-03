@@ -603,7 +603,7 @@ const runPostProcessor = async (
         logger
       );
     } catch (e) {
-      logger.info(`Failed to create ${logLine}${e}`);
+      logger.error(`Failed to create ${logLine}${e}`);
       return;
     }
     logger.info(`Created ${logLine}`);
