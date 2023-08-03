@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import {
   getJavaVersions,
   runVersioningValidation,
   isOneDependencyChanged,
-  doesDependencyChangeMatchPRTitleJava,
+  doesDependencyChangeMatchPRTitleV2,
   reportIndividualChecks,
 } from '../../utils-for-pr-checking';
 import {BaseLanguageRule} from '../base';
 
 /**
- * The JavaDependency class's checkPR function returns
+ * The JavaSampleAppDependency class's checkPR function returns
  * true if the PR:
   - has an author that is 'renovate-bot'
   - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
@@ -36,12 +36,12 @@ import {BaseLanguageRule} from '../base';
   - Each file path must match one of these regexps:
     - /pom.xml$/
   - All files must:
-    - Match this regexp: /pom.xml$/ or /build.gradle$/
+    - Match this regexp: /pom.xml$/
     - Increase the non-major package version of a dependency
     - Only change one dependency
-    - Change the dependency that was there previously, and that is on the title of the PR, and is a Google or grpc dependency
+    - Change the dependency that was there previously, and that is on the title of the PR
  */
-export class JavaDependency extends BaseLanguageRule {
+export class JavaSampleAppDependency extends BaseLanguageRule {
   classRule = {
     author: 'renovate-bot',
     titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
@@ -80,29 +80,6 @@ export class JavaDependency extends BaseLanguageRule {
                 */
       newVersion: new RegExp(
         /<groupId>(?<newDependencyNamePrefixPom>[^<]*)<\/groupId>[\s]*<artifactId>(?<newDependencyNamePom>[^<]*)<\/artifactId>[\s]*-[\s]*<version>(?:v[0-9]-rev[0-9]*-[0-9]*\.[0-9]*\.[0-9]|[[0-9]*\.[0-9]*\.[0-9]*)<\/version>[\s]*\+[\s]*<version>(v[0-9]-rev(?<newRevVersionPom>[0-9]*)-(?<newMajorRevVersionPom>[0-9]*)\.(?<newMinorRevVersionPom>[0-9]*\.[0-9])|(?<newMajorVersionPom>[0-9]*)\.(?<newMinorVersionPom>[0-9]*\.[0-9]*))<\/version>/
-      ),
-    },
-    {
-      targetFileToCheck: /build.gradle$/,
-      // This would match: chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v1.4.2 or chore(deps): update dependency com.google.apis:google-api-services-policytroubleshooter to v1-rev20210319-1.32.1
-      dependencyTitle: new RegExp(
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-      ),
-      /* This would match either
-            -    invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2
-            -    classpath 'com.google.cloud.tools:endpoints-framework-gradle-plugin:1.0.3'
-            -def grpcVersion = '1.40.1'
-            */
-      oldVersion: new RegExp(
-        /-(?:[\s]*(?:classpath|invoker)[\s]'(?<oldDependencyNameBuild>.*):(?<oldMajorVersionBuild>[0-9]*)\.(?<oldMinorVersionBuild>[0-9]*\.[0-9]*)|def[\s](?<oldGrpcVersionBuild>grpcVersion)[\s]=[\s]'(?<oldMajorVersionGrpcBuild>[0-9]*)\.(?<oldMinorVersionGrpcBuild>[0-9]*\.[0-9]*))/
-      ),
-      /* This would match either:
-            +    invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2
-            +    classpath 'com.google.cloud.tools:endpoints-framework-gradle-plugin:1.0.3'
-            +def grpcVersion = '1.40.1'
-            */
-      newVersion: new RegExp(
-        /\+(?:[\s]*(?:classpath|invoker)[\s]'(?<newDependencyNameBuild>.*):(?<newMajorVersionBuild>[0-9]*)\.(?<newMinorVersionBuild>[0-9]*\.[0-9]*)|def[\s](?<newGrpcVersionBuild>grpcVersion)[\s]=[\s]'(?<newMajorVersionGrpcBuild>[0-9]*)\.(?<newMinorVersionGrpcBuild>[0-9]*\.[0-9]*))/
       ),
     },
   ];
@@ -150,7 +127,7 @@ export class JavaDependency extends BaseLanguageRule {
         return false;
       }
 
-      const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
         versions,
         // We can assert this exists since we're in the class rule that contains it
         fileMatch.dependencyTitle!,
