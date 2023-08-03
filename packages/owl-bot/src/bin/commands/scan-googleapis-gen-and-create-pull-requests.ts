@@ -26,6 +26,7 @@ interface Args extends OctokitParams {
   'combine-pulls-threshold': number;
   'use-nested-commit-delimiters'?: boolean;
   'max-yaml-count-per-pull-request': number;
+  'draft-pull-requests': boolean;
 }
 
 export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
@@ -93,6 +94,12 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
         type: 'number',
         default: 20,
         demand: false,
+      })
+      .option('draft-pull-requests', {
+        describe: 'When creating pull requests, make them drafts.',
+        type: 'boolean',
+        default: true,
+        demand: false,
       });
   },
   async handler(argv) {
@@ -114,7 +121,8 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
       argv['use-nested-commit-delimiters']
         ? WithNestedCommitDelimiters.Yes
         : WithNestedCommitDelimiters.No,
-      argv['max-yaml-count-per-pull-request']
+      argv['max-yaml-count-per-pull-request'],
+      argv['draft-pull-requests']
     );
   },
 };
