@@ -28,7 +28,7 @@ import {
   GCFLogger,
 } from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {core, RegenerateArgs, parseOwlBotLock} from './core';
+import {core, RegenerateArgs, parseOwlBotLock, CheckArgs} from './core';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
@@ -576,14 +576,39 @@ const runPostProcessor = async (
 ) => {
   // Fetch the .Owlbot.lock.yaml from head of PR:
   let lock: OwlBotLock | undefined = undefined;
-  // Common args for all calls to createCheck in this function.
-  const checkArgs = {
-    privateKey: privateKey,
-    appId: appId,
-    installation: opts.installation,
-    pr: opts.prNumber,
-    repo: opts.base,
-  };
+  async function createCheck(
+    args: Pick<CheckArgs, 'text' | 'summary' | 'conclusion' | 'title'> &
+      Pick<Partial<CheckArgs>, 'detailsURL'>
+  ): Promise<void> {
+    // Also log the check for easier debugging.
+    const logLine = `GitHub check for https://github.com/${opts.base}/pull/${opts.prNumber}
+  ${args.title}
+  ${args.summary}
+  ${args.text}
+  ${args.conclusion}
+`;
+    try {
+      await core.createCheck(
+        {
+          privateKey: privateKey,
+          appId: appId,
+          installation: opts.installation,
+          pr: opts.prNumber,
+          repo: opts.base,
+          detailsURL:
+            'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
+          ...args,
+        },
+        octokit,
+        logger
+      );
+    } catch (e) {
+      logger.info(`Failed to create ${logLine}${e}`);
+      return;
+    }
+    logger.info(`Created ${logLine}`);
+  }
+
   // Attempt to load the OwlBot lock file for a repository, if the lock
   // file is corrupt an error will be thrown and we should show a failing
   // status:
@@ -591,56 +616,35 @@ const runPostProcessor = async (
   try {
     lockText = await core.fetchOwlBotLock(opts.base, opts.prNumber, octokit);
   } catch (e) {
-    await core.createCheck(
-      {
-        ...checkArgs,
-        text: String(e),
-        summary: 'Failed to fetch the lock file',
-        conclusion: 'failure',
-        title: '🦉 OwlBot - failure',
-        detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
-      },
-      octokit,
-      logger
-    );
+    await createCheck({
+      text: String(e),
+      summary: 'Failed to fetch the lock file',
+      conclusion: 'failure',
+      title: '🦉 OwlBot - failure',
+    });
     return;
   }
   if (!lockText) {
     logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
     // If OwlBot is not configured on repo, indicate success. This makes
     // it easier to enable OwlBot as a required check during migration:
-    await core.createCheck(
-      {
-        ...checkArgs,
-        text: 'OwlBot is not yet enabled on this repository',
-        summary: 'OwlBot is not yet enabled on this repository',
-        conclusion: 'success',
-        title: '🦉 OwlBot - success',
-        detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
-      },
-      octokit,
-      logger
-    );
+    await createCheck({
+      text: 'OwlBot is not yet enabled on this repository',
+      summary: 'OwlBot is not yet enabled on this repository',
+      conclusion: 'success',
+      title: '🦉 OwlBot - success',
+    });
     return;
   }
   try {
     lock = parseOwlBotLock(lockText);
   } catch (e) {
-    await core.createCheck(
-      {
-        ...checkArgs,
-        text: String(e),
-        summary: 'The OwlBot lock file on this repository is corrupt',
-        conclusion: 'failure',
-        title: '🦉 OwlBot - failure',
-        detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
-      },
-      octokit,
-      logger
-    );
+    await createCheck({
+      text: String(e),
+      summary: 'The OwlBot lock file on this repository is corrupt',
+      conclusion: 'failure',
+      title: '🦉 OwlBot - failure',
+    });
     return;
   }
 
@@ -648,19 +652,12 @@ const runPostProcessor = async (
   // TODO: extend on this logic to handle pre-release branches.
   if (opts.baseRef !== opts.defaultBranch) {
     logger.info(`${opts.baseRef} !== ${opts.defaultBranch}`);
-    await core.createCheck(
-      {
-        ...checkArgs,
-        text: 'Ignored by Owl Bot because of PR against non-default branch',
-        summary: 'Ignored by Owl Bot because of PR against non-default branch',
-        conclusion: 'success',
-        title: '🦉 OwlBot - non-default branch',
-        detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md',
-      },
-      octokit,
-      logger
-    );
+    await createCheck({
+      text: 'Ignored by Owl Bot because of PR against non-default branch',
+      summary: 'Ignored by Owl Bot because of PR against non-default branch',
+      conclusion: 'success',
+      title: '🦉 OwlBot - non-default branch',
+    });
     return;
   }
 
@@ -672,19 +669,12 @@ const runPostProcessor = async (
     const message = `Too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`;
     logger.warn(message);
 
-    await core.createCheck(
-      {
-        ...checkArgs,
-        text: message,
-        summary: message,
-        conclusion: 'failure',
-        title: '🦉 OwlBot - failure',
-        detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
-      },
-      octokit,
-      logger
-    );
+    await createCheck({
+      text: message,
+      summary: message,
+      conclusion: 'failure',
+      title: '🦉 OwlBot - failure',
+    });
     return;
   }
   const image = `${lock.docker.image}@${lock.docker.digest}`;
@@ -707,35 +697,23 @@ const runPostProcessor = async (
 
   if (null === buildStatus) {
     // Update pull request with status of job:
-    await core.createCheck(
-      {
-        ...checkArgs,
-        text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
-        summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
-        conclusion: 'success',
-        title: '🦉 OwlBot - ignored',
-        detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md',
-      },
-      octokit,
-      logger
-    );
+    await createCheck({
+      text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+      summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+      conclusion: 'success',
+      title: '🦉 OwlBot - ignored',
+    });
     return;
   }
 
   // Update pull request with status of job:
-  await core.createCheck(
-    {
-      ...checkArgs,
-      text: buildStatus.text,
-      summary: buildStatus.summary,
-      conclusion: buildStatus.conclusion,
-      title: `🦉 OwlBot - ${buildStatus.summary}`,
-      detailsURL: buildStatus.detailsURL,
-    },
-    octokit,
-    logger
-  );
+  await createCheck({
+    text: buildStatus.text,
+    summary: buildStatus.summary,
+    conclusion: buildStatus.conclusion,
+    title: `🦉 OwlBot - ${buildStatus.summary}`,
+    detailsURL: buildStatus.detailsURL,
+  });
 
   await core.updatePullRequestAfterPostProcessor(
     opts.owner,
