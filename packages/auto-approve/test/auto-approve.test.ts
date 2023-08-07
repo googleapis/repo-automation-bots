@@ -210,7 +210,7 @@ describe('auto-approve', () => {
         assert.ok(getChangedFilesStub.calledOnce);
       });
 
-      it('does nothing if there is already an approval', async () => {
+      it('still attempts to add an automerge: exact label if there is an approval', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
@@ -238,6 +238,8 @@ describe('auto-approve', () => {
             },
           ]),
           createCheck('testOwner', 'testRepo', 200),
+          listLabels('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 200),
         ];
 
         await probot.receive({
