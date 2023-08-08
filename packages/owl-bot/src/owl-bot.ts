@@ -28,7 +28,7 @@ import {
   GCFLogger,
 } from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {core, RegenerateArgs, parseOwlBotLock, CheckArgs} from './core';
+import {core, RegenerateArgs, parseOwlBotLock, CheckArgs, OWL_BOT_COPY} from './core';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
@@ -181,7 +181,8 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     async context => {
       const logger = getContextLogger(context);
 
-      if (context.payload.pull_request.draft) {
+      if (context.payload.pull_request.draft
+        && !context.payload.pull_request.labels.some(label => label.name === OWL_BOT_COPY)) {
         logger.info(
           `skipping draft PR ${context.payload.pull_request.issue_url}`
         );
