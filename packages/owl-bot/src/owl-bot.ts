@@ -194,7 +194,9 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         )
       ) {
         logger.info(
-          `skipping draft PR ${context.payload.pull_request.issue_url}`
+          `skipping draft PR ${context.payload.pull_request.issue_url}` +
+            ' with labels ',
+          ...context.payload.pull_request.labels
         );
         return;
       }
