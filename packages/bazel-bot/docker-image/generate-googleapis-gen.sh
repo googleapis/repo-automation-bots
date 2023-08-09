@@ -103,7 +103,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # APIs from being updated.
     set +e
     # Invoke bazel build.
-    (cd "$GOOGLEAPIS" && bazelisk build $BAZEL_FLAGS -k $targets)
+    # --experimental_convenience_symlinks=normal is to make sure bazel-bin symlink is created
+    (cd "$GOOGLEAPIS" && bazelisk build --experimental_convenience_symlinks=normal $BAZEL_FLAGS -k $targets)
 
     # Clear out the existing contents of googleapis-gen before we copy back into it,
     # so that deleted APIs will be be removed.
