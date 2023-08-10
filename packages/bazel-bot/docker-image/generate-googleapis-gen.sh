@@ -89,7 +89,12 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         targets="$BUILD_TARGETS"
     fi
     # Clean out all the source packages from the previous build.
-    rm -f $(find -L "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz")
+
+    BAZEL_BIN=$(cd "$GOOGLEAPIS" && bazel info bazel-bin)
+    # The directory might not exist before the build, but its path is known
+    if test -d "$BAZEL_BIN"; then
+      rm -f $(find "$BAZEL_BIN" -name "*.tar.gz")
+    fi
     # Confirm that bazel can fetch remote build dependencies before building
     # with -k.  Otherwise, we can't distinguish a build failure due to a bad proto
     # vs. a build failure due to transient network issue.
@@ -103,13 +108,12 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # APIs from being updated.
     set +e
     # Invoke bazel build.
-    # --experimental_convenience_symlinks=normal is to make sure bazel-bin symlink is created
-    (cd "$GOOGLEAPIS" && bazelisk build --experimental_convenience_symlinks=normal $BAZEL_FLAGS -k $targets)
+    (cd "$GOOGLEAPIS" && bazelisk build $BAZEL_FLAGS -k $targets)
 
     # Clear out the existing contents of googleapis-gen before we copy back into it,
     # so that deleted APIs will be be removed.
     rm -rf "$GOOGLEAPIS_GEN/external" "$GOOGLEAPIS_GEN/google" "$GOOGLEAPIS_GEN/grafeas"
-    
+
     # Untar the generated source files into googleapis-gen.
     let target_count=0
     failed_targets=()
@@ -120,7 +124,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         parent_dir=$(dirname $tar_gz)
         target_dir="$GOOGLEAPIS_GEN/$parent_dir"
         mkdir -p "$target_dir"
-        tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir" || {
+        tar -xf "$BAZEL_BIN/$tar_gz" -C "$target_dir" || {
             failed_targets+=($target)
             # Restore the original source code because bazel failed to generate
             # the new source code.
