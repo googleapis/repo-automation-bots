@@ -382,22 +382,16 @@ async function handlePullRequestLabeled(
     return;
   }
 
-  const commandLabels = [OWLBOT_RUN_LABEL, OWL_BOT_COPY_COMMAND_LABEL];
+  let plan: ('remove-label' | 'copy' | 'postprocess')[] = [];
 
   if (payload.pull_request.draft && payload.label.name === OWL_BOT_COPY) {
     // owl-bot-copy label was applied to a new draft pull request.
-    // Run the post processor.
-  } else if (commandLabels.includes(payload.label.name)) {
-    // Label added was an owl bot command.  Execute the command
-    // but first remove the run label.
-    await removeOwlBotLabel(
-      owner,
-      repo,
-      prNumber,
-      octokit,
-      payload.label.name,
-      logger
-    );
+    plan = ['postprocess'];
+  } else if (payload.label.name === OWLBOT_RUN_LABEL) {
+    // Label added was an owl bot command.
+    plan = ['remove-label', 'postprocess'];
+  } else if (payload.label.name === OWL_BOT_COPY_COMMAND_LABEL) {
+    plan = ['remove-label', 'copy'];
   } else {
     logger.info(
       `skipping non-owlbot label: ${payload.label.name} ${head} for ${base}`
@@ -405,66 +399,82 @@ async function handlePullRequestLabeled(
     return;
   }
 
-  if (payload.label.name === OWL_BOT_COPY_COMMAND_LABEL) {
-    // Owl Bot Bootstrapper requested Owl Bot to copy code from googleapis-gen.
-    const octokitFactory = octokitFactoryFrom({
-      'app-id': appId,
-      privateKey,
-      installation,
-    });
-    await core.triggerRegeneratePullRequest(octokitFactory, {
-      branch: payload.pull_request.head.ref,
-      gcpProjectId: project,
-      owner,
-      prNumber,
-      buildTriggerId: triggers.regeneratePullRequest,
-      repo,
-      action: 'append',
-    });
-    return;
-  }
+  for (const step of plan) {
+    switch (step) {
+      case 'remove-label':
+        await removeOwlBotLabel(
+          owner,
+          repo,
+          prNumber,
+          octokit,
+          payload.label.name,
+          logger
+        );
+        break;
+      case 'copy': {
+        // Owl Bot Bootstrapper requested Owl Bot to copy code from googleapis-gen.
+        const octokitFactory = octokitFactoryFrom({
+          'app-id': appId,
+          privateKey,
+          installation,
+        });
+        await core.triggerRegeneratePullRequest(octokitFactory, {
+          branch: payload.pull_request.head.ref,
+          gcpProjectId: project,
+          owner,
+          prNumber,
+          buildTriggerId: triggers.regeneratePullRequest,
+          repo,
+          action: 'append',
+        });
+        break;
+      }
+      case 'postprocess': {
+        // If the last commit made to the PR was already from OwlBot, and the label
+        // has been added by a bot account (most likely trusted contributor bot)
+        // do not run the post processor:
+        if (
+          isBotAccount(payload.sender.login) &&
+          (await core.lastCommitFromOwlBotPostProcessor(
+            owner,
+            repo,
+            prNumber,
+            octokit
+          ))
+        ) {
+          logger.info(
+            `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`
+          );
+          return;
+        }
 
-  // If the last commit made to the PR was already from OwlBot, and the label
-  // has been added by a bot account (most likely trusted contributor bot)
-  // do not run the post processor:
-  if (
-    isBotAccount(payload.sender.login) &&
-    (await core.lastCommitFromOwlBotPostProcessor(
-      owner,
-      repo,
-      prNumber,
-      octokit
-    ))
-  ) {
-    logger.info(
-      `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`
-    );
-    return;
+        // If label is explicitly added, run as if PR is made against default branch:
+        const defaultBranch = payload?.repository?.default_branch;
+        await runPostProcessorWithLock(
+          appId,
+          privateKey,
+          project,
+          triggers.runPostProcessor,
+          {
+            head,
+            base,
+            baseRef: defaultBranch,
+            prNumber,
+            installation,
+            owner,
+            repo,
+            defaultBranch,
+            sha: payload.pull_request.head.sha,
+          },
+          octokit,
+          logger,
+          isBotAccount(payload.sender.login)
+        );
+        logger.metric('owlbot.run_post_processor');
+        break;
+      }
+    }
   }
-
-  // If label is explicitly added, run as if PR is made against default branch:
-  const defaultBranch = payload?.repository?.default_branch;
-  await runPostProcessorWithLock(
-    appId,
-    privateKey,
-    project,
-    triggers.runPostProcessor,
-    {
-      head,
-      base,
-      baseRef: defaultBranch,
-      prNumber,
-      installation,
-      owner,
-      repo,
-      defaultBranch,
-      sha: payload.pull_request.head.sha,
-    },
-    octokit,
-    logger,
-    isBotAccount(payload.sender.login)
-  );
-  logger.metric('owlbot.run_post_processor');
 }
 
 /*
