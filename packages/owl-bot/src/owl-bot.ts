@@ -382,39 +382,28 @@ async function handlePullRequestLabeled(
     return;
   }
 
-  const command_labels = [OWLBOT_RUN_LABEL, OWL_BOT_COPY_COMMAND_LABEL];
+  const commandLabels = [OWLBOT_RUN_LABEL, OWL_BOT_COPY_COMMAND_LABEL];
 
-  // Only run on label event if the label added is the owlbot label
-  if (!command_labels.includes(payload.label.name)) {
+  if (payload.pull_request.draft && payload.label.name === OWL_BOT_COPY) {
+    // owl-bot-copy label was applied to a new draft pull request.
+    // Run the post processor.
+  } else if (commandLabels.includes(payload.label.name)) {
+    // Label added was an owl bot command.  Execute the command
+    // but first remove the run label.
+    await removeOwlBotLabel(
+      owner,
+      repo,
+      prNumber,
+      octokit,
+      payload.label.name,
+      logger
+    );
+  } else {
     logger.info(
       `skipping non-owlbot label: ${payload.label.name} ${head} for ${base}`
     );
     return;
   }
-
-  const hasCommandLabel = payload.pull_request.labels.some(l =>
-    command_labels.includes(l.name)
-  );
-
-  // Only run post-processor if appropriate label added:
-  if (!hasCommandLabel) {
-    logger.info(
-      `skipping labels ${payload.pull_request.labels
-        .map(l => l.name)
-        .join(', ')} ${head} for ${base}`
-    );
-    return;
-  }
-
-  // Remove run label before continuing
-  await removeOwlBotLabel(
-    owner,
-    repo,
-    prNumber,
-    octokit,
-    payload.label.name,
-    logger
-  );
 
   if (payload.label.name === OWL_BOT_COPY_COMMAND_LABEL) {
     // Owl Bot Bootstrapper requested Owl Bot to copy code from googleapis-gen.
