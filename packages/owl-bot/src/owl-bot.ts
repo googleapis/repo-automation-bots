@@ -393,27 +393,25 @@ async function handlePullRequestLabeled(
     );
   }
 
-  async function infiniteLoop() {
+  async function runPostProcessorIfNotInfiniteLoop() {
     // If the last commit made to the PR was already from OwlBot, and the label
     // has been added by a bot account (most likely trusted contributor bot)
     // do not run the post processor:
-    const inifiteLoop =
+    if (
       isBotAccount(payload.sender.login) &&
       (await core.lastCommitFromOwlBotPostProcessor(
         owner,
         repo,
         prNumber,
         octokit
-      ));
-      if (inifiteLoop) {
-        logger.info(
-          `skipping post-processor run for ${owner}/${repo} pr = ${prNumber} to avoid an infinite loop`
-        );
-      }
-    return inifiteLoop;
-  }
+      ))
+    ) {
+      logger.info(
+        `skipping post-processor run for ${owner}/${repo} pr = ${prNumber} to avoid an infinite loop`
+      );
+      return;
+    }
 
-  async function runPostProcessor() {
     // If label is explicitly added, run as if PR is made against default branch:
     const defaultBranch = payload?.repository?.default_branch;
     await runPostProcessorWithLock(
@@ -440,16 +438,13 @@ async function handlePullRequestLabeled(
   }
 
   if (payload.pull_request.draft && payload.label.name === OWL_BOT_COPY) {
-    if (!await infiniteLoop()) {
-      await runPostProcessor();
-    }
+    await runPostProcessorIfNotInfiniteLoop();
   } else if (payload.label.name === OWLBOT_RUN_LABEL) {
-    if (!await infiniteLoop()) {
-      await removeNewLabel();
-      await runPostProcessor();
-    }
+    await removeNewLabel();
+    await runPostProcessorIfNotInfiniteLoop();
   } else if (payload.label.name === OWL_BOT_COPY_COMMAND_LABEL) {
     // Owl Bot Bootstrapper requested Owl Bot to copy code from googleapis-gen.
+    await removeNewLabel();
     const octokitFactory = octokitFactoryFrom({
       'app-id': appId,
       privateKey,
