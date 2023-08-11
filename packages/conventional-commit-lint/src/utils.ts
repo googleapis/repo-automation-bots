@@ -69,9 +69,16 @@ export async function scanPullRequest(
     pull_number: pull_request.number,
   });
 
-  let commits: PullsListCommitsResponseData;
+  const commits: PullsListCommitsResponseData = [];
   try {
-    commits = (await octokit.pulls.listCommits(commitParams)).data;
+    for await (const response of octokit.paginate.iterator(
+      octokit.rest.pulls.listCommits,
+      commitParams
+    )) {
+      for (const commit of response.data) {
+        commits.push(commit);
+      }
+    }
   } catch (e) {
     const err = e as Error;
     logger.error(err);
