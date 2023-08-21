@@ -18,5 +18,6 @@
     "gaxios": "^5.0.0",
     "smee-client": "^1.1.0",
     "@google-cloud/mono-repo-publish": "^1.0.0"
-  }
+  },
+  "version": "1.0.0"
 }
