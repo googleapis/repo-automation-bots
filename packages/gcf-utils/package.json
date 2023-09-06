@@ -6,7 +6,7 @@
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal mocha ./build/test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
     "fix": "gts fix",
     "lint": "gts check"
