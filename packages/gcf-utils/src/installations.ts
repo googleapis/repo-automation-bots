@@ -15,17 +15,28 @@
 
 import {WrapConfig} from './configuration';
 
+// Helper interface to abstract the response of the list installations GitHub response
 export interface AppInstallation {
+  // App installation id
   id: number;
+  // Installation type (e.g. `Organization`)
   targetType: string;
+  // Whether or not the installation is suspended
   suspended?: boolean;
+  // Installation owner (organization/user name)
   login?: string;
 }
 
+// Helper interface to abstract the response of the list repositories for an app
+// installation GitHub response
 export interface InstalledRepository {
+  // Installation repository id
   id: number;
+  // Whether or not the repository is archived
   archived: boolean;
+  // Whether or not the repository is disabled
   disabled: boolean;
+  // Name of the repository in the format of <owner>/<repo>
   fullName: string;
 }
 
