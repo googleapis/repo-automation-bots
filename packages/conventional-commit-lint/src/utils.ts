@@ -75,9 +75,7 @@ export async function scanPullRequest(
       octokit.rest.pulls.listCommits,
       commitParams
     )) {
-      for (const commit of response.data) {
-        commits.push(commit);
-      }
+      commits.push(...response.data);
     }
   } catch (e) {
     const err = e as Error;
