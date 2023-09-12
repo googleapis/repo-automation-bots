@@ -34,7 +34,6 @@
     "packages/flakybot": {
       "release-type": "go",
       "component": "flakybot"
-    },
-    ".": {}
+    }
   }
 }

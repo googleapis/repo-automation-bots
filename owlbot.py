@@ -11,24 +11,5 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import synthtool.languages.node as node
 
-node.owlbot_main(templates_excludes=[
-  '.eslintignore',
-  '.eslintrc.json',
-  '.github/CODEOWNERS',
-  '.github/auto-label.yaml',
-  '.github/release-please.yml',
-  '.github/workflows/',
-  '.github/publish.yml',
-  '.github/sync-repo-settings.yaml',
-  '.kokoro/publish.sh',
-  '.kokoro/release/publish.cfg',
-  '.kokoro/**',
-  '.mocharc.js',
-  '.nycrc',
-  '.prettierignore',
-  '.prettierrc.js',
-  'README.md',
-  'renovate.json'
-])
+# intentionally left blank
