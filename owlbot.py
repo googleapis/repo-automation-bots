@@ -30,5 +30,6 @@ node.owlbot_main(templates_excludes=[
   '.prettierignore',
   '.prettierrc.js',
   'README.md',
-  'renovate.json'
+  'renovate.json',
+  'release-please-config.json',
 ])
