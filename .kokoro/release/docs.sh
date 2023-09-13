@@ -20,8 +20,8 @@ set -eo pipefail
 if [[ -z "$CREDENTIALS" ]]; then
   # if CREDENTIALS are explicitly set, assume we're testing locally
   # and don't set NPM_CONFIG_PREFIX.
-  export NPM_CONFIG_PREFIX=/home/node/.npm-global
-  export PATH="$PATH:/home/node/.npm-global/bin"
+  export NPM_CONFIG_PREFIX=${HOME}/.npm-global
+  export PATH="$PATH:${NPM_CONFIG_PREFIX}/bin"
   cd $(dirname $0)/../..
 fi
 npm install
@@ -29,6 +29,7 @@ npm run docs
 
 # create docs.metadata, based on package.json and .repo-metadata.json.
 npm i json@9.0.6 -g
+python3 -m pip install --user gcp-docuploader
 python3 -m docuploader create-metadata \
   --name=$(cat .repo-metadata.json | json name) \
   --version=$(cat package.json | json version) \

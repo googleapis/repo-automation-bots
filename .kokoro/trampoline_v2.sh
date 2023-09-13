@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2021 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@
 
 set -euo pipefail
 
-TRAMPOLINE_VERSION="2.0.10"
+TRAMPOLINE_VERSION="2.0.7"
 
 if command -v tput >/dev/null && [[ -n "${TERM:-}" ]]; then
   readonly IO_COLOR_RED="$(tput setaf 1)"
@@ -125,6 +125,8 @@ pass_down_envvars=(
     "TRAMPOLINE_CI"
     # Indicates the version of the script.
     "TRAMPOLINE_VERSION"
+    # Contains path to build artifacts being executed.
+    "KOKORO_BUILD_ARTIFACTS_SUBDIR"
 )
 
 log_yellow "Building with Trampoline ${TRAMPOLINE_VERSION}"
@@ -160,10 +162,9 @@ if [[ -n "${KOKORO_BUILD_ID:-}" ]]; then
 	"KOKORO_GITHUB_COMMIT"
 	"KOKORO_GITHUB_PULL_REQUEST_NUMBER"
 	"KOKORO_GITHUB_PULL_REQUEST_COMMIT"
-	# For Flaky Bot
+	# For flakybot
 	"KOKORO_GITHUB_COMMIT_URL"
 	"KOKORO_GITHUB_PULL_REQUEST_URL"
-	"KOKORO_BUILD_ARTIFACTS_SUBDIR"
     )
 elif [[ "${TRAVIS:-}" == "true" ]]; then
     RUNNING_IN_CI="true"
@@ -393,7 +394,7 @@ docker_flags=(
     # Use the host network.
     "--network=host"
 
-    # Run in privileged mode. We are not using docker for sandboxing or
+    # Run in priviledged mode. We are not using docker for sandboxing or
     # isolation, just for packaging our dev tools.
     "--privileged"
 

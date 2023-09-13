@@ -1,3 +1,2 @@
 handleGHRelease: true
-manifest: true
-
+releaseType: node

@@ -1,28 +1,17 @@
-rebaseMergeAllowed: true
-squashMergeAllowed: true
-mergeCommitAllowed: false
 branchProtectionRules:
-- pattern: main
-  isAdminEnforced: true
-  requiredStatusCheckContexts:
-    - 'changeFinder'
-    - 'finale'
-    - 'cla/google'
-    - 'packages-bazel-bot-docker-image-test (repo-automation-bots)'
-    - 'packages-canary-bot-test (repo-automation-bots)'
-    - 'packages-cherry-pick-bot-test (repo-automation-bots)'
-    - 'packages-gcf-utils-test (repo-automation-bots)'
-    - 'packages-owl-bot-test (repo-automation-bots)'
-    - 'packages-release-trigger-test (repo-automation-bots)'
-    - 'packages-secret-rotator-test (repo-automation-bots)'
-    - 'serverless-scheduler-proxy-test (repo-automation-bots)'
-  requiredApprovingReviewCount: 1
-  requiresCodeOwnerReviews: true
-  requiresStrictStatusChecks: true
-permissionRules:
-  - team: Googlers
-    permission: pull
-  - team: github-automation
-    permission: push
-  - team: yoshi-admins
-    permission: admin
+  - pattern: main
+    isAdminEnforced: true
+    requiredApprovingReviewCount: 1
+    requiresCodeOwnerReviews: true
+    requiresStrictStatusChecks: false
+    requiredStatusCheckContexts:
+      - "ci/kokoro: Samples test"
+      - "ci/kokoro: System test"
+      - docs
+      - lint
+      - test (12)
+      - test (14)
+      - test (16)
+      - cla/google
+      - windows
+      - OwlBot Post Processor

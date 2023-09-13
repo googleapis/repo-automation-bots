@@ -16,7 +16,7 @@
 
 set -eo pipefail
 
-export NPM_CONFIG_PREFIX=/home/node/.npm-global
+export NPM_CONFIG_PREFIX=${HOME}/.npm-global
 
 # Setup service account credentials.
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/service-account.json
@@ -33,11 +33,23 @@ fi
 
 npm install
 
+# If tests are running against main branch, configure flakybot
+# to open issues on failures:
+if [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"continuous"* ]] || [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"nightly"* ]]; then
+  export MOCHA_REPORTER_OUTPUT=test_output_sponge_log.xml
+  export MOCHA_REPORTER=xunit
+  cleanup() {
+    chmod +x $KOKORO_GFILE_DIR/linux_amd64/flakybot
+    $KOKORO_GFILE_DIR/linux_amd64/flakybot
+  }
+  trap cleanup EXIT HUP
+fi
+
 npm run system-test
 
 # codecov combines coverage across integration and unit tests. Include
 # the logic below for any environment you wish to collect coverage for:
-COVERAGE_NODE=10
+COVERAGE_NODE=12
 if npx check-node-version@3.3.0 --silent --node $COVERAGE_NODE; then
   NYC_BIN=./node_modules/nyc/bin/nyc.js
   if [ -f "$NYC_BIN" ]; then

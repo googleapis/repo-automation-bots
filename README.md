@@ -1,156 +1,118 @@
-# Repo Automation Bots
+[//]: # "This README.md file is auto-generated, all changes to this file will be lost."
+[//]: # "To regenerate it, use `python -m synthtool`."
+<img src="https://avatars2.githubusercontent.com/u/2810941?v=3&s=96" alt="Google Cloud Platform logo" title="Google Cloud Platform" align="right" height="96" width="96"/>
 
-A collection of bots, based on [probot](https://github.com/probot/probot), for
-performing common maintenance tasks across the open-source repos managed
-by Google on GitHub.
+# [Repo Automation Bots: Node.js Client](https://github.com/googleapis/repo-automation-bots)
 
-## Implemented Bots
+[![release level](https://img.shields.io/badge/release%20level-stable-brightgreen.svg?style=flat)](https://cloud.google.com/terms/launch-stages)
+[![npm version](https://img.shields.io/npm/v/repo-automation-bots.svg)](https://www.npmjs.org/package/repo-automation-bots)
 
-| Name | Description | Install |
-| ---- | ----------- | ------- |
-| [auto-approve] | Automatically approves and merges PRs matching user-specified configs | [install][auto-approve-app] |
-| [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
-| [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
-| [cherry-pick-bot] | Cherry-pick merged PRs between branches | [install][cherry-pick-bot-app] |
-| [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
-| [do-not-merge] | PR checker that ensures the `do not merge` label is not present | [install][do-not-merge-app]
-| [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
-| [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][flakybot-app] |
-| [generated-files-bot] | PR checker to notify if you are modifying generated files | [install][generated-files-bot-app]
-| [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
-| [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
-| [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
-| [policy] | Check repo configuration against known rules | [install][policy-app] |
-| [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
-| [release-trigger] | Trigger releases jobs | [install][release-trigger-app] |
-| [repo-metadata-lint] | Lint .repo-metadata.json files | [install][repo-metadata-lint-app] |
-| [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
-| [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
-| [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
 
-## Development environment
 
-You need to install node.js version 12 or higher.
 
-To manage multiple Node.js versions, you can use
-[nvm](https://github.com/nvm-sh/nvm).
 
-## Running the app locally
 
-### Create a Proxy to Relay Webhooks
 
-In order to forward to your local machine, you can use smee.io. Visit
-https://smee.io/new and create a proxy for relaying webhooks to your
-local web-service. After creating the proxy, you'll get the URL of the
-new proxy.
+A comprehensive list of changes in each version may be found in
+[the CHANGELOG](https://github.com/googleapis/repo-automation-bots/blob/main/CHANGELOG.md).
 
-In the root directory of `repo-automation-bots`, run:
+* [Repo Automation Bots Node.js Client API Reference][client-docs]
 
-```
-npm run proxy -- -u <URL-OF-PROXY>
+* [github.com/googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots)
+
+Read more about the client libraries for Cloud APIs, including the older
+Google APIs Client Libraries, in [Client Libraries Explained][explained].
+
+[explained]: https://cloud.google.com/apis/docs/client-libraries-explained
+
+**Table of contents:**
+
+
+* [Quickstart](#quickstart)
+
+  * [Installing the client library](#installing-the-client-library)
+
+
+* [Versioning](#versioning)
+* [Contributing](#contributing)
+* [License](#license)
+
+## Quickstart
+
+### Installing the client library
+
+```bash
+npm install repo-automation-bots
 ```
 
-### Creating the Development Application
-
-If it's your first time running your application, you should create a new
-GitHub application using the probot server:
-
-1. `cd packages/your-bot`.
-1. `npm start`.
-1. visit:  http://localhost:3000 and install.
-
-### Granting the Development Application permissions and events
-
-1. By default there will be no permissions. Visit
-   https://github.com/settings/installations, click configure, then 'app settings'.
-1. Navigate to Permissions and Events. You likely need 'Repository > Pull Requests'
-   for permissions.
-1. You also will need to subscribe to events (bottom of page). For
-   instance, if your bot responds to PR activity, the 'Events > Pull Request' should
-   be enabled.
 
 
-### Install the bot on a repo
-
-1. Follow the link to install the app and navigate to 'Install App',
-   if installed on the organization you desire (likely yourself for testing),
-click the gear.
-1. Under permissions ensure that there aren't pending requests to be approved
-1. Under repository access select only select repositories. Select the
-   repository you wish to test against.
 
 
-### Running Your Application
+The [Repo Automation Bots Node.js Client API Reference][client-docs] documentation
+also contains samples.
 
-Once you've created your application, _and installed it on some of your repos_,
-start probot again, setting the following environment variables. Most can be found
-at github.com/settings/apps/{YOUR_APP}:
+## Supported Node.js Versions
 
-* `APP_ID`: the ID, listed near the top, `App ID: 12345`
-* `PRIVATE_KEY_PATH`: path to App's private key, you can request a new one be
-   created and downloaded at the bottom of the page.
-   * Alternatively, set the GitHub client ID and secret:
-     * `GITHUB_CLIENT_ID`: client ID from the top of the page.
-     * `GITHUB_CLIENT_SECRET`: client secret from the top of the page.
-* `WEBHOOK_SECRET`: secret key set in GitHub developer settings. Edit this to a known value in the settings page.
+Our client libraries follow the [Node.js release schedule](https://nodejs.org/en/about/releases/).
+Libraries are compatible with all current _active_ and _maintenance_ versions of
+Node.js.
+If you are using an end-of-life version of Node.js, we recommend that you update
+as soon as possible to an actively supported LTS version.
 
-Environment variables set, run:
+Google's client libraries support legacy versions of Node.js runtimes on a
+best-efforts basis with the following warnings:
 
-1. `cd packages/your-bot`.
-1. `npm start`.
+* Legacy versions are not tested in continuous integration.
+* Some security patches and features cannot be backported.
+* Dependencies cannot be kept up-to-date.
 
-### Running bots on a Cron
+Client libraries targeting some end-of-life versions of Node.js are available, and
+can be installed through npm [dist-tags](https://docs.npmjs.com/cli/dist-tag).
+The dist-tags follow the naming convention `legacy-(version)`.
+For example, `npm install repo-automation-bots@legacy-8` installs client libraries
+for versions compatible with Node.js 8.
 
-To run a bot on a schedule include a file in your bot's folder named `cron` whose
-content is valid [unix -cron format](http://man7.org/linux/man-pages/man5/crontab.5.html).
-This will create a Cloud Scheduler Job which makes requests to your endpoint
-at the specified schedule.
+## Versioning
 
-### Publishing Utility Modules
+This library follows [Semantic Versioning](http://semver.org/).
 
-1. create a token with Wombat Dressing Room.
-2. run `npm run release`.
 
-## Overall Architecture
 
-![High Level Architecture](./architecture.png)
+This library is considered to be **stable**. The code surface will not change in backwards-incompatible ways
+unless absolutely necessary (e.g. because of critical security issues) or with
+an extensive deprecation period. Issues and requests against **stable** libraries
+are addressed with the highest priority.
 
-[auto-approve]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-approve
-[auto-approve-app]: https://github.com/apps/auto-approve-bot
-[auto-label]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-label
-[auto-label-app]: https://github.com/apps/product-auto-label
-[blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/blunderbuss
-[blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
-[cherry-pick-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/cherry-pick-bot
-[cherry-pick-bot-app]: https://github.com/apps/gcp-cherry-pick-bot
-[conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/conventional-commit-lint
-[conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
-[do-not-merge]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/do-not-merge
-[do-not-merge-app]: https://github.com/apps/do-not-merge-gcf
-[generated-files-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/generated-files-bot
-[generated-files-bot-app]: https://github.com/apps/generated-files-bot
-[license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/header-checker-lint
-[license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
-[policy]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/policy
-[policy-app]: https://github.com/apps/google-cloud-policy-bot
-[release-please]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-please
-[release-please-app]: https://github.com/apps/release-please
-[release-trigger]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-trigger
-[release-trigger-app]: https://github.com/apps/release-trigger
-[trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/trusted-contribution
-[trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
-[failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/failurechecker
-[failurechecker-app]: https://github.com/apps/failure-checker
-[label-sync]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/label-sync
-[label-sync-app]: https://github.com/apps/google-cloud-label-sync
-[flakybot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot
-[flakybot-app]: https://github.com/apps/flaky-bot
-[merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/merge-on-green
-[merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
-[snippet-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/snippet-bot
-[snippet-bot-app]: https://github.com/apps/snippet-bot
-[sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/sync-repo-settings
-[sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
-[Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html
-[repo-metadata-lint]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/repo-metadata-lint
-[repo-metadata-lint-app]: https://github.com/apps/repo-metadata-lint
+
+
+
+
+
+More Information: [Google Cloud Platform Launch Stages][launch_stages]
+
+[launch_stages]: https://cloud.google.com/terms/launch-stages
+
+## Contributing
+
+Contributions welcome! See the [Contributing Guide](https://github.com/googleapis/repo-automation-bots/blob/main/CONTRIBUTING.md).
+
+Please note that this `README.md`, the `samples/README.md`,
+and a variety of configuration files in this repository (including `.nycrc` and `tsconfig.json`)
+are generated from a central template. To edit one of these files, make an edit
+to its templates in
+[directory](https://github.com/googleapis/synthtool).
+
+## License
+
+Apache Version 2.0
+
+See [LICENSE](https://github.com/googleapis/repo-automation-bots/blob/main/LICENSE)
+
+[client-docs]: https://cloud.google.com/nodejs/docs/reference/repo-automation-bots/latest
+
+[shell_img]: https://gstatic.com/cloudssh/images/open-btn.png
+[projects]: https://console.cloud.google.com/project
+[billing]: https://support.google.com/cloud/answer/6293499#enable-billing
+
+[auth]: https://cloud.google.com/docs/authentication/getting-started

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2018 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 set -eo pipefail
 
-export NPM_CONFIG_PREFIX=${HOME}/.npm-global
-
-# Start the releasetool reporter
-python3 -m pip install gcp-releasetool
-python3 -m releasetool publish-reporter-script > /tmp/publisher-script; source /tmp/publisher-script
-
-cd $(dirname $0)/..
-
-NPM_TOKEN=$(cat $KOKORO_KEYSTORE_DIR/73713_google-cloud-npm-token-1)
-echo "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+if [[ -z "$CREDENTIALS" ]]; then
+  # if CREDENTIALS are explicitly set, assume we're testing locally
+  # and don't set NPM_CONFIG_PREFIX.
+  export NPM_CONFIG_PREFIX=${HOME}/.npm-global
+  export PATH="$PATH:${NPM_CONFIG_PREFIX}/bin"
+  cd $(dirname $0)/../..
+fi
 
 npm install
-npm publish --access=public --registry=https://wombat-dressing-room.appspot.com
+npm install --no-save @google-cloud/cloud-rad@^0.2.5
+npx @google-cloud/cloud-rad

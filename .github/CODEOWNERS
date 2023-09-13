@@ -5,15 +5,8 @@
 # https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
 
 
-*     @googleapis/github-automation
-
-packages/auto-label/*                 @googleapis/github-automation @sofisl
-packages/conventional-commit-lint/*   @googleapis/github-automation @bcoe
-packages/generated-files-bot/*        @googleapis/github-automation @chingor13
-packages/header-checker-lint/*        @googleapis/github-automation @chingor13
-packages/merge-on-green/*             @googleapis/github-automation @sofisl
-packages/monitoring-system/*          @googleapis/github-automation @chingor13
-packages/release-please/*             @googleapis/github-automation @bcoe @chingor13
+# The yoshi-nodejs team is the default owner for nodejs repositories.
+*     @googleapis/yoshi-nodejs @googleapis/github-automation
 
 # The github automation team is the default owner for the auto-approve file.
 .github/auto-approve.yml @googleapis/github-automation
