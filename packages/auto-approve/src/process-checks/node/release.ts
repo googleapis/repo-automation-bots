@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {LanguageRule, File, Process} from '../../interfaces';
+import {File, PullRequest} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
@@ -25,87 +25,70 @@ import {
   reportIndividualChecks,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
+import {BaseLanguageRule} from '../base';
 
-export class NodeRelease extends Process implements LanguageRule {
-  classRule: {
-    author: string;
-    titleRegex?: RegExp;
-    maxFiles: number;
-    fileNameRegex?: RegExp[];
-    fileRules?: {
-      oldVersion?: RegExp;
-      newVersion?: RegExp;
-      dependencyTitle?: RegExp;
-      targetFileToCheck: RegExp;
-    }[];
+/**
+ * The NodeRelease class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'release-please'
+  - has a title that matches the regexp: /^chore: release/
+  - has max 2 files changed in the PR
+  - Each file path must match one of these regexps:
+    - /^package.json$/
+    - /^CHANGELOG.md$/
+  - At least one file must:
+    - Match either this regexp: /^package.json$/
+    - Increase the non-major package version
+    - Only change the top-level package
+    - Approve on a day between Mon - Thurs PST (so as to not trigger a weekend release)
+ */
+export class NodeRelease extends BaseLanguageRule {
+  classRule = {
+    author: 'release-please',
+    titleRegex: /^chore: release/,
+    maxFiles: 2,
+    fileNameRegex: [/^package.json$/, /^CHANGELOG.md$/],
   };
+  fileRules = [
+    {
+      targetFileToCheck: /^package.json$/,
+      // This would match: -  "version": "2.3.0"
+      oldVersion: new RegExp(
+        /-[\s]*"(@?\S*)":[\s]"([0-9]*)*\.([0-9]*\.[0-9]*)",/
+      ),
+      // This would match: +  "version": "2.3.0"
+      newVersion: new RegExp(
+        /\+[\s]*"(@?\S*)":[\s]"([0-9]*)*\.([0-9]*\.[0-9]*)",/
+      ),
+    },
+  ];
 
-  constructor(
-    incomingPrAuthor: string,
-    incomingTitle: string,
-    incomingFileCount: number,
-    incomingChangedFiles: File[],
-    incomingRepoName: string,
-    incomingRepoOwner: string,
-    incomingPrNumber: number,
-    incomingOctokit: Octokit,
-    incomingBody?: string
-  ) {
-    super(
-      incomingPrAuthor,
-      incomingTitle,
-      incomingFileCount,
-      incomingChangedFiles,
-      incomingRepoName,
-      incomingRepoOwner,
-      incomingPrNumber,
-      incomingOctokit,
-      incomingBody
-    ),
-      (this.classRule = {
-        author: 'release-please',
-        titleRegex: /^chore: release/,
-        maxFiles: 2,
-        fileNameRegex: [/^package.json$/, /^CHANGELOG.md$/],
-        fileRules: [
-          {
-            targetFileToCheck: /^package.json$/,
-            // This would match: -  "version": "2.3.0"
-            oldVersion: new RegExp(
-              /-[\s]*"(@?\S*)":[\s]"([0-9]*)*\.([0-9]*\.[0-9]*)",/
-            ),
-            // This would match: +  "version": "2.3.0"
-            newVersion: new RegExp(
-              /\+[\s]*"(@?\S*)":[\s]"([0-9]*)*\.([0-9]*\.[0-9]*)",/
-            ),
-          },
-        ],
-      });
+  constructor(octokit: Octokit) {
+    super(octokit);
   }
-
-  public async checkPR(): Promise<boolean> {
+  public async checkPR(incomingPR: PullRequest): Promise<boolean> {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
-      this.incomingPR.author
+      incomingPR.author
     );
 
     const titleMatches = checkTitleOrBody(
-      this.incomingPR.title,
+      incomingPR.title,
       this.classRule.titleRegex
     );
 
     const fileCountMatch = checkFileCount(
-      this.incomingPR.fileCount,
+      incomingPR.fileCount,
       this.classRule.maxFiles
     );
 
     const filePatternsMatch = checkFilePathsMatch(
-      this.incomingPR.changedFiles.map(x => x.filename),
+      incomingPR.changedFiles.map((x: {filename: string}) => x.filename),
       this.classRule.fileNameRegex
     );
 
-    for (const fileRule of this.classRule.fileRules!) {
-      const fileMatch = this.incomingPR.changedFiles?.find((x: File) =>
+    for (const fileRule of this.fileRules!) {
+      const fileMatch = incomingPR.changedFiles?.find((x: File) =>
         fileRule.targetFileToCheck.test(x.filename)
       );
 
@@ -133,9 +116,9 @@ export class NodeRelease extends Process implements LanguageRule {
         reportIndividualChecks(
           ['isMergedOnWeekDay', 'isVersionValid', 'oneDependencyChanged'],
           [isMergedOnWeekDay, isVersionValid, oneDependencyChanged],
-          this.incomingPR.repoOwner,
-          this.incomingPR.repoName,
-          this.incomingPR.prNumber,
+          incomingPR.repoOwner,
+          incomingPR.repoName,
+          incomingPR.prNumber,
           fileMatch.filename
         );
         return false;
@@ -150,9 +133,9 @@ export class NodeRelease extends Process implements LanguageRule {
         'filePatternsMatch',
       ],
       [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
-      this.incomingPR.repoOwner,
-      this.incomingPR.repoName,
-      this.incomingPR.prNumber
+      incomingPR.repoOwner,
+      incomingPR.repoName,
+      incomingPR.prNumber
     );
 
     return (

@@ -23,7 +23,12 @@
           "JavaDependency",
           "OwlBotTemplateChanges",
           "OwlBotAPIChanges",
-          "PHPApiaryCodegen"
+          "PHPApiaryCodegen",
+          "PythonSampleAppDependency",
+          "JavaSampleAppDependency",
+          "DockerDependency",
+          "GoDependency",
+          "GoApiaryCodegen"
         ]
       }
     }

@@ -1,9 +1,9 @@
 {
   "packages/bot-config-utils": "6.1.3",
   "packages/cron-utils": "3.2.2",
-  "packages/datastore-lock": "4.0.4",
+  "packages/datastore-lock": "4.1.0",
   "packages/flakybot": "1.2.0",
-  "packages/gcf-utils": "14.4.6",
+  "packages/gcf-utils": "15.0.0",
   "packages/git-file-utils": "1.2.6",
   "packages/issue-utils": "2.1.2",
   "packages/label-utils": "3.0.2",

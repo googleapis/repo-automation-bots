@@ -207,3 +207,60 @@ export class DatastoreLock {
     else return false;
   }
 }
+
+/**
+ * Parameters for creating a DatastoreLock.
+ */
+export interface DatastoreLockDetails {
+  /** A unique identifier for the lock.
+   * This identifier is used to identify the lock in the datastore. */
+  lockId: string;
+  /** The name of the resource that the lock is protecting.
+   * Usually a url of a github resource. */
+  target: string;
+  /** If the current process crashes or otherwise fails to release the lock,
+   * it will be automatically released in lockExpiry milliseconds. */
+  lockExpiry?: number;
+  /** Milliseconds to wait while trying to acquire the lock. */
+  lockAcquireTimeout?: number;
+}
+
+/**
+ * Construct a new DatastoreLock.
+ */
+export function datastoreLockFromDetails(
+  details: DatastoreLockDetails
+): DatastoreLock {
+  return new DatastoreLock(
+    details.lockId,
+    details.target,
+    details.lockExpiry,
+    details.lockAcquireTimeout
+  );
+}
+
+/**
+ * Execute a function while holding a lock.
+ *
+ * @param details The Datastore lock's details.
+ * @param f The function to execute while holding the lock.
+ * @returns the value returned by f().
+ */
+export async function withDatastoreLock<R>(
+  details: DatastoreLockDetails,
+  f: () => Promise<R>
+): Promise<R> {
+  const lock = datastoreLockFromDetails(details);
+  const acquired = await lock.acquire();
+  if (!acquired) {
+    // throw an error and expect gcf-utils infrastructure to retry
+    throw new Error(
+      `Failed to acquire lock in ${details.lockAcquireTimeout}ms for ${details.target}.`
+    );
+  }
+  try {
+    return await f();
+  } finally {
+    lock.release();
+  }
+}

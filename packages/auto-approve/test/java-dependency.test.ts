@@ -21,125 +21,28 @@ const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
 });
 describe('behavior of Java Dependency process', () => {
-  it('should get constructed with the appropriate values', () => {
-    const javaDependency = new JavaDependency(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
-
-    const expectation = {
-      incomingPR: {
-        author: 'testAuthor',
-        title: 'testTitle',
-        fileCount: 3,
-        changedFiles: [{filename: 'hello', sha: '2345'}],
-        repoName: 'testRepoName',
-        repoOwner: 'testRepoOwner',
-        prNumber: 1,
-        body: 'body',
-      },
-      classRule: {
-        author: 'renovate-bot',
-        titleRegex:
-          /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-        maxFiles: 50,
-        fileNameRegex: [/pom.xml$/, /build.gradle$/],
-        fileRules: [
-          {
-            targetFileToCheck: /pom.xml$/,
-            // This would match: chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v1.4.2 or chore(deps): update dependency com.google.apis:google-api-services-policytroubleshooter to v1-rev20210319-1.32.1
-            dependencyTitle: new RegExp(
-              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-            ),
-            /* This would match:
-                  <groupId>com.google.apis</groupId>
-                  <artifactId>google-api-services-policytroubleshooter</artifactId>
-                  -      <version>v1-rev20210319-1.31.5</version>
-                  or
-                  <groupId>com.google.apis</groupId>
-                  <artifactId>google-api-services-policytroubleshooter</artifactId>
-                  -     <version>v1-rev20210319-1.31.5</version>
-                */
-            oldVersion: new RegExp(
-              /<groupId>(?<oldDependencyNamePrefixPom>[^<]*)<\/groupId>[\s]*<artifactId>(?<oldDependencyNamePom>[^<]*)<\/artifactId>[\s]*-[\s]*<version>(?:v[0-9]-rev(?<oldRevVersionPom>[0-9]*)-(?<oldMajorRevVersionPom>[0-9]*)\.(?<oldMinorRevVersionPom>[0-9]*\.[0-9])|(?<oldMajorVersionPom>[0-9]*)\.(?<oldMinorVersionPom>[0-9]*\.[0-9]*))<\/version>[\s]*/
-            ),
-            /* This would match:
-                  <groupId>com.google.cloud</groupId>
-                  <artifactId>google-cloud-datacatalog</artifactId>
-            -     <version>1.4.1</version>
-            +     <version>1.4.2</version>
-                  or
-                   <groupId>com.google.apis</groupId>
-                   <artifactId>google-api-services-policytroubleshooter</artifactId>
-            -      <version>v1-rev20210319-1.31.5</version>
-            +      <version>v1-rev20210319-1.32.1</version>
-                */
-            newVersion: new RegExp(
-              /<groupId>(?<newDependencyNamePrefixPom>[^<]*)<\/groupId>[\s]*<artifactId>(?<newDependencyNamePom>[^<]*)<\/artifactId>[\s]*-[\s]*<version>(?:v[0-9]-rev[0-9]*-[0-9]*\.[0-9]*\.[0-9]|[[0-9]*\.[0-9]*\.[0-9]*)<\/version>[\s]*\+[\s]*<version>(v[0-9]-rev(?<newRevVersionPom>[0-9]*)-(?<newMajorRevVersionPom>[0-9]*)\.(?<newMinorRevVersionPom>[0-9]*\.[0-9])|(?<newMajorVersionPom>[0-9]*)\.(?<newMinorVersionPom>[0-9]*\.[0-9]*))<\/version>/
-            ),
-          },
-          {
-            targetFileToCheck: /build.gradle$/,
-            // This would match: chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v1.4.2 or chore(deps): update dependency com.google.apis:google-api-services-policytroubleshooter to v1-rev20210319-1.32.1
-            dependencyTitle: new RegExp(
-              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-            ),
-            /* This would match either
-            -    invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2
-            -    classpath 'com.google.cloud.tools:endpoints-framework-gradle-plugin:1.0.3'
-            -def grpcVersion = '1.40.1'
-            */
-            oldVersion: new RegExp(
-              /-(?:[\s]*(?:classpath|invoker)[\s]'(?<oldDependencyNameBuild>.*):(?<oldMajorVersionBuild>[0-9]*)\.(?<oldMinorVersionBuild>[0-9]*\.[0-9]*)|def[\s](?<oldGrpcVersionBuild>grpcVersion)[\s]=[\s]'(?<oldMajorVersionGrpcBuild>[0-9]*)\.(?<oldMinorVersionGrpcBuild>[0-9]*\.[0-9]*))/
-            ),
-            /* This would match either:
-            +    invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2
-            +    classpath 'com.google.cloud.tools:endpoints-framework-gradle-plugin:1.0.3'
-            +def grpcVersion = '1.40.1'
-            */
-            newVersion: new RegExp(
-              /\+(?:[\s]*(?:classpath|invoker)[\s]'(?<newDependencyNameBuild>.*):(?<newMajorVersionBuild>[0-9]*)\.(?<newMinorVersionBuild>[0-9]*\.[0-9]*)|def[\s](?<newGrpcVersionBuild>grpcVersion)[\s]=[\s]'(?<newMajorVersionGrpcBuild>[0-9]*)\.(?<newMinorVersionGrpcBuild>[0-9]*\.[0-9]*))/
-            ),
-          },
-        ],
-      },
-      octokit,
-    };
-
-    assert.deepStrictEqual(javaDependency.incomingPR, expectation.incomingPR);
-    assert.deepStrictEqual(javaDependency.classRule, expectation.classRule);
-    assert.deepStrictEqual(javaDependency.octokit, octokit);
-  });
-
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
-    const javaDependency = new JavaDependency(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+    const incomingPR = {
+      author: 'testAuthor',
+      title: 'testTitle',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const javaDependency = new JavaDependency(octokit);
 
-    assert.deepStrictEqual(await javaDependency.checkPR(), false);
+    assert.deepStrictEqual(await javaDependency.checkPR(incomingPR), false);
   });
 
   it('should return false in checkPR if one of the files did not match additional rules in fileRules', async () => {
-    const javaDependency = new JavaDependency(
-      'renovate-bot',
-      'fix(deps): update dependency cloud.google.com to v16',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'fix(deps): update dependency cloud.google.com to v16',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'iam/api-client/pom.xml',
@@ -171,22 +74,23 @@ describe('behavior of Java Dependency process', () => {
             '     </dependency>\n',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const javaDependency = new JavaDependency(octokit);
 
-    assert.deepStrictEqual(await javaDependency.checkPR(), false);
+    assert.deepStrictEqual(await javaDependency.checkPR(incomingPR), false);
   });
 
   it('should return true in checkPR if incoming PR does match classRules - pom.xml', async () => {
-    const javaDependency = new JavaDependency(
-      'renovate-bot',
-      'fix(deps): update dependency com.google.cloud:google-cloud-datacatalog to v16',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title:
+        'fix(deps): update dependency com.google.cloud:google-cloud-datacatalog to v16',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'iam/api-client/pom.xml',
@@ -203,22 +107,23 @@ describe('behavior of Java Dependency process', () => {
             '     </dependency>\n',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const javaDependency = new JavaDependency(octokit);
 
-    assert.ok(await javaDependency.checkPR());
+    assert.ok(await javaDependency.checkPR(incomingPR));
   });
 
   it('should return true in checkPR if incoming PR does match classRules - build.gradle - grpc version', async () => {
-    const javaDependency = new JavaDependency(
-      'renovate-bot',
-      'chore(deps): update dependency io.grpc:protoc-gen-grpc-java to v1.40.1',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title:
+        'chore(deps): update dependency io.grpc:protoc-gen-grpc-java to v1.40.1',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'iam/api-client/build.gradle',
@@ -236,22 +141,23 @@ describe('behavior of Java Dependency process', () => {
             '   repositories {',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const javaDependency = new JavaDependency(octokit);
 
-    assert.ok(await javaDependency.checkPR());
+    assert.ok(await javaDependency.checkPR(incomingPR));
   });
 
   it('should return true in checkPR if incoming PR does match classRules - build.gradle - classpath', async () => {
-    const javaDependency = new JavaDependency(
-      'renovate-bot',
-      'chore(deps): update dependency com.google.cloud.tools:endpoints-framework-gradle-plugin to v1.0.3',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title:
+        'chore(deps): update dependency com.google.cloud.tools:endpoints-framework-gradle-plugin to v1.0.3',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'iam/api-client/build.gradle',
@@ -269,22 +175,23 @@ describe('behavior of Java Dependency process', () => {
             ' }',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const javaDependency = new JavaDependency(octokit);
 
-    assert.ok(await javaDependency.checkPR());
+    assert.ok(await javaDependency.checkPR(incomingPR));
   });
 
   it('should return true in checkPR if incoming PR does match classRules - build.gradle - invoker', async () => {
-    const javaDependency = new JavaDependency(
-      'renovate-bot',
-      'chore(deps): update dependency com.google.cloud.functions.invoker:java-function-invoker to v1.0.2',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title:
+        'chore(deps): update dependency com.google.cloud.functions.invoker:java-function-invoker to v1.0.2',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'iam/api-client/build.gradle',
@@ -299,22 +206,23 @@ describe('behavior of Java Dependency process', () => {
             "+  invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2'\n",
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const javaDependency = new JavaDependency(octokit);
 
-    assert.ok(await javaDependency.checkPR());
+    assert.ok(await javaDependency.checkPR(incomingPR));
   });
 
   it('should return true in checkPR if incoming PR does match classRules - pom.xml - apiary update', async () => {
-    const javaDependency = new JavaDependency(
-      'renovate-bot',
-      'chore(deps): update dependency com.google.apis:google-api-services-cloudiot to v1-rev20210816-1.32.1',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title:
+        'chore(deps): update dependency com.google.apis:google-api-services-cloudiot to v1-rev20210816-1.32.1',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'iam/api-client/pom.xml',
@@ -332,13 +240,13 @@ describe('behavior of Java Dependency process', () => {
             '       <groupId>com.google.cloud</groupId>',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const javaDependency = new JavaDependency(octokit);
 
-    assert.ok(await javaDependency.checkPR());
+    assert.ok(await javaDependency.checkPR(incomingPR));
   });
 });

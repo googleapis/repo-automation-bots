@@ -12,64 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {LanguageRule, File, Process} from '../../interfaces';
+import {PullRequest} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
   reportIndividualChecks,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
+import {BaseLanguageRule} from '../base';
 
-export class PHPApiaryCodegen extends Process implements LanguageRule {
-  classRule: {
-    author: string;
-    titleRegex: RegExp;
+/**
+ * The PHPApiaryCodegen class's checkPR function returns
+ * true if the PR:
+  - has an author that is 'yoshi-code-bot'
+  - has a title that matches the regexp: /^Regenerate .* client$/
+ */
+export class PHPApiaryCodegen extends BaseLanguageRule {
+  classRule = {
+    author: 'yoshi-code-bot',
+    titleRegex: /^Regenerate .* client$/,
   };
-
-  constructor(
-    incomingPrAuthor: string,
-    incomingTitle: string,
-    incomingFileCount: number,
-    incomingChangedFiles: File[],
-    incomingRepoName: string,
-    incomingRepoOwner: string,
-    incomingPrNumber: number,
-    incomingOctokit: Octokit,
-    incomingBody?: string
-  ) {
-    super(
-      incomingPrAuthor,
-      incomingTitle,
-      incomingFileCount,
-      incomingChangedFiles,
-      incomingRepoName,
-      incomingRepoOwner,
-      incomingPrNumber,
-      incomingOctokit,
-      incomingBody
-    ),
-      (this.classRule = {
-        author: 'yoshi-code-bot',
-        titleRegex: /^Regenerate .* client$/,
-      });
+  constructor(octokit: Octokit) {
+    super(octokit);
   }
 
-  public async checkPR(): Promise<boolean> {
+  public async checkPR(incomingPR: PullRequest): Promise<boolean> {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
-      this.incomingPR.author
+      incomingPR.author
     );
 
     const titleMatches = checkTitleOrBody(
-      this.incomingPR.title,
+      incomingPR.title,
       this.classRule.titleRegex
     );
     reportIndividualChecks(
       ['authorshipMatches', 'titleMatches'],
       [authorshipMatches, titleMatches],
-      this.incomingPR.repoOwner,
-      this.incomingPR.repoName,
-      this.incomingPR.prNumber
+      incomingPR.repoOwner,
+      incomingPR.repoName,
+      incomingPR.prNumber
     );
 
     return authorshipMatches && titleMatches;

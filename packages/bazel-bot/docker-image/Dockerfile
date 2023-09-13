@@ -29,12 +29,11 @@ FROM gcr.io/gapic-images/googleapis:prod
 COPY --from=0 /jwt-cli/target/release/jwt /bin/jwt
 
 # Install the github command line tool, and jq to parse json responses.
-RUN apt-get --allow-releaseinfo-change update && \
-    apt-get install -y software-properties-common && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 && \
-    apt-add-repository https://cli.github.com/packages && \
-    apt-get update && \
-    apt-get install -y gh jq
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt update \
+    && apt-get install -y gh jq
 
 # Copy the source files from this directory.
 COPY generate-googleapis-gen.sh /generate-googleapis-gen.sh

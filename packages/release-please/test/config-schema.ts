@@ -52,6 +52,12 @@ describe('config-schema', () => {
   it('validates extra xml files', () => {
     assertValidConfig('extra_files_xml');
   });
+  it('validates onDemand', () => {
+    assertValidConfig('on_demand');
+  });
+  it('validates onDemand in a branch', () => {
+    assertValidConfig('on_demand_branch');
+  });
   it('rejects extra fields', () => {
     assertInvalidConfig('invalid', /must NOT have additional properties/);
   });

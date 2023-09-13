@@ -54,6 +54,7 @@ export = (app: Probot) => {
       'pull_request.edited',
       'pull_request.labeled',
       'pull_request.synchronize',
+      'pull_request.ready_for_review',
     ],
     async (context: Context<'issues'> | Context<'pull_request'>) => {
       const logger = getContextLogger(context);

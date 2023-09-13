@@ -27,6 +27,11 @@ processes:
   - "OwlBotTemplateChanges"
   - "OwlBotAPIChanges"
   - "PHPApiaryCodegen"
+  - "DockerDependency"
+  - "GoDependency"
+  - "GoApiaryCodegen"
+  - "PythonSampleAppDependency"
+  - "JavaSampleAppDependency"
 ```
 
 These seven processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
@@ -76,13 +81,11 @@ Below is what each process checks for:
 * NodeDependency:
   - Checks that the author is 'renovate-bot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-  - Max 3 files changed in the PR
   - Each file path must match one of these regexps:
     - /package\.json$/
   - All files must: 
-    - Match either these regexp:
-      - /^samples\/package.json$/
-      - /^\/package.json$/
+    - Match this regexp:
+      - /package.json$/
     - Increase the non-major package version of a dependency
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
@@ -104,14 +107,14 @@ Below is what each process checks for:
 * JavaDependency:
   - Checks that the author is 'renovate-bot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-  - Max 3 files changed in the PR
+  - Max 50 files changed in the PR
   - Each file path must match one of these regexps:
-    - /pom.xml$/
+    - /pom.xml$/ or /build.gradle$/
   - All files must: 
-    - Match this regexp: /pom.xml$/
+    - Match this regexp: /pom.xml$/ or /build.gradle$/
     - Increase the non-major package version of a dependency
     - Only change one dependency
-    - Change the dependency that was there previously, and that is on the title of the PR, and is a Google dependency
+    - Change the dependency that was there previously, and that is on the title of the PR, and is a Google or grpc dependency
 * OwlBotTemplateChanges:
   - Checks that the author is 'gcf-owl-bot[bot]'
   - Checks that the title of the PR does NOT include feat, fix, or !
@@ -128,6 +131,52 @@ Below is what each process checks for:
 * PHPApiaryCodegen
   - Checks that the author is 'yoshi-code-bot'
   - Checks that the title of the PR matches the regexp: /^Regenerate .* client$/
+* DockerDependency
+  - Checks that the author is 'renovate-bot'
+  - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update (\D[^:?]*).* docker (digest|tag) to (.*)$/
+  - Each file path must match this regexp:
+    - /Dockerfile$/
+  - All files must: 
+    - Match this regexp: /Dockerfile$/
+    - Increase the non-major package version of a dependency or the tag
+    - Only change one dependency
+    - Change the dependency that was there previously, and that is on the title of the PR
+* GoApiaryCodegen
+  - Checks that the author is 'yoshi-automation'
+  - Checks that the title of the PR matches the regexp: /^feat\(all\): auto-regenerate discovery clients$/
+* GoDependency
+  - Checks that the author is 'renovate-bot'
+  - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update (?:module (\D*?)|(\D*?) digest) to v?(\S*)$/
+  - Each file path must match one of these regexp:
+    - /go\.sum$/
+    - /go\.mod$/
+  - All files must: 
+    - Match this regexp: /go\.mod$/ (if it's go.sum, there are no additional checks, but it passes)
+    - Increase the non-major package version of a dependency or digest
+    - Change the dependency that was there previously, and that is on the title of the PR
+* PythonSampleAppDependency
+  - Checks that the author is 'renovate-bot'
+  - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  - Each file path must match one of these regexp:
+    - /requirements\.txt$/
+    - /requirements\.in$/
+  - All files must: 
+    - Match this regexp: /requirements.txt$/ or /requirements\.in$/
+    - Increase the non-major package version of a dependency or digest
+    - Change the dependency that was there previously, and that is on the title of the PR
+* JavaSampleAppDependency:
+  - Checks that the author is 'renovate-bot'
+  - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  - Max 50 files changed in the PR
+  - Each file path must match one of these regexps:
+    - /pom.xml$/
+  - All files must: 
+    - Match this regexp: /pom.xml$/
+    - Increase the non-major package version of a dependency
+    - Only change one dependency
+    - Change the dependency that was there previously, and that is on the title of the PR
+
+
 
   
 

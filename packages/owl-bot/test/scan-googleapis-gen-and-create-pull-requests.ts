@@ -360,6 +360,73 @@ Copy-Tag: ${copyTag}`
     assert.strictEqual(copyStateStore.store.size, 2);
   });
 
+  it('updates a bulk PR', async () => {
+    const anotherYaml: OwlBotYaml = {
+      'deep-copy-regex': [
+        {
+          source: '/b.txt',
+          dest: '/another/b.txt',
+        },
+      ],
+    };
+    const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml, [
+      {
+        yaml: anotherYaml,
+        path: 'SpellCheck/.OwlBot.yaml',
+      },
+    ]);
+
+    // Create a branch in the dest dir for the existing pull request.
+    const destDir = destRepo.getCloneUrl();
+    const headBranch = cc.branchNameForCopies([
+      '.github/.OwlBot.yaml',
+      'SpellCheck/.OwlBot.yaml',
+    ]);
+    cmd(`git branch ${headBranch}`, {cwd: destDir});
+
+    const pulls = new FakePulls();
+    pulls.list = ({head}) => {
+      if (
+        head === 'googleapis:owl-bot-copy' ||
+        head === 'googleapis:owl-bot-copy-SpellCheck'
+      ) {
+        return Promise.resolve({data: []});
+      }
+      const pullBody = 'This is the greatest pull request ever.';
+      return Promise.resolve({
+        data: [
+          {
+            owner: 'googleapis',
+            repo: 'nodejs-spell-check',
+            title: 'q',
+            body: pullBody,
+            head: headBranch,
+          },
+        ],
+      });
+    };
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const copyStateStore = new FakeCopyStateStore();
+    await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      undefined,
+      copyStateStore,
+      1, // combinePullsThreshold
+      undefined,
+      undefined,
+      5 // maxYamlCountPerPullRequest
+    );
+
+    // Confirm it created two pull requests.
+    assert.strictEqual(pulls.updates.length, 1);
+
+    // Confirm both were recorded in the copy state store.
+    assert.strictEqual(copyStateStore.store.size, 2);
+  });
+
   it('copies files and appends a pull request', async () => {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 

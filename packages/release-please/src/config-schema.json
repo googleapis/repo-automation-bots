@@ -111,6 +111,9 @@
                 },
                 "initialVersion": {
                     "type": "string"
+                },
+                "onDemand": {
+                    "type": "boolean"
                 }
             }
         },
@@ -167,7 +170,8 @@
         "disableFailureChecker": true,
         "versioning": true,
         "changelogType": true,
-        "initialVersion": true
+        "initialVersion": true,
+        "onDemand": true
     },
     "allOf": [
         { "$ref": "#/definitions/BranchOptions"},
@@ -207,7 +211,8 @@
                             "disableFailureChecker": true,
                             "versioning": true,
                             "changelogType": true,
-                            "initialVersion": true
+                            "initialVersion": true,
+                            "onDemand": true
                         },
                         "allOf": [
                             { "$ref": "#/definitions/BranchOptions"},

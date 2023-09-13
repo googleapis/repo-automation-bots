@@ -58,6 +58,17 @@ export interface Versions {
 }
 
 /**
+ * Interface for the versions found in the selected files. These versions are
+ * picked out based on the regex listed in `./language-versioning-rules.json` for
+ * that particular file. From there, you will get the previous dependency, new
+ * dependency, and previous version number and changed version number.
+ */
+export interface VersionsWithShaDiff extends Versions {
+  oldShaOrRevTag?: string;
+  newShaOrRevTag?: string;
+}
+
+/**
  * Interface for return type of array from getTargetFiles. It is the amalgamation
  * of the file that was changed in the PR, plus the file rule that applies
  * to that given file.
@@ -73,27 +84,22 @@ export interface FileAndMetadata {
  * checks, and then overall confirms if that PR passes additional checks for its given language.
  */
 export interface LanguageRule {
-  checkPR(): Promise<boolean>;
-  incomingPR: {
-    author: string;
-    title: string;
-    fileCount: number;
-    changedFiles: File[];
-    repoName: string;
-    repoOwner: string;
-    prNumber: number;
-    body?: string;
-  };
-  classRule: {
-    author: string;
-    titleRegex?: RegExp;
-    titleRegexExclude?: RegExp;
-    fileNameRegex?: RegExp[];
-    maxFiles?: number;
-    fileRules?: FileRule[];
-    bodyRegex?: RegExp;
-  };
+  checkPR(pullRequest: PullRequest): Promise<boolean>;
   octokit: Octokit;
+}
+
+/**
+ * Interface for the information in a Pull Request
+ */
+export interface PullRequest {
+  author: string;
+  title: string;
+  fileCount: number;
+  changedFiles: File[];
+  repoName: string;
+  repoOwner: string;
+  prNumber: number;
+  body?: string | null;
 }
 
 /**

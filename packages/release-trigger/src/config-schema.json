@@ -13,6 +13,12 @@
         },
         "multiScmName": {
             "type": "string"
+        },
+        "triggerWithoutPullRequest": {
+            "type": "boolean"
+        },
+        "lang": {
+            "type": "string"
         }
     }
 }

@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File, FileSpecificRule, FileAndMetadata, Versions} from './interfaces';
+import {
+  File,
+  FileSpecificRule,
+  FileAndMetadata,
+  Versions,
+  VersionsWithShaDiff,
+} from './interfaces';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -146,7 +152,7 @@ export function getVersions(
 /**
  * Given a patch for a file that was changed in a PR, and a regular expression to search
  * for the old version number and a regular expression to search for the new version number,
- * this function will return the old and new versions of a package for not-Java (see getJavaVersions for other function).
+ * this function will return the old and new versions of a non-Java package (see getJavaVersions for other function).
  *
  * @param versionFile the changed file that has additional rules to conform to
  * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
@@ -157,7 +163,7 @@ export function getVersionsV2(
   versionFile: File | undefined,
   oldVersionRegex?: RegExp,
   newVersionRegex?: RegExp
-): Versions | undefined {
+): Versions | VersionsWithShaDiff | undefined {
   if (!versionFile || !oldVersionRegex || !newVersionRegex) {
     return undefined;
   }
@@ -168,19 +174,24 @@ export function getVersionsV2(
   let oldMinorVersion;
   let newMajorVersion;
   let newMinorVersion;
+  let oldShaOrRevTag;
+  let newShaOrRevTag;
 
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
+
   if (oldVersions) {
     oldDependencyName = oldVersions[1];
     oldMajorVersion = oldVersions[2];
     oldMinorVersion = oldVersions[3];
+    oldShaOrRevTag = oldVersions[4] || undefined;
   }
 
   if (newVersions) {
     newDependencyName = newVersions[1];
     newMajorVersion = newVersions[2];
     newMinorVersion = newVersions[3];
+    newShaOrRevTag = newVersions[4] || undefined;
   }
 
   // If there is a change with a file that requires special validation checks,
@@ -209,6 +220,8 @@ export function getVersionsV2(
     oldMinorVersion,
     newMajorVersion,
     newMinorVersion,
+    oldShaOrRevTag,
+    newShaOrRevTag,
   };
 }
 
@@ -280,9 +293,8 @@ export function doesDependencyChangeMatchPRTitleV2(
   dependencyRegex: RegExp,
   title: string
 ): boolean {
-  let dependencyName;
+  let dependencyName = '';
   const titleRegex = title.match(dependencyRegex);
-
   if (titleRegex) {
     dependencyName = titleRegex[2];
   }
@@ -291,6 +303,7 @@ export function doesDependencyChangeMatchPRTitleV2(
     dependencyName === versions.newDependencyName
   );
 }
+
 /**
  * This function determines whether the major version of a package was changed.
  *
@@ -357,7 +370,7 @@ export function checkFilePathsMatch(
   // Each file in a given PR should match at least one of the configuration rules
   // in auto-appprove.yml; should set filesMatch to false if at least one does not
   for (const file of prFiles) {
-    if (!changedFilesRules.some(x => file.match(x))) {
+    if (!changedFilesRules.some(x => x.test(file))) {
       filesMatch = false;
     }
   }
@@ -411,6 +424,25 @@ export function checkFileCount(
  */
 export function runVersioningValidation(versions: Versions): boolean {
   return !isMajorVersionChanging(versions) && isMinorVersionUpgraded(versions);
+}
+
+/**
+ * Runs additional validation checks when a version is upgraded to ensure that the
+ * version is only upgraded, not downgraded, and that the major version is not bumped.
+ * If the PR could have a rev or sha (as in Docker or Go PRs), this checks that
+ * the minor version is bumped, and/or the rev or sha is upgraded
+ *
+ * @param versions the versions object returned from getVersions, getVersionsV2, and getJavaVersions
+ * @returns true if the version is only bumped a minor, not a major
+ */
+export function isVersionValidWithShaOrRev(
+  versions: VersionsWithShaDiff
+): boolean {
+  return (
+    !isMajorVersionChanging(versions) &&
+    (versions.oldShaOrRevTag !== versions.newShaOrRevTag ||
+      isMinorVersionUpgraded(versions))
+  );
 }
 
 /**
@@ -502,7 +534,7 @@ export function getJavaVersions(
     }
 
     if (newVersions) {
-      // Whatever the new dependency name iss, or if it was just `grpcVersion`
+      // Whatever the new dependency name is, or if it was just `grpcVersion`
       newDependencyName =
         newVersions.groups?.newDependencyNameBuild ||
         newVersions.groups?.newGrpcVersionBuild;

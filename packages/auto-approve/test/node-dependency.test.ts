@@ -23,91 +23,28 @@ const octokit = new Octokit({
 });
 
 describe('behavior of Node Dependency process', () => {
-  it('should get constructed with the appropriate values', () => {
-    const nodeDependency = new NodeDependency(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
-
-    const expectation = {
-      incomingPR: {
-        author: 'testAuthor',
-        title: 'testTitle',
-        fileCount: 3,
-        changedFiles: [{filename: 'hello', sha: '2345'}],
-        repoName: 'testRepoName',
-        repoOwner: 'testRepoOwner',
-        prNumber: 1,
-        body: 'body',
-      },
-      classRule: {
-        author: 'renovate-bot',
-        titleRegex:
-          /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-        maxFiles: 3,
-        fileNameRegex: [/package\.json$/],
-        fileRules: [
-          {
-            dependencyTitle:
-              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-            targetFileToCheck: /^samples\/package.json$/,
-            // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-            oldVersion:
-              /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
-            // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
-            newVersion:
-              /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
-          },
-          {
-            dependencyTitle:
-              /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-            targetFileToCheck: /^package.json$/,
-            // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
-            oldVersion:
-              /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/,
-            // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
-            newVersion:
-              /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
-          },
-        ],
-      },
-      octokit,
-    };
-
-    assert.deepStrictEqual(nodeDependency.incomingPR, expectation.incomingPR);
-    assert.deepStrictEqual(nodeDependency.classRule, expectation.classRule);
-    assert.deepStrictEqual(nodeDependency.octokit, octokit);
-  });
-
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
-    const nodeDependency = new NodeDependency(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+    const incomingPR = {
+      author: 'testAuthor',
+      title: 'testTitle',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeDependency = new NodeDependency(octokit);
 
-    assert.deepStrictEqual(await nodeDependency.checkPR(), false);
+    assert.deepStrictEqual(await nodeDependency.checkPR(incomingPR), false);
   });
 
   it('should return false in checkPR if one of the files did not match additional rules in fileRules', async () => {
-    const nodeDependency = new NodeDependency(
-      'renovate-bot',
-      'fix(deps): update dependency @octokit/auth-app to v16',
-      3,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'fix(deps): update dependency @octokit/auth-app to v16',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'package.json',
@@ -143,22 +80,22 @@ describe('behavior of Node Dependency process', () => {
             '   "engines": {',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeDependency = new NodeDependency(octokit);
 
-    assert.deepStrictEqual(await nodeDependency.checkPR(), false);
+    assert.deepStrictEqual(await nodeDependency.checkPR(incomingPR), false);
   });
 
   it('should return true in checkPR if incoming PR does match ONE OF the classRules, and no files do not match ANY of the rules', async () => {
-    const nodeDependency = new NodeDependency(
-      'renovate-bot',
-      'fix(deps): update dependency @octokit/auth-app to v16',
-      1,
-      [
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'fix(deps): update dependency @octokit/auth-app to v16',
+      fileCount: 1,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'package.json',
@@ -177,13 +114,53 @@ describe('behavior of Node Dependency process', () => {
             '   "engines": {',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeDependency = new NodeDependency(octokit);
 
-    assert.ok(await nodeDependency.checkPR());
+    assert.ok(await nodeDependency.checkPR(incomingPR));
+  });
+
+  it('should return true in checkPR if incoming PR has ^ or ~ characters', async () => {
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'fix(deps): update dependency recast to ^0.23.0',
+      fileCount: 1,
+      changedFiles: [
+        {
+          sha: '64d9442dc0e7b39caafa07604186d58e57f1745d',
+          filename: 'packages/typeless-sample-bot/package.json',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/googleapis/google-cloud-node/blob/d17c6c9f32fc7c62a6d728969e4e6982766eb2d0/packages%2Ftypeless-sample-bot%2Fpackage.json',
+          raw_url:
+            'https://github.com/googleapis/google-cloud-node/raw/d17c6c9f32fc7c62a6d728969e4e6982766eb2d0/packages%2Ftypeless-sample-bot%2Fpackage.json',
+          contents_url:
+            'https://api.github.com/repos/googleapis/google-cloud-node/contents/packages%2Ftypeless-sample-bot%2Fpackage.json?ref=d17c6c9f32fc7c62a6d728969e4e6982766eb2d0',
+          patch:
+            '@@ -33,7 +33,7 @@\n' +
+            '     "@babel/traverse": "^7.18.10",\n' +
+            '     "chalk": "^5.0.1",\n' +
+            '     "debug": "^4.3.4",\n' +
+            '-    "recast": "^0.22.0",\n' +
+            '+    "recast": "^0.23.0"\n' +
+            '   },\n' +
+            '   "devDependencies": {',
+        },
+      ],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeDependency = new NodeDependency(octokit);
+
+    assert.ok(await nodeDependency.checkPR(incomingPR));
   });
 });

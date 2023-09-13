@@ -17,6 +17,7 @@ import Ajv from 'ajv';
 import schema from './repo-metadata-schema.json';
 import {Octokit} from '@octokit/rest';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
+import * as StoreMetadata from './store-metadata';
 
 export interface ValidationResult {
   status: 'success' | 'error';
@@ -29,6 +30,11 @@ const API_LIBRARY_TYPES = [
   'GAPIC_MANUAL',
   'AGENT',
   'GAPIC_COMBO',
+];
+
+// Manually curated list of allowed api_shortname entries
+const EXTRA_ALLOWED_API_SHORTNAMES = [
+  'bigquery', // handwritten client that has no protos
 ];
 
 interface ApiIndex {
@@ -94,6 +100,17 @@ export class Validate {
       }
     }
 
+    // On success, store an entry in a metadata table. This data is
+    // used to answer questions such as API coverage:
+    if (result.status === 'success') {
+      await StoreMetadata.storeMetadata({
+        release_level: repoMetadata.release_level,
+        language: repoMetadata.language,
+        repository: repoMetadata.repository,
+        api_service: `${repoMetadata.api_shortname}.googleapis.com`,
+      });
+    }
+
     return result;
   }
   // Returns list of valid API names, based on api-index-v1.json file
@@ -101,7 +118,7 @@ export class Validate {
   // on googleapis/googleapis:
   async validApiShortNames() {
     const apiIndex = await this.getApiIndex();
-    const apiShortNames = new Set<string>();
+    const apiShortNames = new Set<string>(EXTRA_ALLOWED_API_SHORTNAMES);
     for (const api of apiIndex.apis) {
       const match = api.hostName.match(/(?<service>[^.]+)/);
       if (match && match.groups) {

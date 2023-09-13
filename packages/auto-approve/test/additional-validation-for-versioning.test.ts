@@ -30,6 +30,7 @@ import {
   checkFileCount,
   runVersioningValidation,
   getOpenPRsInRepoFromSameAuthor,
+  isVersionValidWithShaOrRev,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -411,17 +412,7 @@ describe('run additional versioning checks', () => {
           '   "engines": {',
       };
 
-      const fileRule = new NodeRelease(
-        'testAuthor',
-        'testTitle',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const fileRule = new NodeRelease(octokit);
 
       const getVersionsExpectation = {
         oldDependencyName: 'version',
@@ -430,11 +421,13 @@ describe('run additional versioning checks', () => {
         oldMinorVersion: '3.0',
         newMajorVersion: '2',
         newMinorVersion: '3.1',
+        newShaOrRevTag: undefined,
+        oldShaOrRevTag: undefined,
       };
       const versions = getVersionsV2(
         PRFile,
-        fileRule.classRule.fileRules![0].oldVersion,
-        fileRule.classRule.fileRules![0].newVersion
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -460,17 +453,7 @@ describe('run additional versioning checks', () => {
           '   "engines": {',
       };
 
-      const fileRule = new NodeDependency(
-        'testAuthor',
-        'testTitle',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const fileRule = new NodeDependency(octokit);
 
       const getVersionsExpectation = {
         oldDependencyName: '@google-cloud/nodejs-asset',
@@ -479,11 +462,13 @@ describe('run additional versioning checks', () => {
         oldMinorVersion: '3.0',
         newMajorVersion: '2',
         newMinorVersion: '3.1',
+        newShaOrRevTag: undefined,
+        oldShaOrRevTag: undefined,
       };
       const versions = getVersionsV2(
         PRFile,
-        fileRule.classRule.fileRules![1].oldVersion,
-        fileRule.classRule.fileRules![1].newVersion
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -509,44 +494,24 @@ describe('run additional versioning checks', () => {
           '   "engines": {',
       };
 
-      const fileRule = new NodeDependency(
-        'testAuthor',
-        'testTitle',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const fileRule = new NodeDependency(octokit);
 
       const versions = getVersionsV2(
         PRFile,
-        fileRule.classRule.fileRules![1].oldVersion,
-        fileRule.classRule.fileRules![1].newVersion
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
       assert.strictEqual(versions, undefined);
     });
 
     it('should return undefined if the target file does not exist', () => {
-      const fileRule = new NodeDependency(
-        'testAuthor',
-        'testTitle',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const fileRule = new NodeDependency(octokit);
 
       assert.strictEqual(
         getVersionsV2(
           undefined,
-          fileRule.classRule.fileRules![1].oldVersion,
-          fileRule.classRule.fileRules![1].newVersion
+          fileRule.fileRules![0].oldVersion,
+          fileRule.fileRules![0].newVersion
         ),
         undefined
       );
@@ -571,17 +536,7 @@ describe('run additional versioning checks', () => {
           '     <dependency>',
       };
 
-      const fileRule = new JavaDependency(
-        'testAuthor',
-        'testTitle',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const fileRule = new JavaDependency(octokit);
 
       const getVersionsExpectation = {
         oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
@@ -593,8 +548,8 @@ describe('run additional versioning checks', () => {
       };
       const versions = getJavaVersions(
         PRFile,
-        fileRule.classRule.fileRules![0].oldVersion,
-        fileRule.classRule.fileRules![0].newVersion
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -619,17 +574,7 @@ describe('run additional versioning checks', () => {
           '         <!-- Test dependencies -->',
       };
 
-      const fileRule = new JavaDependency(
-        'testAuthor',
-        'testTitle',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const fileRule = new JavaDependency(octokit);
 
       const getVersionsExpectation = {
         oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
@@ -641,8 +586,8 @@ describe('run additional versioning checks', () => {
       };
       const versions = getJavaVersions(
         PRFile,
-        fileRule.classRule.fileRules![0].oldVersion,
-        fileRule.classRule.fileRules![0].newVersion
+        fileRule.fileRules![0].oldVersion,
+        fileRule.fileRules![0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -917,22 +862,12 @@ describe('run additional versioning checks', () => {
         newMinorVersion: '1.0',
       };
 
-      const nodeDependency = new NodeDependency(
-        'testAuthor',
-        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const nodeDependency = new NodeDependency(octokit);
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
         versions,
-        nodeDependency.classRule.fileRules![0].dependencyTitle!,
-        nodeDependency.incomingPR.title
+        nodeDependency.fileRules![0].dependencyTitle!,
+        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0'
       );
 
       assert.strictEqual(doesDependencyMatch, false);
@@ -948,22 +883,12 @@ describe('run additional versioning checks', () => {
         newMinorVersion: '1.0',
       };
 
-      const nodeDependency = new NodeDependency(
-        'testAuthor',
-        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const nodeDependency = new NodeDependency(octokit);
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
         versions,
-        nodeDependency.classRule.fileRules![0].dependencyTitle!,
-        nodeDependency.incomingPR.title
+        nodeDependency.fileRules![0].dependencyTitle!,
+        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0'
       );
 
       assert.ok(doesDependencyMatch);
@@ -979,22 +904,12 @@ describe('run additional versioning checks', () => {
         newMinorVersion: '1.0',
       };
 
-      const nodeDependency = new NodeDependency(
-        'testAuthor',
-        'chore: update dependency google-cloud-secret-manager to v2.5.0',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const nodeDependency = new NodeDependency(octokit);
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
         versions,
-        nodeDependency.classRule.fileRules![0].dependencyTitle!,
-        nodeDependency.incomingPR.title
+        nodeDependency.fileRules![0].dependencyTitle!,
+        'chore: update dependency google-cloud-secret-manager to v2.5.0'
       );
 
       assert.strictEqual(doesDependencyMatch, false);
@@ -1012,22 +927,12 @@ describe('run additional versioning checks', () => {
         newMinorVersion: '1.0',
       };
 
-      const javaDependency = new JavaDependency(
-        'testAuthor',
-        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const javaDependency = new JavaDependency(octokit);
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
         versions,
-        javaDependency.classRule.fileRules![0].dependencyTitle!,
-        javaDependency.incomingPR.title
+        javaDependency.fileRules![0].dependencyTitle!,
+        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0'
       );
 
       assert.strictEqual(doesDependencyMatch, false);
@@ -1043,22 +948,12 @@ describe('run additional versioning checks', () => {
         newMinorVersion: '1.0',
       };
 
-      const javaDependency = new JavaDependency(
-        'testAuthor',
-        'chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v2.5.0',
-        3,
-        [{filename: 'hello', sha: '2345'}],
-        'testRepoName',
-        'testRepoOwner',
-        1,
-        octokit,
-        'body'
-      );
+      const javaDependency = new JavaDependency(octokit);
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
         versions,
-        javaDependency.classRule.fileRules![0].dependencyTitle!,
-        javaDependency.incomingPR.title
+        javaDependency.fileRules![0].dependencyTitle!,
+        'chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v2.5.0'
       );
 
       assert.ok(doesDependencyMatch);
@@ -1204,6 +1099,36 @@ describe('run additional versioning checks', () => {
       };
 
       assert.deepStrictEqual(runVersioningValidation(versions), false);
+    });
+
+    it('should return true if one of sha and/or minor is bumped', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '2.1',
+        newShaOrRevTag: '20221014081412-f15817d10f9b',
+        oldShaOrRevTag: '20221017152216-f25eb7ecb193',
+      };
+
+      assert.deepStrictEqual(isVersionValidWithShaOrRev(versions), true);
+    });
+
+    it('should return false if neither the sha nor the minor are bumped', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '2.0',
+        newShaOrRevTag: '20221014081412-f15817d10f9b',
+        oldShaOrRevTag: '20221014081412-f15817d10f9b',
+      };
+
+      assert.deepStrictEqual(isVersionValidWithShaOrRev(versions), false);
     });
   });
 

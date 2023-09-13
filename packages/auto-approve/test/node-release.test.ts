@@ -31,79 +31,29 @@ describe('behavior of Node Release process', () => {
   afterEach(() => {
     sinon.restore();
   });
-  it('should get constructed with the appropriate values', () => {
-    const nodeRelease = new NodeRelease(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
-
-    const expectation = {
-      incomingPR: {
-        author: 'testAuthor',
-        title: 'testTitle',
-        fileCount: 3,
-        changedFiles: [{filename: 'hello', sha: '2345'}],
-        repoName: 'testRepoName',
-        repoOwner: 'testRepoOwner',
-        prNumber: 1,
-        body: 'body',
-      },
-      classRule: {
-        author: 'release-please',
-        titleRegex: /^chore: release/,
-        maxFiles: 2,
-        fileNameRegex: [/^package.json$/, /^CHANGELOG.md$/],
-        fileRules: [
-          {
-            targetFileToCheck: /^package.json$/,
-            // This would match: -  "version": "2.3.0"
-            oldVersion: new RegExp(
-              /-[\s]*"(@?\S*)":[\s]"([0-9]*)*\.([0-9]*\.[0-9]*)",/
-            ),
-            // This would match: +  "version": "2.3.0"
-            newVersion: new RegExp(
-              /\+[\s]*"(@?\S*)":[\s]"([0-9]*)*\.([0-9]*\.[0-9]*)",/
-            ),
-          },
-        ],
-      },
-      octokit,
-    };
-
-    assert.deepStrictEqual(nodeRelease.incomingPR, expectation.incomingPR);
-    assert.deepStrictEqual(nodeRelease.classRule, expectation.classRule);
-    assert.deepStrictEqual(nodeRelease.octokit, octokit);
-  });
 
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
-    const nodeRelease = new NodeRelease(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+    const incomingPR = {
+      author: 'testAuthor',
+      title: 'testTitle',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeRelease = new NodeRelease(octokit);
 
-    assert.deepStrictEqual(await nodeRelease.checkPR(), false);
+    assert.deepStrictEqual(await nodeRelease.checkPR(incomingPR), false);
   });
 
   it('should return false in checkPR if one of the files does not match regular expression for permitted files', async () => {
-    const nodeRelease = new NodeRelease(
-      'release-please',
-      'fix(deps): update dependency mocha to v16',
-      3,
-      [
+    const incomingPR = {
+      author: 'release-please',
+      title: 'fix(deps): update dependency mocha to v16',
+      fileCount: 3,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'package.json',
@@ -139,22 +89,22 @@ describe('behavior of Node Release process', () => {
             '   "engines": {',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeRelease = new NodeRelease(octokit);
 
-    assert.deepStrictEqual(await nodeRelease.checkPR(), false);
+    assert.deepStrictEqual(await nodeRelease.checkPR(incomingPR), false);
   });
 
   it('should return true in checkPR if incoming PR does match ONE OF the classRules, and no files do not match ANY of the rules', async () => {
-    const nodeRelease = new NodeRelease(
-      'release-please',
-      'chore: release 2.3.1',
-      1,
-      [
+    const incomingPR = {
+      author: 'release-please',
+      title: 'chore: release 2.3.1',
+      fileCount: 1,
+      changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
           filename: 'package.json',
@@ -173,13 +123,13 @@ describe('behavior of Node Release process', () => {
             '   "engines": {',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeRelease = new NodeRelease(octokit);
 
-    assert.ok(await nodeRelease.checkPR());
+    assert.ok(await nodeRelease.checkPR(incomingPR));
   });
 });

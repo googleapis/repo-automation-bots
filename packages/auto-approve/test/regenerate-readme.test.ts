@@ -23,81 +23,41 @@ const octokit = new Octokit({
 });
 
 describe('behavior of RegenerateReadme process', () => {
-  it('should get constructed with the appropriate values', () => {
-    const regenerateReadme = new RegenerateReadme(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
-
-    const expectation = {
-      incomingPR: {
-        author: 'testAuthor',
-        title: 'testTitle',
-        fileCount: 3,
-        changedFiles: [{filename: 'hello', sha: '2345'}],
-        repoName: 'testRepoName',
-        repoOwner: 'testRepoOwner',
-        prNumber: 1,
-        body: 'body',
-      },
-      classRule: {
-        author: 'yoshi-automation',
-        titleRegex: /^chore: regenerate README$/,
-        maxFiles: 2,
-        fileNameRegex: [
-          /^README.md$/,
-          /\.github\/readme\/synth.metadata\/synth\.metadata$/,
-        ],
-      },
-      octokit,
-    };
-
-    assert.deepStrictEqual(regenerateReadme.incomingPR, expectation.incomingPR);
-    assert.deepStrictEqual(regenerateReadme.classRule, expectation.classRule);
-    assert.deepStrictEqual(regenerateReadme.octokit, octokit);
-  });
-
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
-    const regenerateReadme = new RegenerateReadme(
-      'testAuthor',
-      'testTitle',
-      3,
-      [{filename: 'hello', sha: '2345'}],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+    const incomingPR = {
+      author: 'testAuthor',
+      title: 'testTitle',
+      fileCount: 3,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const regenerateReadme = new RegenerateReadme(octokit);
 
-    assert.deepStrictEqual(await regenerateReadme.checkPR(), false);
+    assert.deepStrictEqual(await regenerateReadme.checkPR(incomingPR), false);
   });
 
   it('should return true in checkPR if incoming PR does match classRules', async () => {
-    const regenerateReadme = new RegenerateReadme(
-      'yoshi-automation',
-      'chore: regenerate README',
-      2,
-      [
+    const incomingPR = {
+      author: 'yoshi-automation',
+      title: 'chore: regenerate README',
+      fileCount: 2,
+      changedFiles: [
         {
           filename: 'README.md',
           sha: '2345',
         },
       ],
-      'testRepoName',
-      'testRepoOwner',
-      1,
-      octokit,
-      'body'
-    );
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
 
-    assert.ok(await regenerateReadme.checkPR());
+    const regenerateReadme = new RegenerateReadme(octokit);
+
+    assert.ok(await regenerateReadme.checkPR(incomingPR));
   });
 });

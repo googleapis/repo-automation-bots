@@ -29,6 +29,7 @@ import yaml from 'js-yaml';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import * as gcfUtilsModule from 'gcf-utils';
+import * as datastoreLockModule from '@google-automations/datastore-lock';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
@@ -69,6 +70,13 @@ describe('ReleasePleaseBot', () => {
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
       .resolves(new Octokit({auth: 'faketoken'}));
+
+    sandbox.replace(datastoreLockModule, 'withDatastoreLock', async function (
+      _details: any,
+      f: () => Promise<void>
+    ) {
+      await f();
+    } as any);
   });
 
   afterEach(() => {
@@ -633,6 +641,29 @@ describe('ReleasePleaseBot', () => {
         sinon.assert.notCalled(createReleasesStub);
         sinon.assert.calledOnce(addIssueStub);
       });
+
+      it('ignores non-releases for on-demand repos', async () => {
+        getConfigStub.resolves(loadConfig('on_demand.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.notCalled(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+      });
+
+      it('handles releases for on-demand repos', async () => {
+        getConfigStub.resolves(loadConfig('on_demand.yml'));
+        payload = require(resolve(fixturesPath, './push_to_master_release'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.notCalled(createPullRequestsStub);
+        sinon.assert.calledOnce(createReleasesStub);
+      });
     });
 
     describe('for manifest releases', () => {
@@ -734,6 +765,30 @@ describe('ReleasePleaseBot', () => {
       sinon.assert.notCalled(createReleasesStub);
       sinon.assert.calledOnce(fromManifestStub);
       sinon.assert.calledOnce(addIssueStub);
+    });
+
+    it('ignores archived repositories', async () => {
+      payload = require(resolve(fixturesPath, './push_to_main_archived'));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+    });
+
+    it('ignores disabled repositories', async () => {
+      payload = require(resolve(fixturesPath, './push_to_main_disabled'));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
     });
   });
 
@@ -872,6 +927,33 @@ describe('ReleasePleaseBot', () => {
       );
     });
 
+    it('should try to create a release pull request for on-demand repo', async () => {
+      const payload = require(resolve(fixturesPath, './pull_request_labeled'));
+      getConfigStub.resolves(loadConfig('on_demand.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+      sinon.assert.calledOnce(createPullRequestsStub);
+      sinon.assert.calledOnceWithExactly(
+        fromConfigStub,
+        sinon.match.instanceOf(GitHub),
+        'master',
+        sinon.match.has('releaseType', 'java-yoshi'),
+        sinon.match.any,
+        undefined
+      );
+    });
+
     it('should ignore failing to remove the label', async () => {
       const payload = require(resolve(fixturesPath, './pull_request_labeled'));
       getConfigStub.resolves(loadConfig('valid.yml'));
@@ -903,6 +985,34 @@ describe('ReleasePleaseBot', () => {
     it('should try to tag a GitHub release', async () => {
       const payload = require(resolve(fixturesPath, './pull_request_labeled'));
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+      sinon.assert.calledOnce(createPullRequestsStub);
+      sinon.assert.calledOnce(createReleasesStub);
+      sinon.assert.calledOnceWithExactly(
+        fromConfigStub,
+        sinon.match.instanceOf(GitHub),
+        'master',
+        sinon.match.has('releaseType', 'java-yoshi'),
+        sinon.match.any,
+        undefined
+      );
+    });
+
+    it('should try to tag a GitHub release for an on-demand repo', async () => {
+      const payload = require(resolve(fixturesPath, './pull_request_labeled'));
+      getConfigStub.resolves(loadConfig('on_demand.yml'));
       const requests = nock('https://api.github.com')
         .delete(
           '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
@@ -970,6 +1080,36 @@ describe('ReleasePleaseBot', () => {
         id: 'abc123',
       });
 
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+    });
+
+    it('ignores archived repositories', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_labeled_archived'
+      ));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
+      sinon.assert.notCalled(createPullRequestsStub);
+      sinon.assert.notCalled(createReleasesStub);
+    });
+
+    it('ignores disabled repositories', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_labeled_disabled'
+      ));
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+
+      sinon.assert.notCalled(getConfigStub);
       sinon.assert.notCalled(createPullRequestsStub);
       sinon.assert.notCalled(createReleasesStub);
     });

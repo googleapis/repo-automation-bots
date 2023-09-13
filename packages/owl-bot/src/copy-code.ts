@@ -289,15 +289,22 @@ async function findAndAppendPullRequest(
   // Is there a pull request open with the branch name for this
   // yaml path set?
   const destBranch = branchNameForCopies(yamlPaths);
+  const head = `${params.destRepo.owner}:${destBranch}`;
+  logger.info(
+    `Looking for existing, open pull request on ${params.destRepo.owner}/${params.destRepo.repo} with head: ${head}`
+  );
   const pulls = await octokit.pulls.list({
     owner: params.destRepo.owner,
     repo: params.destRepo.repo,
     state: 'open',
-    head: `${params.destRepo.owner}:${destBranch}`,
+    head,
   });
   const pull = pulls.data.length > 0 ? pulls.data[0] : undefined;
 
   if (!pull) {
+    logger.info(
+      'No existing pull request found, should attempt to create a new one.'
+    );
     return false;
   }
 
@@ -419,13 +426,15 @@ interface WorkingCopyParams extends CopyParams {
  * googleapis-gen.  Creates pull request if there's none matching and open.
  *
  * @param yamlPaths .OwlBot.yaml paths that triggered this copy
+ * @param draftPullRequests when creating pull requests, make them drafts
  * @returns a subset of yamlPaths that didn't correspond to any open pull requests
  */
 export async function copyCodeAndAppendOrCreatePullRequest(
   params: CopyParams,
   yamlPaths: string[],
   logger: Logger = console,
-  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No
+  withNestedCommitDelimiters: WithNestedCommitDelimiters = WithNestedCommitDelimiters.No,
+  draftPulledRequests = false
 ): Promise<void> {
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
@@ -498,6 +507,19 @@ export async function copyCodeAndAppendOrCreatePullRequest(
       i + params.maxYamlCountPerPullRequest
     );
 
+    const wparams: WorkingCopyParams = {...params, destDir, workDir};
+    const updated = await findAndAppendPullRequest(
+      wparams,
+      leftOverBatch,
+      logger,
+      withNestedCommitDelimiters
+    );
+
+    if (updated) {
+      logger.info('Updated existing batch PR.');
+      continue;
+    }
+
     const destBranch = branchNameForCopies(leftOverBatch);
     cmd(`git checkout ${defaultBranch}`, {cwd: destDir});
     cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
@@ -560,7 +582,9 @@ command in a local clone of this repo:
       WithRegenerateCheckbox.Yes,
       apiList,
       Force.Yes,
-      logger
+      logger,
+      undefined,
+      draftPulledRequests
     );
 
     // Record that we've copied the code.

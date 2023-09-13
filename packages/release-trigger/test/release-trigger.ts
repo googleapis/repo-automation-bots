@@ -212,7 +212,7 @@ describe('release-trigger', () => {
     });
     it('should execute autorelease trigger-single command', async () => {
       const execStub = sandbox
-        .stub(releaseTriggerModule, 'exec')
+        .stub(releaseTriggerModule, 'execFile')
         .resolves({stdout: 'some output', stderr: 'some error output'});
       const {stdout, stderr} = await triggerKokoroJob(
         'https://github.com/testOwner/testRepo/pull/1234',
@@ -224,7 +224,7 @@ describe('release-trigger', () => {
     });
 
     it('should catch and log an exception', async () => {
-      const execStub = sandbox.stub(releaseTriggerModule, 'exec').resolves({
+      const execStub = sandbox.stub(releaseTriggerModule, 'execFile').resolves({
         stdout: 'some stdout message',
         stderr: 'some stderr message',
         error: new Error('Command failed: /bin/false'),
@@ -251,7 +251,7 @@ describe('release-trigger', () => {
 
     it('should trigger multi-scm job', async () => {
       const execStub = sandbox
-        .stub(releaseTriggerModule, 'exec')
+        .stub(releaseTriggerModule, 'execFile')
         .resolves({stdout: 'some output', stderr: 'some error output'});
       const {stdout, stderr} = await triggerKokoroJob(
         'https://github.com/testOwner/testRepo/pull/1234',
@@ -263,10 +263,13 @@ describe('release-trigger', () => {
       assert.strictEqual(stdout, 'some output');
       assert.strictEqual(stderr, 'some error output');
       sinon.assert.calledOnce(execStub);
-      sinon.assert.calledWith(
-        execStub,
-        'python3 -m autorelease trigger-single --pull=https://github.com/testOwner/testRepo/pull/1234 --multi-scm-name=some-multi-scm-name'
-      );
+      sinon.assert.calledWith(execStub, 'python3', [
+        '-m',
+        'autorelease',
+        'trigger-single',
+        '--pull=https://github.com/testOwner/testRepo/pull/1234',
+        '--multi-scm-name=some-multi-scm-name',
+      ]);
     });
   });
 

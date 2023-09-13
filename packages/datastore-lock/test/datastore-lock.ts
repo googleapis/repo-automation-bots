@@ -17,7 +17,12 @@ import {describe, it, before, after} from 'mocha';
 import nock from 'nock';
 
 import DataStoreEmulator from 'google-datastore-emulator';
-import {DatastoreLock} from '../src/datastore-lock';
+import {
+  DatastoreLock,
+  DatastoreLockDetails,
+  datastoreLockFromDetails,
+  withDatastoreLock,
+} from '../src/datastore-lock';
 
 describe('datastore-lock', () => {
   let emulator: DataStoreEmulator;
@@ -88,6 +93,39 @@ describe('datastore-lock', () => {
       // Second request asks, is there a lock? It should have timed out:
       const l2 = new DatastoreLock('datastore-lock-test', 'test');
       assert.strictEqual(await l2.peek(), false);
+    });
+  });
+
+  describe('withDatastoreLock', () => {
+    const details: DatastoreLockDetails = {
+      lockId: 'withDatastoreLock',
+      target: 'test',
+    };
+
+    it('works', async () => {
+      await withDatastoreLock(details, async () => {
+        const l = datastoreLockFromDetails(details);
+        assert(await l.peek());
+      });
+    });
+
+    it('times out', async () => {
+      const details: DatastoreLockDetails = {
+        lockId: 'withDatastoreLock',
+        target: 'test',
+      };
+      try {
+        await withDatastoreLock(details, async () => {
+          await withDatastoreLock(
+            {...details, lockAcquireTimeout: 100},
+            async () => {
+              throw new Error('This code should never execute.');
+            }
+          );
+        });
+      } catch (e) {
+        assert(String(e).includes('100ms'));
+      }
     });
   });
 });

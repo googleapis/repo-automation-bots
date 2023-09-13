@@ -42,6 +42,7 @@ steps:
       - 'false'
     env:
       - 'HOME=/workspace'
+
   # Clone user/branch that created PR:
   - name: 'gcr.io/cloud-builders/git'
     args:
@@ -62,6 +63,19 @@ steps:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
       - 'NEW_PULL_REQUEST_TEXT_PATH=/workspace/new_pull_request_text.txt'
 
+  # Validate all the OwlBot configs are well formed.
+  - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli'
+    args:
+      - validate
+      - '.'
+      - --ignore-regexp
+      - '.*/templates/.*'
+      - --ignore-regexp
+      - '.*/fixtures/.*'
+    dir: ${_PR_REPOSITORY}
+    env:
+      - 'HOME=/workspace'
+
   # Install credentials *after* running the container.
   - name: 'bash'
     args:
@@ -81,6 +95,26 @@ steps:
       - 'store --file /workspace/.git-credentials'
     env:
       - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+      - 'HOME=/workspace'
+
+  # TODO: remove when we find a better resolution.
+  # See: https://github.com/orgs/community/discussions/55820
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - http.postBuffer
+      - '157286400'
+    env:
+      - 'HOME=/workspace'
+
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - http.version
+      - 'HTTP/1.1'
+    env:
       - 'HOME=/workspace'
 
   # Commit any changes back to the pull request.

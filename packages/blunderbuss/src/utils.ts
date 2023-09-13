@@ -106,8 +106,11 @@ export async function assign(
   }
 
   // PRs are a superset of issues, so we can handle them similarly.
-  const assignConfig = issue ? config.assign_issues : config.assign_prs!;
-  const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
+  const cfg = {
+    assign: issue ? config.assign_issues : config.assign_prs ?? [],
+    assignBy: issue ? config.assign_issues_by : config.assign_prs_by,
+    assignAlways: issue ? [] : config.assign_prs_always ?? [],
+  };
   const user = issue ? issue.user.login : pullRequest!.user.login;
 
   // Reload the issue and use the assignee for counting.
@@ -156,7 +159,7 @@ export async function assign(
     // changes a random label.
     let assigneesForNewLabel: string[] | undefined;
     if (payload.label?.name) {
-      assigneesForNewLabel = findAssignees(byConfig, [payload.label.name]);
+      assigneesForNewLabel = findAssignees(cfg.assignBy, [payload.label.name]);
     }
 
     if (
@@ -192,7 +195,7 @@ export async function assign(
   }
 
   let labels: string[] | undefined = [];
-  if (byConfig !== undefined && context.payload.action === 'opened') {
+  if (cfg.assignBy !== undefined && context.payload.action === 'opened') {
     // It is possible that blunderbuss is running before other bots have
     // a chance to add extra labels. Wait and re-pull fresh labels
     // before comparing against the config.
@@ -208,14 +211,21 @@ export async function assign(
       ? issue.labels?.map(l => l.name)
       : pullRequest?.labels?.map(l => l.name);
   }
-  const preferredAssignees = findAssignees(byConfig, labels);
+  const preferredAssignees = findAssignees(cfg.assignBy, labels);
   let possibleAssignees = preferredAssignees.length
     ? preferredAssignees
-    : assignConfig || [];
+    : cfg.assign || [];
   possibleAssignees = await expandTeams(possibleAssignees, context);
   const exclude = issue ? '' : user;
   const assignee = randomFrom(possibleAssignees, exclude);
-  if (!assignee) {
+  const requiredAssignee =
+    cfg.assignAlways.length > 0
+      ? randomFrom(await expandTeams(cfg.assignAlways, context), exclude)
+      : undefined;
+  const assignees = (
+    assignee === requiredAssignee ? [assignee] : [assignee, requiredAssignee]
+  ).filter(Boolean) as string[];
+  if (assignees.length === 0) {
     context.log.info(
       util.format(
         '[%s] #%s not assigned: no valid assignee(s)',
@@ -227,7 +237,7 @@ export async function assign(
   }
 
   const resp = await context.octokit.issues.addAssignees(
-    context.issue({assignees: [assignee]})
+    context.issue({assignees})
   );
   if (resp.status !== 201) {
     context.log.error(

@@ -23,6 +23,7 @@ export interface Configuration {
   assign_issues?: string[];
   assign_issues_by?: ByConfig[];
   assign_prs?: string[];
+  assign_prs_always?: string[];
   assign_prs_by?: ByConfig[];
   ignore_authors?: string[];
 }
