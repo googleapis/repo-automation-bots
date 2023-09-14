@@ -31,6 +31,7 @@ import {RequestError} from '@octokit/request-error';
 import {GraphqlResponseError} from '@octokit/graphql';
 import {Options, ApplicationFunction} from 'probot';
 import * as loggerModule from '../src/logging/gcf-logger';
+import * as installationsModule from '../src/installations';
 import * as express from 'express';
 import fs from 'fs';
 import sinon from 'sinon';
@@ -42,34 +43,72 @@ import mockedEnv from 'mocked-env';
 import {v1} from '@google-cloud/secret-manager';
 import {GoogleAuth} from 'google-auth-library';
 import {GCFLogger} from '../src/logging/gcf-logger';
+import {InstalledRepository, AppInstallation} from '../src/installations';
 
 nock.disableNetConnect();
 
-function nockListInstallationRepos() {
-  return (
-    nock('https://api.github.com/')
-      .get('/installation/repositories')
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      .reply(200, require('../../test/fixtures/installations.json'))
-  );
+const INSTALLATION_REPOS: InstalledRepository[] = [
+  {
+    id: 1296268,
+    archived: false,
+    disabled: false,
+    fullName: 'octocat/Hello-World',
+  },
+  {
+    id: 1296269,
+    archived: false,
+    disabled: false,
+    fullName: 'octocat/Goodnight-Moon',
+  },
+];
+const INSTALLATIONS: AppInstallation[] = [
+  {
+    id: 1,
+    targetType: 'Organization',
+    login: 'octocat',
+    suspended: false,
+  },
+];
+const MANY_INSTALLATIONS: AppInstallation[] = [
+  {
+    id: 1,
+    targetType: 'Organization',
+    login: 'octocat',
+    suspended: false,
+  },
+  {
+    id: 2,
+    targetType: 'Organization',
+    login: 'octocat2',
+    suspended: false,
+  },
+];
+function mockInstallationRepos(
+  sandbox: sinon.SinonSandbox,
+  installationRepos: InstalledRepository[]
+) {
+  async function* fakeGenerator() {
+    for (const installationRepo of installationRepos) {
+      yield installationRepo;
+    }
+  }
+  return sandbox
+    .stub(installationsModule, 'eachInstalledRepository')
+    .returns(fakeGenerator());
 }
 
-function nockListInstallationManyRepos() {
-  return (
-    nock('https://api.github.com/')
-      .get('/installation/repositories')
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      .reply(200, require('../../test/fixtures/many_installations.json'))
-  );
-}
-
-function nockListInstallations(fixture = 'app_installations.json') {
-  return (
-    nock('https://api.github.com/')
-      .get('/app/installations')
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      .reply(200, require(`../../test/fixtures/${fixture}`))
-  );
+function mockInstallations(
+  sandbox: sinon.SinonSandbox,
+  installations: AppInstallation[]
+) {
+  async function* fakeGenerator() {
+    for (const installation of installations) {
+      yield installation;
+    }
+  }
+  return sandbox
+    .stub(installationsModule, 'eachInstallation')
+    .returns(fakeGenerator());
 }
 
 const sandbox = sinon.createSandbox();
@@ -983,7 +1022,7 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRepoRequests = nockListInstallationRepos();
+        mockInstallationRepos(sandbox, INSTALLATION_REPOS);
 
         await handler(req, response);
 
@@ -992,7 +1031,6 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRepoRequests.done();
       });
 
       it('ensures that task is enqueued with flow control when called by scheduler for many repos', async () => {
@@ -1004,7 +1042,21 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRepoRequests = nockListInstallationManyRepos();
+
+        const manyInstallationRepos: InstalledRepository[] = Array.from(
+          Array(31).keys()
+        ).map(i => {
+          return {
+            id: i,
+            fullName: `octokit/repo${i}`,
+            archived: false,
+            disabled: false,
+          };
+        });
+        const listInstallationStub = mockInstallationRepos(
+          sandbox,
+          manyInstallationRepos
+        );
 
         await handler(req, response);
 
@@ -1027,7 +1079,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRepoRequests.done();
+        sinon.assert.calledOnce(listInstallationStub);
       });
 
       it('accepts a custom flow control delay', async () => {
@@ -1042,7 +1094,21 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRepoRequests = nockListInstallationManyRepos();
+
+        const manyInstallationRepos: InstalledRepository[] = Array.from(
+          Array(31).keys()
+        ).map(i => {
+          return {
+            id: i,
+            fullName: `octokit/repo${i}`,
+            archived: false,
+            disabled: false,
+          };
+        });
+        const listInstallationStub = mockInstallationRepos(
+          sandbox,
+          manyInstallationRepos
+        );
 
         await handler(req, response);
 
@@ -1059,7 +1125,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRepoRequests.done();
+        sinon.assert.calledOnce(listInstallationStub);
       });
 
       it('ensures that task is enqueued when called by scheduler for many installations', async () => {
@@ -1069,8 +1135,11 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRequests = nockListInstallations();
-        const listInstallationRepoRequests = nockListInstallationRepos();
+        const listInstallationsStub = mockInstallations(sandbox, INSTALLATIONS);
+        const listInstallationReposStub = mockInstallationRepos(
+          sandbox,
+          INSTALLATION_REPOS
+        );
 
         await handler(req, response);
 
@@ -1079,20 +1148,20 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRequests.done();
-        listInstallationRepoRequests.done();
+        sinon.assert.calledOnce(listInstallationsStub);
+        sinon.assert.calledOnce(listInstallationReposStub);
       });
 
-      it('skipps suspended installations', async () => {
+      it('skips suspended installations', async () => {
         await mockBootstrapper();
         req.body = {};
         req.headers = {};
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRequests = nockListInstallations(
-          'suspended_installations.json'
-        );
+        const listInstallationStub = mockInstallations(sandbox, [
+          {id: 1, targetType: 'Organization', suspended: true, login: 'my-org'},
+        ]);
 
         await handler(req, response);
 
@@ -1101,7 +1170,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRequests.done();
+        sinon.assert.calledOnce(listInstallationStub);
       });
 
       it('skips organizations which are not allowed', async () => {
@@ -1113,9 +1182,15 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRequests = nockListInstallations(
-          'not_allowed_installations.json'
-        );
+
+        const listInstallationStub = mockInstallations(sandbox, [
+          {
+            id: 1,
+            targetType: 'Organization',
+            login: 'octocat',
+            suspended: false,
+          },
+        ]);
 
         await handler(req, response);
 
@@ -1124,7 +1199,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRequests.done();
+        sinon.assert.calledOnce(listInstallationStub);
       });
 
       it('handles the schedule.repository task', async () => {
@@ -1160,9 +1235,8 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRequests = nockListInstallations(
-          'app_installations.json'
-        );
+
+        const listInstallationStub = mockInstallations(sandbox, INSTALLATIONS);
 
         await handler(req, response);
 
@@ -1171,7 +1245,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRequests.done();
+        sinon.assert.calledOnce(listInstallationStub);
       });
 
       it('ensures that task is enqueued when called by scheduler for many installations', async () => {
@@ -1183,8 +1257,10 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        const listInstallationRequests = nockListInstallations(
-          'app_installations_multiple.json'
+        // sandbox.stub(installationModule, 'eachInstallation')
+        const listInstallationStub = mockInstallations(
+          sandbox,
+          MANY_INSTALLATIONS
         );
 
         await handler(req, response);
@@ -1194,7 +1270,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
-        listInstallationRequests.done();
+        sinon.assert.calledOnce(listInstallationStub);
       });
 
       it('ensures that task is enqueued when called by scheduler with an installation id', async () => {
@@ -1588,6 +1664,7 @@ describe('GCFBootstrapper', () => {
       await bootstrapper.loadProbot(async () => {
         // Do nothing
       });
+      console.log(configStub);
       sinon.assert.calledOnce(configStub);
     });
 
@@ -1607,7 +1684,6 @@ describe('GCFBootstrapper', () => {
     let bootstrapper: GCFBootstrapper;
     let secretClientStub: v1.SecretManagerServiceClient;
     let secretsStub: sinon.SinonStub;
-    let secretVersionNameStub: sinon.SinonStub;
 
     beforeEach(() => {
       secretClientStub = new v1.SecretManagerServiceClient();
@@ -1617,17 +1693,10 @@ describe('GCFBootstrapper', () => {
         location: 'my-location',
         secretsClient: secretClientStub,
       });
-
-      secretVersionNameStub = sandbox
-        .stub(bootstrapper, 'getLatestSecretVersionName')
-        .callsFake(() => {
-          return 'foobar';
-        });
     });
 
     afterEach(() => {
-      secretsStub.reset();
-      secretVersionNameStub.reset();
+      sandbox.restore();
     });
 
     it('gets the config', async () => {
@@ -1645,8 +1714,9 @@ describe('GCFBootstrapper', () => {
         ]);
       await bootstrapper.getProbotConfig();
       sinon.assert.calledOnce(secretsStub);
-      sinon.assert.calledOnceWithExactly(secretsStub, {name: 'foobar'});
-      sinon.assert.calledOnce(secretVersionNameStub);
+      sinon.assert.calledOnceWithExactly(secretsStub, {
+        name: 'projects/my-project/secrets/my-function/versions/latest',
+      });
     });
 
     it('throws on empty data', async () => {
@@ -1681,57 +1751,6 @@ describe('GCFBootstrapper', () => {
         .resolves([{}]);
 
       assert.rejects(bootstrapper.getProbotConfig());
-    });
-  });
-
-  describe('getLatestSecretVersionName', () => {
-    let bootstrapper: GCFBootstrapper;
-    let secretVersionNameStub: sinon.SinonStub;
-
-    beforeEach(() => {
-      bootstrapper = new GCFBootstrapper({
-        projectId: 'my-project',
-        functionName: 'my-function',
-        location: 'my-location',
-      });
-      secretVersionNameStub = sandbox
-        .stub(bootstrapper, 'getSecretName')
-        .callsFake(() => {
-          return 'foobar';
-        });
-    });
-
-    afterEach(() => {
-      secretVersionNameStub.reset();
-    });
-
-    it('appends "latest"', async () => {
-      const latest = bootstrapper.getLatestSecretVersionName();
-      assert.strictEqual(latest, 'foobar/versions/latest');
-      sinon.assert.calledOnce(secretVersionNameStub);
-    });
-  });
-
-  describe('getSecretName', () => {
-    it('formats from env', async () => {
-      restoreEnv = mockedEnv({
-        GCF_SHORT_FUNCTION_NAME: 'bar',
-        GCF_LOCATION: 'somewhere',
-        PROJECT_ID: 'foo',
-      });
-      const bootstrapper = new GCFBootstrapper();
-      const latest = bootstrapper.getSecretName();
-      assert.strictEqual(latest, 'projects/foo/secrets/bar');
-    });
-
-    it('formats from constructor', async () => {
-      const bootstrapper = new GCFBootstrapper({
-        projectId: 'my-project',
-        functionName: 'my-function',
-        location: 'my-location',
-      });
-      const latest = bootstrapper.getSecretName();
-      assert.strictEqual(latest, 'projects/my-project/secrets/my-function');
     });
   });
 

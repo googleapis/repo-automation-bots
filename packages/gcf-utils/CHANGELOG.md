@@ -87,6 +87,19 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [15.0.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.6...gcf-utils-v15.0.0) (2023-09-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* require node 18
+* remove `addOrUpdateIssueComment` which is moved to issue-utils.
+
+### Features
+
+* remove `addOrUpdateIssueComment` which is moved to issue-utils. ([057125e](https://github.com/googleapis/repo-automation-bots/commit/057125e0fe11d6a6b6b2498e27a1cdb87b404593))
+* require node 18 ([057125e](https://github.com/googleapis/repo-automation-bots/commit/057125e0fe11d6a6b6b2498e27a1cdb87b404593))
+
 ## [14.4.6](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v14.4.5...gcf-utils-v14.4.6) (2023-01-12)
 
 
