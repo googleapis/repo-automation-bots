@@ -22,7 +22,7 @@ then
   exit 1
 fi
 
-export NPM_CONFIG_PREFIX=/home/node/.npm-global
+# export NPM_CONFIG_PREFIX=/home/node/.npm-global
 
 # Start the releasetool reporter
 python3 -m releasetool publish-reporter-script > /tmp/publisher-script; source /tmp/publisher-script
