@@ -33,4 +33,5 @@ mkdir -p node_modules # Ensure module installs at current path.
 npm i @google-cloud/mono-repo-publish
 NPM_TOKEN=$(cat "${KOKORO_GFILE_DIR}/secret_manager/repo_automation_bots_npm_publish_token")
 printf "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}\nregistry=https://wombat-dressing-room.appspot.com" > ~/.npmrc
-node ./node_modules/.bin/mono-repo-publish --pr-url="${AUTORELEASE_PR}"
+SCRIPT=$(realpath $(dirname $0)/./publish-single.sh)
+npx @google-cloud/mono-repo-publish custom --script="${SCRIPT}" --pr-url="${AUTORELEASE_PR}" --exclude-files=**/samples/*
