@@ -20,7 +20,7 @@ set -exo pipefail
 
 pwd
 
-npm install --registry=https://registry.npmjs.org
+npm ci --registry=https://registry.npmjs.org
 npm pack .
 # npm provides no way to specify, observe, or predict the name of the tarball
 # file it generates.  We have to look in the current directory for the freshest
