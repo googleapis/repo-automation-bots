@@ -32,6 +32,7 @@ processes:
   - "GoApiaryCodegen"
   - "PythonSampleAppDependency"
   - "JavaSampleAppDependency"
+  - "NodeGeneratorDependency"
 ```
 
 These seven processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
@@ -175,8 +176,16 @@ Below is what each process checks for:
     - Increase the non-major package version of a dependency
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
-
-
+* NodeGeneratorDependency:
+ - Checks that the author is 'renovate-bot'
+  - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v?\^?~?(\S*)$/
+  - Each file path must match one of these regexps:
+    - [/package\.json$/, /\.bzl$/, /pnpm-lock\.yaml$/]
+  - All files must: 
+    - Match this regexp:
+      - /package.json$/, /\.bzl$/, or /pnpm-lock\.yaml$/
+    - Increase the non-major package version of a dependency
+    - Change the dependency that was there previously, and that is on the title of the PR
 
   
 
