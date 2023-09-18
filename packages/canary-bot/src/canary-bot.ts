@@ -20,14 +20,8 @@ import {components} from '@octokit/openapi-types';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {resolve} from 'path';
-import {
-  getContextLogger,
-  getAuthenticatedOctokit,
-  logger,
-} from 'gcf-utils';
-import {
-  addOrUpdateIssueComment
-} from '@google-automations/issue-utils';
+import {getContextLogger, getAuthenticatedOctokit, logger} from 'gcf-utils';
+import {addOrUpdateIssueComment} from '@google-automations/issue-utils';
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
