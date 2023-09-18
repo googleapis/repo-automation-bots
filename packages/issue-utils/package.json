@@ -16,7 +16,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "gcf-utils": "^14.0.1",
+    "gcf-utils": "^15.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
@@ -35,7 +35,7 @@
     "typescript": "~4.8.2"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   },
   "keywords": [
     "github issues",
