@@ -42,8 +42,6 @@ jobs:
       - run: pwd
       - run: npm test
         working-directory: ./packages/${{ matrix.package }}
-        env:
-          NODE_OPTIONS: "--no-experimental-fetch"
       - run: npm run lint
         working-directory: ./packages/${{ matrix.package }}
   go-test:
