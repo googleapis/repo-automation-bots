@@ -6,7 +6,7 @@
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
     "fix": "gts fix",
@@ -39,7 +39,7 @@
     "typescript": "^4.9.4"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   },
   "keywords": [
     "Git data API"
