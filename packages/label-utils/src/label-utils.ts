@@ -56,12 +56,18 @@ export async function syncLabels(
   }
 }
 
+interface GitHubLabel {
+  name: string;
+  color: string;
+  description: string;
+}
+
 async function syncLabelsImpl(
   octokit: Octokit,
   owner: string,
   repo: string,
   labels: Array<Label>,
-  logger: GCFLogger
+  logger: GCFLogger = defaultLogger
 ): Promise<void> {
   const newLabels: Array<LabelWithColor> = [];
   for (const l of labels) {
@@ -71,11 +77,14 @@ async function syncLabelsImpl(
       color: getLabelColor(l.name.toLowerCase()),
     });
   }
-  const oldLabels = await octokit.paginate(octokit.issues.listLabelsForRepo, {
-    owner,
-    repo,
-    per_page: 100,
-  });
+  const oldLabels: GitHubLabel[] = await octokit.paginate(
+    octokit.issues.listLabelsForRepo as any,
+    {
+      owner,
+      repo,
+      per_page: 100,
+    }
+  );
   for (const l of newLabels) {
     const match = oldLabels.find(x => x.name.toLowerCase() === l.name);
     if (match) {

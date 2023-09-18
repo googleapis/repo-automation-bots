@@ -6,7 +6,7 @@
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -19,7 +19,7 @@
   "dependencies": {
     "ajv": "^8.11.0",
     "easy-object-selector": "^1.3.0",
-    "gcf-utils": "^14.0.1",
+    "gcf-utils": "^15.0.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
     "yargs": "^17.5.1"
@@ -41,7 +41,7 @@
     "typescript": "~4.8.2"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   },
   "keywords": [
     "Github repository"
