@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import {createHash} from 'crypto';
-import {logger} from 'gcf-utils';
-import {DatastoreLock} from '@google-automations/datastore-lock';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
+import {withDatastoreLock} from '@google-automations/datastore-lock';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 
@@ -38,18 +38,18 @@ export async function syncLabels(
   octokit: Octokit,
   owner: string,
   repo: string,
-  labels: Array<Label>
+  labels: Array<Label>,
+  logger: GCFLogger = defaultLogger
 ): Promise<void> {
-  const l = new DatastoreLock('label-sync', `${owner}/${repo}`);
-  const lockResult = await l.acquire();
-  if (!lockResult) {
-    logger.error(`Failed to acquire the lock for ${owner}/${repo}`);
-    return;
-  }
   try {
-    return syncLabelsImpl(octokit, owner, repo, labels);
-  } finally {
-    await l.release();
+    await withDatastoreLock({
+      lockId: 'label-sync',
+      target: `${owner}/${repo}`
+    }, async () => {
+      return await syncLabelsImpl(octokit, owner, repo, labels, logger);
+    });
+  } catch (e) {
+    logger.error(`Failed to acquire the lock:`, e);
   }
 }
 
@@ -57,7 +57,8 @@ async function syncLabelsImpl(
   octokit: Octokit,
   owner: string,
   repo: string,
-  labels: Array<Label>
+  labels: Array<Label>,
+  logger: GCFLogger
 ): Promise<void> {
   const newLabels: Array<LabelWithColor> = [];
   for (const l of labels) {
