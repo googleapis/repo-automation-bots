@@ -15,6 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {GCFLogger, logger as defaultLogger} from 'gcf-utils';
+export {addOrUpdateIssueComment} from './issue-comments';
 
 export interface Issue {
   owner: string;
