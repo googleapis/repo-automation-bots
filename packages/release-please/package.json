@@ -28,15 +28,15 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^6.1.0",
-    "@google-automations/datastore-lock": "^4.1.0",
-    "@google-automations/issue-utils": "^2.0.0",
-    "@google-automations/label-utils": "^3.0.0",
+    "@google-automations/bot-config-utils": "^7.0.0",
+    "@google-automations/datastore-lock": "^5.0.0",
+    "@google-automations/issue-utils": "^3.0.0",
+    "@google-automations/label-utils": "^4.0.0",
     "@octokit/rest": "^19.0.4",
     "@octokit/webhooks": "^10.1.5",
-    "gcf-utils": "^14.4.4",
+    "gcf-utils": "^15.0.0",
     "jsonwebtoken": "^9.0.0",
-    "release-please": "^15.10.5"
+    "release-please": "^16.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.0",
