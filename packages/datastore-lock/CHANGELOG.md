@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.1.0...datastore-lock-v5.0.0) (2023-09-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* **datastore-lock:** require node 18 ([#5223](https://github.com/googleapis/repo-automation-bots/issues/5223))
+
+### Features
+
+* **datastore-lock:** require node 18 ([#5223](https://github.com/googleapis/repo-automation-bots/issues/5223)) ([b67de31](https://github.com/googleapis/repo-automation-bots/commit/b67de31561d1145ce6a111736b95dbb42612fdef))
+
 ## [4.1.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.0.4...datastore-lock-v4.1.0) (2023-05-17)
 
 
