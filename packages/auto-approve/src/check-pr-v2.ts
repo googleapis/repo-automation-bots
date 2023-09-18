@@ -26,6 +26,7 @@ import {JavaSampleAppDependency} from './process-checks/sample-application-repos
 import {GoDependency} from './process-checks/sample-application-repos/go-dependency';
 import {DockerDependency} from './process-checks/sample-application-repos/docker-dependency';
 import {NodeDependency} from './process-checks/node/dependency';
+import {NodeGeneratorDependency} from './process-checks/node/generator-dependency';
 import {NodeRelease} from './process-checks/node/release';
 import {JavaDependency} from './process-checks/java/dependency';
 import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
@@ -106,6 +107,10 @@ const typeMap = [
   {
     configValue: 'JavaSampleAppDependency',
     configType: JavaSampleAppDependency,
+  },
+  {
+    configValue: 'NodeGeneratorDependency',
+    configType: NodeGeneratorDependency,
   },
 ];
 
