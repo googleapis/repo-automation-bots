@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v2.1.2...issue-utils-v2.2.0) (2023-09-18)
+
+
+### Features
+
+* migrate addOrUpdateIssueComment to issue-utils ([#5217](https://github.com/googleapis/repo-automation-bots/issues/5217)) ([b50f612](https://github.com/googleapis/repo-automation-bots/commit/b50f612c4a930dada11bae4e85e9b482fa4690f5))
+
 ## [2.1.2](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v2.1.1...issue-utils-v2.1.2) (2023-01-10)
 
 
