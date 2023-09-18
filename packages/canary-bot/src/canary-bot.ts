@@ -21,10 +21,13 @@ import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {resolve} from 'path';
 import {
-  addOrUpdateIssueComment,
   getContextLogger,
   getAuthenticatedOctokit,
+  logger,
 } from 'gcf-utils';
+import {
+  addOrUpdateIssueComment
+} from '@google-automations/issue-utils';
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -92,6 +95,7 @@ export = (app: Probot) => {
 
     // Issue found
     if (issue) {
+      logger.info('updating issue');
       await addOrUpdateIssueComment(
         await getAuthenticatedOctokit(context.payload.installation?.id),
         owner,
