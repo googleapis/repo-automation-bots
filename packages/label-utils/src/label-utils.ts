@@ -42,14 +42,17 @@ export async function syncLabels(
   logger: GCFLogger = defaultLogger
 ): Promise<void> {
   try {
-    await withDatastoreLock({
-      lockId: 'label-sync',
-      target: `${owner}/${repo}`
-    }, async () => {
-      return await syncLabelsImpl(octokit, owner, repo, labels, logger);
-    });
+    await withDatastoreLock(
+      {
+        lockId: 'label-sync',
+        target: `${owner}/${repo}`,
+      },
+      async () => {
+        return await syncLabelsImpl(octokit, owner, repo, labels, logger);
+      }
+    );
   } catch (e) {
-    logger.error(`Failed to acquire the lock:`, e);
+    logger.error('Failed to acquire the lock:', e);
   }
 }
 
