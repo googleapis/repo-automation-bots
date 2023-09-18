@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/label-utils",
-  "version": "3.0.2",
+  "version": "4.0.0",
   "description": "Utilities for github labels",
   "scripts": {
     "compile": "tsc -p .",
