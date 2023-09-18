@@ -89,7 +89,6 @@ export = (app: Probot) => {
 
     // Issue found
     if (issue) {
-      logger.info('updating issue');
       await addOrUpdateIssueComment(
         await getAuthenticatedOctokit(context.payload.installation?.id),
         owner,
