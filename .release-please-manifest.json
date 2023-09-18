@@ -5,7 +5,7 @@
   "packages/flakybot": "1.2.0",
   "packages/gcf-utils": "15.0.0",
   "packages/git-file-utils": "1.2.6",
-  "packages/issue-utils": "2.2.0",
+  "packages/issue-utils": "3.0.0",
   "packages/label-utils": "3.0.2",
   "packages/mono-repo-publish": "1.7.0",
   "packages/object-selector": "3.0.2",

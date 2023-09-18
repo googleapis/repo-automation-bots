@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v2.2.0...issue-utils-v3.0.0) (2023-09-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* require node 18 ([#5219](https://github.com/googleapis/repo-automation-bots/issues/5219))
+
+### Features
+
+* require node 18 ([#5219](https://github.com/googleapis/repo-automation-bots/issues/5219)) ([69e904e](https://github.com/googleapis/repo-automation-bots/commit/69e904e17ae8e17a7ffb348ffde73250fb9e1788))
+
 ## [2.2.0](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v2.1.2...issue-utils-v2.2.0) (2023-09-18)
 
 
