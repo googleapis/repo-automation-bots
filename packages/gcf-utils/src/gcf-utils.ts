@@ -44,8 +44,16 @@ import {
   SCHEDULER_INSTALLATION_EVENT_NAME,
   SCHEDULER_REPOSITORY_EVENT_NAME,
 } from './custom-events';
+import {
+  RUNNING_IN_TEST,
+  DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
+  DEFAULT_WRAP_CONFIG,
+  WrapConfig,
+} from './configuration';
+import {eachInstallation, eachInstalledRepository} from './installations';
 export {TriggerType} from './bot-request';
 export {GCFLogger} from './logging/gcf-logger';
+export {DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND} from './configuration';
 
 // A maximum body size in bytes for Cloud Task
 export const MAX_BODY_SIZE_FOR_CLOUD_TASK = 665600; // 650KB
@@ -68,11 +76,8 @@ export type HandlerFunction = (
 
 type CronType = 'repository' | 'installation' | 'global';
 const DEFAULT_CRON_TYPE: CronType = 'repository';
-const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 const DEFAULT_TASK_CALLER =
   'task-caller@repo-automation-bots.iam.gserviceaccount.com';
-// Adding 30 second delay for each batch with 30 tasks
-export const DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND = 30;
 
 type BotEnvironment = 'functions' | 'run';
 
@@ -133,24 +138,8 @@ export interface WrapOptions {
   flowControlDelayInSeconds?: number;
 }
 
-interface WrapConfig {
-  logging: boolean;
-  skipVerification: boolean;
-  maxCronRetries: number;
-  maxRetries: number;
-  maxPubSubRetries: number;
-  flowControlDelayInSeconds: number;
-}
-
-const DEFAULT_WRAP_CONFIG: WrapConfig = {
-  logging: false,
-  skipVerification: RUNNING_IN_TEST,
-  maxCronRetries: 0,
-  maxRetries: 10,
-  maxPubSubRetries: 0,
-  flowControlDelayInSeconds: DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
-};
-
+// Default logger, in general, you will want to configure a local logger that
+// manages its own context.
 export const logger = new GCFLogger();
 
 export interface CronPayload {
@@ -174,17 +163,26 @@ export interface BotSecrets {
   webhookSecret: string;
 }
 
+interface BotSecretsOptions {
+  projectId?: string;
+  botName?: string;
+  secretsClient?: SecretManagerV1.SecretManagerServiceClient;
+}
 /**
  * A helper for fetch secret from SecretManager.
  */
-export async function getBotSecrets(): Promise<BotSecrets> {
-  const projectId = process.env.PROJECT_ID;
-  const functionName = process.env.GCF_SHORT_FUNCTION_NAME;
-  const secretsClient = new SecretManagerV1.SecretManagerServiceClient({
-    fallback: 'rest',
-  });
+export async function getBotSecrets(
+  options: BotSecretsOptions = {}
+): Promise<BotSecrets> {
+  const projectId = options.projectId ?? process.env.PROJECT_ID;
+  const botName = options.botName ?? process.env.GCF_SHORT_FUNCTION_NAME;
+  const secretsClient =
+    options.secretsClient ??
+    new SecretManagerV1.SecretManagerServiceClient({
+      fallback: 'rest',
+    });
   const [version] = await secretsClient.accessSecretVersion({
-    name: `projects/${projectId}/secrets/${functionName}/versions/latest`,
+    name: `projects/${projectId}/secrets/${botName}/versions/latest`,
   });
   // Extract the payload as a string.
   const payload = version?.payload?.data?.toString() || '';
@@ -236,66 +234,6 @@ export async function getAuthenticatedOctokit(
     },
   });
 }
-
-/**
- * It creates a comment string used for `addOrUpdateissuecomment`.
- */
-export const getCommentMark = (installationId: number): string => {
-  return `<!-- probot comment [${installationId}]-->`;
-};
-
-/**
- * It creates a comment, or if the bot already created a comment, it
- * updates the same comment.
- *
- * @param {Octokit} octokit - The Octokit instance.
- * @param {string} owner - The owner of the issue.
- * @param {string} repo - The name of the repository.
- * @param {number} issueNumber - The number of the issue.
- * @param {number} installationId - A unique number for identifying the issue
- *   comment.
- * @param {string} commentBody - The body of the comment.
- * @param {boolean} onlyUpdate - If set to true, it will only update an
- *   existing issue comment.
- */
-export const addOrUpdateIssueComment = async (
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  installationId: number,
-  commentBody: string,
-  onlyUpdate = false
-) => {
-  const commentMark = getCommentMark(installationId);
-  const listCommentsResponse = await octokit.issues.listComments({
-    owner: owner,
-    repo: repo,
-    per_page: 50, // I think 50 is enough, but I may be wrong.
-    issue_number: issueNumber,
-  });
-  let found = false;
-  for (const comment of listCommentsResponse.data) {
-    if (comment.body?.includes(commentMark)) {
-      // We found the existing comment, so updating it
-      await octokit.issues.updateComment({
-        owner: owner,
-        repo: repo,
-        comment_id: comment.id,
-        body: `${commentMark}\n${commentBody}`,
-      });
-      found = true;
-    }
-  }
-  if (!found && !onlyUpdate) {
-    await octokit.issues.createComment({
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      body: `${commentMark}\n${commentBody}`,
-    });
-  }
-};
 
 interface BootstrapperOptions {
   secretsClient?: SecretManagerV1.SecretManagerServiceClient;
@@ -393,51 +331,36 @@ export class GCFBootstrapper {
     return this.probot;
   }
 
-  getSecretName(): string {
-    return `projects/${this.projectId}/secrets/${this.functionName}`;
-  }
-
-  getLatestSecretVersionName(): string {
-    const secretName = this.getSecretName();
-    return `${secretName}/versions/latest`;
-  }
-
   async getProbotConfig(logging?: boolean): Promise<Options> {
-    const name = this.getLatestSecretVersionName();
-    const [version] = await this.secretsClient.accessSecretVersion({
-      name: name,
+    const secrets = await getBotSecrets({
+      projectId: this.projectId,
+      botName: this.functionName,
+      secretsClient: this.secretsClient,
     });
-    // Extract the payload as a string.
-    const payload = version?.payload?.data?.toString() || '';
-    if (payload === '') {
-      throw Error('did not retrieve a payload from SecretManager.');
-    }
-    const config = JSON.parse(payload);
 
-    if (Object.prototype.hasOwnProperty.call(config, 'cert')) {
-      config.privateKey = config.cert;
-      delete config.cert;
-    }
-    if (Object.prototype.hasOwnProperty.call(config, 'id')) {
-      config.appId = config.id;
-      delete config.id;
-    }
     if (logging) {
       logger.info('custom logging instance enabled');
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
         .plugin(ConfigPlugin)
         .defaults({authStrategy: createProbotAuth});
-      return {...config, Octokit: LoggingOctokit} as Options;
+      return {
+        appId: secrets.appId,
+        privateKey: secrets.privateKey,
+        secret: secrets.webhookSecret,
+        Octokit: LoggingOctokit,
+      };
     } else {
       logger.info('custom logging instance not enabled');
       const DefaultOctokit = Octokit.plugin(ConfigPlugin).defaults({
         authStrategy: createProbotAuth,
       });
       return {
-        ...config,
+        appId: secrets.appId,
+        privateKey: secrets.privateKey,
+        secret: secrets.webhookSecret,
         log: logger,
         Octokit: DefaultOctokit,
-      } as Options;
+      } as unknown as Options;
     }
   }
 
@@ -749,60 +672,6 @@ export class GCFBootstrapper {
   }
 
   /**
-   * Async iterator over each installation for an app.
-   *
-   * See https://docs.github.com/en/rest/reference/apps#list-installations-for-the-authenticated-app
-   * @param wrapConfig {WrapConfig}
-   */
-  private async *eachInstallation(wrapConfig: WrapConfig) {
-    const octokit = await this.getAuthenticatedOctokit(undefined, wrapConfig);
-    const installationsPaginated = octokit.paginate.iterator(
-      octokit.apps.listInstallations
-    );
-    for await (const response of installationsPaginated) {
-      for (const installation of response.data) {
-        if (installation.suspended_at !== null) {
-          // Assume the installation is suspended.
-          logger.info(
-            `skipping installations for ${installation.id} because it is suspended`
-          );
-          continue;
-        }
-        yield installation;
-      }
-    }
-  }
-
-  /**
-   * Async iterator over each repository for an app installation.
-   *
-   * See https://docs.github.com/en/rest/reference/apps#list-repositories-accessible-to-the-app-installation
-   * @param wrapConfig {WrapConfig}
-   */
-  private async *eachInstalledRepository(
-    installationId: number,
-    wrapConfig: WrapConfig
-  ) {
-    const octokit = await this.getAuthenticatedOctokit(
-      installationId,
-      wrapConfig
-    );
-    const installationRepositoriesPaginated = octokit.paginate.iterator(
-      octokit.apps.listReposAccessibleToInstallation,
-      {
-        mediaType: {
-          previews: ['machine-man'],
-        },
-      }
-    );
-    for await (const response of installationRepositoriesPaginated) {
-      for (const repo of response.data) {
-        yield repo;
-      }
-    }
-  }
-
-  /**
    * Handle a scheduled tasks that should run per-installation.
    *
    * If an installation is specified (via installation.id in the payload),
@@ -831,18 +700,15 @@ export class GCFBootstrapper {
         log
       );
     } else {
-      const generator = this.eachInstallation(wrapConfig);
+      const generator = eachInstallation(wrapConfig);
       for await (const installation of generator) {
         const extraParams: Scheduled = {
           installation: {
             id: installation.id,
           },
         };
-        if (
-          installation.target_type === 'Organization' &&
-          installation?.account?.login
-        ) {
-          extraParams.cron_org = installation.account.login;
+        if (installation.targetType === 'Organization' && installation.login) {
+          extraParams.cron_org = installation.login;
         }
         const payload = {
           ...body,
@@ -892,7 +758,7 @@ export class GCFBootstrapper {
         log
       );
     } else if (body.installation) {
-      const generator = this.eachInstalledRepository(
+      const generator = eachInstalledRepository(
         body.installation.id,
         wrapConfig
       );
@@ -905,7 +771,7 @@ export class GCFBootstrapper {
         }
         promises.push(
           this.scheduledToTask(
-            repo.full_name,
+            repo.fullName,
             id,
             body,
             SCHEDULER_REPOSITORY_EVENT_NAME,
@@ -926,33 +792,27 @@ export class GCFBootstrapper {
         promises.splice(0, promises.length);
       }
     } else {
-      const installationGenerator = this.eachInstallation(wrapConfig);
+      const installationGenerator = eachInstallation(wrapConfig);
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchSize = 30;
       let delayInSeconds = 0; // initial delay for the tasks
       for await (const installation of installationGenerator) {
         if (body.allowed_organizations !== undefined) {
-          const org = installation?.account?.login.toLowerCase();
+          const org = installation.login?.toLowerCase();
           if (!body.allowed_organizations.includes(org)) {
             log.info(`${org} is not allowed for this scheduler job, skipping`);
             continue;
           }
         }
 
-        const generator = this.eachInstalledRepository(
-          installation.id,
-          wrapConfig
-        );
+        const generator = eachInstalledRepository(installation.id, wrapConfig);
         const extraParams: Scheduled = {
           installation: {
             id: installation.id,
           },
         };
-        if (
-          installation.target_type === 'Organization' &&
-          installation?.account?.login
-        ) {
-          extraParams.cron_org = installation.account.login;
+        if (installation.targetType === 'Organization' && installation.login) {
+          extraParams.cron_org = installation.login;
         }
 
         const payload = {
@@ -965,7 +825,7 @@ export class GCFBootstrapper {
           }
           promises.push(
             this.scheduledToTask(
-              repo.full_name,
+              repo.fullName,
               id,
               payload,
               SCHEDULER_REPOSITORY_EVENT_NAME,
@@ -1384,7 +1244,6 @@ export function logErrors(
   // Add "@type" bindings so that Cloud Error Reporting will capture these logs.
   const bindings = logger.getBindings();
   if (shouldReportErrors && bindings['@type'] !== ERROR_REPORTING_TYPE_NAME) {
-    console.log('adding type bindings');
     logger = logger.child({
       '@type': ERROR_REPORTING_TYPE_NAME,
       ...bindings,

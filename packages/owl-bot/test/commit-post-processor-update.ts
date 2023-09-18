@@ -23,6 +23,7 @@ import sinon from 'sinon';
 import nock from 'nock';
 import {OWL_BOT_IGNORE, OWLBOT_RUN_LABEL} from '../src/labels';
 import * as fs from 'fs';
+import {OWL_BOT_COPY} from '../src/core';
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -65,12 +66,15 @@ describe('commitPostProcessorUpdate', () => {
   const gitHubToken = 'test-github-token';
   let sandbox: sinon.SinonSandbox;
   let pr = 0;
-  let labels: {name: string}[] = [];
 
-  function prepareGitHubEndpoint() {
+  function prepareGitHubEndpoint(options?: {
+    draft?: boolean;
+    labels?: {name: string}[];
+  }) {
     const payload = {
       pull_request: {
-        labels,
+        labels: [],
+        ...options,
         number: pr,
         head: {
           repo: {
@@ -114,9 +118,6 @@ describe('commitPostProcessorUpdate', () => {
 
     /** Increments the counter so each test can have its own unique PR */
     pr++;
-    labels = [];
-
-    prepareGitHubEndpoint();
   });
 
   afterEach(() => {
@@ -125,10 +126,35 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it("adds commit when there's no Copy-Tag", async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(prepareArgs(clone));
+    assert.deepStrictEqual(
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .pullRequestToPromote,
+      undefined
+    );
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.match(log, /Updates from OwlBot/);
+  });
+
+  it('promotes pull request from draft', async () => {
+    prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
+    const origin = makeOrigin();
+    const clone = cloneRepo(origin);
+    makeDirTree(clone, ['a.txt:The post processor ran.']);
+    assert.deepStrictEqual(
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .pullRequestToPromote,
+      {
+        owner: 'test-org',
+        pull_number: pr,
+        repo: 'test-repo',
+      }
+    );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -136,6 +162,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('adds commit when Copy-Tag is corrupt', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['c.txt:See the sea.']);
@@ -150,6 +177,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('adds commit when .OwlBot.yaml is missing', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['c.txt:See the sea.']);
@@ -165,6 +193,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('adds commit when .OwlBot.yaml is corrupt', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:corrupt`]);
@@ -180,6 +209,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   function makeRepoWithPendingCommit(): {origin: string; clone: string} {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:deep-remove-regex:\n  - /pasta.txt`]);
@@ -191,6 +221,7 @@ describe('commitPostProcessorUpdate', () => {
   }
 
   it('adds commit when .OwlBot.yaml contains no flag', async () => {
+    prepareGitHubEndpoint();
     const {origin, clone} = makeRepoWithPendingCommit();
     await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -200,6 +231,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('updates pr title and body', async () => {
+    prepareGitHubEndpoint();
     const {origin, clone} = makeRepoWithPendingCommit();
     const args = prepareArgs(clone);
     args['new-pull-request-text-path'] = tmp.fileSync().name;
@@ -214,7 +246,41 @@ describe('commitPostProcessorUpdate', () => {
         body: 'Updated body.',
       })
       .reply(204);
-    await commitPostProcessorUpdate(args);
+    assert.deepStrictEqual(
+      (await commitPostProcessorUpdate(args)).pullRequestToPromote,
+      undefined
+    );
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.match(log, /Updates from OwlBot/);
+    scope.done();
+  });
+
+  it('updates pr title and body and promotes from draft', async () => {
+    const {origin, clone} = makeRepoWithPendingCommit();
+    prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
+    const args = prepareArgs(clone);
+    args['new-pull-request-text-path'] = tmp.fileSync().name;
+    fs.writeFileSync(
+      args['new-pull-request-text-path'],
+      'updated title\n\nUpdated body.'
+    );
+    // commitPostProcessorUpdate() should issue a PATCH request to update the PR.
+    const scope = nock('https://api.github.com')
+      .patch(`/repos/${destRepo}/pulls/${pr}`, {
+        title: 'updated title',
+        body: 'Updated body.',
+      })
+      .reply(204);
+    assert.deepStrictEqual(
+      (await commitPostProcessorUpdate(args)).pullRequestToPromote,
+      {
+        owner: 'test-org',
+        pull_number: pr,
+        repo: 'test-repo',
+      }
+    );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -223,6 +289,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('squashes commit when .OwlBot.yaml contains flag', async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:squash: true`]);
@@ -230,7 +297,36 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(prepareArgs(clone));
+    assert.deepStrictEqual(
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .pullRequestToPromote,
+      undefined
+    );
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.doesNotMatch(log, /Updates from OwlBot/);
+    assert.match(log, /Copy-Tag/);
+  });
+
+  it('squashes commit and promotes from draft when .OwlBot.yaml contains flag', async () => {
+    const origin = makeOrigin();
+    const clone = cloneRepo(origin);
+    makeDirTree(clone, [`${yamlPath}:squash: true`]);
+    cmd(`git add ${yamlPath}`, {cwd: clone});
+    const copyTag = copyTagFrom(yamlPath, 'abc123');
+    cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
+    makeDirTree(clone, ['a.txt:The post processor ran.']);
+    prepareGitHubEndpoint({draft: true, labels: [{name: OWL_BOT_COPY}]});
+    assert.deepStrictEqual(
+      (await commitPostProcessorUpdate(prepareArgs(clone)))
+        .pullRequestToPromote,
+      {
+        owner: 'test-org',
+        pull_number: pr,
+        repo: 'test-repo',
+      }
+    );
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -239,6 +335,7 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it("doesn't create a commit when no changes are pending", async () => {
+    prepareGitHubEndpoint();
     const origin = makeOrigin();
     makeDirTree(origin, [`${yamlPath}:squash: true`]);
     cmd(`git add ${yamlPath}`, {cwd: origin});
@@ -262,15 +359,13 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it("Doesn't create a commit if the 'ignore' label is present", async () => {
+    prepareGitHubEndpoint({labels: [{name: OWL_BOT_IGNORE}]});
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
     const head = cmd('git log -1 --format=%H main', {cwd: origin}).toString(
       'utf-8'
     );
-
-    labels.push({name: OWL_BOT_IGNORE});
-    prepareGitHubEndpoint();
 
     await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
@@ -285,12 +380,10 @@ describe('commitPostProcessorUpdate', () => {
   });
 
   it('Creates a commit if labels other than ignore are present', async () => {
+    prepareGitHubEndpoint({labels: [{name: OWLBOT_RUN_LABEL}]});
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-
-    labels.push({name: OWLBOT_RUN_LABEL});
-    prepareGitHubEndpoint();
 
     await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(

@@ -55,7 +55,7 @@ export class FakePulls {
   updates: any[] = [];
   reviewComments: any[] = [];
 
-  list() {
+  list(search: any) {
     return Promise.resolve({data: this.pulls});
   }
 

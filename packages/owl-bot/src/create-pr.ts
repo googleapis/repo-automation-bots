@@ -203,7 +203,8 @@ export async function createPullRequestFromLastCommit(
   apiName = '',
   forceFlag: Force = Force.No,
   logger: Logger = console,
-  commitMessage?: string
+  commitMessage?: string,
+  draft = false
 ): Promise<string> {
   const cmd = newCmd(logger);
   const githubRepo = await octokit.repos.get({owner, repo});
@@ -226,6 +227,7 @@ export async function createPullRequestFromLastCommit(
   );
 
   // Create a pull request.
+  const draftFlag = draft ? {draft: true} : {};
   const pull = await octokit.pulls.create({
     owner,
     repo,
@@ -233,6 +235,7 @@ export async function createPullRequestFromLastCommit(
     body,
     head: branch,
     base: githubRepo.data.default_branch,
+    ...draftFlag,
   });
   logger.info(`Created pull request ${pull.data.html_url}`);
   if (labels.length > 0) {

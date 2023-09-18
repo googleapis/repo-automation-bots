@@ -15,6 +15,7 @@
 import {Octokit} from '@octokit/rest';
 import {ValidationResult, Validate} from './validate';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
+
 import {GCFLogger, logger as defaultLogger} from 'gcf-utils';
 import {IssueOpener} from './issue-opener';
 /* eslint-disable-next-line node/no-extraneous-import */
@@ -59,6 +60,7 @@ export async function scanRepo(
   const results: ValidationResult[] = [];
   const validate = new Validate(octokit);
   const fileCache = new RepositoryFileCache(octokit, {owner, repo});
+  // Scan .repo-metadata.json in the repository:
   const metadataFiles = await fileCache.findFilesByFilename(
     '.repo-metadata.json',
     branch
@@ -68,6 +70,24 @@ export async function scanRepo(
     const result = await validate.validate(path, content.parsedContent);
     if (result.status === 'error') {
       results.push(result);
+    }
+  }
+  // Scan for the .repo-metadata-full.json, see:
+  // https://github.com/googleapis/google-cloud-go/blob/main/internal/.repo-metadata-full.json
+  const metadataFullPath = (
+    await fileCache.findFilesByFilename('.repo-metadata-full.json', branch)
+  )[0];
+  if (metadataFullPath) {
+    const content = await fileCache.getFileContents(metadataFullPath, branch);
+    const metadataAll = JSON.parse(content.parsedContent);
+    for (const lib of Object.keys(metadataAll)) {
+      const result = await validate.validate(
+        metadataFullPath,
+        JSON.stringify(metadataAll[lib])
+      );
+      if (result.status === 'error') {
+        results.push(result);
+      }
     }
   }
   return results;

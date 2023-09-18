@@ -14,6 +14,9 @@
 
 import myProbotApp from '../src/canary-bot';
 import * as gcfUtilsModule from 'gcf-utils';
+// issue-utils directly exports addOrUpdateIssueComment from this internal source file
+// and somehow sinon can't stub the method directly from issue-utils
+import * as issueModule from '@google-automations/issue-utils/build/src/issue-comments';
 import {resolve} from 'path';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, createProbot, ProbotOctokit} from 'probot';
@@ -52,7 +55,7 @@ describe('canary-bot', () => {
     });
     await probot.load(myProbotApp);
     addOrUpdateIssueCommentStub = sandbox.stub(
-      gcfUtilsModule,
+      issueModule,
       'addOrUpdateIssueComment'
     );
     getAuthenticatedOctokitStub = sandbox.stub(

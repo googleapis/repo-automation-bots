@@ -23,11 +23,17 @@ import {Octokit} from '@octokit/rest';
 import {request} from '@octokit/request';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {getContextLogger, GCFLogger, getAuthenticatedOctokit} from 'gcf-utils';
+import {
+  getContextLogger,
+  GCFLogger,
+  getAuthenticatedOctokit,
+  logger as defaultLogger,
+} from 'gcf-utils';
 import {
   getConfig,
   MultiConfigChecker,
 } from '@google-automations/bot-config-utils';
+import {withDatastoreLock} from '@google-automations/datastore-lock';
 import {syncLabels} from '@google-automations/label-utils';
 import {
   Errors,
@@ -249,22 +255,57 @@ async function buildManifest(
   );
 }
 
+const RP_LOCK_ID = 'release-please';
+const RP_LOCK_DURATION_MS = 60 * 1000;
+const RP_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
+interface RunBranchOptions {
+  logger?: GCFLogger;
+  skipPullRequest?: boolean;
+}
 async function runBranchConfigurationWithConfigurationHandling(
   github: GitHub,
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
   octokit: Octokit,
-  logger: GCFLogger
+  options: RunBranchOptions
 ) {
+  const target = `${repoUrl}---${branchConfiguration.branch}`;
+  await withDatastoreLock(
+    {
+      lockId: RP_LOCK_ID,
+      target,
+      lockExpiry: RP_LOCK_DURATION_MS,
+      lockAcquireTimeout: RP_LOCK_ACQUIRE_TIMEOUT_MS,
+    },
+    async () => {
+      await runBranchConfigurationWithConfigurationHandlingWithoutLock(
+        github,
+        repoLanguage,
+        repoUrl,
+        branchConfiguration,
+        octokit,
+        options
+      );
+    }
+  );
+}
+async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
+  github: GitHub,
+  repoLanguage: string | null,
+  repoUrl: string,
+  branchConfiguration: BranchConfiguration,
+  octokit: Octokit,
+  options: RunBranchOptions
+) {
+  const logger = options.logger ?? defaultLogger;
   try {
     await runBranchConfiguration(
       github,
       repoLanguage,
       repoUrl,
       branchConfiguration,
-      octokit,
-      logger
+      options
     );
   } catch (e) {
     if (e instanceof Errors.ConfigurationError) {
@@ -315,9 +356,9 @@ async function runBranchConfiguration(
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
-  octokit: Octokit,
-  logger: GCFLogger
+  options: RunBranchOptions
 ) {
+  const logger = options.logger ?? defaultLogger;
   const plugins: Array<PluginType> = [
     ...(isSentenceCaseEnabled(repoUrl)
       ? [
@@ -328,31 +369,26 @@ async function runBranchConfiguration(
         ]
       : []),
   ];
-  let manifest = await buildManifest(
-    github,
-    repoLanguage,
-    branchConfiguration,
-    logger,
-    plugins
-  );
 
+  let manifest: Manifest | null = null;
   // release-please can handle creating a release on GitHub, we opt not to do
   // this for our repos that have autorelease enabled.
   if (branchConfiguration.handleGHRelease) {
     logger.info(`handling GitHub release for (${repoUrl})`);
+    manifest = await buildManifest(
+      github,
+      repoLanguage,
+      branchConfiguration,
+      logger,
+      plugins
+    );
     try {
       const numReleases = await Runner.createReleases(manifest);
       logger.info(`Created ${numReleases} releases`);
       if (numReleases > 0) {
         // we created a release, reload config which may include the latest
         // version
-        manifest = await buildManifest(
-          github,
-          repoLanguage,
-          branchConfiguration,
-          logger,
-          plugins
-        );
+        manifest = null;
       }
     } catch (e) {
       if (e instanceof Errors.DuplicateReleaseError) {
@@ -365,8 +401,21 @@ async function runBranchConfiguration(
     }
   }
 
-  logger.info(`creating pull request for (${repoUrl})`);
-  await Runner.createPullRequests(manifest);
+  if (options.skipPullRequest) {
+    logger.info(`skipping pull request from configuration for (${repoUrl})`);
+  } else {
+    logger.info(`creating pull request for (${repoUrl})`);
+    if (!manifest) {
+      manifest = await buildManifest(
+        github,
+        repoLanguage,
+        branchConfiguration,
+        logger,
+        plugins
+      );
+    }
+    await Runner.createPullRequests(manifest);
+  }
 }
 
 interface GitHubCommit {
@@ -469,7 +518,7 @@ const handler = (app: Probot) => {
         repoUrl,
         branchConfiguration,
         octokit,
-        logger
+        {logger, skipPullRequest: branchConfiguration.onDemand}
       );
     }
   });
@@ -620,7 +669,7 @@ const handler = (app: Probot) => {
         repoUrl,
         branchConfiguration,
         octokit,
-        logger
+        {logger}
       );
     }
   });

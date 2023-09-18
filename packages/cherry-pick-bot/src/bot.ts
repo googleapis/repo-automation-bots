@@ -60,8 +60,7 @@ export = (app: Probot) => {
       octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH,
-      {schema: schema}
+      CONFIGURATION_FILE_PATH
     );
     if (!remoteConfig) {
       logger.debug(`cherry-pick-bot not configured for ${owner}/${repo}`);
@@ -177,8 +176,7 @@ export = (app: Probot) => {
       octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH,
-      {schema: schema}
+      CONFIGURATION_FILE_PATH
     );
     if (!remoteConfig) {
       logger.debug(`cherry-pick-bot not configured for ${owner}/${repo}`);

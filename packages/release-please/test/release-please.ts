@@ -29,6 +29,7 @@ import yaml from 'js-yaml';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import * as gcfUtilsModule from 'gcf-utils';
+import * as datastoreLockModule from '@google-automations/datastore-lock';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
@@ -69,6 +70,13 @@ describe('ReleasePleaseBot', () => {
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
       .resolves(new Octokit({auth: 'faketoken'}));
+
+    sandbox.replace(datastoreLockModule, 'withDatastoreLock', async function (
+      _details: any,
+      f: () => Promise<void>
+    ) {
+      await f();
+    } as any);
   });
 
   afterEach(() => {
@@ -653,7 +661,7 @@ describe('ReleasePleaseBot', () => {
           {name: 'push', payload: payload as any, id: 'abc123'}
         );
 
-        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
       });
     });

@@ -254,6 +254,31 @@
       "name": "stale: extraold",
       "description": "Pull request is critically old and needs prioritization.",
       "color": "801904"
+    },
+    {
+      "name": "asset: notebook",
+      "description": "DEE Asset tagging - Notebook.",
+      "color": "6A0E36"
+    },
+    {
+      "name": "asset: flagship",
+      "description": "DEE Asset tagging - Flagship.",
+      "color": "249156"
+    },
+    {
+      "name": "asset: snippet",
+      "description": "DEE Asset tagging - Snippet.",
+      "color": "387B8E"
+    },
+    {
+      "name": "asset: tool",
+      "description": "DEE Asset tagging - Tool.",
+      "color": "251EAE"
+    },
+    {
+      "name": "asset: pattern",
+      "description": "DEE Asset tagging - Pattern.",
+      "color": "EFDE28"      
     }
   ]
 }
