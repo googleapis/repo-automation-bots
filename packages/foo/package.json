@@ -1,0 +1,58 @@
+{
+  "name": "foo",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "start": "node ./build/src/appserver.js",
+    "start:local": "node ./build/src/local.js",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "@google-cloud/secret-manager": "^5.0.1",
+    "@octokit/rest": "^19.0.4",
+    "@octokit/webhooks": "^12.0.3",
+    "aggregate-error": "^3.1.0",
+    "body-parser": "^1.20.2",
+    "express": "^4.18.1",
+    "pino": "^8.11.0",
+    "sonic-boom": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "4.17.2",
+    "@types/express-serve-static-core": "4.17.21",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^18.7.13",
+    "@types/sinon": "^10.0.13",
+    "c8": "^7.12.0",
+    "cross-env": "^7.0.3",
+    "gts": "^4.0.0",
+    "lru-cache": "^7.14.0",
+    "mocha": "^10.0.0",
+    "nock": "^13.2.9",
+    "sinon": "^15.0.0",
+    "smee-client": "^1.2.3",
+    "typescript": "~4.8.1"
+  },
+  "engines": {
+    "node": ">= 14"
+  }
+}
