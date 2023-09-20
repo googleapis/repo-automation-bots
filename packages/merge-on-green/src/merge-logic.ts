@@ -16,7 +16,7 @@ import {GCFLogger} from 'gcf-utils';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import { MERGE_ON_GREEN_LABEL_SECURE } from './labels';
+import {MERGE_ON_GREEN_LABEL_SECURE} from './labels';
 
 export interface Label {
   name: string;
