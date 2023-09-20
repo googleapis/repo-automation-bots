@@ -1,4 +1,3 @@
-
 (async () => {
   const {server} = await import('./appserver');
   const port = process.env.PORT ?? 8080;

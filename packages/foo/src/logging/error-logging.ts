@@ -1,7 +1,6 @@
-
 // eslint-disable-next-line node/no-extraneous-import
 import AggregateError from 'aggregate-error';
-import { GCFLogger } from "./gcf-logger";
+import {GCFLogger} from './gcf-logger';
 
 export const ERROR_REPORTING_TYPE_NAME =
   'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent';

@@ -22,7 +22,7 @@ let server: http.Server;
     app.on('issues.opened', context => {});
   };
   const webhookHandler = await WebhookHandler.load({
-    skipVerification: true
+    skipVerification: true,
   });
   server = webhookHandler.server(appFn);
 
@@ -31,6 +31,6 @@ let server: http.Server;
   server.listen(8080).setTimeout(0);
 })().then(() => {
   console.log('loaded');
-})
+});
 
 export {server};

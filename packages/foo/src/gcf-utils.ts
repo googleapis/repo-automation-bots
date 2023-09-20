@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GCFLogger } from './logging/gcf-logger';
+import {GCFLogger} from './logging/gcf-logger';
 
 export {WebhookHandler} from './webhook-handler';
 export {GCFLogger} from './logging/gcf-logger';
 
-
 export const logger = new GCFLogger();
-

@@ -34,7 +34,7 @@ function mockResponse() {
 describe('WebhookHandler', () => {
   afterEach(() => {
     sandbox.restore();
-  })
+  });
   describe('gcf', () => {
     it('handles webhooks', async () => {
       const webhookHandler = new WebhookHandler({
@@ -45,6 +45,7 @@ describe('WebhookHandler', () => {
           privateKey: 'my-private-key',
           webhookSecret: 'foo',
         },
+        location: 'us-central1',
         skipVerification: true,
       });
       const issueSpy = sandbox.stub();
@@ -70,9 +71,7 @@ describe('WebhookHandler', () => {
       sinon.assert.calledOnce(issueSpy);
     });
 
-    it('rejects invalid signatures', async () => {
-
-    });
+    it('rejects invalid signatures', async () => {});
 
     it('handles valid task request signatures', async () => {
       const webhookHandler = new WebhookHandler({
@@ -83,6 +82,7 @@ describe('WebhookHandler', () => {
           privateKey: 'my-private-key',
           webhookSecret: 'foo',
         },
+        location: 'us-central1',
       });
       const issueSpy = sandbox.stub();
       const testApp = (app: Webhooks) => {
@@ -90,16 +90,19 @@ describe('WebhookHandler', () => {
       };
       const gcf = webhookHandler.gcf(testApp);
 
-      const request = mockRequest({
-        installation: {id: 1},
-      }, {
-        'x-github-event': 'issues',
-        'x-github-delivery': '123',
-        // populated once this job has been executed by cloud tasks:
-        'x-cloudtasks-taskname': 'my-task',
-        // cat fixtures/payload.json | openssl dgst -sha1 -hmac "foo"
-        'x-hub-signature': 'sha1=fd28a625d68ef18fe9b532fd972514774fed9653'
-      });
+      const request = mockRequest(
+        {
+          installation: {id: 1},
+        },
+        {
+          'x-github-event': 'issues',
+          'x-github-delivery': '123',
+          // populated once this job has been executed by cloud tasks:
+          'x-cloudtasks-taskname': 'my-task',
+          // cat fixtures/payload.json | openssl dgst -sha1 -hmac "foo"
+          'x-hub-signature': 'sha1=fd28a625d68ef18fe9b532fd972514774fed9653',
+        }
+      );
 
       await gcf(request, mockResponse());
 

@@ -14,7 +14,7 @@
 
 import * as express from 'express';
 import {SCHEDULER_EVENT_NAMES} from './custom-events';
-import { HandlerRequest } from './webhook-handler';
+import {HandlerRequest} from './webhook-handler';
 
 /**
  * Type of function execution trigger

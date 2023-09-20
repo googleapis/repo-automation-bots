@@ -1,5 +1,3 @@
-import { Request, Response, RequestHandler } from 'express';
+import {Request, Response, RequestHandler} from 'express';
 
-export const LoggingMiddleware: RequestHandler = (req, res, next) => {
-  
-}
+export const LoggingMiddleware: RequestHandler = (req, res, next) => {};

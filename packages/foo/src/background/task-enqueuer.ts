@@ -1,5 +1,5 @@
-import { BotRequest } from "../bot-request";
-import { GCFLogger } from "../logging/gcf-logger";
+import {BotRequest} from '../bot-request';
+import {GCFLogger} from '../logging/gcf-logger';
 
 type BotEnvironment = 'functions' | 'run';
 export interface BackgroundRequest {
@@ -8,6 +8,7 @@ export interface BackgroundRequest {
   body: string;
   targetEnvironment: BotEnvironment;
   targetName: string;
+  delayInSeconds?: number;
 }
 
 export interface TaskEnqueuer {

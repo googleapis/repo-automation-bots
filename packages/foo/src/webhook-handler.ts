@@ -7,24 +7,39 @@ import {GCFLogger} from './logging/gcf-logger';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {logErrors} from './logging/error-logging';
 import {TaskEnqueuer} from './background/task-enqueuer';
-import {GoogleTaskEnqueuer} from './background/google-task-enqueuer';
+import {CloudTasksEnqueuer} from './background/cloud-tasks-enqueuer';
 import {
   parseScheduledRequest,
   ScheduledRequest,
+  scheduledRequestWithInstallation,
+  scheduledRequestWithRepository,
 } from './background/scheduled-request';
-import {SCHEDULER_GLOBAL_EVENT_NAME} from './custom-events';
+import {
+  SCHEDULER_GLOBAL_EVENT_NAME,
+  SCHEDULER_INSTALLATION_EVENT_NAME,
+  SCHEDULER_REPOSITORY_EVENT_NAME,
+} from './custom-events';
 import * as http from 'http';
 import {getServer} from './server';
+import {InstallationHandler} from './installations';
+import {OctokitFactory} from './octokit';
+import {PayloadCache, NoopPayloadCache} from './background/payload-cache';
+import {CloudStoragePayloadCache} from './background/cloud-storage-payload-cache';
+import {ServiceUnavailable, parseRateLimitError} from './errors';
+import AggregateError from 'aggregate-error';
 
 const DEFAULT_MAX_RETRIES = 10;
 const DEFAULT_MAX_CRON_RETRIES = 0;
 const DEFAULT_MAX_PUBSUB_RETRIES = 0;
 
+// Adding 30 second delay for each batch with 30 tasks
+const DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND = 30;
+
 export interface HandlerRequest extends Request {
   rawBody: Buffer;
 }
 
-export interface HandlerResponse extends Response {}
+export type HandlerResponse = Response;
 
 interface HandlerBaseOptions {
   taskEnqueuer?: TaskEnqueuer;
@@ -34,6 +49,8 @@ interface HandlerBaseOptions {
   maxPubSubRetries?: number;
   taskTargetEnvironment?: BotEnvironment;
   taskTargetName?: string;
+  flowControlDelayInSeconds?: number;
+  payloadBucket?: string;
 }
 
 interface WebhookHandlerLoadOptions extends HandlerBaseOptions {
@@ -59,6 +76,13 @@ type ApplicationFunction = (app: Webhooks) => void;
 
 export type BotEnvironment = 'functions' | 'run';
 
+interface EnqueueTaskParams {
+  id: string;
+  eventName: string;
+  body: string;
+  delayInSeconds?: number;
+}
+
 export class WebhookHandler {
   private taskEnqueuer: TaskEnqueuer;
   private projectId: string;
@@ -72,23 +96,42 @@ export class WebhookHandler {
   private taskTargetEnvironment: BotEnvironment;
   private taskTargetName: string;
   private location: string;
+  private installationHandler: InstallationHandler;
+  private octokitFactory: OctokitFactory;
+  private flowControlDelayInSeconds: number;
+  private taskCaller: string;
+  private payloadCache: PayloadCache;
 
   constructor(options: WebhookHandlerOptions) {
     this.projectId = options.projectId;
     this.botName = options.botName;
     this.botSecrets = options.botSecrets;
     this.location = options.location;
+    this.webhooks = new Webhooks({secret: this.botSecrets.webhookSecret});
+    this.taskCaller = 'FIXME@gserviceaccount.com';
     this.taskEnqueuer =
       options.taskEnqueuer ??
-      new GoogleTaskEnqueuer(this.projectId, this.botName, this.location);
+      new CloudTasksEnqueuer(
+        this.projectId,
+        this.botName,
+        this.location,
+        this.taskCaller,
+        this.webhooks.sign
+      );
     this.skipVerification = options.skipVerification ?? false;
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.maxCronRetries = options.maxCronRetries ?? DEFAULT_MAX_CRON_RETRIES;
     this.maxPubSubRetries =
       options.maxPubSubRetries ?? DEFAULT_MAX_PUBSUB_RETRIES;
-    this.webhooks = new Webhooks({secret: this.botSecrets.webhookSecret});
     this.taskTargetEnvironment = options.taskTargetEnvironment ?? 'functions';
     this.taskTargetName = options.taskTargetName ?? this.botName;
+    this.octokitFactory = new OctokitFactory(this.botSecrets);
+    this.installationHandler = new InstallationHandler(this.octokitFactory);
+    this.flowControlDelayInSeconds =
+      options.flowControlDelayInSeconds ?? DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
+    this.payloadCache = options.payloadBucket
+      ? new CloudStoragePayloadCache(options.payloadBucket)
+      : new NoopPayloadCache();
   }
 
   static async load(
@@ -112,6 +155,7 @@ export class WebhookHandler {
         'Missing required `location`. Please provide as a constructor argument or set the GCF_LOCATION env variable.'
       );
     }
+    const payloadBucket = options.payloadBucket ?? process.env.WEBHOOK_TMP;
     const secretLoader =
       options.secretLoader ?? new GoogleSecretLoader(projectId);
     const botSecrets = await secretLoader.load(botName);
@@ -121,6 +165,7 @@ export class WebhookHandler {
       botSecrets,
       botName,
       location,
+      payloadBucket,
     });
   }
 
@@ -177,17 +222,23 @@ export class WebhookHandler {
   }
 
   private async handleScheduled(
-    request: BotRequest,
+    botRequest: BotRequest,
     response: HandlerResponse,
     logger: GCFLogger
   ) {
-    const scheduledRequest = parseScheduledRequest(request);
+    const scheduledRequest = parseScheduledRequest(botRequest);
     switch (scheduledRequest.cron_type) {
       case 'global':
-        await this.handleScheduledGlobal(scheduledRequest, response, logger);
+        await this.handleScheduledGlobal(
+          botRequest,
+          scheduledRequest,
+          response,
+          logger
+        );
         break;
       case 'installation':
         await this.handleScheduledInstallation(
+          botRequest,
           scheduledRequest,
           response,
           logger
@@ -196,6 +247,7 @@ export class WebhookHandler {
       case 'repository':
       default:
         await this.handleScheduledRepository(
+          botRequest,
           scheduledRequest,
           response,
           logger
@@ -206,34 +258,69 @@ export class WebhookHandler {
   }
 
   private async handleScheduledGlobal(
+    botRequest: BotRequest,
     scheduledRequest: ScheduledRequest,
     response: HandlerResponse,
     logger: GCFLogger
   ) {
     logger.debug('Enqueuing global scheduled task');
-    await this.taskEnqueuer.enqueueTask(
+    await this.enqueueTask(
       {
-        id: '',
+        id: botRequest.githubDeliveryId,
         eventName: SCHEDULER_GLOBAL_EVENT_NAME,
         body: JSON.stringify(scheduledRequest),
-        targetEnvironment: this.taskTargetEnvironment,
-        targetName: this.taskTargetName,
       },
       logger
     );
+    response.status(200).json({message: 'Enqueued global cron task'});
   }
 
   private async handleScheduledInstallation(
+    botRequest: BotRequest,
     scheduledRequest: ScheduledRequest,
     response: HandlerResponse,
     logger: GCFLogger
   ) {
     logger.debug('Enqueuing per-installation scheduled tasks');
+    if (scheduledRequest.installation) {
+      await this.enqueueTask(
+        {
+          id: botRequest.githubDeliveryId,
+          eventName: SCHEDULER_INSTALLATION_EVENT_NAME,
+          body: JSON.stringify(scheduledRequest),
+        },
+        logger
+      );
+      response
+        .status(200)
+        .json({message: 'Enqueued single installation cron task'});
+    } else {
+      const generator = this.installationHandler.eachInstallation();
+      for await (const installation of generator) {
+        const payload = scheduledRequestWithInstallation(
+          scheduledRequest,
+          installation
+        );
+        await this.enqueueTask(
+          {
+            id: botRequest.githubDeliveryId,
+            eventName: SCHEDULER_INSTALLATION_EVENT_NAME,
+            body: JSON.stringify(payload),
+          },
+          logger
+        );
+      }
+    }
+    response.status(200).json({message: 'Enqueued global cron task'});
+  }
+
+  private async enqueueTask(
+    enqueueParams: EnqueueTaskParams,
+    logger: GCFLogger
+  ) {
     await this.taskEnqueuer.enqueueTask(
       {
-        id: '',
-        eventName: SCHEDULER_GLOBAL_EVENT_NAME,
-        body: JSON.stringify(scheduledRequest),
+        ...enqueueParams,
         targetEnvironment: this.taskTargetEnvironment,
         targetName: this.taskTargetName,
       },
@@ -242,18 +329,60 @@ export class WebhookHandler {
   }
 
   private async handleScheduledRepository(
+    botRequest: BotRequest,
     scheduledRequest: ScheduledRequest,
     response: HandlerResponse,
     logger: GCFLogger
   ) {
     logger.debug('Enqueuing per-repository scheduled task');
-    await this.taskEnqueuer.enqueueTask(
+    if (scheduledRequest.repo) {
+      await this.enqueueTask(
+        {
+          id: botRequest.githubDeliveryId,
+          eventName: SCHEDULER_REPOSITORY_EVENT_NAME,
+          body: JSON.stringify(scheduledRequest),
+        },
+        logger
+      );
+    } else if (scheduledRequest.installation) {
+      const generator = this.installationHandler.eachInstalledRepository(
+        scheduledRequest.installation.id
+      );
+
+      const promises: Array<Promise<void>> = new Array<Promise<void>>();
+      const batchSize = 30;
+      let delayInSeconds = 0; // initial delay for the tasks
+      for await (const repo of generator) {
+        const payload = scheduledRequestWithRepository(scheduledRequest, repo);
+        promises.push(
+          this.enqueueTask(
+            {
+              id: botRequest.githubDeliveryId,
+              eventName: SCHEDULER_REPOSITORY_EVENT_NAME,
+              body: JSON.stringify(payload),
+              delayInSeconds,
+            },
+            logger
+          )
+        );
+        if (promises.length >= batchSize) {
+          await Promise.all(promises);
+          promises.splice(0, promises.length);
+          // add delay for flow control
+          delayInSeconds += this.flowControlDelayInSeconds;
+        }
+      }
+      // Wait for the rest.
+      if (promises.length > 0) {
+        await Promise.all(promises);
+        promises.splice(0, promises.length);
+      }
+    }
+    await this.enqueueTask(
       {
         id: '',
         eventName: SCHEDULER_GLOBAL_EVENT_NAME,
         body: JSON.stringify(scheduledRequest),
-        targetEnvironment: this.taskTargetEnvironment,
-        targetName: this.taskTargetName,
       },
       logger
     );
@@ -267,17 +396,90 @@ export class WebhookHandler {
   }
 
   private async handleTask(
-    request: BotRequest,
+    botRequest: BotRequest,
     response: HandlerResponse,
     logger: GCFLogger
   ) {
-    this.webhooks.receive({
-      id: request.githubDeliveryId,
-      name: request.eventName as any,
-      payload: request.payload as any,
-    });
+    // Abort task retries if we've hit the max number by
+    // returning "success"
+    const maxRetries = this.getRetryLimit(botRequest.eventName);
+    if (botRequest.taskRetryCount > maxRetries) {
+      logger.metric('too-many-retries');
+      logger.info(
+        `Too many retries: ${botRequest.taskRetryCount} > ${maxRetries}`
+      );
+      // return 200 so we don't retry the task again
+      response.status(200).json({message: 'Too many retries'});
+      return;
+    }
 
-    response.status(200).json({message: 'Executed'});
+    // Load payload from cache if cached
+    const payload = await this.payloadCache.load(
+      botRequest.payload as Record<string, any>,
+      logger
+    );
+
+    // The payload does not exist, stop retrying on this task by letting
+    // this request "succeed".
+    if (!payload) {
+      logger.metric('payload-expired');
+      response.status(200).json({message: 'Payload expired'});
+      return;
+    }
+
+    try {
+      this.webhooks.receive({
+        id: botRequest.githubDeliveryId,
+        name: botRequest.eventName as any,
+        payload: payload as any,
+      });
+
+      response.status(200).json({message: 'Executed'});
+    } catch (e) {
+      const rateLimits = parseRateLimitError(e as Error);
+      if (rateLimits) {
+        logger.warn('Rate limit exceeded', rateLimits);
+        // On GitHub quota issues, return a 503 to throttle our task queues
+        // https://cloud.google.com/tasks/docs/common-pitfalls#backoff_errors_and_enforced_rates
+        response.status(503).json({
+          ...rateLimits,
+          message: 'Rate Limited',
+        });
+        return;
+      } else {
+        // If a bot throws ServicceUnavailable, returns 503 for throttle task queue.
+        let isServiceUnavailable = e instanceof ServiceUnavailable;
+        let serviceUnavailableMessage =
+          e instanceof ServiceUnavailable ? e.message : '';
+        let serviceUnavailableStack =
+          e instanceof ServiceUnavailable ? e.originalError.stack : '';
+        if (e instanceof AggregateError) {
+          for (const inner of e) {
+            if (inner instanceof ServiceUnavailable) {
+              isServiceUnavailable = true;
+              serviceUnavailableMessage = inner.message;
+              serviceUnavailableStack = inner.originalError.stack;
+            }
+          }
+        }
+        if (isServiceUnavailable) {
+          logger.warn(
+            'ServiceUnavailable',
+            serviceUnavailableMessage,
+            serviceUnavailableStack
+          );
+          response.status(503).send({
+            statusCode: 503,
+            body: JSON.stringify({
+              message: serviceUnavailableMessage,
+            }),
+          });
+          return;
+        } else {
+          throw e;
+        }
+      }
+    }
   }
 
   private async handleWebhook(
@@ -285,17 +487,15 @@ export class WebhookHandler {
     response: HandlerResponse,
     logger: GCFLogger
   ) {
-    await this.taskEnqueuer.enqueueTask(
+    await this.enqueueTask(
       {
         id: request.githubDeliveryId,
         eventName: request.eventName,
         body: JSON.stringify(request.payload),
-        targetEnvironment: this.taskTargetEnvironment,
-        targetName: this.taskTargetName,
       },
       logger
     );
-    response.status(200).json({message: 'Enqueued task'});
+    response.status(200).json({message: 'Enqueued webhook task'});
   }
 
   private async handleUnknown(
