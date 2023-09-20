@@ -13,6 +13,7 @@ import {
   ScheduledRequest,
   scheduledRequestWithInstallation,
   scheduledRequestWithRepository,
+  scheduledRequestWithInstalledRepository,
 } from './background/scheduled-request';
 import {
   SCHEDULER_GLOBAL_EVENT_NAME,
@@ -25,8 +26,11 @@ import {InstallationHandler} from './installations';
 import {OctokitFactory} from './octokit';
 import {PayloadCache, NoopPayloadCache} from './background/payload-cache';
 import {CloudStoragePayloadCache} from './background/cloud-storage-payload-cache';
-import {ServiceUnavailable, parseRateLimitError} from './errors';
-import AggregateError from 'aggregate-error';
+import {
+  parseRateLimitError,
+  eachError,
+  parseServiceUnavailableError,
+} from './errors';
 
 const DEFAULT_MAX_RETRIES = 10;
 const DEFAULT_MAX_CRON_RETRIES = 0;
@@ -353,7 +357,10 @@ export class WebhookHandler {
       const batchSize = 30;
       let delayInSeconds = 0; // initial delay for the tasks
       for await (const repo of generator) {
-        const payload = scheduledRequestWithRepository(scheduledRequest, repo);
+        const payload = scheduledRequestWithInstalledRepository(
+          scheduledRequest,
+          repo
+        );
         promises.push(
           this.enqueueTask(
             {
@@ -377,22 +384,79 @@ export class WebhookHandler {
         await Promise.all(promises);
         promises.splice(0, promises.length);
       }
+    } else {
+      const installationGenerator = this.installationHandler.eachInstallation();
+      const promises: Array<Promise<void>> = new Array<Promise<void>>();
+      const batchSize = 30;
+      let delayInSeconds = 0; // initial delay for the tasks
+      for await (const installation of installationGenerator) {
+        if (scheduledRequest.allowed_organizations !== undefined) {
+          const org = installation.login?.toLowerCase();
+          if (org && !scheduledRequest.allowed_organizations.includes(org)) {
+            logger.info(
+              `${org} is not allowed for this scheduler job, skipping`
+            );
+            continue;
+          }
+        }
+        const payload = scheduledRequestWithInstallation(
+          scheduledRequest,
+          installation
+        );
+        const generator = this.installationHandler.eachInstalledRepository(
+          installation.id
+        );
+        for await (const repo of generator) {
+          if (repo.archived === true || repo.disabled === true) {
+            continue;
+          }
+          promises.push(
+            this.enqueueTask(
+              {
+                id: botRequest.githubDeliveryId,
+                eventName: SCHEDULER_REPOSITORY_EVENT_NAME,
+                body: JSON.stringify(payload),
+                delayInSeconds,
+              },
+              logger
+            )
+          );
+          if (promises.length >= batchSize) {
+            await Promise.all(promises);
+            promises.splice(0, promises.length);
+            // add delay for flow control
+            delayInSeconds += this.flowControlDelayInSeconds;
+          }
+        }
+        // Wait for the rest.
+        if (promises.length > 0) {
+          await Promise.all(promises);
+          promises.splice(0, promises.length);
+        }
+      }
     }
-    await this.enqueueTask(
-      {
-        id: '',
-        eventName: SCHEDULER_GLOBAL_EVENT_NAME,
-        body: JSON.stringify(scheduledRequest),
-      },
-      logger
-    );
   }
   private async handlePubSub(
-    request: BotRequest,
+    botRequest: BotRequest,
     response: HandlerResponse,
     logger: GCFLogger
   ) {
-    response.status(400).json({message: 'FIXME'});
+    const body = botRequest.payload as ScheduledRequest;
+    let payload: ScheduledRequest = body.message?.data
+      ? JSON.parse(Buffer.from(body.message.data, 'base64').toString())
+      : body;
+    if (payload.repo) {
+      payload = scheduledRequestWithRepository(payload, payload.repo);
+    }
+    await this.enqueueTask(
+      {
+        id: botRequest.githubDeliveryId,
+        eventName: botRequest.eventName,
+        body: JSON.stringify(payload),
+      },
+      logger
+    );
+    response.status(200).json({message: 'Enqueue pubsub task'});
   }
 
   private async handleTask(
@@ -436,49 +500,32 @@ export class WebhookHandler {
 
       response.status(200).json({message: 'Executed'});
     } catch (e) {
-      const rateLimits = parseRateLimitError(e as Error);
-      if (rateLimits) {
-        logger.warn('Rate limit exceeded', rateLimits);
-        // On GitHub quota issues, return a 503 to throttle our task queues
-        // https://cloud.google.com/tasks/docs/common-pitfalls#backoff_errors_and_enforced_rates
-        response.status(503).json({
-          ...rateLimits,
-          message: 'Rate Limited',
-        });
-        return;
-      } else {
-        // If a bot throws ServicceUnavailable, returns 503 for throttle task queue.
-        let isServiceUnavailable = e instanceof ServiceUnavailable;
-        let serviceUnavailableMessage =
-          e instanceof ServiceUnavailable ? e.message : '';
-        let serviceUnavailableStack =
-          e instanceof ServiceUnavailable ? e.originalError.stack : '';
-        if (e instanceof AggregateError) {
-          for (const inner of e) {
-            if (inner instanceof ServiceUnavailable) {
-              isServiceUnavailable = true;
-              serviceUnavailableMessage = inner.message;
-              serviceUnavailableStack = inner.originalError.stack;
-            }
-          }
-        }
-        if (isServiceUnavailable) {
-          logger.warn(
-            'ServiceUnavailable',
-            serviceUnavailableMessage,
-            serviceUnavailableStack
-          );
-          response.status(503).send({
-            statusCode: 503,
-            body: JSON.stringify({
-              message: serviceUnavailableMessage,
-            }),
+      for (const inner of eachError(e as Error)) {
+        const rateLimits = parseRateLimitError(inner);
+        if (rateLimits) {
+          logger.warn('Rate limit exceeded', rateLimits);
+          // On GitHub quota issues, return a 503 to throttle our task queues
+          // https://cloud.google.com/tasks/docs/common-pitfalls#backoff_errors_and_enforced_rates
+          response.status(503).json({
+            ...rateLimits,
+            message: 'Rate Limited',
           });
           return;
-        } else {
-          throw e;
+        }
+        const serviceUnavailable = parseServiceUnavailableError(inner);
+        if (serviceUnavailable) {
+          logger.warn(
+            'ServiceUnavailable',
+            serviceUnavailable.message,
+            serviceUnavailable.stack
+          );
+          response.status(503).json({
+            message: serviceUnavailable.message,
+          });
+          return;
         }
       }
+      throw e;
     }
   }
 
@@ -504,7 +551,9 @@ export class WebhookHandler {
     logger: GCFLogger
   ) {
     logger.warn(`Unknown trigger type: ${request.triggerType}`);
-    response.status(400).json({message: 'FIXME'});
+    response
+      .status(400)
+      .json({message: `Unknown trigger type: ${request.triggerType}`});
   }
 
   private async verifySignature(

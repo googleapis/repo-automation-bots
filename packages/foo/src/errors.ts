@@ -14,18 +14,21 @@ interface RateLimits {
 const RATE_LIMIT_MESSAGE = 'API rate limit exceeded';
 const RATE_LIMIT_REGEX = new RegExp('API rate limit exceeded for user ID (d+)');
 const SECONDARY_RATE_LIMIT_MESSAGE = 'exceeded a secondary rate limit';
-export function parseRateLimitError(e: Error): RateLimits | undefined {
-  // If any of the aggregated errors are rate limit errors, then
-  // this should be considered a rate limit error
+
+export function* eachError(e: Error): Generator<Error, void, void> {
   if (e instanceof AggregateError) {
     for (const inner of e) {
-      const rateLimits = parseRateLimitError(inner);
-      if (rateLimits) {
-        return rateLimits;
+      for (const nested of eachError(inner)) {
+        yield nested;
       }
     }
-    return undefined;
-  } else if (e instanceof RequestError) {
+  } else {
+    yield e;
+  }
+}
+
+export function parseRateLimitError(e: Error): RateLimits | undefined {
+  if (e instanceof RequestError) {
     if (e.status !== 403) {
       return undefined;
     }
@@ -64,6 +67,23 @@ export function parseRateLimitError(e: Error): RateLimits | undefined {
   }
 
   // other non-RequestErrors are not considered rate limit errors
+  return undefined;
+}
+
+interface ServiceUnavailableData {
+  message: string;
+  stack?: string;
+}
+
+export function parseServiceUnavailableError(
+  e: Error
+): ServiceUnavailableData | undefined {
+  if (e instanceof ServiceUnavailable) {
+    return {
+      message: e.message,
+      stack: e.originalError.stack,
+    };
+  }
   return undefined;
 }
 

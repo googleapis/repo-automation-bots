@@ -47,13 +47,23 @@ export function scheduledRequestWithInstallation(
   };
 }
 
-export function scheduledRequestWithRepository(
+export function scheduledRequestWithInstalledRepository(
   scheduledRequest: ScheduledRequest,
   installedRepository: InstalledRepository
 ): ScheduledRequest {
   return {
     ...scheduledRequest,
     ...buildRepositoryDetails(installedRepository.fullName),
+  };
+}
+
+export function scheduledRequestWithRepository(
+  scheduledRequest: ScheduledRequest,
+  repositoryFullName: string
+): ScheduledRequest {
+  return {
+    ...scheduledRequest,
+    ...buildRepositoryDetails(repositoryFullName),
   };
 }
 
