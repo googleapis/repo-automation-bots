@@ -17,15 +17,8 @@ import sinon from 'sinon';
 import nock from 'nock';
 
 import {Webhooks} from '@octokit/webhooks';
-import * as express from 'express';
-import fs from 'fs';
 import {Bootstrapper, HandlerFunction} from '../src/bootstrapper';
 import {NoopTaskEnqueuer} from '../src/background/task-enqueuer';
-import {
-  InstallationHandler,
-  AppInstallation,
-  InstalledRepository,
-} from '../src/installations';
 import {GCFLogger} from '../src';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
@@ -34,89 +27,92 @@ import {GraphqlResponseError} from '@octokit/graphql';
 import * as errorLoggingModule from '../src/logging/error-logging';
 import AggregateError from 'aggregate-error';
 import {ServiceUnavailable} from '../src/errors';
+import {
+  mockRequest,
+  mockResponse,
+  mockRequestFromFixture,
+  MockInstallationHandler,
+  MockSecretLoader,
+} from './helpers';
+import {RestoreFn} from 'mocked-env';
+import mockedEnv from 'mocked-env';
+import assert from 'assert';
+import {GoogleSecretLoader} from '../src/secrets/google-secret-loader';
 
 nock.disableNetConnect();
-
 const sandbox = sinon.createSandbox();
 
-function mockRequest(body: object, headers: Record<string, any>) {
-  const request = Object.create(
-    Object.getPrototypeOf(express.request),
-    Object.getOwnPropertyDescriptors(express.request)
-  );
-  request.rawBody = Buffer.from(JSON.stringify(body));
-  request.body = body;
-  request.headers = headers;
-  return request;
-}
-function mockRequestFromFixture(fixture: string, headers: Record<string, any>) {
-  const request = Object.create(
-    Object.getPrototypeOf(express.request),
-    Object.getOwnPropertyDescriptors(express.request)
-  );
-  const rawBody = fs.readFileSync(fixture);
-  request.rawBody = rawBody;
-  request.body = JSON.parse(rawBody.toString('utf-8'));
-  request.headers = headers;
-  return request;
-}
-
-function mockResponse() {
-  const response = {} as any;
-  response.status = sandbox.stub().returns(response);
-  response.json = sandbox.stub().returns(response);
-  response.send = sandbox.stub().returns(response);
-  return response;
-}
-
-class MockInstallationHandler implements InstallationHandler {
-  private installations: AppInstallation[] = [];
-  private installedRepositoriesByInstallation: Map<
-    number,
-    InstalledRepository[]
-  > = new Map();
-
-  reset() {
-    this.installations = [];
-    this.installedRepositoriesByInstallation = new Map();
-  }
-
-  setInstallations(installations: AppInstallation[]) {
-    this.installations = installations;
-  }
-
-  setInstalledRepositories(
-    installationId: number,
-    InstalledRepositories: InstalledRepository[]
-  ) {
-    this.installedRepositoriesByInstallation.set(
-      installationId,
-      InstalledRepositories
-    );
-  }
-
-  async *eachInstallation(): AsyncGenerator<AppInstallation, void, void> {
-    for (const installation of this.installations) {
-      yield installation;
-    }
-  }
-  async *eachInstalledRepository(
-    installationId: number
-  ): AsyncGenerator<InstalledRepository, void, void> {
-    const installedRepositories =
-      this.installedRepositoriesByInstallation.get(installationId) || [];
-    for (const repo of installedRepositories) {
-      yield repo;
-    }
-  }
-}
-
 describe('Bootstrapper', () => {
+  let restoreEnv: RestoreFn | null;
   afterEach(() => {
     sandbox.restore();
+    if (restoreEnv) {
+      restoreEnv();
+      restoreEnv = null;
+    }
   });
 
-  describe('load', () => {});
+  describe('load', () => {
+    it('requires a project id', async () => {
+      await assert.rejects(
+        async () => {
+          await Bootstrapper.load({});
+        },
+        e => {
+          return (e as Error).message.includes('PROJECT_ID');
+        }
+      );
+    });
+    it('requires a bot name', async () => {
+      await assert.rejects(
+        async () => {
+          await Bootstrapper.load({
+            projectId: 'my-project',
+          });
+        },
+        e => {
+          return (e as Error).message.includes('GCF_SHORT_FUNCTION_NAME');
+        }
+      );
+    });
+    it('requires a location', async () => {
+      await assert.rejects(
+        async () => {
+          await Bootstrapper.load({
+            projectId: 'my-project',
+            botName: 'my-bot-name',
+          });
+        },
+        e => {
+          return (e as Error).message.includes('GCF_LOCATION');
+        }
+      );
+    });
+    it('detects from env var', async () => {
+      restoreEnv = mockedEnv({
+        GCF_SHORT_FUNCTION_NAME: 'my-bot-name',
+        GCF_LOCATION: 'my-location',
+        PROJECT_ID: 'my-project',
+      });
+      const bootstrapper = await Bootstrapper.load({
+        secretLoader: new MockSecretLoader(),
+      });
+      assert.ok(bootstrapper);
+    });
+    it('loads secrets from Secret Manager', async () => {
+      sandbox.stub(GoogleSecretLoader.prototype, 'load').resolves({
+        privateKey: 'my-private-key',
+        webhookSecret: 'my-webhook-secret',
+        appId: '123456',
+      });
+      const bootstrapper = await Bootstrapper.load({
+        projectId: 'my-project',
+        botName: 'my-bot-name',
+        location: 'my-location',
+      });
+      assert.ok(bootstrapper);
+    });
+  });
 
   describe('handler', () => {
     describe('webhooks', async () => {

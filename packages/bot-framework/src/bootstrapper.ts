@@ -72,7 +72,7 @@ interface BootstrapperBaseOptions {
   installationHandler?: InstallationHandler;
 }
 
-interface BootstrapperLoadOptions extends BootstrapperBaseOptions {
+export interface BootstrapperLoadOptions extends BootstrapperBaseOptions {
   projectId?: string;
   botName?: string;
   secretLoader?: SecretLoader;
@@ -100,6 +100,10 @@ interface EnqueueTaskParams {
   eventName: string;
   body: string;
   delayInSeconds?: number;
+}
+
+export interface BootstrapperFactory {
+  build(options: BootstrapperLoadOptions): Promise<Bootstrapper>;
 }
 
 export class Bootstrapper {
