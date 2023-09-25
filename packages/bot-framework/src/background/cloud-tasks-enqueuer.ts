@@ -19,8 +19,6 @@ import {v2 as CloudTasksV2} from '@google-cloud/tasks';
 import {v2 as CloudRunV2} from '@google-cloud/run';
 import {BotEnvironment} from '../bootstrapper';
 
-type PayloadSigner = (payload: string) => Promise<string>;
-
 export class CloudTasksEnqueuer implements TaskEnqueuer {
   private projectId: string;
   private botName: string;
@@ -28,15 +26,13 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
   private cloudTasksClient: CloudTasksV2.CloudTasksClient;
   private cloudRunClient: CloudRunV2.ServicesClient;
   private cloudRunUrl?: string;
-  private payloadSigner: PayloadSigner;
   private taskCaller: string;
 
   constructor(
     projectId: string,
     botName: string,
     location: string,
-    taskCaller: string,
-    payloadSigner: PayloadSigner
+    taskCaller: string
   ) {
     this.projectId = projectId;
     this.botName = botName;
@@ -44,7 +40,6 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
     // TODO: inject existing client
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
     this.cloudRunClient = new CloudRunV2.ServicesClient();
-    this.payloadSigner = payloadSigner;
     this.taskCaller = taskCaller;
   }
 
@@ -52,11 +47,11 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
     return request;
   }
   async enqueueTask(
-    botRequest: BackgroundRequest,
+    backgroundRequest: BackgroundRequest,
     logger: GCFLogger
   ): Promise<void> {
     logger.info(
-      `scheduling cloud task targeting: ${botRequest.targetEnvironment}, service: ${botRequest.targetName}`
+      `scheduling cloud task targeting: ${backgroundRequest.targetEnvironment}, service: ${backgroundRequest.targetName}`
     );
 
     // Make a task here and return 200 as this is coming from GitHub
@@ -70,14 +65,13 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
     const url = await this.getTaskTarget(
       this.projectId,
       this.location,
-      botRequest.targetEnvironment,
-      botRequest.targetName
+      backgroundRequest.targetEnvironment,
+      backgroundRequest.targetName
     );
-    const delayInSeconds = botRequest.delayInSeconds ?? 0;
+    const delayInSeconds = backgroundRequest.delayInSeconds ?? 0;
 
     logger.info(`scheduling task in queue ${queueName}`);
-    if (botRequest.body) {
-      const signature = (await this.payloadSigner(botRequest.body)) || '';
+    if (backgroundRequest.body) {
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
@@ -88,13 +82,13 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
           httpRequest: {
             httpMethod: 'POST',
             headers: {
-              'X-GitHub-Event': botRequest.eventName || '',
-              'X-GitHub-Delivery': botRequest.id || '',
-              'X-Hub-Signature': signature,
+              'X-GitHub-Event': backgroundRequest.eventName || '',
+              'X-GitHub-Delivery': backgroundRequest.id || '',
+              'X-Hub-Signature': backgroundRequest.signature,
               'Content-Type': 'application/json',
             },
             url,
-            body: Buffer.from(botRequest.body),
+            body: Buffer.from(backgroundRequest.body),
             oidcToken: {
               serviceAccountEmail: this.taskCaller,
             },
@@ -102,7 +96,6 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
         },
       });
     } else {
-      const signature = (await this.payloadSigner('')) || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
@@ -112,9 +105,9 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
           httpRequest: {
             httpMethod: 'POST',
             headers: {
-              'X-GitHub-Event': botRequest.eventName || '',
-              'X-GitHub-Delivery': botRequest.id || '',
-              'X-Hub-Signature': signature,
+              'X-GitHub-Event': backgroundRequest.eventName || '',
+              'X-GitHub-Delivery': backgroundRequest.id || '',
+              'X-Hub-Signature': backgroundRequest.signature,
               'Content-Type': 'application/json',
             },
             url,

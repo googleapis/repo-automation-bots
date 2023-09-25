@@ -23,6 +23,7 @@ export interface BackgroundRequest {
   targetEnvironment: BotEnvironment;
   targetName: string;
   delayInSeconds?: number;
+  signature: string;
 }
 
 export interface TaskEnqueuer {

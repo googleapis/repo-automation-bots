@@ -150,8 +150,7 @@ export class Bootstrapper {
         this.projectId,
         this.botName,
         this.location,
-        this.taskCaller,
-        this.webhooks.sign
+        this.taskCaller
       );
     this.skipVerification = options.skipVerification ?? false;
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
@@ -372,10 +371,12 @@ export class Bootstrapper {
     logger: GCFLogger
   ) {
     const body = await this.payloadCache.save(enqueueParams.body, logger);
+    const signature = await this.webhooks.sign(body);
     await this.taskEnqueuer.enqueueTask(
       {
         ...enqueueParams,
         body,
+        signature,
         targetEnvironment: this.taskTargetEnvironment,
         targetName: this.taskTargetName,
       },
