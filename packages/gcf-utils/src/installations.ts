@@ -52,7 +52,7 @@ export async function* eachInstallation(
 ): AsyncGenerator<AppInstallation, void, void> {
   const octokit = await getAuthenticatedOctokit(undefined);
   const installationsPaginated = octokit.paginate.iterator(
-    octokit.apps.listInstallations
+    octokit.apps.listInstallations as any
   );
   for await (const response of installationsPaginated) {
     for (const installation of response.data) {
@@ -78,7 +78,7 @@ export async function* eachInstalledRepository(
 ): AsyncGenerator<InstalledRepository, void, void> {
   const octokit = await getAuthenticatedOctokit(installationId);
   const installationRepositoriesPaginated = octokit.paginate.iterator(
-    octokit.apps.listReposAccessibleToInstallation,
+    octokit.apps.listReposAccessibleToInstallation as any,
     {
       mediaType: {
         previews: ['machine-man'],
