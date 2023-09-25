@@ -371,9 +371,11 @@ export class Bootstrapper {
     enqueueParams: EnqueueTaskParams,
     logger: GCFLogger
   ) {
+    const body = await this.payloadCache.save(enqueueParams.body, logger);
     await this.taskEnqueuer.enqueueTask(
       {
         ...enqueueParams,
+        body,
         targetEnvironment: this.taskTargetEnvironment,
         targetName: this.taskTargetName,
       },
