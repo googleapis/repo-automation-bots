@@ -14,6 +14,7 @@
 //
 
 import {WrapConfig} from './configuration';
+import {getAuthenticatedOctokit} from './gcf-utils';
 
 // Helper interface to abstract the response of the list installations GitHub response
 export interface AppInstallation {
@@ -49,7 +50,7 @@ export interface InstalledRepository {
 export async function* eachInstallation(
   wrapConfig: WrapConfig
 ): AsyncGenerator<AppInstallation, void, void> {
-  const octokit = await this.getAuthenticatedOctokit(undefined, wrapConfig);
+  const octokit = await getAuthenticatedOctokit(undefined);
   const installationsPaginated = octokit.paginate.iterator(
     octokit.apps.listInstallations
   );
@@ -75,10 +76,7 @@ export async function* eachInstalledRepository(
   installationId: number,
   wrapConfig: WrapConfig
 ): AsyncGenerator<InstalledRepository, void, void> {
-  const octokit = await this.getAuthenticatedOctokit(
-    installationId,
-    wrapConfig
-  );
+  const octokit = await getAuthenticatedOctokit(installationId);
   const installationRepositoriesPaginated = octokit.paginate.iterator(
     octokit.apps.listReposAccessibleToInstallation,
     {
