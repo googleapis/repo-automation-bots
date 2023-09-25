@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 import express from 'express';
 import * as bodyParser from 'body-parser';
 import * as http from 'http';
-import {HandlerFunction, HandlerRequest} from './webhook-handler';
+import {HandlerFunction, HandlerRequest} from './bootstrapper';
 
 /**
  * Retains a reference to the raw body buffer to allow access to the raw body

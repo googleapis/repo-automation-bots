@@ -1,3 +1,17 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import sinon from 'sinon';
 import nock from 'nock';
@@ -5,7 +19,7 @@ import nock from 'nock';
 import {Webhooks} from '@octokit/webhooks';
 import * as express from 'express';
 import fs from 'fs';
-import {WebhookHandler} from '../src/webhook-handler';
+import {Bootstrapper} from '../src/bootstrapper';
 import {NoopTaskEnqueuer} from '../src/background/task-enqueuer';
 import {
   InstallationHandler,
@@ -89,13 +103,13 @@ class MockInstallationHandler implements InstallationHandler {
   }
 }
 
-describe('WebhookHandler', () => {
+describe('Bootstrapper', () => {
   afterEach(() => {
     sandbox.restore();
   });
   describe('gcf', () => {
     describe('webhooks', async () => {
-      const webhookHandler = new WebhookHandler({
+      const webhookHandler = new Bootstrapper({
         projectId: 'my-test-project',
         botName: 'my-bot-name',
         botSecrets: {
@@ -176,7 +190,7 @@ describe('WebhookHandler', () => {
 
     describe('with signatures', () => {
       it('rejects invalid signatures', async () => {
-        const webhookHandler = new WebhookHandler({
+        const webhookHandler = new Bootstrapper({
           projectId: 'my-test-project',
           botName: 'my-bot-name',
           botSecrets: {
@@ -208,7 +222,7 @@ describe('WebhookHandler', () => {
       });
 
       it('handles valid task request signatures', async () => {
-        const webhookHandler = new WebhookHandler({
+        const webhookHandler = new Bootstrapper({
           projectId: 'my-test-project',
           botName: 'my-bot-name',
           botSecrets: {
@@ -243,7 +257,7 @@ describe('WebhookHandler', () => {
     describe('cron', () => {
       const installationHandler = new MockInstallationHandler();
       const taskEnqueuer = new NoopTaskEnqueuer();
-      const webhookHandler = new WebhookHandler({
+      const webhookHandler = new Bootstrapper({
         projectId: 'my-test-project',
         botName: 'my-bot-name',
         botSecrets: {
