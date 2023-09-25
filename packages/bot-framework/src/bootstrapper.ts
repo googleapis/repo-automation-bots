@@ -69,7 +69,7 @@ interface BootstrapperBaseOptions {
   taskTargetEnvironment?: BotEnvironment;
   taskTargetName?: string;
   flowControlDelayInSeconds?: number;
-  payloadBucket?: string;
+  payloadCache?: PayloadCache;
   installationHandler?: InstallationHandler;
 }
 
@@ -78,6 +78,7 @@ export interface BootstrapperLoadOptions extends BootstrapperBaseOptions {
   botName?: string;
   secretLoader?: SecretLoader;
   location?: string;
+  payloadBucket?: string;
 }
 
 interface BootstrapperOptions extends BootstrapperBaseOptions {
@@ -165,9 +166,7 @@ export class Bootstrapper {
       new OctokitInstallationHandler(this.octokitFactory);
     this.flowControlDelayInSeconds =
       options.flowControlDelayInSeconds ?? DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
-    this.payloadCache = options.payloadBucket
-      ? new CloudStoragePayloadCache(options.payloadBucket)
-      : new NoopPayloadCache();
+    this.payloadCache = options.payloadCache ?? new NoopPayloadCache();
   }
 
   static async load(
@@ -192,6 +191,9 @@ export class Bootstrapper {
       );
     }
     const payloadBucket = options.payloadBucket ?? process.env.WEBHOOK_TMP;
+    const payloadCache = payloadBucket
+      ? new CloudStoragePayloadCache(payloadBucket)
+      : new NoopPayloadCache();
     const secretLoader =
       options.secretLoader ?? new GoogleSecretLoader(projectId);
     const botSecrets = await secretLoader.load(botName);
@@ -201,7 +203,7 @@ export class Bootstrapper {
       botSecrets,
       botName,
       location,
-      payloadBucket,
+      payloadCache,
     });
   }
 

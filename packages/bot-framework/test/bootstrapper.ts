@@ -41,7 +41,7 @@ import {RestoreFn} from 'mocked-env';
 import mockedEnv from 'mocked-env';
 import assert from 'assert';
 import {GoogleSecretLoader} from '../src/secrets/google-secret-loader';
-import {Octokit} from '@octokit/rest';
+import {NoopPayloadCache} from '../src/background/payload-cache';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -794,8 +794,6 @@ describe('Bootstrapper', () => {
       });
     });
 
-    describe('pubsub', () => {});
-
     describe('error handling', () => {
       const bootstrapper = new Bootstrapper({
         projectId: 'my-test-project',
@@ -1048,6 +1046,74 @@ describe('Bootstrapper', () => {
 
         sinon.assert.calledOnce(issueSpy);
         sinon.assert.calledWith(response.status, 503);
+      });
+    });
+
+    describe('payload caching', () => {
+      const payloadCache = new NoopPayloadCache();
+      const taskEnqueuer = new NoopTaskEnqueuer();
+      const bootstrapper = new Bootstrapper({
+        projectId: 'my-test-project',
+        botName: 'my-bot-name',
+        botSecrets: {
+          appId: '1234',
+          privateKey: 'my-private-key',
+          webhookSecret: 'foo',
+        },
+        location: 'us-central1',
+        skipVerification: true,
+        payloadCache,
+        taskEnqueuer,
+      });
+      it('attempts to store the payload on a webhook trigger', async () => {
+        const saveSpy = sandbox.spy(payloadCache, 'save');
+        const issueSpy = sandbox.stub();
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
+          app.on('issues', issueSpy);
+        });
+
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+          }
+        );
+        const response = mockResponse();
+
+        await handler(request, response);
+
+        sinon.assert.calledWith(response.status, 200);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.calledOnce(saveSpy);
+      });
+      it('attempts to load the payload on a task trigger', async () => {
+        const loadSpy = sandbox.spy(payloadCache, 'load');
+        const issueSpy = sandbox.stub();
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
+          app.on('issues', issueSpy);
+        });
+
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+
+        await handler(request, response);
+
+        sinon.assert.calledWith(response.status, 200);
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.calledOnce(loadSpy);
       });
     });
   });
