@@ -16,3 +16,13 @@ export interface TaskEnqueuer {
 
   loadTask(request: BotRequest, logger: GCFLogger): Promise<BotRequest>;
 }
+
+export class NoopTaskEnqueuer implements TaskEnqueuer {
+  async enqueueTask(
+    request: BackgroundRequest,
+    logger: GCFLogger
+  ): Promise<void> {}
+  async loadTask(request: BotRequest, logger: GCFLogger): Promise<BotRequest> {
+    return request;
+  }
+}

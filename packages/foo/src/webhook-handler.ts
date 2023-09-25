@@ -22,7 +22,7 @@ import {
 } from './custom-events';
 import * as http from 'http';
 import {getServer} from './server';
-import {InstallationHandler} from './installations';
+import {InstallationHandler, OctokitInstallationHandler} from './installations';
 import {OctokitFactory} from './octokit';
 import {PayloadCache, NoopPayloadCache} from './background/payload-cache';
 import {CloudStoragePayloadCache} from './background/cloud-storage-payload-cache';
@@ -55,6 +55,7 @@ interface HandlerBaseOptions {
   taskTargetName?: string;
   flowControlDelayInSeconds?: number;
   payloadBucket?: string;
+  installationHandler?: InstallationHandler;
 }
 
 interface WebhookHandlerLoadOptions extends HandlerBaseOptions {
@@ -130,7 +131,9 @@ export class WebhookHandler {
     this.taskTargetEnvironment = options.taskTargetEnvironment ?? 'functions';
     this.taskTargetName = options.taskTargetName ?? this.botName;
     this.octokitFactory = new OctokitFactory(this.botSecrets);
-    this.installationHandler = new InstallationHandler(this.octokitFactory);
+    this.installationHandler =
+      options.installationHandler ??
+      new OctokitInstallationHandler(this.octokitFactory);
     this.flowControlDelayInSeconds =
       options.flowControlDelayInSeconds ?? DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
     this.payloadCache = options.payloadBucket

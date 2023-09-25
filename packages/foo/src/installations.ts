@@ -24,7 +24,14 @@ export interface InstalledRepository {
   fullName: string;
 }
 
-export class InstallationHandler {
+export interface InstallationHandler {
+  eachInstallation(): AsyncGenerator<AppInstallation, void, void>;
+  eachInstalledRepository(
+    installationId: number
+  ): AsyncGenerator<InstalledRepository, void, void>;
+}
+
+export class OctokitInstallationHandler implements InstallationHandler {
   private octokitFactory: OctokitFactory;
 
   constructor(octokitFactory: OctokitFactory) {
