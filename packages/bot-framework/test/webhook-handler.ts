@@ -166,7 +166,7 @@ describe('Bootstrapper', () => {
         const request = mockRequest(
           {
             installation: {id: 1},
-            action: "opened",
+            action: 'opened',
           },
           {
             'x-github-event': 'issues',
@@ -458,36 +458,21 @@ describe('Bootstrapper', () => {
     describe('pubsub', () => {});
 
     describe('error handling', () => {
-      it('returns 500 on errors', async () => {
+      it('returns 500 on errors', async () => {});
 
-      });
+      it('reports to error reporting on finaly retry', async () => {});
 
-      it('reports to error reporting on finaly retry', async () => {
+      it('logs errors for single handler error', async () => {});
 
-      });
+      it('logs errors for multiple handler errors', async () => {});
 
-      it('logs errors for single handler error', async () => {
+      it('returns 503 on rate limit errors', async () => {});
 
-      });
+      it('returns 503 on secondary rate limit errors', async () => {});
 
-      it('logs errors for multiple handler errors', async () => {
+      it('returns 503 on graphql rate limit errors', async () => {});
 
-      })
-
-      it('returns 503 on rate limit errors', async () => {
-      });
-
-      it('returns 503 on secondary rate limit errors', async () => {
-
-      });
-
-      it('returns 503 on graphql rate limit errors', async () => {
-
-      });
-
-      it('returns 503 on ServiceUnavailable', async () => {
-
-      });
+      it('returns 503 on ServiceUnavailable', async () => {});
     });
   });
 });
