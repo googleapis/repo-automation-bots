@@ -16,6 +16,7 @@ import {GCFLogger} from './logging/gcf-logger';
 
 export {Bootstrapper} from './bootstrapper';
 export {GCFLogger} from './logging/gcf-logger';
+export {getContextLogger} from './context/context-logger';
 
 // Default logger. In general, avoid using this global logger. Instead,
 // configure your own instance with context.

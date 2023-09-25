@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {Request, Response} from 'express';
-import {Webhooks} from '@octokit/webhooks';
+import {Webhooks, EmitterWebhookEvent} from '@octokit/webhooks';
 import {SecretLoader, BotSecrets} from './secrets/secret-loader';
 import {GoogleSecretLoader} from './secrets/google-secret-loader';
 import {parseBotRequest, BotRequest, TriggerType} from './bot-request';
@@ -45,6 +45,7 @@ import {
   eachError,
   parseServiceUnavailableError,
 } from './errors';
+import {Octokit} from '@octokit/rest';
 
 const DEFAULT_MAX_RETRIES = 10;
 const DEFAULT_MAX_CRON_RETRIES = 0;
@@ -91,7 +92,7 @@ export type HandlerFunction = (
   response: HandlerResponse
 ) => Promise<void>;
 
-type ApplicationFunction = (app: Webhooks) => void;
+type ApplicationFunction = (app: BootstrapperApp) => void;
 
 export type BotEnvironment = 'functions' | 'run';
 
@@ -106,6 +107,13 @@ export interface BootstrapperFactory {
   build(options: BootstrapperLoadOptions): Promise<Bootstrapper>;
 }
 
+export type BootstrapperApp = Webhooks<ContextExtensions>;
+
+interface ContextExtensions {
+  logger: GCFLogger;
+  octokit: Octokit;
+}
+
 export class Bootstrapper {
   private taskEnqueuer: TaskEnqueuer;
   private projectId: string;
@@ -115,7 +123,7 @@ export class Bootstrapper {
   private maxRetries: number;
   private maxCronRetries: number;
   private maxPubSubRetries: number;
-  private webhooks: Webhooks;
+  private webhooks: BootstrapperApp;
   private taskTargetEnvironment: BotEnvironment;
   private taskTargetName: string;
   private location: string;
@@ -130,7 +138,10 @@ export class Bootstrapper {
     this.botName = options.botName;
     this.botSecrets = options.botSecrets;
     this.location = options.location;
-    this.webhooks = new Webhooks({secret: this.botSecrets.webhookSecret});
+    this.webhooks = new Webhooks({
+      secret: this.botSecrets.webhookSecret,
+      transform: this.transform.bind(this),
+    });
     this.taskCaller = 'FIXME@gserviceaccount.com';
     this.taskEnqueuer =
       options.taskEnqueuer ??
@@ -243,6 +254,20 @@ export class Bootstrapper {
       } finally {
         requestLogger.flushSync();
       }
+    };
+  }
+
+  private transform(
+    event: EmitterWebhookEvent
+  ): EmitterWebhookEvent & ContextExtensions {
+    const installationId = (event.payload as {installation?: {id: number}})
+      .installation?.id;
+    return {
+      ...event,
+      logger: new GCFLogger(),
+      octokit: installationId
+        ? this.octokitFactory.getInstallationOctokit(installationId)
+        : this.octokitFactory.getAppOctokit(),
     };
   }
 

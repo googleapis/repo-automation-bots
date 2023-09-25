@@ -17,9 +17,13 @@ import sinon from 'sinon';
 import nock from 'nock';
 
 import {Webhooks} from '@octokit/webhooks';
-import {Bootstrapper, HandlerFunction} from '../src/bootstrapper';
+import {
+  Bootstrapper,
+  HandlerFunction,
+  BootstrapperApp,
+} from '../src/bootstrapper';
 import {NoopTaskEnqueuer} from '../src/background/task-enqueuer';
-import {GCFLogger} from '../src';
+import {GCFLogger, getContextLogger} from '../src';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 // eslint-disable-next-line node/no-extraneous-import
@@ -38,6 +42,7 @@ import {RestoreFn} from 'mocked-env';
 import mockedEnv from 'mocked-env';
 import assert from 'assert';
 import {GoogleSecretLoader} from '../src/secrets/google-secret-loader';
+import {Octokit} from '@octokit/rest';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -128,7 +133,7 @@ describe('Bootstrapper', () => {
         skipVerification: true,
       });
       it('rejects unknown trigger types', async () => {
-        const handler = bootstrapper.handler((app: Webhooks) => {});
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {});
         const request = mockRequest({}, {});
         const response = mockResponse();
 
@@ -138,7 +143,7 @@ describe('Bootstrapper', () => {
       });
       it('routes to handler', async () => {
         const issueSpy = sandbox.stub();
-        const handler = bootstrapper.handler((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
           app.on('issues', issueSpy);
         });
 
@@ -164,7 +169,7 @@ describe('Bootstrapper', () => {
         const issueSpy = sandbox.stub();
         const issueSpy2 = sandbox.stub();
         const issueOpenedSpy = sandbox.stub();
-        const handler = bootstrapper.handler((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
           app.on('issues', issueSpy);
           app.on('issues', issueSpy2);
           app.on('issues.opened', issueOpenedSpy);
@@ -191,6 +196,58 @@ describe('Bootstrapper', () => {
         sinon.assert.calledOnce(issueSpy2);
         sinon.assert.calledOnce(issueOpenedSpy);
       });
+      it('provides an authenticated octokit instance', async () => {
+        let octokit: Octokit | null = null;
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
+          app.on('issues', context => {
+            octokit = context.octokit;
+          });
+        });
+
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+
+        await handler(request, response);
+
+        assert.ok(octokit);
+        sinon.assert.calledWith(response.status, 200);
+      });
+      it('provides a context logger', async () => {
+        let logger: GCFLogger | null = null;
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
+          app.on('issues', context => {
+            logger = context.logger;
+          });
+        });
+
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+
+        await handler(request, response);
+
+        assert.ok(logger);
+        sinon.assert.calledWith(response.status, 200);
+      });
     });
 
     describe('task retries', () => {});
@@ -208,7 +265,7 @@ describe('Bootstrapper', () => {
           location: 'us-central1',
         });
         const issueSpy = sandbox.stub();
-        const handler = bootstrapper.handler((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
           app.on('issues', issueSpy);
         });
 
@@ -240,7 +297,7 @@ describe('Bootstrapper', () => {
           location: 'us-central1',
         });
         const issueSpy = sandbox.stub();
-        const handler = bootstrapper.handler((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: BootstrapperApp) => {
           app.on('issues', issueSpy);
         });
 
@@ -278,7 +335,7 @@ describe('Bootstrapper', () => {
         installationHandler,
       });
       const issueSpy = sandbox.stub();
-      const handler = bootstrapper.handler((app: Webhooks) => {
+      const handler = bootstrapper.handler((app: BootstrapperApp) => {
         app.on('issues', issueSpy);
       });
       beforeEach(() => {
@@ -485,7 +542,7 @@ describe('Bootstrapper', () => {
         issueSpy = sandbox.stub();
         pullSpy1 = sandbox.stub();
         pullSpy2 = sandbox.stub();
-        handler = bootstrapper.handler((app: Webhooks) => {
+        handler = bootstrapper.handler((app: BootstrapperApp) => {
           app.on('issues', issueSpy);
           app.on('pull_request', pullSpy1);
           app.on('pull_request', pullSpy2);
