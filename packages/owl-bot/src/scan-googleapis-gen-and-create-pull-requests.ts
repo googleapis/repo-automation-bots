@@ -20,6 +20,7 @@ import {
   copyCodeAndAppendOrCreatePullRequest,
   CopyParams,
   copyTagFrom,
+  InvalidOrgError,
   toLocalRepo,
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
@@ -192,13 +193,18 @@ export async function scanGoogleapisGenAndCreatePullRequests(
       octokitFactory,
       maxYamlCountPerPullRequest,
     };
-    await copyCodeAndAppendOrCreatePullRequest(
-      params,
-      todo.yamlPaths,
-      logger,
-      withNestedCommitDelimiters,
-      draftPullRequests
-    );
+    try {
+      await copyCodeAndAppendOrCreatePullRequest(
+        params,
+        todo.yamlPaths,
+        logger,
+        withNestedCommitDelimiters,
+        draftPullRequests
+      );
+    } catch (err) {
+      if (err instanceof InvalidOrgError) continue;
+      else throw err;
+    }
   }
   return todoStack.length;
 }
