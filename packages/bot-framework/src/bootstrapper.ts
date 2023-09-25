@@ -191,10 +191,10 @@ export class Bootstrapper {
   }
 
   server(appFn: ApplicationFunction): http.Server {
-    return getServer(this.gcf(appFn));
+    return getServer(this.handler(appFn));
   }
 
-  gcf(appFn: ApplicationFunction): HandlerFunction {
+  handler(appFn: ApplicationFunction): HandlerFunction {
     // load handlers onto webhooks
     appFn(this.webhooks);
 
@@ -509,7 +509,7 @@ export class Bootstrapper {
     }
 
     try {
-      this.webhooks.receive({
+      await this.webhooks.receive({
         id: botRequest.githubDeliveryId,
         name: botRequest.eventName as any,
         payload: payload as any,

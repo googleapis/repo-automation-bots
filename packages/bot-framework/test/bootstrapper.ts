@@ -19,13 +19,21 @@ import nock from 'nock';
 import {Webhooks} from '@octokit/webhooks';
 import * as express from 'express';
 import fs from 'fs';
-import {Bootstrapper} from '../src/bootstrapper';
+import {Bootstrapper, HandlerFunction} from '../src/bootstrapper';
 import {NoopTaskEnqueuer} from '../src/background/task-enqueuer';
 import {
   InstallationHandler,
   AppInstallation,
   InstalledRepository,
 } from '../src/installations';
+import {GCFLogger} from '../src';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
+// eslint-disable-next-line node/no-extraneous-import
+import {GraphqlResponseError} from '@octokit/graphql';
+import * as errorLoggingModule from '../src/logging/error-logging';
+import AggregateError from 'aggregate-error';
+import {ServiceUnavailable} from '../src/errors';
 
 nock.disableNetConnect();
 
@@ -107,9 +115,12 @@ describe('Bootstrapper', () => {
   afterEach(() => {
     sandbox.restore();
   });
-  describe('gcf', () => {
+
+  describe('load', () => {});
+
+  describe('handler', () => {
     describe('webhooks', async () => {
-      const webhookHandler = new Bootstrapper({
+      const bootstrapper = new Bootstrapper({
         projectId: 'my-test-project',
         botName: 'my-bot-name',
         botSecrets: {
@@ -121,17 +132,17 @@ describe('Bootstrapper', () => {
         skipVerification: true,
       });
       it('rejects unknown trigger types', async () => {
-        const gcf = webhookHandler.gcf((app: Webhooks) => {});
+        const handler = bootstrapper.handler((app: Webhooks) => {});
         const request = mockRequest({}, {});
         const response = mockResponse();
 
-        await gcf(request, response);
+        await handler(request, response);
 
         sinon.assert.calledWith(response.status, 400);
       });
       it('routes to handler', async () => {
         const issueSpy = sandbox.stub();
-        const gcf = webhookHandler.gcf((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: Webhooks) => {
           app.on('issues', issueSpy);
         });
 
@@ -148,7 +159,7 @@ describe('Bootstrapper', () => {
         );
         const response = mockResponse();
 
-        await gcf(request, response);
+        await handler(request, response);
 
         sinon.assert.calledWith(response.status, 200);
         sinon.assert.calledOnce(issueSpy);
@@ -157,7 +168,7 @@ describe('Bootstrapper', () => {
         const issueSpy = sandbox.stub();
         const issueSpy2 = sandbox.stub();
         const issueOpenedSpy = sandbox.stub();
-        const gcf = webhookHandler.gcf((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: Webhooks) => {
           app.on('issues', issueSpy);
           app.on('issues', issueSpy2);
           app.on('issues.opened', issueOpenedSpy);
@@ -177,7 +188,7 @@ describe('Bootstrapper', () => {
         );
         const response = mockResponse();
 
-        await gcf(request, response);
+        await handler(request, response);
 
         sinon.assert.calledWith(response.status, 200);
         sinon.assert.calledOnce(issueSpy);
@@ -190,7 +201,7 @@ describe('Bootstrapper', () => {
 
     describe('with signatures', () => {
       it('rejects invalid signatures', async () => {
-        const webhookHandler = new Bootstrapper({
+        const bootstrapper = new Bootstrapper({
           projectId: 'my-test-project',
           botName: 'my-bot-name',
           botSecrets: {
@@ -201,7 +212,7 @@ describe('Bootstrapper', () => {
           location: 'us-central1',
         });
         const issueSpy = sandbox.stub();
-        const gcf = webhookHandler.gcf((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: Webhooks) => {
           app.on('issues', issueSpy);
         });
 
@@ -215,14 +226,14 @@ describe('Bootstrapper', () => {
         });
 
         const response = mockResponse();
-        await gcf(request, response);
+        await handler(request, response);
 
         sinon.assert.calledWith(response.status, 400);
         sinon.assert.notCalled(issueSpy);
       });
 
       it('handles valid task request signatures', async () => {
-        const webhookHandler = new Bootstrapper({
+        const bootstrapper = new Bootstrapper({
           projectId: 'my-test-project',
           botName: 'my-bot-name',
           botSecrets: {
@@ -233,7 +244,7 @@ describe('Bootstrapper', () => {
           location: 'us-central1',
         });
         const issueSpy = sandbox.stub();
-        const gcf = webhookHandler.gcf((app: Webhooks) => {
+        const handler = bootstrapper.handler((app: Webhooks) => {
           app.on('issues', issueSpy);
         });
 
@@ -247,7 +258,7 @@ describe('Bootstrapper', () => {
         });
 
         const response = mockResponse();
-        await gcf(request, response);
+        await handler(request, response);
 
         sinon.assert.calledWith(response.status, 200);
         sinon.assert.calledOnce(issueSpy);
@@ -257,7 +268,7 @@ describe('Bootstrapper', () => {
     describe('cron', () => {
       const installationHandler = new MockInstallationHandler();
       const taskEnqueuer = new NoopTaskEnqueuer();
-      const webhookHandler = new Bootstrapper({
+      const bootstrapper = new Bootstrapper({
         projectId: 'my-test-project',
         botName: 'my-bot-name',
         botSecrets: {
@@ -271,7 +282,7 @@ describe('Bootstrapper', () => {
         installationHandler,
       });
       const issueSpy = sandbox.stub();
-      const gcf = webhookHandler.gcf((app: Webhooks) => {
+      const handler = bootstrapper.handler((app: Webhooks) => {
         app.on('issues', issueSpy);
       });
       beforeEach(() => {
@@ -305,7 +316,7 @@ describe('Bootstrapper', () => {
             },
           ]);
 
-          await gcf(request, response);
+          await handler(request, response);
 
           sinon.assert.calledWith(response.status, 200);
           sinon.assert.notCalled(issueSpy);
@@ -354,7 +365,7 @@ describe('Bootstrapper', () => {
             },
           ]);
 
-          await gcf(request, response);
+          await handler(request, response);
 
           sinon.assert.calledWith(response.status, 200);
           sinon.assert.notCalled(issueSpy);
@@ -374,7 +385,7 @@ describe('Bootstrapper', () => {
           const enqueueTaskStub = sandbox.stub(taskEnqueuer, 'enqueueTask');
           const response = mockResponse();
 
-          await gcf(request, response);
+          await handler(request, response);
 
           sinon.assert.calledWith(response.status, 200);
           sinon.assert.notCalled(issueSpy);
@@ -396,7 +407,7 @@ describe('Bootstrapper', () => {
           const enqueueTaskStub = sandbox.stub(taskEnqueuer, 'enqueueTask');
           const response = mockResponse();
 
-          await gcf(request, response);
+          await handler(request, response);
 
           sinon.assert.calledWith(response.status, 200);
           sinon.assert.notCalled(issueSpy);
@@ -425,7 +436,7 @@ describe('Bootstrapper', () => {
             },
           ]);
 
-          await gcf(request, response);
+          await handler(request, response);
 
           sinon.assert.calledWith(response.status, 200);
           sinon.assert.notCalled(issueSpy);
@@ -446,7 +457,7 @@ describe('Bootstrapper', () => {
           const enqueueTaskStub = sandbox.stub(taskEnqueuer, 'enqueueTask');
           const response = mockResponse();
 
-          await gcf(request, response);
+          await handler(request, response);
 
           sinon.assert.calledWith(response.status, 200);
           sinon.assert.notCalled(issueSpy);
@@ -458,21 +469,258 @@ describe('Bootstrapper', () => {
     describe('pubsub', () => {});
 
     describe('error handling', () => {
-      it('returns 500 on errors', async () => {});
+      const bootstrapper = new Bootstrapper({
+        projectId: 'my-test-project',
+        botName: 'my-bot-name',
+        botSecrets: {
+          appId: '1234',
+          privateKey: 'my-private-key',
+          webhookSecret: 'foo',
+        },
+        location: 'us-central1',
+        skipVerification: true,
+      });
+      let handler: HandlerFunction;
+      let issueSpy: sinon.SinonStub;
+      let pullSpy1: sinon.SinonStub;
+      let pullSpy2: sinon.SinonStub;
+      let logErrorsStub: sinon.SinonStub;
+      beforeEach(() => {
+        issueSpy = sandbox.stub();
+        pullSpy1 = sandbox.stub();
+        pullSpy2 = sandbox.stub();
+        handler = bootstrapper.handler((app: Webhooks) => {
+          app.on('issues', issueSpy);
+          app.on('pull_request', pullSpy1);
+          app.on('pull_request', pullSpy2);
+        });
+        logErrorsStub = sandbox.stub(errorLoggingModule, 'logErrors');
+      });
+      it('returns 500 on errors', async () => {
+        issueSpy.throws();
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+        await handler(request, response);
 
-      it('reports to error reporting on finaly retry', async () => {});
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.calledWith(response.status, 500);
+        sinon.assert.calledWith(
+          logErrorsStub,
+          sinon.match.instanceOf(GCFLogger),
+          sinon.match.instanceOf(Error),
+          false
+        );
+      });
 
-      it('logs errors for single handler error', async () => {});
+      it('reports to error reporting on final retry', async () => {
+        issueSpy.throws();
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+            'x-cloudtasks-taskretrycount': '10',
+          }
+        );
+        const response = mockResponse();
+        await handler(request, response);
 
-      it('logs errors for multiple handler errors', async () => {});
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.calledWith(response.status, 500);
+        sinon.assert.calledWith(
+          logErrorsStub,
+          sinon.match.instanceOf(GCFLogger),
+          sinon.match.any,
+          true
+        );
+      });
 
-      it('returns 503 on rate limit errors', async () => {});
+      it('logs errors for multiple handler errors', async () => {
+        pullSpy1.throws(new SyntaxError('Some message'));
+        pullSpy2.throws(new Error('Another message'));
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'pull_request',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+        await handler(request, response);
 
-      it('returns 503 on secondary rate limit errors', async () => {});
+        sinon.assert.calledOnce(pullSpy1);
+        sinon.assert.calledOnce(pullSpy2);
+        sinon.assert.calledWith(response.status, 500);
+        sinon.assert.calledWith(
+          logErrorsStub,
+          sinon.match.instanceOf(GCFLogger),
+          sinon.match.instanceOf(AggregateError),
+          false
+        );
+      });
 
-      it('returns 503 on graphql rate limit errors', async () => {});
+      it('returns 503 on rate limit errors', async () => {
+        issueSpy.throws(
+          new RequestError('API rate limit exceeded for user ID 3456', 403, {
+            response: {
+              headers: {
+                'x-ratelimit-remaining': '0',
+                'x-ratelimit-reset': '1653880306',
+                'x-ratelimit-limit': '5000',
+                'x-ratelimit-resource': 'core',
+              },
+              status: 403,
+              url: '',
+              data: '',
+            },
+            request: {
+              headers: {},
+              method: 'POST',
+              url: '',
+            },
+          })
+        );
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+        await handler(request, response);
 
-      it('returns 503 on ServiceUnavailable', async () => {});
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.calledWith(response.status, 503);
+      });
+
+      it('returns 503 on secondary rate limit errors', async () => {
+        issueSpy.throws(
+          new RequestError(
+            'You have exceeded a secondary rate limit. Please wait a few minutes before you try again.',
+            403,
+            {
+              response: {
+                headers: {},
+                status: 403,
+                url: '',
+                data: '',
+              },
+              request: {
+                headers: {},
+                method: 'POST',
+                url: '',
+              },
+            }
+          )
+        );
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+        await handler(request, response);
+
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.calledWith(response.status, 503);
+      });
+
+      it('returns 503 on graphql rate limit errors', async () => {
+        issueSpy.throws(
+          new GraphqlResponseError(
+            {
+              method: 'GET',
+              url: 'fake',
+            },
+            {
+              'x-ratelimit-remaining': '0',
+              'x-ratelimit-reset': '1653880306',
+              'x-ratelimit-limit': '12500',
+              'x-ratelimit-resource': 'graphql',
+            },
+            {
+              data: {},
+              errors: [
+                {
+                  type: 'RATE_LIMITED',
+                  message:
+                    'API rate limit exceeded for installation ID 1848216',
+                  path: ['fake'],
+                  extensions: {},
+                  locations: [{line: 1, column: 2}],
+                },
+              ],
+            }
+          )
+        );
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+        await handler(request, response);
+
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.calledWith(response.status, 503);
+      });
+
+      it('returns 503 on ServiceUnavailable', async () => {
+        issueSpy.throws(
+          new ServiceUnavailable('', new Error('An error happened'))
+        );
+        const request = mockRequest(
+          {
+            installation: {id: 1},
+          },
+          {
+            'x-github-event': 'issues',
+            'x-github-delivery': '123',
+            // populated once this job has been executed by cloud tasks:
+            'x-cloudtasks-taskname': 'my-task',
+          }
+        );
+        const response = mockResponse();
+        await handler(request, response);
+
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.calledWith(response.status, 503);
+      });
     });
   });
 });

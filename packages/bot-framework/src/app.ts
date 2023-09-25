@@ -21,7 +21,7 @@ let handler: HandlerFunction;
     app.on('issues.opened', context => {});
   };
   const webhookHandler = await Bootstrapper.load({});
-  handler = webhookHandler.gcf(appFn);
+  handler = webhookHandler.handler(appFn);
 })();
 
 export {handler};
