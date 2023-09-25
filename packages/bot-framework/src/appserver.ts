@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {WebhookHandler} from './webhook-handler';
+import {Bootstrapper} from './bootstrapper';
 import {Webhooks} from '@octokit/webhooks';
 import * as http from 'http';
 
@@ -21,7 +21,7 @@ let server: http.Server;
   const appFn = (app: Webhooks) => {
     app.on('issues.opened', context => {});
   };
-  const webhookHandler = await WebhookHandler.load({
+  const webhookHandler = await Bootstrapper.load({
     skipVerification: true,
   });
   server = webhookHandler.server(appFn);

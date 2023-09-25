@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {WebhookHandler, HandlerFunction} from './webhook-handler';
-import {Webhooks} from '@octokit/webhooks';
+import {GCFLogger} from './logging/gcf-logger';
 
-let handler: HandlerFunction;
-(async () => {
-  const appFn = (app: Webhooks) => {
-    app.on('issues.opened', context => {});
-  };
-  const webhookHandler = await WebhookHandler.load({});
-  handler = webhookHandler.gcf(appFn);
-})();
+export {Bootstrapper} from './bootstrapper';
+export {GCFLogger} from './logging/gcf-logger';
 
-export {handler};
+// Default logger. In general, avoid using this global logger. Instead,
+// configure your own instance with context.
+export const logger = new GCFLogger();

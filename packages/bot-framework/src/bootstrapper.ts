@@ -45,7 +45,7 @@ export interface HandlerRequest extends Request {
 
 export type HandlerResponse = Response;
 
-interface HandlerBaseOptions {
+interface BootstrapperBaseOptions {
   taskEnqueuer?: TaskEnqueuer;
   skipVerification?: boolean;
   maxRetries?: number;
@@ -58,14 +58,14 @@ interface HandlerBaseOptions {
   installationHandler?: InstallationHandler;
 }
 
-interface WebhookHandlerLoadOptions extends HandlerBaseOptions {
+interface BootstrapperLoadOptions extends BootstrapperBaseOptions {
   projectId?: string;
   botName?: string;
   secretLoader?: SecretLoader;
   location?: string;
 }
 
-interface WebhookHandlerOptions extends HandlerBaseOptions {
+interface BootstrapperOptions extends BootstrapperBaseOptions {
   projectId: string;
   botName: string;
   botSecrets: BotSecrets;
@@ -88,7 +88,7 @@ interface EnqueueTaskParams {
   delayInSeconds?: number;
 }
 
-export class WebhookHandler {
+export class Bootstrapper {
   private taskEnqueuer: TaskEnqueuer;
   private projectId: string;
   private botName: string;
@@ -107,7 +107,7 @@ export class WebhookHandler {
   private taskCaller: string;
   private payloadCache: PayloadCache;
 
-  constructor(options: WebhookHandlerOptions) {
+  constructor(options: BootstrapperOptions) {
     this.projectId = options.projectId;
     this.botName = options.botName;
     this.botSecrets = options.botSecrets;
@@ -142,8 +142,8 @@ export class WebhookHandler {
   }
 
   static async load(
-    options: WebhookHandlerLoadOptions = {}
-  ): Promise<WebhookHandler> {
+    options: BootstrapperLoadOptions = {}
+  ): Promise<Bootstrapper> {
     const projectId = options.projectId ?? process.env.PROJECT_ID;
     if (!projectId) {
       throw new Error(
@@ -166,7 +166,7 @@ export class WebhookHandler {
     const secretLoader =
       options.secretLoader ?? new GoogleSecretLoader(projectId);
     const botSecrets = await secretLoader.load(botName);
-    return new WebhookHandler({
+    return new Bootstrapper({
       ...options,
       projectId,
       botSecrets,

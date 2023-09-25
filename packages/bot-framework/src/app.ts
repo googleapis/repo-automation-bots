@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger} from './logging/gcf-logger';
+import {Bootstrapper, HandlerFunction} from './bootstrapper';
+import {Webhooks} from '@octokit/webhooks';
 
-export {WebhookHandler} from './webhook-handler';
-export {GCFLogger} from './logging/gcf-logger';
+let handler: HandlerFunction;
+(async () => {
+  const appFn = (app: Webhooks) => {
+    app.on('issues.opened', context => {});
+  };
+  const webhookHandler = await Bootstrapper.load({});
+  handler = webhookHandler.gcf(appFn);
+})();
 
-export const logger = new GCFLogger();
+export {handler};
