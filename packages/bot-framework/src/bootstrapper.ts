@@ -262,9 +262,10 @@ export class Bootstrapper {
   ): EmitterWebhookEvent & ContextExtensions {
     const installationId = (event.payload as {installation?: {id: number}})
       .installation?.id;
+    const logger = (event as any).logger ?? new GCFLogger();
     return {
       ...event,
-      logger: new GCFLogger(),
+      logger,
       octokit: installationId
         ? this.octokitFactory.getInstallationOctokit(installationId)
         : this.octokitFactory.getAppOctokit(),
@@ -542,7 +543,8 @@ export class Bootstrapper {
         id: botRequest.githubDeliveryId,
         name: botRequest.eventName as any,
         payload: payload as any,
-      });
+        logger,
+      } as any);
 
       response.status(200).json({message: 'Executed'});
     } catch (e) {

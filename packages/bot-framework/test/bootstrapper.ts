@@ -16,14 +16,13 @@ import {describe, beforeEach, afterEach, it} from 'mocha';
 import sinon from 'sinon';
 import nock from 'nock';
 
-import {Webhooks} from '@octokit/webhooks';
 import {
   Bootstrapper,
   HandlerFunction,
   BootstrapperApp,
 } from '../src/bootstrapper';
 import {NoopTaskEnqueuer} from '../src/background/task-enqueuer';
-import {GCFLogger, getContextLogger} from '../src';
+import {GCFLogger} from '../src/logging/gcf-logger';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 // eslint-disable-next-line node/no-extraneous-import
@@ -197,10 +196,9 @@ describe('Bootstrapper', () => {
         sinon.assert.calledOnce(issueOpenedSpy);
       });
       it('provides an authenticated octokit instance', async () => {
-        let octokit: Octokit | null = null;
         const handler = bootstrapper.handler((app: BootstrapperApp) => {
           app.on('issues', context => {
-            octokit = context.octokit;
+            assert.ok(context.octokit);
           });
         });
 
@@ -219,14 +217,13 @@ describe('Bootstrapper', () => {
 
         await handler(request, response);
 
-        assert.ok(octokit);
         sinon.assert.calledWith(response.status, 200);
       });
       it('provides a context logger', async () => {
-        let logger: GCFLogger | null = null;
         const handler = bootstrapper.handler((app: BootstrapperApp) => {
           app.on('issues', context => {
-            logger = context.logger;
+            assert.ok(context.logger);
+            assert.ok((context.logger.getBindings() as any).trigger);
           });
         });
 
@@ -244,8 +241,6 @@ describe('Bootstrapper', () => {
         const response = mockResponse();
 
         await handler(request, response);
-
-        assert.ok(logger);
         sinon.assert.calledWith(response.status, 200);
       });
     });
