@@ -245,7 +245,287 @@ describe('Bootstrapper', () => {
       });
     });
 
-    describe('task retries', () => {});
+    describe('task retries', () => {
+      describe('with default retry settings', () => {
+        const bootstrapper = new Bootstrapper({
+          projectId: 'my-test-project',
+          botName: 'my-bot-name',
+          botSecrets: {
+            appId: '1234',
+            privateKey: 'my-private-key',
+            webhookSecret: 'foo',
+          },
+          location: 'us-central1',
+          skipVerification: true,
+        });
+        it('accepts a retry task below the limit', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'issues',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '1',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.calledOnce(issueSpy);
+        });
+        it('rejects a retry task above the limit', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'issues',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '20',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.notCalled(issueSpy);
+        });
+        it('rejects a cron retry task', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'schedule.repository',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '1',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.notCalled(issueSpy);
+        });
+        it('rejects a pubsub retry task', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'pubsub.message',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '1',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.notCalled(issueSpy);
+        });
+      });
+      describe('with custom retry settings', () => {
+        const bootstrapper = new Bootstrapper({
+          projectId: 'my-test-project',
+          botName: 'my-bot-name',
+          botSecrets: {
+            appId: '1234',
+            privateKey: 'my-private-key',
+            webhookSecret: 'foo',
+          },
+          location: 'us-central1',
+          skipVerification: true,
+          maxCronRetries: 2,
+          maxPubSubRetries: 4,
+          maxRetries: 10,
+        });
+        it('accepts a retry task below the limit', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'issues',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '1',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.calledOnce(issueSpy);
+        });
+        it('rejects a retry task above the limit', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'issues',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '20',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.notCalled(issueSpy);
+        });
+        it('accepts a cron retry task', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'schedule.repository',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '2',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.calledOnce(issueSpy);
+        });
+        it('rejects a cron retry task above the limit', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'schedule.repository',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '3',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.notCalled(issueSpy);
+        });
+        it('accepts a pubsub retry task', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'pubsub.message',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '3',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.calledOnce(issueSpy);
+        });
+        it('rejects a pubsub retry task above the limit', async () => {
+          const issueSpy = sandbox.stub();
+          const handler = bootstrapper.handler((app: BootstrapperApp) => {
+            app.onAny(issueSpy);
+          });
+
+          const request = mockRequest(
+            {
+              installation: {id: 1},
+            },
+            {
+              'x-github-event': 'pubsub.message',
+              'x-github-delivery': '123',
+              // populated once this job has been executed by cloud tasks:
+              'x-cloudtasks-taskname': 'my-task',
+              'x-cloudtasks-taskretrycount': '5',
+            }
+          );
+          const response = mockResponse();
+
+          await handler(request, response);
+
+          sinon.assert.calledWith(response.status, 200);
+          sinon.assert.notCalled(issueSpy);
+        });
+      });
+    });
 
     describe('with signatures', () => {
       it('rejects invalid signatures', async () => {
