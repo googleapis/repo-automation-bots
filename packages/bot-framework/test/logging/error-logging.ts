@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ERROR_REPORTING_TYPE_NAME, logErrors} from '../../src/logging/error-logging';
+import {
+  ERROR_REPORTING_TYPE_NAME,
+  logErrors,
+} from '../../src/logging/error-logging';
 import {GCFLogger} from '../../src/logging/gcf-logger';
 import {ObjectWritableMock} from 'stream-mock';
 import {describe, beforeEach, it} from 'mocha';

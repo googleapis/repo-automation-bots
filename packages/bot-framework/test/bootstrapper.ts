@@ -15,6 +15,7 @@
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import sinon from 'sinon';
 import nock from 'nock';
+import * as http from 'http';
 
 import {
   Bootstrapper,
@@ -42,9 +43,14 @@ import mockedEnv from 'mocked-env';
 import assert from 'assert';
 import {GoogleSecretLoader} from '../src/secrets/google-secret-loader';
 import {NoopPayloadCache} from '../src/background/payload-cache';
+import * as gaxios from 'gaxios';
+import {resolve} from 'path';
+import Sinon from 'sinon';
+const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
+const TEST_SERVER_PORT = 8000;
 
 describe('Bootstrapper', () => {
   let restoreEnv: RestoreFn | null;
@@ -1106,6 +1112,179 @@ describe('Bootstrapper', () => {
         sinon.assert.calledWith(response.status, 200);
         sinon.assert.calledOnce(issueSpy);
         sinon.assert.calledOnce(loadSpy);
+      });
+    });
+  });
+
+  describe('server', () => {
+    describe('without verification', () => {
+      let server: http.Server;
+      const taskEnqueuer = new NoopTaskEnqueuer();
+      const bootstrapper = new Bootstrapper({
+        projectId: 'test-project',
+        botName: 'test-bot',
+        botSecrets: {
+          privateKey: 'some-private-key',
+          appId: '1234',
+          webhookSecret: 'some-secret',
+        },
+        skipVerification: true,
+        taskEnqueuer,
+      });
+      let enqueueTaskStub: sinon.SinonStub;
+      const issueSpy = sandbox.stub();
+      before(done => {
+        nock.enableNetConnect(host => {
+          return host.startsWith('localhost:');
+        });
+
+        server = bootstrapper
+          .server(async app => {
+            app.on('issues', issueSpy);
+          })
+          .on('listening', () => {
+            done();
+          })
+          .listen(TEST_SERVER_PORT);
+      });
+      beforeEach(() => {
+        enqueueTaskStub = sandbox.stub(taskEnqueuer, 'enqueueTask');
+      });
+
+      afterEach(() => {
+        issueSpy.reset();
+        enqueueTaskStub.reset();
+      });
+
+      after(done => {
+        server.on('close', () => {
+          done();
+        });
+        server.close();
+      });
+
+      it('should handle requests', async () => {
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-cloudtasks-taskname': 'test-bot',
+            'x-github-event': 'issues',
+          },
+        });
+        assert.deepStrictEqual(response.status, 200);
+        sinon.assert.notCalled(enqueueTaskStub);
+        sinon.assert.calledOnce(issueSpy);
+      });
+
+      it('should handle payloads', async () => {
+        const payload = require(resolve(fixturesPath, './issue_event'));
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-cloudtasks-taskname': 'test-bot',
+            'x-github-event': 'issues',
+            'content-type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        assert.deepStrictEqual(response.status, 200);
+        sinon.assert.notCalled(enqueueTaskStub);
+        sinon.assert.calledOnceWithMatch(
+          issueSpy,
+          sinon.match.has(
+            'payload',
+            sinon.match({
+              action: 'opened',
+              issue: {
+                number: 10,
+              },
+            })
+          )
+        );
+      });
+
+      it('should queue requests', async () => {
+        const payload = require(resolve(fixturesPath, './issue_event'));
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-github-event': 'issues',
+            'content-type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        assert.deepStrictEqual(response.status, 200);
+        sinon.assert.calledOnce(enqueueTaskStub);
+        sinon.assert.notCalled(issueSpy);
+      });
+    });
+
+    describe('with verification', () => {
+      let server: http.Server;
+      const taskEnqueuer = new NoopTaskEnqueuer();
+      const bootstrapper = new Bootstrapper({
+        projectId: 'test-project',
+        botName: 'test-bot',
+        botSecrets: {
+          privateKey: 'cert',
+          appId: '1234',
+          webhookSecret: 'foo',
+        },
+        taskEnqueuer,
+      });
+      const issueSpy = sandbox.stub();
+      let enqueueTaskStub: sinon.SinonStub;
+      before(done => {
+        nock.enableNetConnect(host => {
+          return host.startsWith('localhost:');
+        });
+
+        server = bootstrapper
+          .server(async app => {
+            app.on('issues', issueSpy);
+          })
+          .on('listening', () => {
+            done();
+          })
+          .listen(TEST_SERVER_PORT);
+      });
+
+      beforeEach(() => {
+        enqueueTaskStub = sandbox.stub(taskEnqueuer, 'enqueueTask');
+      });
+
+      afterEach(() => {
+        issueSpy.reset();
+      });
+
+      after(done => {
+        server.on('close', () => {
+          done();
+        });
+        server.close();
+      });
+
+      it('should reject bad signatures with 400 on webhooks', async () => {
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-github-event': 'issues',
+            'x-hub-signature': 'bad-signature',
+          },
+          // don't throw on non-success error codes
+          validateStatus: () => {
+            return true;
+          },
+        });
+        assert.deepStrictEqual(response.status, 400);
+        sinon.assert.notCalled(enqueueTaskStub);
+        sinon.assert.notCalled(issueSpy);
       });
     });
   });
