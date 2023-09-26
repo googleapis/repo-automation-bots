@@ -239,18 +239,3 @@ function pinoLevelToCloudLoggingSeverity(
   const UNKNOWN_SEVERITY = 'DEFAULT';
   return {severity: severityMap[level] || UNKNOWN_SEVERITY, level: level};
 }
-
-/**
- * Build a child logger and attach bindings (attributes). This function is used
- * for mocking logging for tests.
- *
- * @param {GCFLogger} logger The parent logger
- * @param {object} bindings Data to add to each log entry
- * @returns {GCFLogger}
- */
-export function buildRequestLogger(
-  logger: GCFLogger,
-  bindings: object
-): GCFLogger {
-  return logger.child(bindings);
-}
