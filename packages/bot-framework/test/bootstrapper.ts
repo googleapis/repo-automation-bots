@@ -45,7 +45,6 @@ import {GoogleSecretLoader} from '../src/secrets/google-secret-loader';
 import {NoopPayloadCache} from '../src/background/payload-cache';
 import * as gaxios from 'gaxios';
 import {resolve} from 'path';
-import Sinon from 'sinon';
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 nock.disableNetConnect();
