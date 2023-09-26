@@ -30,7 +30,7 @@ export function makeAbcRepo(logger = console): string {
   const cmd = newCmd(logger);
 
   // Create a git repo.
-  const dir = tmp.dirSync().name;
+  const dir = tmp.dirSync({template: 'googleapis-XXXXXX'}).name;
   cmd('git init -b main', {cwd: dir});
   cmd('git config user.email "test@example.com"', {cwd: dir});
   cmd('git config user.name "test"', {cwd: dir});
@@ -61,7 +61,7 @@ export function makeRepoWithOwlBotYaml(
 ): string {
   const cmd = newCmd(console);
 
-  const dir = tmp.dirSync().name;
+  const dir = tmp.dirSync({template: 'googleapis-XXXXXX'}).name;
   cmd('git init -b main', {cwd: dir});
   cmd('git config user.email "test@example.com"', {cwd: dir});
   cmd('git config user.name "test"', {cwd: dir});
