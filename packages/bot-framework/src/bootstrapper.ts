@@ -20,7 +20,7 @@ import {parseBotRequest, BotRequest, TriggerType} from './bot-request';
 import {GCFLogger} from './logging/gcf-logger';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {logErrors} from './logging/error-logging';
-import {TaskEnqueuer} from './background/task-enqueuer';
+import {TaskEnqueuer, NoopTaskEnqueuer} from './background/task-enqueuer';
 import {CloudTasksEnqueuer} from './background/cloud-tasks-enqueuer';
 import {
   parseScheduledRequest,
@@ -54,6 +54,9 @@ const DEFAULT_MAX_PUBSUB_RETRIES = 0;
 // Adding 30 second delay for each batch with 30 tasks
 const DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND = 30;
 
+const DEFAULT_TASK_CALLER =
+  'task-caller@repo-automation-bots.iam.gserviceaccount.com';
+
 export interface HandlerRequest extends Request {
   rawBody: Buffer;
 }
@@ -79,13 +82,13 @@ export interface BootstrapperLoadOptions extends BootstrapperBaseOptions {
   secretLoader?: SecretLoader;
   location?: string;
   payloadBucket?: string;
+  taskCaller?: string;
 }
 
 interface BootstrapperOptions extends BootstrapperBaseOptions {
   projectId: string;
   botName: string;
   botSecrets: BotSecrets;
-  location: string;
 }
 
 export type HandlerFunction = (
@@ -96,6 +99,7 @@ export type HandlerFunction = (
 type ApplicationFunction = (app: BootstrapperApp) => void;
 
 export type BotEnvironment = 'functions' | 'run';
+const DEFAULT_TASK_TARGET_ENVIRONMENT: BotEnvironment = 'functions';
 
 interface EnqueueTaskParams {
   id: string;
@@ -125,40 +129,25 @@ export class Bootstrapper {
   private maxCronRetries: number;
   private maxPubSubRetries: number;
   private webhooks: BootstrapperApp;
-  private taskTargetEnvironment: BotEnvironment;
-  private taskTargetName: string;
-  private location: string;
   private installationHandler: InstallationHandler;
   private octokitFactory: OctokitFactory;
   private flowControlDelayInSeconds: number;
-  private taskCaller: string;
   private payloadCache: PayloadCache;
 
   constructor(options: BootstrapperOptions) {
     this.projectId = options.projectId;
     this.botName = options.botName;
     this.botSecrets = options.botSecrets;
-    this.location = options.location;
     this.webhooks = new Webhooks({
       secret: this.botSecrets.webhookSecret,
       transform: this.transform.bind(this),
     });
-    this.taskCaller = 'FIXME@gserviceaccount.com';
-    this.taskEnqueuer =
-      options.taskEnqueuer ??
-      new CloudTasksEnqueuer(
-        this.projectId,
-        this.botName,
-        this.location,
-        this.taskCaller
-      );
+    this.taskEnqueuer = options.taskEnqueuer ?? new NoopTaskEnqueuer();
     this.skipVerification = options.skipVerification ?? false;
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.maxCronRetries = options.maxCronRetries ?? DEFAULT_MAX_CRON_RETRIES;
     this.maxPubSubRetries =
       options.maxPubSubRetries ?? DEFAULT_MAX_PUBSUB_RETRIES;
-    this.taskTargetEnvironment = options.taskTargetEnvironment ?? 'functions';
-    this.taskTargetName = options.taskTargetName ?? this.botName;
     this.octokitFactory = new OctokitFactory(this.botSecrets);
     this.installationHandler =
       options.installationHandler ??
@@ -196,13 +185,21 @@ export class Bootstrapper {
     const secretLoader =
       options.secretLoader ?? new GoogleSecretLoader(projectId);
     const botSecrets = await secretLoader.load(botName);
+    const taskCaller = options.taskCaller ?? DEFAULT_TASK_CALLER;
     return new Bootstrapper({
       ...options,
       projectId,
       botSecrets,
       botName,
-      location,
       payloadCache,
+      taskEnqueuer: new CloudTasksEnqueuer(
+        projectId,
+        botName,
+        location,
+        taskCaller,
+        options.taskTargetEnvironment ?? DEFAULT_TASK_TARGET_ENVIRONMENT,
+        options.taskTargetName ?? botName
+      ),
     });
   }
 
@@ -377,8 +374,6 @@ export class Bootstrapper {
         ...enqueueParams,
         body,
         signature,
-        targetEnvironment: this.taskTargetEnvironment,
-        targetName: this.taskTargetName,
       },
       logger
     );

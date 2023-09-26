@@ -128,7 +128,6 @@ describe('Bootstrapper', () => {
           privateKey: 'my-private-key',
           webhookSecret: 'foo',
         },
-        location: 'us-central1',
         skipVerification: true,
       });
       it('rejects unknown trigger types', async () => {
@@ -255,7 +254,6 @@ describe('Bootstrapper', () => {
             privateKey: 'my-private-key',
             webhookSecret: 'foo',
           },
-          location: 'us-central1',
           skipVerification: true,
         });
         it('accepts a retry task below the limit', async () => {
@@ -368,7 +366,6 @@ describe('Bootstrapper', () => {
             privateKey: 'my-private-key',
             webhookSecret: 'foo',
           },
-          location: 'us-central1',
           skipVerification: true,
           maxCronRetries: 2,
           maxPubSubRetries: 4,
@@ -537,7 +534,6 @@ describe('Bootstrapper', () => {
             privateKey: 'my-private-key',
             webhookSecret: 'foo',
           },
-          location: 'us-central1',
         });
         const issueSpy = sandbox.stub();
         const handler = bootstrapper.handler((app: BootstrapperApp) => {
@@ -569,7 +565,6 @@ describe('Bootstrapper', () => {
             privateKey: 'my-private-key',
             webhookSecret: 'foo',
           },
-          location: 'us-central1',
         });
         const issueSpy = sandbox.stub();
         const handler = bootstrapper.handler((app: BootstrapperApp) => {
@@ -604,7 +599,6 @@ describe('Bootstrapper', () => {
           privateKey: 'my-private-key',
           webhookSecret: 'foo',
         },
-        location: 'us-central1',
         skipVerification: true,
         taskEnqueuer,
         installationHandler,
@@ -803,7 +797,6 @@ describe('Bootstrapper', () => {
           privateKey: 'my-private-key',
           webhookSecret: 'foo',
         },
-        location: 'us-central1',
         skipVerification: true,
       });
       let handler: HandlerFunction;
@@ -1060,7 +1053,6 @@ describe('Bootstrapper', () => {
           privateKey: 'my-private-key',
           webhookSecret: 'foo',
         },
-        location: 'us-central1',
         skipVerification: true,
         payloadCache,
         taskEnqueuer,

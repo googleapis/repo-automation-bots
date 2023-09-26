@@ -27,12 +27,16 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
   private cloudRunClient: CloudRunV2.ServicesClient;
   private cloudRunUrl?: string;
   private taskCaller: string;
+  private taskTargetEnvironment: BotEnvironment;
+  private taskTargetName: string;
 
   constructor(
     projectId: string,
     botName: string,
     location: string,
-    taskCaller: string
+    taskCaller: string,
+    taskTargetEnvironment: BotEnvironment,
+    taskTargetName: string
   ) {
     this.projectId = projectId;
     this.botName = botName;
@@ -41,6 +45,8 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
     this.cloudRunClient = new CloudRunV2.ServicesClient();
     this.taskCaller = taskCaller;
+    this.taskTargetEnvironment = taskTargetEnvironment;
+    this.taskTargetName = taskTargetName;
   }
 
   async loadTask(request: BotRequest, logger: GCFLogger): Promise<BotRequest> {
@@ -51,7 +57,7 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
     logger: GCFLogger
   ): Promise<void> {
     logger.info(
-      `scheduling cloud task targeting: ${backgroundRequest.targetEnvironment}, service: ${backgroundRequest.targetName}`
+      `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}`
     );
 
     // Make a task here and return 200 as this is coming from GitHub
@@ -65,8 +71,8 @@ export class CloudTasksEnqueuer implements TaskEnqueuer {
     const url = await this.getTaskTarget(
       this.projectId,
       this.location,
-      backgroundRequest.targetEnvironment,
-      backgroundRequest.targetName
+      this.taskTargetEnvironment,
+      this.taskTargetName
     );
     const delayInSeconds = backgroundRequest.delayInSeconds ?? 0;
 

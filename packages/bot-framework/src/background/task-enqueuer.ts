@@ -20,8 +20,6 @@ export interface BackgroundRequest {
   id: string;
   eventName: string;
   body: string;
-  targetEnvironment: BotEnvironment;
-  targetName: string;
   delayInSeconds?: number;
   signature: string;
 }
