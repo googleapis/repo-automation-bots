@@ -1,5 +1,16 @@
 # Changelog
 
+## [7.0.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.1.3...bot-config-utils-v7.0.0) (2023-09-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* require node 18 ([#5225](https://github.com/googleapis/repo-automation-bots/issues/5225))
+
+### Features
+
+* require node 18 ([#5225](https://github.com/googleapis/repo-automation-bots/issues/5225)) ([b2f851a](https://github.com/googleapis/repo-automation-bots/commit/b2f851a741d191719f2e3840b09e4230de9826f9))
+
 ## [6.1.3](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v6.1.2...bot-config-utils-v6.1.3) (2023-01-10)
 
 
