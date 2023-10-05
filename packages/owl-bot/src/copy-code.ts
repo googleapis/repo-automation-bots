@@ -191,7 +191,7 @@ export async function copyCodeIntoCommit(
     let yaml: OwlBotYaml | undefined;
     try {
       if (!fs.existsSync(localYamlPath)) {
-        logger.warn(`${localYamlPath} doesn't exist.`)
+        logger.warn(`${localYamlPath} doesn't exist.`);
         continue;
       }
       yaml = await loadOwlBotYaml(localYamlPath);
