@@ -15,13 +15,11 @@
 import {Request, Response} from 'express';
 import {Webhooks, EmitterWebhookEvent} from '@octokit/webhooks';
 import {SecretLoader, BotSecrets} from './secrets/secret-loader';
-import {GoogleSecretLoader} from './secrets/google-secret-loader';
 import {parseBotRequest, BotRequest, TriggerType} from './bot-request';
 import {GCFLogger} from './logging/gcf-logger';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {logErrors} from './logging/error-logging';
 import {TaskEnqueuer, NoopTaskEnqueuer} from './background/task-enqueuer';
-import {CloudTasksEnqueuer} from './background/cloud-tasks-enqueuer';
 import {
   parseScheduledRequest,
   ScheduledRequest,
@@ -39,7 +37,6 @@ import {getServer} from './server';
 import {InstallationHandler, OctokitInstallationHandler} from './installations';
 import {OctokitFactory} from './octokit';
 import {PayloadCache, NoopPayloadCache} from './background/payload-cache';
-import {CloudStoragePayloadCache} from './background/cloud-storage-payload-cache';
 import {
   parseRateLimitError,
   eachError,
@@ -53,9 +50,6 @@ const DEFAULT_MAX_PUBSUB_RETRIES = 0;
 
 // Adding 30 second delay for each batch with 30 tasks
 const DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND = 30;
-
-const DEFAULT_TASK_CALLER =
-  'task-caller@repo-automation-bots.iam.gserviceaccount.com';
 
 export interface HandlerRequest extends Request {
   rawBody: Buffer;
@@ -99,7 +93,6 @@ export type HandlerFunction = (
 type ApplicationFunction = (app: BootstrapperApp) => void;
 
 export type BotEnvironment = 'functions' | 'run';
-const DEFAULT_TASK_TARGET_ENVIRONMENT: BotEnvironment = 'functions';
 
 interface EnqueueTaskParams {
   id: string;
@@ -155,52 +148,6 @@ export class Bootstrapper {
     this.flowControlDelayInSeconds =
       options.flowControlDelayInSeconds ?? DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
     this.payloadCache = options.payloadCache ?? new NoopPayloadCache();
-  }
-
-  static async load(
-    options: BootstrapperLoadOptions = {}
-  ): Promise<Bootstrapper> {
-    const projectId = options.projectId ?? process.env.PROJECT_ID;
-    if (!projectId) {
-      throw new Error(
-        'Need to specify a project ID explicitly or via PROJECT_ID env variable'
-      );
-    }
-    const botName = options.botName ?? process.env.GCF_SHORT_FUNCTION_NAME;
-    if (!botName) {
-      throw new Error(
-        'Need to specify a bot name explicitly or via GCF_SHORT_FUNCTION_NAME env variable'
-      );
-    }
-    const location = options.location ?? process.env.GCF_LOCATION;
-    if (!location) {
-      throw new Error(
-        'Missing required `location`. Please provide as a constructor argument or set the GCF_LOCATION env variable.'
-      );
-    }
-    const payloadBucket = options.payloadBucket ?? process.env.WEBHOOK_TMP;
-    const payloadCache = payloadBucket
-      ? new CloudStoragePayloadCache(payloadBucket)
-      : new NoopPayloadCache();
-    const secretLoader =
-      options.secretLoader ?? new GoogleSecretLoader(projectId);
-    const botSecrets = await secretLoader.load(botName);
-    const taskCaller = options.taskCaller ?? DEFAULT_TASK_CALLER;
-    return new Bootstrapper({
-      ...options,
-      projectId,
-      botSecrets,
-      botName,
-      payloadCache,
-      taskEnqueuer: new CloudTasksEnqueuer(
-        projectId,
-        botName,
-        location,
-        taskCaller,
-        options.taskTargetEnvironment ?? DEFAULT_TASK_TARGET_ENVIRONMENT,
-        options.taskTargetName ?? botName
-      ),
-    });
   }
 
   server(appFn: ApplicationFunction): http.Server {

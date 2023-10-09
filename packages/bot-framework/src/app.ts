@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Bootstrapper, HandlerFunction} from './bootstrapper';
+import {HandlerFunction} from './bootstrapper';
 import {Webhooks} from '@octokit/webhooks';
+import {GCPBootstrapper} from './gcp-bootstrapper';
 
 let handler: HandlerFunction;
 (async () => {
   const appFn = (app: Webhooks) => {
     app.on('issues.opened', context => {});
   };
-  const webhookHandler = await Bootstrapper.load({});
+  const webhookHandler = await GCPBootstrapper.load({});
   handler = webhookHandler.handler(appFn);
 })();
 

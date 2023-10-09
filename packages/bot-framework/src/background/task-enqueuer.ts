@@ -15,7 +15,6 @@
 import {BotRequest} from '../bot-request';
 import {GCFLogger} from '../logging/gcf-logger';
 
-type BotEnvironment = 'functions' | 'run';
 export interface BackgroundRequest {
   id: string;
   eventName: string;

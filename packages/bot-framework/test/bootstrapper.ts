@@ -36,12 +36,8 @@ import {
   mockResponse,
   mockRequestFromFixture,
   MockInstallationHandler,
-  MockSecretLoader,
 } from './helpers';
-import {RestoreFn} from 'mocked-env';
-import mockedEnv from 'mocked-env';
 import assert from 'assert';
-import {GoogleSecretLoader} from '../src/secrets/google-secret-loader';
 import {NoopPayloadCache} from '../src/background/payload-cache';
 import * as gaxios from 'gaxios';
 import {resolve} from 'path';
@@ -52,75 +48,8 @@ const sandbox = sinon.createSandbox();
 const TEST_SERVER_PORT = 8000;
 
 describe('Bootstrapper', () => {
-  let restoreEnv: RestoreFn | null;
   afterEach(() => {
     sandbox.restore();
-    if (restoreEnv) {
-      restoreEnv();
-      restoreEnv = null;
-    }
-  });
-
-  describe('load', () => {
-    it('requires a project id', async () => {
-      await assert.rejects(
-        async () => {
-          await Bootstrapper.load({});
-        },
-        e => {
-          return (e as Error).message.includes('PROJECT_ID');
-        }
-      );
-    });
-    it('requires a bot name', async () => {
-      await assert.rejects(
-        async () => {
-          await Bootstrapper.load({
-            projectId: 'my-project',
-          });
-        },
-        e => {
-          return (e as Error).message.includes('GCF_SHORT_FUNCTION_NAME');
-        }
-      );
-    });
-    it('requires a location', async () => {
-      await assert.rejects(
-        async () => {
-          await Bootstrapper.load({
-            projectId: 'my-project',
-            botName: 'my-bot-name',
-          });
-        },
-        e => {
-          return (e as Error).message.includes('GCF_LOCATION');
-        }
-      );
-    });
-    it('detects from env var', async () => {
-      restoreEnv = mockedEnv({
-        GCF_SHORT_FUNCTION_NAME: 'my-bot-name',
-        GCF_LOCATION: 'my-location',
-        PROJECT_ID: 'my-project',
-      });
-      const bootstrapper = await Bootstrapper.load({
-        secretLoader: new MockSecretLoader(),
-      });
-      assert.ok(bootstrapper);
-    });
-    it('loads secrets from Secret Manager', async () => {
-      sandbox.stub(GoogleSecretLoader.prototype, 'load').resolves({
-        privateKey: 'my-private-key',
-        webhookSecret: 'my-webhook-secret',
-        appId: '123456',
-      });
-      const bootstrapper = await Bootstrapper.load({
-        projectId: 'my-project',
-        botName: 'my-bot-name',
-        location: 'my-location',
-      });
-      assert.ok(bootstrapper);
-    });
   });
 
   describe('handler', () => {

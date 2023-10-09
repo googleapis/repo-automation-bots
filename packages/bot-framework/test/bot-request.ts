@@ -14,7 +14,6 @@
 
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import * as express from 'express';
 import {parseBotRequest, TriggerType} from '../src/bot-request';
 import {mockRequest} from './helpers';
 

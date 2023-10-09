@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Bootstrapper} from './bootstrapper';
+import {GCPBootstrapper} from './gcp-bootstrapper';
 import {Webhooks} from '@octokit/webhooks';
 import * as http from 'http';
 
@@ -21,13 +21,10 @@ let server: http.Server;
   const appFn = (app: Webhooks) => {
     app.on('issues.opened', context => {});
   };
-  const webhookHandler = await Bootstrapper.load({
+  const webhookHandler = await GCPBootstrapper.load({
     skipVerification: true,
   });
   server = webhookHandler.server(appFn);
-
-  console.log('here');
-
   server.listen(8080).setTimeout(0);
 })().then(() => {
   console.log('loaded');
