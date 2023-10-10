@@ -190,6 +190,10 @@ export async function copyCodeIntoCommit(
     const localYamlPath = path.join(params.destDir, yamlPath);
     let yaml: OwlBotYaml | undefined;
     try {
+      if (!fs.existsSync(localYamlPath)) {
+        logger.warn(`${localYamlPath} doesn't exist.`);
+        continue;
+      }
       yaml = await loadOwlBotYaml(localYamlPath);
     } catch (e) {
       await reportError(e, yamlPath);
@@ -547,7 +551,7 @@ export async function copyCodeAndAppendOrCreatePullRequest(
       const issue = await octokit.issues.create({
         owner: params.destRepo.owner,
         repo: params.destRepo.repo,
-        title: `${yamlPath} is missing or defective`,
+        title: `${yamlPath} is defective`,
         body: `While attempting to copy files from
 ${sourceLink}
 
