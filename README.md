@@ -115,6 +115,11 @@ at the specified schedule.
 
 ![High Level Architecture](./architecture.png)
 
+## Data Collected
+
+Please note that these applications may temporarily receive personally identifiable information (PII)
+via GitHub webhooks in the form of usernames, git commit emails, and repository names.
+
 [auto-approve]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-approve
 [auto-approve-app]: https://github.com/apps/auto-approve-bot
 [auto-label]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-label
