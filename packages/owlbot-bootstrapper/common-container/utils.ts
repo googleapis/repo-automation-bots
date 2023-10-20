@@ -78,7 +78,7 @@ export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
  * @returns full PR text for the PR being created
  */
 export async function getPRText(latestSha: string, copyTagText: string) {
-  return `Source-Link: https://googleapis/googleapis-gen@${latestSha}\n${copyTagText}`;
+  return `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${latestSha}\n${copyTagText}`;
 }
 
 /**

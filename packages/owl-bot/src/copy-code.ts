@@ -42,6 +42,17 @@ import * as crypto from 'crypto';
 import {Logger} from './logger';
 import {ExecSyncOptions} from 'child_process';
 
+// OwlBot only functions on an allow list of organizations,
+// this list must be updated to support a new org:
+const ORG_ALLOW_LIST = ['googleapis', 'googlecloudplatform'];
+export class InvalidOrgError extends Error {}
+function hasValidOrg(url: string) {
+  for (const org of ORG_ALLOW_LIST) {
+    if (url.toLowerCase().indexOf(`/${org}`) !== -1) return true;
+  }
+  return false;
+}
+
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
 //    server or other multi-processing environment.
@@ -179,6 +190,10 @@ export async function copyCodeIntoCommit(
     const localYamlPath = path.join(params.destDir, yamlPath);
     let yaml: OwlBotYaml | undefined;
     try {
+      if (!fs.existsSync(localYamlPath)) {
+        logger.warn(`${localYamlPath} doesn't exist.`);
+        continue;
+      }
       yaml = await loadOwlBotYaml(localYamlPath);
     } catch (e) {
       await reportError(e, yamlPath);
@@ -448,6 +463,10 @@ export async function copyCodeAndAppendOrCreatePullRequest(
   {
     const token = await params.octokitFactory.getGitHubShortLivedAccessToken();
     const url = params.destRepo.getCloneUrl(token);
+    if (!hasValidOrg(url)) {
+      logger.warn(`${url} was not valid, add to ORG_ALLOW_LIST?`);
+      throw new InvalidOrgError();
+    }
     destDir = path.join(workDir, 'dest');
     cmd(`git clone ${url} ${destDir}`);
   }
@@ -532,7 +551,7 @@ export async function copyCodeAndAppendOrCreatePullRequest(
       const issue = await octokit.issues.create({
         owner: params.destRepo.owner,
         repo: params.destRepo.repo,
-        title: `${yamlPath} is missing or defective`,
+        title: `${yamlPath} is defective`,
         body: `While attempting to copy files from
 ${sourceLink}
 
