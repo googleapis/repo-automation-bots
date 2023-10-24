@@ -13,7 +13,7 @@ exports['auto-approve main auto-approve function config exists on main branch ap
   "event": "APPROVE"
 }
 
-exports['auto-approve main auto-approve function config exists on main branch does nothing if there is already an approval 1'] = {
+exports['auto-approve main auto-approve function config exists on main branch still attempts to add an automerge: exact label if there is an approval 1'] = {
   "head_sha": "c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a",
   "name": "Auto-approve.yml check",
   "conclusion": "success",
@@ -182,15 +182,4 @@ exports['auto-approve gets secrets and authenticates separately for approval cre
 
 exports['auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 2'] = {
   "event": "APPROVE"
-}
-
-exports['auto-approve main auto-approve function config exists on main branch still attempts to add an automerge: exact label if there is an approval 1'] = {
-  "head_sha": "c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a",
-  "name": "Auto-approve.yml check",
-  "conclusion": "success",
-  "output": {
-    "title": "Auto-approve.yml check",
-    "summary": "Successful auto-approve.yml config check",
-    "text": ""
-  }
 }

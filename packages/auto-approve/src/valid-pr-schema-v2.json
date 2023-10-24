@@ -28,7 +28,8 @@
           "JavaSampleAppDependency",
           "DockerDependency",
           "GoDependency",
-          "GoApiaryCodegen"
+          "GoApiaryCodegen",
+          "NodeGeneratorDependency"
         ]
       }
     }

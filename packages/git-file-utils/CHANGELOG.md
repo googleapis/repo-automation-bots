@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.6...git-file-utils-v2.0.0) (2023-09-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* require node 18 ([#5225](https://github.com/googleapis/repo-automation-bots/issues/5225))
+
+### Features
+
+* require node 18 ([#5225](https://github.com/googleapis/repo-automation-bots/issues/5225)) ([b2f851a](https://github.com/googleapis/repo-automation-bots/commit/b2f851a741d191719f2e3840b09e4230de9826f9))
+
 ## [1.2.6](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.5...git-file-utils-v1.2.6) (2023-01-23)
 
 
