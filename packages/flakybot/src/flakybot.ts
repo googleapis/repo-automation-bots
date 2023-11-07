@@ -119,7 +119,6 @@ interface TestCase {
   package?: string;
   testCase?: string;
   passed: boolean;
-  log?: string;
 }
 
 interface TestResults {
@@ -924,12 +923,9 @@ flakybot.formatBody = (
 ): string => {
   // Warning: this format is used to detect flaky tests. Don't make breaking
   // changes.
-  let body = `commit: ${commit}
+  const body = `commit: ${commit}
 buildURL: ${buildURL}
 status: ${testCase.passed ? 'passed' : 'failed'}`;
-  if (testCase.log) {
-    body += `\n<details><summary>Test output</summary><br><pre>${testCase.log}</pre></details>`;
-  }
   return body;
 };
 
@@ -1078,12 +1074,10 @@ flakybot.findTestResults = (xml: string): TestResults => {
         continue;
       }
       // Java puts its test logs in a CDATA element; other languages use _text.
-      const log = failure['_text'] || failure['_cdata'] || '';
       failures.push({
         package: pkg,
         testCase: testcase['_attributes'].name,
         passed: false,
-        log,
       });
     }
   }
