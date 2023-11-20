@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {FileRule, PullRequest} from '../../interfaces';
+import {FileRule, PullRequest, VersionsWithShaDiff} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
@@ -21,6 +21,7 @@ import {
   getVersionsV2,
   runVersioningValidation,
   reportIndividualChecks,
+  isVersionValidWithShaOrRev,
 } from '../../utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 import {BaseLanguageRule} from '../base';
@@ -46,8 +47,15 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
     author: 'renovate-bot',
     titleRegex:
       // This would match: fix(deps): update dependency @octokit/rest to v19.0.8 or ^0.23.0 or ~0.23.0
-      /^(fix|chore)\(deps\): update dependency (@?\S*) to v?\^?~?(\S*)$/,
-    fileNameRegex: [/package\.json$/, /\.bzl$/, /pnpm-lock\.yaml$/],
+      /^(fix|chore)\(deps\): update (dependency ){0,1}(@?\S*) (digest ){0,1}to v?\^?~?(\S*)$/,
+    fileNameRegex: [
+      /package\.json$/,
+      /\.bzl$/,
+      /pnpm-lock\.yaml$/,
+      /package-lock.json$/,
+      /yarn.lock$/,
+      /\.github\/workflows\/ci.yaml$/,
+    ],
   };
   fileRules = [
     {
@@ -59,6 +67,33 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
       oldVersion: /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
       // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
       newVersion: /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
+    },
+    {
+      dependencyTitle:
+        // This would match: fix(deps): update dependency @octokit/rest to v19.0.8 or ^0.23.0 or ~0.23.0
+        /^(fix|chore)\(deps\): update (@?\S*) digest to v?\^?~?(\S*)$/,
+      targetFileToCheck: /\.github\/workflows\/ci.yaml$/,
+      /* These versions would match:
+      '     # time.\n' +
+            ' \n' +
+            '     steps:\n' +
+            '-    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4\n' +
+            '+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4\n' +
+            ' \n' +
+            '     - name: Cache Bazel files\n' +
+            '       id: cache-bazel\n' +
+            '@@ -142,7 +142,7 @@ jobs:\n' +
+            '   lint:\n' +
+            '     runs-on: ubuntu-latest\n' +
+            '     steps:\n' +
+            '-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4\n' +
+            '+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4\n' +
+            '       - uses: actions/setup-node@v3\n' +
+            '         with:\n' +
+            '           node-version: 14'
+          */
+      oldVersion: /-\s*- uses: (@?\S*)@([a-z0-9]*)/,
+      newVersion: /\+\s*- uses: (@?\S*)@([a-z0-9]*)/,
     },
     {
       dependencyTitle:
@@ -110,9 +145,21 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
         x.targetFileToCheck.test(file.filename)
       );
 
-      if (!fileMatch && file.filename.match(/pnpm-lock.yaml$/)) {
+      if (
+        (!fileMatch && file.filename.match(/pnpm-lock.yaml$/)) ||
+        file.filename.match(/package-lock.json$/) ||
+        file.filename.match(/yarn.lock$/)
+      ) {
         continue;
       } else if (!fileMatch) {
+        reportIndividualChecks(
+          ['fileMatch'],
+          [Boolean(fileMatch)],
+          incomingPR.repoOwner,
+          incomingPR.repoName,
+          incomingPR.prNumber,
+          file.filename
+        );
         return false;
       }
 
@@ -133,7 +180,9 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
         incomingPR.title
       );
 
-      const isVersionValid = runVersioningValidation(versions);
+      const isVersionValid = (versions as VersionsWithShaDiff).oldShaOrRevTag
+        ? isVersionValidWithShaOrRev(versions)
+        : runVersioningValidation(versions);
 
       if ((doesDependencyMatch && isVersionValid) === false) {
         reportIndividualChecks(

@@ -184,14 +184,29 @@ export function getVersionsV2(
     oldDependencyName = oldVersions[1];
     oldMajorVersion = oldVersions[2];
     oldMinorVersion = oldVersions[3];
-    oldShaOrRevTag = oldVersions[4] || undefined;
+    // Sometimes, we just have a sha and no major or minor versions
+    // If there are major and minor versions, then there might also
+    // be a sha. If there are none, then there must be a sha, or else
+    // we do not have a valid config file.
+    oldShaOrRevTag =
+      oldMajorVersion && oldMinorVersion
+        ? oldVersions[4] ?? undefined
+        : oldVersions[2];
   }
+
 
   if (newVersions) {
     newDependencyName = newVersions[1];
     newMajorVersion = newVersions[2];
     newMinorVersion = newVersions[3];
-    newShaOrRevTag = newVersions[4] || undefined;
+    // Sometimes, we just have a sha and no major or minor versions
+    // If there are major and minor versions, then there might also
+    // be a sha. If there are none, then there must be a sha, or else
+    // we do not have a valid config file.
+    newShaOrRevTag =
+      newMajorVersion && newMinorVersion
+        ? newVersions[4] ?? undefined
+        : newVersions[2];
   }
 
   // If there is a change with a file that requires special validation checks,
@@ -202,10 +217,11 @@ export function getVersionsV2(
     !(
       oldDependencyName &&
       newDependencyName &&
-      oldMajorVersion &&
-      oldMinorVersion &&
-      newMajorVersion &&
-      newMinorVersion
+      ((oldMajorVersion &&
+        oldMinorVersion &&
+        newMajorVersion &&
+        newMinorVersion) ||
+        (oldShaOrRevTag && newShaOrRevTag))
     )
   ) {
     logger.warn(
@@ -296,7 +312,8 @@ export function doesDependencyChangeMatchPRTitleV2(
   let dependencyName = '';
   const titleRegex = title.match(dependencyRegex);
   if (titleRegex) {
-    dependencyName = titleRegex[2];
+    //In case we have an extra capturing group with dependency
+    dependencyName = titleRegex[2] || titleRegex[3];
   }
   return (
     versions.newDependencyName === versions.oldDependencyName &&
@@ -438,11 +455,25 @@ export function runVersioningValidation(versions: Versions): boolean {
 export function isVersionValidWithShaOrRev(
   versions: VersionsWithShaDiff
 ): boolean {
-  return (
-    !isMajorVersionChanging(versions) &&
-    (versions.oldShaOrRevTag !== versions.newShaOrRevTag ||
-      isMinorVersionUpgraded(versions))
-  );
+  const doMajorandMinorVersionsExist =
+    versions.oldMajorVersion &&
+    versions.newMajorVersion &&
+    versions.oldMinorVersion &&
+    versions.newMinorVersion;
+
+  // If there is a sha present in the file, then sometimes there are no corresponding
+  // major or minor versions. In this case, we should just check that the sha changed
+  // See https://github.com/googleapis/gapic-generator-typescript/pull/1491 as an
+  // example
+  if (doMajorandMinorVersionsExist) {
+    return (
+      !isMajorVersionChanging(versions) &&
+      (versions.oldShaOrRevTag !== versions.newShaOrRevTag ||
+        isMinorVersionUpgraded(versions))
+    );
+  } else {
+    return versions.oldShaOrRevTag !== versions.newShaOrRevTag;
+  }
 }
 
 /**

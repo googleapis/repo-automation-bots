@@ -51,10 +51,10 @@ export interface FileRule {
 export interface Versions {
   oldDependencyName: string;
   newDependencyName: string;
-  oldMajorVersion: string;
-  oldMinorVersion: string;
-  newMajorVersion: string;
-  newMinorVersion: string;
+  oldMajorVersion?: string;
+  oldMinorVersion?: string;
+  newMajorVersion?: string;
+  newMinorVersion?: string;
 }
 
 /**
