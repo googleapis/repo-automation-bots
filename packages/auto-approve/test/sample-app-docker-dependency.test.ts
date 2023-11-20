@@ -22,7 +22,7 @@ const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
 });
 
-describe.only('behavior of Docker Dependency process', () => {
+describe('behavior of Docker Dependency process', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const incomingPR = {
       author: 'testAuthor',
@@ -406,7 +406,7 @@ describe.only('behavior of Docker Dependency process', () => {
     assert.ok(await dockerDependency.checkPR(incomingPR));
   });
 
-  it.only('should approve Docker dep updates with digests in the title', async () => {
+  it('should approve Docker dep updates with digests in the title', async () => {
     const incomingPR = {
       author: 'renovate-bot',
       title:
