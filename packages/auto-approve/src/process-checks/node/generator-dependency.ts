@@ -107,7 +107,7 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
         -      urls = ["https://github.com/protocolbuffers/protobuf/archive/v24.2.tar.gz"],
       */
       oldVersion:
-        /[\s]*name = "(@?\S*)",\n-[\s]*sha256 = "\S*",\n-[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)",\n-[\s]*urls? = \S*/,
+        /[\s]*name = "(@?\S*)",\n-[\s]*sha256 = "\S*",\n-[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)"/,
       /* This would match:
             name = "aspect_rules_js",
         -    anything,
@@ -117,7 +117,7 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
         +    strip_prefix = "rules_js-1.30.0",
         +    url = "https://github.com/aspect-build/rules_js/archive/refs/tags/v1.30.0.tar.gz",
       */ newVersion:
-        /[\s]*name = "(@?\S*)",\n-.*\n-.*\n-.*\n\+[\s]*sha256 = "\S*",\n\+[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)",\n\+[\s]*urls? = \S*/,
+        /[\s]*name = "(@?\S*)",\n-.*\n-.*\n-.*\n\+[\s]*sha256 = "\S*",\n\+[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)"/,
     },
   ];
   constructor(octokit: Octokit) {
