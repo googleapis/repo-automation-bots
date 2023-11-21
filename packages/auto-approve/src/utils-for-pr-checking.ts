@@ -194,7 +194,6 @@ export function getVersionsV2(
         : oldVersions[2];
   }
 
-
   if (newVersions) {
     newDependencyName = newVersions[1];
     newMajorVersion = newVersions[2];
