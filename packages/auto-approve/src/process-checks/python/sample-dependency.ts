@@ -30,14 +30,15 @@ import {BaseLanguageRule} from '../base';
 /**
  * The PythonSampleDependency class's checkPR function returns
  * true if the PR:
-  - has an author that is 'renovate-bot'
+  - has an author that is 'renovate-bot' or 'dependabot'
   - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+    or /^(chore)\(deps\): bump (@?\S*) from \S* to (\S*) in \S/
   - Each file path must match one of these regexps:
     - /requirements.txt$/
   - All files must:
     - Match this regexp: /requirements.txt$/
     - Increase the non-major package version of a dependency
-    - Only change one dependency, that must be a google dependency
+    - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
     - Not match any regexes in the 'excluded' list
  */
@@ -73,15 +74,19 @@ export class PythonSampleDependency extends BaseLanguageRule {
   }
 
   public async checkPR(incomingPR: PullRequest): Promise<boolean> {
-    const authorshipMatches = checkAuthor(
-      this.classRule.authors,
-      incomingPR.author
-    );
+    let authorshipMatches = false;
+    for (const author of this.classRule.authors) {
+      if (checkAuthor(author, incomingPR.author)) {
+        authorshipMatches = true;
+      }
+    }
 
-    const titleMatches = checkTitleOrBody(
-      incomingPR.title,
-      this.classRule.titleRegex
-    );
+    let titleMatches = false;
+    for (const titleRegex of this.classRule.titleRegex) {
+      if (checkTitleOrBody(incomingPR.title, titleRegex)) {
+        titleMatches = true;
+      }
+    }
 
     const filePatternsMatch = checkFilePathsMatch(
       incomingPR.changedFiles.map(x => x.filename),
