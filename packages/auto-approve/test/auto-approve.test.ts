@@ -271,7 +271,11 @@ describe('auto-approve', () => {
             {rules: [{author: 'fake-author', title: 'fake-title'}]},
             200
           ),
-          getReviewsCompleted('GoogleCloudPlatform', 'python-docs-samples-1', []),
+          getReviewsCompleted(
+            'GoogleCloudPlatform',
+            'python-docs-samples-1',
+            []
+          ),
           submitReview('GoogleCloudPlatform', 'python-docs-samples-1', 200),
           listLabels('GoogleCloudPlatform', 'python-docs-samples-1', 200),
           addLabels('GoogleCloudPlatform', 'python-docs-samples-1', 200),
