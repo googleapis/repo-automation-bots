@@ -298,9 +298,12 @@ export function doesDependencyChangeMatchPRTitleV2(
   if (titleRegex) {
     dependencyName = titleRegex[2];
   }
+
   return (
-    versions.newDependencyName === versions.oldDependencyName &&
-    dependencyName === versions.newDependencyName
+    versions.newDependencyName.toLocaleLowerCase() ===
+      versions.oldDependencyName.toLocaleLowerCase() &&
+    dependencyName.toLocaleLowerCase() ===
+      versions.newDependencyName.toLocaleLowerCase()
   );
 }
 
@@ -321,7 +324,13 @@ export function isMajorVersionChanging(versions: Versions): boolean {
  * @returns whether the minor version was upgraded.
  */
 export function isMinorVersionUpgraded(versions: Versions): boolean {
-  return Number(versions.newMinorVersion) > Number(versions.oldMinorVersion);
+  const [oldMinor, oldPatch] = versions.oldMinorVersion.split('.');
+  const [newMinor, newPatch] = versions.newMinorVersion.split('.');
+  return (
+    (Number(newMinor) > Number(oldMinor) ||
+      Number(newPatch) > Number(oldPatch)) &&
+    Number(versions.oldMinorVersion) !== Number(versions.newMinorVersion)
+  );
 }
 
 /**
@@ -392,17 +401,42 @@ export function mergesOnWeekday(): boolean {
 }
 
 export function checkAuthor(
-  authorToCompare: string,
+  authorToCompare: string | string[],
   incomingAuthor: string
 ): boolean {
-  return authorToCompare === incomingAuthor;
+  let isMatch = false;
+  if (Array.isArray(authorToCompare)) {
+    for (const author of authorToCompare) {
+      if (author === incomingAuthor) {
+        isMatch = true;
+        break;
+      }
+    }
+    return isMatch;
+  } else {
+    return authorToCompare === incomingAuthor;
+  }
 }
 
-export function checkTitleOrBody(titleOrBody: string, regex?: RegExp): boolean {
-  if (!regex) {
+export function checkTitleOrBody(
+  titleOrBody: string,
+  regexes?: RegExp | RegExp[]
+): boolean {
+  if (!regexes) {
     return true;
   }
-  return regex.test(titleOrBody);
+  let isMatch = false;
+  if (Array.isArray(regexes)) {
+    for (const regex of regexes) {
+      if (regex.test(titleOrBody)) {
+        isMatch = true;
+        break;
+      }
+    }
+    return isMatch;
+  } else {
+    return regexes.test(titleOrBody);
+  }
 }
 
 export function checkFileCount(

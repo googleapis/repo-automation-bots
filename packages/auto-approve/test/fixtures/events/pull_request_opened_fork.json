@@ -292,8 +292,8 @@
          "repo":{
             "id":35065876,
             "node_id":"MDEwOlJlcG9zaXRvcnkzNTA2NTg3Ng==",
-            "name":"python-docs-samples",
-            "full_name":"GoogleCloudPlatform/python-docs-samples",
+            "name":"python-docs-samples-1",
+            "full_name":"GoogleCloudPlatform/python-docs-samples-1",
             "private":false,
             "owner":{
                "login":"GoogleCloudPlatform",
@@ -441,8 +441,8 @@
    "repository":{
       "id":35065876,
       "node_id":"MDEwOlJlcG9zaXRvcnkzNTA2NTg3Ng==",
-      "name":"python-docs-samples",
-      "full_name":"GoogleCloudPlatform/python-docs-samples",
+      "name":"python-docs-samples-1",
+      "full_name":"GoogleCloudPlatform/python-docs-samples-1",
       "private":false,
       "owner":{
          "login":"GoogleCloudPlatform",

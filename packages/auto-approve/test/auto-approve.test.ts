@@ -267,15 +267,15 @@ describe('auto-approve', () => {
         const scopes = [
           getConfigFile(
             'GoogleCloudPlatform',
-            'python-docs-samples',
+            'python-docs-samples-1',
             {rules: [{author: 'fake-author', title: 'fake-title'}]},
             200
           ),
-          getReviewsCompleted('GoogleCloudPlatform', 'python-docs-samples', []),
-          submitReview('GoogleCloudPlatform', 'python-docs-samples', 200),
-          listLabels('GoogleCloudPlatform', 'python-docs-samples', 200),
-          addLabels('GoogleCloudPlatform', 'python-docs-samples', 200),
-          createCheck('GoogleCloudPlatform', 'python-docs-samples', 200),
+          getReviewsCompleted('GoogleCloudPlatform', 'python-docs-samples-1', []),
+          submitReview('GoogleCloudPlatform', 'python-docs-samples-1', 200),
+          listLabels('GoogleCloudPlatform', 'python-docs-samples-1', 200),
+          addLabels('GoogleCloudPlatform', 'python-docs-samples-1', 200),
+          createCheck('GoogleCloudPlatform', 'python-docs-samples-1', 200),
         ];
 
         await probot.receive({

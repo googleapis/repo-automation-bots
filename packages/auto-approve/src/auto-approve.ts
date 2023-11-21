@@ -379,7 +379,18 @@ export function handler(app: Probot) {
               );
             }
 
-            await retryAddLabel(3, owner, repo, prNumber, octokit);
+            // Currently, the python-docs-samples team do not want to automerge
+            // the PRs. I'm hardcoding their exception since this hasn't otherwise
+            // been a feature request, and they are expecting to want to merge in the
+            // future.
+            if (
+              !(
+                owner === 'GoogleCloudPlatform' &&
+                repo === 'python-docs-samples'
+              )
+            ) {
+              await retryAddLabel(3, owner, repo, prNumber, octokit);
+            }
           } else if (isConfigValid && !isPRValid) {
             // If config is valid but PR isn't, log that it is not valid, but don't comment on PR since that would be noisy
             logger.info(
