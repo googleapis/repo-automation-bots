@@ -47,7 +47,13 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
     titleRegex:
       // This would match: fix(deps): update dependency @octokit/rest to v19.0.8 or ^0.23.0 or ~0.23.0
       /^(fix|chore)\(deps\): update dependency (@?\S*) to v?\^?~?(\S*)$/,
-    fileNameRegex: [/package\.json$/, /\.bzl$/, /pnpm-lock\.yaml$/],
+    fileNameRegex: [
+      /package\.json$/,
+      /\.bzl$/,
+      /pnpm-lock\.yaml$/,
+      /package-lock.json$/,
+      /yarn.lock$/,
+    ],
   };
   fileRules = [
     {
@@ -72,7 +78,7 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
         -      urls = ["https://github.com/protocolbuffers/protobuf/archive/v24.2.tar.gz"],
       */
       oldVersion:
-        /[\s]*name = "(@?\S*)",\n-[\s]*sha256 = "\S*",\n-[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)",\n-[\s]*urls? = \S*/,
+        /[\s]*name = "(@?\S*)",\n-[\s]*sha256 = "\S*",\n-[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)"/,
       /* This would match:
             name = "aspect_rules_js",
         -    anything,
@@ -82,7 +88,7 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
         +    strip_prefix = "rules_js-1.30.0",
         +    url = "https://github.com/aspect-build/rules_js/archive/refs/tags/v1.30.0.tar.gz",
       */ newVersion:
-        /[\s]*name = "(@?\S*)",\n-.*\n-.*\n-.*\n\+[\s]*sha256 = "\S*",\n\+[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)",\n\+[\s]*urls? = \S*/,
+        /[\s]*name = "(@?\S*)",\n-.*\n-.*\n-.*\n\+[\s]*sha256 = "\S*",\n\+[\s]*strip_prefix = "\w*-(\d*)\.(\d*|\d*\.\d*)",\n/,
     },
   ];
   constructor(octokit: Octokit) {
@@ -110,7 +116,11 @@ export class NodeGeneratorDependency extends BaseLanguageRule {
         x.targetFileToCheck.test(file.filename)
       );
 
-      if (!fileMatch && file.filename.match(/pnpm-lock.yaml$/)) {
+      if (
+        (!fileMatch && file.filename.match(/pnpm-lock.yaml$/)) ||
+        file.filename.match(/package-lock.json$/) ||
+        file.filename.match(/yarn.lock$/)
+      ) {
         continue;
       } else if (!fileMatch) {
         return false;

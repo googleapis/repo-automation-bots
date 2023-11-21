@@ -291,4 +291,150 @@ describe('behavior of Node Generator Dependency process', () => {
 
     assert.ok(await nodeDependency.checkPR(incomingPR));
   });
+
+  it('should allow for package-lock.json and yarn.locks to  be approved', async () => {
+    const incomingPR = {
+      author: 'renovate-bot',
+      title: 'chore(deps): update dependency @types/module-alias to ^2.0.4',
+      fileCount: 4,
+      changedFiles: [
+        {
+          sha: '47b7a23cfa41986bc1fbeb5f204a688c407bd662',
+          filename: 'package-lock.json',
+          status: 'modified',
+          additions: 4,
+          deletions: 4,
+          changes: 8,
+          blob_url:
+            'https://github.com/googleapis/gapic-generator-typescript/blob/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/package-lock.json',
+          raw_url:
+            'https://github.com/googleapis/gapic-generator-typescript/raw/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/package-lock.json',
+          contents_url:
+            'https://api.github.com/repos/googleapis/gapic-generator-typescript/contents/package-lock.json?ref=fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4',
+          patch:
+            '@@ -26,7 +26,7 @@\n' +
+            '       "devDependencies": {\n' +
+            '         "@bazel/bazelisk": "^1.18.0",\n' +
+            '         "@types/mocha": "^10.0.2",\n' +
+            '-        "@types/module-alias": "^2.0.2",\n' +
+            '+        "@types/module-alias": "^2.0.4",\n' +
+            '         "@types/node": "^18.11.18",\n' +
+            '         "@types/nunjucks": "^3.2.4",\n' +
+            '         "@types/object-hash": "^3.0.4",\n' +
+            '@@ -948,9 +948,9 @@\n' +
+            '       "dev": true\n' +
+            '     },\n' +
+            '     "node_modules/@types/module-alias": {\n' +
+            '-      "version": "2.0.2",\n' +
+            '-      "resolved": "https://registry.npmjs.org/@types/module-alias/-/module-alias-2.0.2.tgz",\n' +
+            '-      "integrity": "sha512-Oeo5NEjAceFgN8OzGiLXPswgv2GBmrDGuTnLS0sQ8g4Mq5sB5c97Hu5B+n9Gu/j+5Y+oUb4TSawHXkZ8MENGyw==",\n' +
+            '+      "version": "2.0.4",\n' +
+            '+      "resolved": "https://registry.npmjs.org/@types/module-alias/-/module-alias-2.0.4.tgz",\n' +
+            '+      "integrity": "sha512-5+G/QXO/DvHZw60FjvbDzO4JmlD/nG5m2/vVGt25VN1eeP3w2bCoks1Wa7VuptMPM1TxJdx6RjO70N9Fw0nZPA==",\n' +
+            '       "dev": true\n' +
+            '     },\n' +
+            '     "node_modules/@types/node": {',
+        },
+        {
+          sha: '9e843cbdfa997155d1fbd69e1e288862460191dd',
+          filename: 'package.json',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/googleapis/gapic-generator-typescript/blob/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/package.json',
+          raw_url:
+            'https://github.com/googleapis/gapic-generator-typescript/raw/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/package.json',
+          contents_url:
+            'https://api.github.com/repos/googleapis/gapic-generator-typescript/contents/package.json?ref=fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4',
+          patch:
+            '@@ -54,7 +54,7 @@\n' +
+            '   "devDependencies": {\n' +
+            '     "@bazel/bazelisk": "^1.18.0",\n' +
+            '     "@types/mocha": "^10.0.2",\n' +
+            '-    "@types/module-alias": "^2.0.2",\n' +
+            '+    "@types/module-alias": "^2.0.4",\n' +
+            '     "@types/node": "^18.11.18",\n' +
+            '     "@types/nunjucks": "^3.2.4",\n' +
+            '     "@types/object-hash": "^3.0.4",',
+        },
+        {
+          sha: '4a9621187881844d2e22fd6b91bbea7c1bfecd4a',
+          filename: 'pnpm-lock.yaml',
+          status: 'modified',
+          additions: 4,
+          deletions: 4,
+          changes: 8,
+          blob_url:
+            'https://github.com/googleapis/gapic-generator-typescript/blob/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/pnpm-lock.yaml',
+          raw_url:
+            'https://github.com/googleapis/gapic-generator-typescript/raw/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/pnpm-lock.yaml',
+          contents_url:
+            'https://api.github.com/repos/googleapis/gapic-generator-typescript/contents/pnpm-lock.yaml?ref=fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4',
+          patch:
+            '@@ -41,8 +41,8 @@ devDependencies:\n' +
+            '     specifier: ^10.0.2\n' +
+            '     version: 10.0.2\n' +
+            "   '@types/module-alias':\n" +
+            '-    specifier: ^2.0.2\n' +
+            '-    version: 2.0.2\n' +
+            '+    specifier: ^2.0.4\n' +
+            '+    version: 2.0.4\n' +
+            "   '@types/node':\n" +
+            '     specifier: ^18.11.18\n' +
+            '     version: 18.13.0\n' +
+            '@@ -550,8 +550,8 @@ packages:\n' +
+            '     resolution: {integrity: sha512-NaHL0+0lLNhX6d9rs+NSt97WH/gIlRHmszXbQ/8/MV/eVcFNdeJ/GYhrFuUc8K7WuPhRhTSdMkCp8VMzhUq85w==}\n' +
+            '     dev: true\n' +
+            ' \n' +
+            '-  /@types/module-alias@2.0.2:\n' +
+            '-    resolution: {integrity: sha512-Oeo5NEjAceFgN8OzGiLXPswgv2GBmrDGuTnLS0sQ8g4Mq5sB5c97Hu5B+n9Gu/j+5Y+oUb4TSawHXkZ8MENGyw==}\n' +
+            '+  /@types/module-alias@2.0.4:\n' +
+            '+    resolution: {integrity: sha512-5+G/QXO/DvHZw60FjvbDzO4JmlD/nG5m2/vVGt25VN1eeP3w2bCoks1Wa7VuptMPM1TxJdx6RjO70N9Fw0nZPA==}\n' +
+            '     dev: true\n' +
+            ' \n' +
+            '   /@types/node@18.13.0:',
+        },
+        {
+          sha: '7d38d61b7d2ed761db882221e05129582a6a952b',
+          filename: 'yarn.lock',
+          status: 'modified',
+          additions: 4,
+          deletions: 4,
+          changes: 8,
+          blob_url:
+            'https://github.com/googleapis/gapic-generator-typescript/blob/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/yarn.lock',
+          raw_url:
+            'https://github.com/googleapis/gapic-generator-typescript/raw/fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4/yarn.lock',
+          contents_url:
+            'https://api.github.com/repos/googleapis/gapic-generator-typescript/contents/yarn.lock?ref=fa9de0ca47f16632a766dfe2a3693e6ebbbcf3e4',
+          patch:
+            '@@ -498,10 +498,10 @@\n' +
+            '   resolved "https://registry.npmjs.org/@types/mocha/-/mocha-10.0.2.tgz"\n' +
+            '   integrity sha512-NaHL0+0lLNhX6d9rs+NSt97WH/gIlRHmszXbQ/8/MV/eVcFNdeJ/GYhrFuUc8K7WuPhRhTSdMkCp8VMzhUq85w==\n' +
+            ' \n' +
+            '-"@types/module-alias@^2.0.2":\n' +
+            '-  version "2.0.2"\n' +
+            '-  resolved "https://registry.npmjs.org/@types/module-alias/-/module-alias-2.0.2.tgz"\n' +
+            '-  integrity sha512-Oeo5NEjAceFgN8OzGiLXPswgv2GBmrDGuTnLS0sQ8g4Mq5sB5c97Hu5B+n9Gu/j+5Y+oUb4TSawHXkZ8MENGyw==\n' +
+            '+"@types/module-alias@^2.0.4":\n' +
+            '+  version "2.0.4"\n' +
+            '+  resolved "https://registry.npmjs.org/@types/module-alias/-/module-alias-2.0.4.tgz"\n' +
+            '+  integrity sha512-5+G/QXO/DvHZw60FjvbDzO4JmlD/nG5m2/vVGt25VN1eeP3w2bCoks1Wa7VuptMPM1TxJdx6RjO70N9Fw0nZPA==\n' +
+            ' \n' +
+            ' "@types/node@*", "@types/node@>=12.12.47", "@types/node@>=13.7.0", "@types/node@^18.11.18":\n' +
+            '   version "18.17.14"',
+        },
+      ],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const nodeDependency = new NodeGeneratorDependency(octokit);
+
+    assert.ok(await nodeDependency.checkPR(incomingPR));
+  });
+
 });
