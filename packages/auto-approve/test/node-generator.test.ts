@@ -436,5 +436,4 @@ describe('behavior of Node Generator Dependency process', () => {
 
     assert.ok(await nodeDependency.checkPR(incomingPR));
   });
-
 });
