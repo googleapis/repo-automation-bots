@@ -48,6 +48,8 @@
                     "enum": [
                         "default",
                         "always-bump-patch",
+                        "always-bump-major",
+                        "always-bump-minor",
                         "service-pack"
                     ]
                 },

@@ -300,7 +300,10 @@ export function autoDetectLabel(
 // A mapping of languages to their file extensions
 import defaultExtensions from './extensions.json';
 
-function getLabelFromPathConfig(filename: string, config: PathConfig): string {
+export function getLabelFromPathConfig(
+  filename: string,
+  config: PathConfig
+): string {
   // If user specified labels for discrete paths
   const dirs = filename.split('/');
   let label = '';
@@ -319,6 +322,7 @@ function getLabelFromPathConfig(filename: string, config: PathConfig): string {
     if (typeof config[dir] === 'string') {
       label = config[dir] as string;
       exactMatch = true;
+      break;
     } else if (typeof config[dir] === 'object' || Array.isArray(config[dir])) {
       label = getLabelFromPathConfig(filename, config[dir] as PathConfig);
     } else if (config['.'] && !exactMatch) {

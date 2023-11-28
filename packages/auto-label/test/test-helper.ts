@@ -15,6 +15,8 @@
 import {resolve} from 'path';
 import fs from 'fs';
 import yaml from 'js-yaml';
+import {getLabelFromPathConfig} from '../src/helper';
+import * as assert from 'assert';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 export function loadConfig(configFile: string) {
@@ -22,3 +24,34 @@ export function loadConfig(configFile: string) {
     fs.readFileSync(resolve(fixturesPath, 'config', configFile), 'utf-8')
   );
 }
+
+describe('getLabelFromPathConfig', () => {
+  it('matches the earliest element in the path when multiple match', () => {
+    const label = getLabelFromPathConfig('/composer/workflows', {
+      composer: 'composer',
+      workflows: 'workflows',
+    });
+    assert.strictEqual(label, 'composer');
+  });
+
+  it('matches deep element in path', () => {
+    const label = getLabelFromPathConfig('/a/b/c/d/composer/workflows', {
+      composer: 'composer',
+      workflows: 'workflows',
+    });
+    assert.strictEqual(label, 'composer');
+  });
+
+  it('matches one element in path', () => {
+    const label = getLabelFromPathConfig('/a/b/c/d/workflows', {
+      composer: 'composer',
+      workflows: 'workflows',
+    });
+    assert.strictEqual(label, 'workflows');
+  });
+
+  it('it returns empty when nothing matches', () => {
+    const label = getLabelFromPathConfig('/composer/workflows', {});
+    assert.strictEqual(label, '');
+  });
+});
