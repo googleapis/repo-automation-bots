@@ -405,4 +405,70 @@ describe('behavior of Docker Dependency process', () => {
 
     assert.ok(await dockerDependency.checkPR(incomingPR));
   });
+
+  it('should approve Docker dep updates with digests in the title', async () => {
+    const incomingPR = {
+      author: 'renovate-bot',
+      title:
+        'chore(deps): update postgres:16.0-alpine docker digest to bfd42bb',
+      fileCount: 2,
+      changedFiles: [
+        {
+          sha: '8fe2f5eb59f8eb9f95e0e8fcd075f6f6b5529b52',
+          filename: 'src/accounts/accounts-db/Dockerfile',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/9d5fb93b846ea45c55a529d63e6e2ef9d245996e/src%2Faccounts%2Faccounts-db%2FDockerfile',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/9d5fb93b846ea45c55a529d63e6e2ef9d245996e/src%2Faccounts%2Faccounts-db%2FDockerfile',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Faccounts%2Faccounts-db%2FDockerfile?ref=9d5fb93b846ea45c55a529d63e6e2ef9d245996e',
+          patch:
+            '@@ -11,7 +11,7 @@\n' +
+            ' # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n' +
+            ' # See the License for the specific language governing permissions and\n' +
+            ' # limitations under the License.\n' +
+            '-FROM postgres:16.0-alpine@sha256:2ccd6655060d7b06c71f86094e8c7a28bdcc8a80b43baca4b1dabb29cff138a2\n' +
+            '+FROM postgres:16.0-alpine@sha256:bfd42bb6358aee8a305ec3f51d505d6b9e406cf3ce800914a66741dba18b8263\n' +
+            ' \n' +
+            ' # Files for initializing the database.\n' +
+            ' COPY initdb/0-accounts-schema.sql /docker-entrypoint-initdb.d/0-accounts-schema.sql',
+        },
+        {
+          sha: '9fcaa463cd48e26e1c64292c1c5e8e954e228400',
+          filename: 'src/ledger/ledger-db/Dockerfile',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/blob/9d5fb93b846ea45c55a529d63e6e2ef9d245996e/src%2Fledger%2Fledger-db%2FDockerfile',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/bank-of-anthos/raw/9d5fb93b846ea45c55a529d63e6e2ef9d245996e/src%2Fledger%2Fledger-db%2FDockerfile',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/bank-of-anthos/contents/src%2Fledger%2Fledger-db%2FDockerfile?ref=9d5fb93b846ea45c55a529d63e6e2ef9d245996e',
+          patch:
+            '@@ -11,7 +11,7 @@\n' +
+            ' # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n' +
+            ' # See the License for the specific language governing permissions and\n' +
+            ' # limitations under the License.\n' +
+            '-FROM postgres:16.0-alpine@sha256:2ccd6655060d7b06c71f86094e8c7a28bdcc8a80b43baca4b1dabb29cff138a2\n' +
+            '+FROM postgres:16.0-alpine@sha256:bfd42bb6358aee8a305ec3f51d505d6b9e406cf3ce800914a66741dba18b8263\n' +
+            ' \n' +
+            ' # Need to get coreutils to get the date bash function working properly:\n' +
+            ' RUN apk add --update coreutils && rm -rf /var/cache/apk/*',
+        },
+      ],
+      repoName: 'GoogleCloudPlatform',
+      repoOwner: 'bank-of-anthos',
+      prNumber: 1855,
+      body: 'body',
+    };
+    const dockerDependency = new DockerDependency(octokit);
+
+    assert.ok(await dockerDependency.checkPR(incomingPR));
+  });
 });
