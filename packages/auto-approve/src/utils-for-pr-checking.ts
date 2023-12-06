@@ -298,9 +298,12 @@ export function doesDependencyChangeMatchPRTitleV2(
   if (titleRegex) {
     dependencyName = titleRegex[2];
   }
+
   return (
-    versions.newDependencyName === versions.oldDependencyName &&
-    dependencyName === versions.newDependencyName
+    versions.newDependencyName.toLocaleLowerCase() ===
+      versions.oldDependencyName.toLocaleLowerCase() &&
+    dependencyName.toLocaleLowerCase() ===
+      versions.newDependencyName.toLocaleLowerCase()
   );
 }
 
@@ -321,7 +324,13 @@ export function isMajorVersionChanging(versions: Versions): boolean {
  * @returns whether the minor version was upgraded.
  */
 export function isMinorVersionUpgraded(versions: Versions): boolean {
-  return Number(versions.newMinorVersion) > Number(versions.oldMinorVersion);
+  const [oldMinor, oldPatch] = versions.oldMinorVersion.split('.');
+  const [newMinor, newPatch] = versions.newMinorVersion.split('.');
+  return (
+    (Number(newMinor) > Number(oldMinor) ||
+      Number(newPatch) > Number(oldPatch)) &&
+    Number(versions.oldMinorVersion) !== Number(versions.newMinorVersion)
+  );
 }
 
 /**

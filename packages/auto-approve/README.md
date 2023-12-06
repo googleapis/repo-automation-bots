@@ -69,14 +69,15 @@ Below is what each process checks for:
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
 * PythonSampleDependency:
-  - Checks that the author is 'renovate-bot'
+  - Checks that the author is 'renovate-bot' or 'dependabot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  or /^(chore)\(deps\): bump (@?\S*) from \S* to (\S*) in \S/
   - Each file path must match one of these regexps:
     - /requirements.txt$/
   - All files must: 
     - Match this regexp: /requirements.txt$/
     - Increase the non-major package version of a dependency
-    - Only change one dependency, that must be a google dependency
+    - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
     - Not match any regexes in the 'excluded' list
 * NodeDependency:
