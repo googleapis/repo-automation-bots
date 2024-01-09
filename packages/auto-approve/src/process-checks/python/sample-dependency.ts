@@ -44,7 +44,7 @@ import {BaseLanguageRule} from '../base';
  */
 export class PythonSampleDependency extends BaseLanguageRule {
   classRule = {
-    authors: ['renovate-bot', 'dependabot'],
+    authors: ['renovate-bot', 'dependabot[bot]'],
     titleRegex: [
       /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
       /^(chore)\(deps\): bump (@?\S*) from \S* to (\S*) in \S*/,

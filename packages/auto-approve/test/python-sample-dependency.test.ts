@@ -175,7 +175,7 @@ describe('behavior of Python Sample Dependency process', () => {
 
   it('should return true in checkPR if incoming PR matches for dependabot', async () => {
     const incomingPR = {
-      author: 'dependabot',
+      author: 'dependabot[bot]',
       title:
         'chore(deps): bump django from 4.1.7 to 4.1.13 in /appengine/standard_python3/bundled-services/blobstore/django',
       fileCount: 1,
