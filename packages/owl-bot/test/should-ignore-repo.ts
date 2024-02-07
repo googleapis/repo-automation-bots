@@ -26,6 +26,9 @@ describe('shouldIgnoreRepo', () => {
   it('ignores PHP sharded repo', () => {
     assert.ok(shouldIgnoreRepo('googleapis/google-cloud-php-asset'));
   });
+  it('ignores non-cloud PHP sharded repo', () => {
+    assert.ok(shouldIgnoreRepo('googleapis/php-shopping-merchant-reports'));
+  });
   it("doesn't ignore PHP root repo", () => {
     assert.ok(!shouldIgnoreRepo('googleapis/google-cloud-php'));
   });
