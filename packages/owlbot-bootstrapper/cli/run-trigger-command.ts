@@ -28,6 +28,7 @@ export interface CliArgs {
   serviceConfigPath?: string;
   interContainerVarsPath?: string;
   skipIssueOnFailure: boolean;
+  sourceCl: number;
 }
 
 export interface MonoRepo {
@@ -129,6 +130,11 @@ export const runTriggerCommand: yargs.CommandModule<{}, CliArgs> = {
         describe: 'does not create issues if failure',
         type: 'boolean',
         default: false,
+      })
+      .option('sourceCl', {
+        describe: 'source CL for tracking',
+        type: 'number',
+        demand: true,
       });
   },
   async handler(argv) {
