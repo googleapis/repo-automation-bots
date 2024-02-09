@@ -81,6 +81,7 @@ describe('post processing', async () => {
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
       skipIssueOnFailure: 'false',
+      sourceCl: 2345,
     };
 
     await postProcess(argv);
@@ -104,6 +105,7 @@ describe('post processing', async () => {
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
       skipIssueOnFailure: 'false',
+      sourceCl: 2345,
     };
 
     const octokit = new Octokit({auth: 'abc1234'});
@@ -133,6 +135,7 @@ describe('post processing', async () => {
       interContainerVarsPath: 'INTER_CONTAINER_VARS_PATH',
       buildId: '1234',
       skipIssueOnFailure: 'true',
+      sourceCl: 2345,
     };
     const octokit = new Octokit({auth: 'abc1234'});
     authenticateOctokitStub.returns(octokit);
