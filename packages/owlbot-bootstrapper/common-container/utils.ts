@@ -14,7 +14,7 @@
 
 import {execSync, ExecSyncOptions} from 'child_process';
 import {logger} from 'gcf-utils';
-import {v4 as uuid} from 'uuid';
+import {uuid} from 'uuidv4';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {InterContainerVars} from './interfaces';
