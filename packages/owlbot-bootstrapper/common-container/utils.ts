@@ -14,7 +14,7 @@
 
 import {execSync, ExecSyncOptions} from 'child_process';
 import {logger} from 'gcf-utils';
-import {uuid} from 'uuidv4';
+import {v4 as uuid} from 'uuid';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {InterContainerVars} from './interfaces';
@@ -47,7 +47,9 @@ export async function setConfig(directoryPath?: string) {
  * @param octokit authenticated octokit instance
  * @returns most recent sha as a string
  */
-export async function getLatestShaGoogleapisGen(octokit: Octokit) {
+export async function getLatestShaGoogleapisGen(
+  octokit: Octokit
+): Promise<string> {
   const commits = await octokit.paginate(octokit.repos.listCommits, {
     owner: ORG,
     repo: 'googleapis-gen',
@@ -61,7 +63,10 @@ export async function getLatestShaGoogleapisGen(octokit: Octokit) {
  * @param owlbotYamlPath the path to the new OwlBot.yaml file
  * @returns the copy -tag text
  */
-export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
+export function getCopyTagText(
+  latestSha: string,
+  owlbotYamlPath: string
+): string {
   if (!owlbotYamlPath)
     logger.warn('No owlbot yaml path passed from language-container');
   // Language-specific containers need to provide their path to their new .OwlBot.yaml
@@ -77,8 +82,14 @@ export function getCopyTagText(latestSha: string, owlbotYamlPath: string) {
  * @param copyTagText the copy-tag text owlbot needs to update the PR
  * @returns full PR text for the PR being created
  */
-export async function getPRText(latestSha: string, copyTagText: string) {
-  return `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${latestSha}\n${copyTagText}`;
+export function getPRText(
+  latestSha: string,
+  copyTagText: string,
+  sourceCl: number
+): string {
+  return `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${latestSha}
+${copyTagText}
+PiperOrigin-RevId: ${sourceCl}`;
 }
 
 /**
@@ -121,18 +132,21 @@ export async function openAPR(
   repoName: string,
   apiId: string,
   latestSha: string,
-  copyTagText: string
+  copyTagText: string,
+  sourceCl: number
 ): Promise<number> {
   try {
     const defaultBranch = (await getRepoMetadata(ORG, repoName, octokit))
       .default_branch;
+    const title = `feat: add initial files for ${apiId}`;
+    const body = getPRText(latestSha, copyTagText, sourceCl);
     const pr = await octokit.rest.pulls.create({
       owner: ORG,
       repo: repoName,
       head: branchName,
       base: defaultBranch,
-      title: `feat: add initial files for ${apiId}`,
-      body: await getPRText(latestSha, copyTagText),
+      title,
+      body,
     });
 
     return pr.data.number;

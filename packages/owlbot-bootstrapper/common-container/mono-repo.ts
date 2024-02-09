@@ -119,7 +119,8 @@ export class MonoRepo {
    */
   public async pushToBranchAndOpenPR(
     monoRepoPath: string,
-    interContainerVarsFilePath: string
+    interContainerVarsFilePath: string,
+    sourceCl: number
   ) {
     const interContainerVars = getWellKnownFileContents(
       interContainerVarsFilePath
@@ -141,7 +142,8 @@ export class MonoRepo {
       this.repoName,
       this.apiId,
       latestSha,
-      copyTagText
+      copyTagText,
+      sourceCl
     );
     await addOwlBotLabel(this.octokit, this.repoName, prNumber);
   }
