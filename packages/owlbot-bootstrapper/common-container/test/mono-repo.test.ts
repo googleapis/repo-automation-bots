@@ -250,8 +250,6 @@ describe('MonoRepo class', () => {
       2345
     );
 
-    // assert.ok(false, 'testing');
-
     const stdoutBranch = execSync('git branch', {
       cwd: `${directoryPath}/${FAKE_REPO_NAME}`,
     });
