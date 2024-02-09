@@ -59,6 +59,7 @@ export async function runTrigger(
           ? `${argv.monoRepoDir}/${monoRepo.repo}`
           : `${MONO_REPO_DIR}/${monoRepo.repo}`,
         _SERVICE_CONFIG_PATH: argv.serviceConfigPath ?? SERVICE_CONFIG_PATH,
+        _SOURCE_CL: String(argv.sourceCl),
         _INTER_CONTAINER_VARS_PATH:
           argv.interContainerVarsPath ?? INTER_CONTAINER_VARS_PATH,
         _SKIP_ISSUE_ON_FAILURE: String(argv.skipIssueOnFailure),

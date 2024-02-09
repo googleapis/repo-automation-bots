@@ -58,7 +58,8 @@ export async function postProcess(argv: CliArgs) {
 
     await monoRepo.pushToBranchAndOpenPR(
       argv.monoRepoPath,
-      argv.interContainerVarsPath
+      argv.interContainerVarsPath,
+      argv.sourceCl
     );
     logger.info(`Opened a new PR in ${monoRepo.repoName}`);
   } catch (err) {

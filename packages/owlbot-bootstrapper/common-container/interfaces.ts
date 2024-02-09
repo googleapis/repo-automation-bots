@@ -50,6 +50,7 @@ export interface CliArgs {
   interContainerVarsPath: string;
   buildId: string;
   skipIssueOnFailure: string;
+  sourceCl: number;
 }
 
 export interface InterContainerVars {
