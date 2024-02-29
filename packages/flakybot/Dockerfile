@@ -16,7 +16,7 @@
 
 # Use the official lightweight Node.js 14 image.
 # https://hub.docker.com/_/node
-FROM node:14-slim AS BUILD
+FROM node:18-slim AS BUILD
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -34,7 +34,7 @@ COPY . ./
 
 RUN npm run compile
 
-FROM node:14-slim
+FROM node:18-slim
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -44,6 +44,7 @@ COPY --from=BUILD /usr/src/app/build build
 RUN npm ci --only=production
 
 ENV NODE_ENV "production"
+
 
 # Run the web service on container startup.
 CMD [ "npm", "--no-update-notifier", "run", "start" ]
