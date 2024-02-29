@@ -641,7 +641,7 @@ const runPostProcessor = async (
     lock = parseOwlBotLock(lockText);
   } catch (e) {
     await createCheck({
-      text: `${String(e)} Logs: go/cloud-sdk-automation-howtos#logs`,
+      text: `${String(e)}. Logs: go/cloud-sdk-automation-howtos#logs`,
       summary: 'The OwlBot lock file on this repository is corrupt',
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -671,7 +671,7 @@ const runPostProcessor = async (
     logger.warn(message);
 
     await createCheck({
-      text: `${message} Logs: go/cloud-sdk-automation-howtos#logs`,
+      text: `${message}. Logs: go/cloud-sdk-automation-howtos#logs`,
       summary: message,
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
