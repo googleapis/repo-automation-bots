@@ -34,6 +34,7 @@ import {
   parseOwlBotLock,
   CheckArgs,
   OWL_BOT_COPY,
+  OPERATIONAL_DOCUMENT,
 } from './core';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
@@ -71,7 +72,6 @@ interface PubSubContext {
 }
 
 const LOCK_TIMEOUT = 25 * 1000;
-const OPERATIONAL_DOCUMENT = 'Logs: go/cloud-sdk-automation-howtos#logs';
 class LockError extends Error {}
 async function acquireLock(target: string): Promise<DatastoreLock> {
   const lock = new DatastoreLock('owlbot', target, LOCK_TIMEOUT);
