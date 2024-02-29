@@ -16,7 +16,7 @@
 
 # Use the Yoshi Node.js 14 image - it has python3 installed
 # https://github.com/googleapis/testing-infra-docker/tree/master/node/14-user
-FROM gcr.io/cloud-devrel-kokoro-resources/node:14-user AS BUILD
+FROM gcr.io/cloud-devrel-kokoro-resources/node:18-user AS BUILD
 
 WORKDIR /home/node
 
@@ -33,7 +33,7 @@ COPY . ./
 
 RUN npm run compile
 
-FROM gcr.io/cloud-devrel-kokoro-resources/node:14-user
+FROM gcr.io/cloud-devrel-kokoro-resources/node:18-user
 
 WORKDIR /home/node
 
