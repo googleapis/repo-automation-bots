@@ -1668,7 +1668,7 @@ describe('OwlBot', () => {
     );
     sandbox.assert.calledWith(
       createCheckStub,
-      sinon.match.has('text', 'Error: lock file did not contain "docker" key')
+      sinon.match.has('text', 'Error: lock file did not contain "docker" key. Logs: go/cloud-sdk-automation-howtos#logs')
     );
     githubMock.done();
   });
