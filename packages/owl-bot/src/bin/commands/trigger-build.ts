@@ -111,7 +111,7 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
           installation: argv.installation,
           pr: argv.pr,
           repo: argv.repo,
-          text: buildStatus.text,
+          text: `${buildStatus.text} Logs: go/cloud-sdk-automation-howtos#logs`,
           summary: buildStatus.summary,
           conclusion: buildStatus.conclusion,
           detailsURL: buildStatus.detailsURL,
