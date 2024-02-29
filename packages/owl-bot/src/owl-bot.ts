@@ -34,6 +34,7 @@ import {
   parseOwlBotLock,
   CheckArgs,
   OWL_BOT_COPY,
+  OPERATIONAL_DOCUMENT,
 } from './core';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
@@ -618,7 +619,7 @@ const runPostProcessor = async (
     lockText = await core.fetchOwlBotLock(opts.base, opts.prNumber, octokit);
   } catch (e) {
     await createCheck({
-      text: String(e),
+      text: `${String(e)}. ${OPERATIONAL_DOCUMENT}`,
       summary: 'Failed to fetch the lock file',
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -641,7 +642,7 @@ const runPostProcessor = async (
     lock = parseOwlBotLock(lockText);
   } catch (e) {
     await createCheck({
-      text: String(e),
+      text: `${String(e)}. ${OPERATIONAL_DOCUMENT}`,
       summary: 'The OwlBot lock file on this repository is corrupt',
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -671,7 +672,7 @@ const runPostProcessor = async (
     logger.warn(message);
 
     await createCheck({
-      text: message,
+      text: `${message}. ${OPERATIONAL_DOCUMENT}`,
       summary: message,
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -699,7 +700,7 @@ const runPostProcessor = async (
   if (null === buildStatus) {
     // Update pull request with status of job:
     await createCheck({
-      text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+      text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label. ${OPERATIONAL_DOCUMENT}`,
       summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
       conclusion: 'success',
       title: '🦉 OwlBot - ignored',
@@ -709,7 +710,7 @@ const runPostProcessor = async (
 
   // Update pull request with status of job:
   await createCheck({
-    text: buildStatus.text,
+    text: `${buildStatus.text} ${OPERATIONAL_DOCUMENT}`,
     summary: buildStatus.summary,
     conclusion: buildStatus.conclusion,
     title: `🦉 OwlBot - ${buildStatus.summary}`,
