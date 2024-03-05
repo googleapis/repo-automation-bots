@@ -1,2 +1,2 @@
-gcp-releasetool>=1.17.0
+gcp-releasetool>=2.0.0rc1 # update to the version of gcp-releasetool that supports protobuf 4.x and cryptography 42.x
 keyrings.alt
