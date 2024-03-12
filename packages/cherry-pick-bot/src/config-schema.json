@@ -12,6 +12,13 @@
 		"preservePullRequestTitle": {
 			"description": "Preserves the original PR title",
 			"type": "boolean"
+		},
+		"allowedAuthorAssociations": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"enum": ["COLLABORATOR", "CONTRIBUTOR", "FIRST_TIMER", "FIRST_TIME_CONTRIBUTOR", "MANNEQUIN", "MEMBER", "NONE", "OWNER"]
+			}
 		}
 	}
 }
