@@ -26,7 +26,12 @@ import {newCmd} from '../../cmd';
 import {findCopyTags, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
 import {OWL_BOT_IGNORE} from '../../labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from '../../constants';
-import {octokitFactoryFromToken} from '../../octokit-util';
+import {
+  octokitFactoryFromToken,
+  OctokitFactory,
+  octokitTokenFrom,
+  octokitFactoryFrom,
+} from '../../octokit-util';
 import * as proc from 'child_process';
 import path = require('path');
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
@@ -34,13 +39,22 @@ import {hasGitChanges} from '../../git-utils';
 import * as fs from 'fs';
 import {resplit, WithRegenerateCheckbox} from '../../create-pr';
 import {OWL_BOT_COPY} from '../../core';
+import {parseBotSecrets} from '../../bot-secrets';
 
 interface Args {
   'dest-repo': string;
   pr: number;
-  'github-token': string;
+  'github-token'?: string;
   'repo-path': string;
   'new-pull-request-text-path': string;
+  installation: number;
+}
+interface CommitUpdateArgs {
+  'dest-repo': string;
+  pr: number;
+  'repo-path': string;
+  'new-pull-request-text-path': string;
+  octokitFactory: OctokitFactory;
 }
 
 export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
@@ -58,6 +72,11 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
         type: 'string',
         demand: true,
       })
+      .option('installation', {
+        describe: 'The GitHub app installation ID.',
+        type: 'number',
+        demand: true,
+      })
       .option('pr', {
         describe: 'The pull request number',
         type: 'number',
@@ -66,7 +85,6 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
       .option('github-token', {
         describe: 'Short-lived GitHub token.',
         type: 'string',
-        demand: true,
       })
       .option('new-pull-request-text-path', {
         describe:
@@ -81,9 +99,15 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
       });
   },
   handler: async argv => {
-    const {pullRequestToPromote} = await commitPostProcessorUpdate(argv);
+    const octokitFactory = argv['github-token']
+      ? octokitFactoryFromToken(argv['github-token'])
+      : await octokitFactoryFromEnvironment(argv.installation);
+    const {pullRequestToPromote} = await commitPostProcessorUpdate({
+      ...argv,
+      octokitFactory,
+    });
     if (pullRequestToPromote) {
-      await promoteFromDraft(pullRequestToPromote, argv['github-token']);
+      await promoteFromDraft(pullRequestToPromote, octokitFactory);
     }
   },
 };
@@ -99,10 +123,22 @@ interface AfterCommitPostProcessorUpdate {
   pullRequestToPromote?: PRLocator;
 }
 
+async function octokitFactoryFromEnvironment(
+  installation: number
+): Promise<OctokitFactory> {
+  const secretsJson = process.env.OWLBOT_SECRETS ?? '';
+  const secrets = parseBotSecrets(secretsJson);
+  return await octokitFactoryFrom({
+    installation: installation,
+    'app-id': secrets.appId,
+    privateKey: secrets.privateKey,
+  });
+}
+
 export async function commitPostProcessorUpdate(
-  args: Args
+  args: CommitUpdateArgs
 ): Promise<AfterCommitPostProcessorUpdate> {
-  const octokitFactory = octokitFactoryFromToken(args['github-token']);
+  const octokitFactory = args.octokitFactory;
   const octokit = await octokitFactory.getShortLivedOctokit();
   const repo = githubRepoFromOwnerSlashName(args['dest-repo']);
 
@@ -198,9 +234,8 @@ export function commitOwlbotUpdate(repoDir: string) {
 
 async function promoteFromDraft(
   prLocator: PRLocator,
-  githubToken: string
+  octokitFactory: OctokitFactory
 ): Promise<void> {
-  const octokitFactory = octokitFactoryFromToken(githubToken);
   const octokit = await octokitFactory.getShortLivedOctokit();
   const found = (await octokit.graphql(
     `
@@ -216,7 +251,7 @@ async function promoteFromDraft(
       repo: prLocator.repo,
       pullNumber: prLocator.pull_number,
     }
-  )) as any;  // eslint-disable-line
+  )) as any; // eslint-disable-line
 
   await octokit.graphql(
     `

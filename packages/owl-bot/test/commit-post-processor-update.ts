@@ -24,6 +24,7 @@ import nock from 'nock';
 import {OWL_BOT_IGNORE, OWLBOT_RUN_LABEL} from '../src/labels';
 import * as fs from 'fs';
 import {OWL_BOT_COPY} from '../src/core';
+import {Octokit} from '@octokit/rest';
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -64,6 +65,10 @@ describe('commitPostProcessorUpdate', () => {
   const yamlPath = '.github/.OwlBot.yaml';
   const destRepo = 'test-org/test-repo';
   const gitHubToken = 'test-github-token';
+  const octokitFactory = {
+    getGitHubShortLivedAccessToken: async () => gitHubToken,
+    getShortLivedOctokit: async (token?: string) => new Octokit(),
+  };
   let sandbox: sinon.SinonSandbox;
   let pr = 0;
 
@@ -107,7 +112,7 @@ describe('commitPostProcessorUpdate', () => {
     return {
       'dest-repo': destRepo,
       pr,
-      'github-token': gitHubToken,
+      octokitFactory,
       'repo-path': repoPath,
       'new-pull-request-text-path': '',
     };
