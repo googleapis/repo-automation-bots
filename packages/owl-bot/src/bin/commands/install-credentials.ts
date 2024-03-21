@@ -21,7 +21,7 @@ import {OctokitFactory} from '../../octokit-util';
 
 interface Args {
   destination: string;
-  installation: number;
+  installation?: number;
   'github-token'?: string;
 }
 
@@ -33,7 +33,6 @@ export const installCredentialsCommand: yargs.CommandModule<{}, Args> = {
       .option('installation', {
         describe: 'The GitHub app installation ID.',
         type: 'number',
-        demand: true,
       })
       .option('destination', {
         describe:

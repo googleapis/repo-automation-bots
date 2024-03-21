@@ -42,7 +42,7 @@ interface Args {
   'github-token'?: string;
   'repo-path': string;
   'new-pull-request-text-path': string;
-  installation: number;
+  installation?: number;
 }
 interface CommitUpdateArgs {
   'dest-repo': string;
@@ -70,7 +70,6 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
       .option('installation', {
         describe: 'The GitHub app installation ID.',
         type: 'number',
-        demand: true,
       })
       .option('pr', {
         describe: 'The pull request number',

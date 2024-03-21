@@ -21,24 +21,22 @@ import {parseBotSecrets} from '../../bot-secrets';
 
 interface Args {
   'github-token'?: string;
-  installation: number;
+  installation?: number;
 }
 
 export async function octokitFactoryFromArgsOrEnvironment(
   args: Args
 ): Promise<OctokitFactory> {
-  return args['github-token']
-    ? octokitFactoryFromToken(args['github-token'])
-    : await octokitFactoryFromEnvironment(args.installation);
-}
-
-export async function octokitFactoryFromEnvironment(
-  installation: number
-): Promise<OctokitFactory> {
+  if (args['github-token']) {
+    return octokitFactoryFromToken(args['github-token']);
+  }
+  if (!args.installation) {
+    throw new Error('need github-token or installation');
+  }
   const secretsJson = process.env.OWLBOT_SECRETS ?? '';
   const secrets = parseBotSecrets(secretsJson);
   return await octokitFactoryFrom({
-    installation: installation,
+    installation: args.installation,
     'app-id': secrets.appId,
     privateKey: secrets.privateKey,
   });
