@@ -16,18 +16,13 @@
 
 import {writeFileSync} from 'fs';
 import yargs = require('yargs');
-import {
-  octokitTokenFrom,
-  octokitFactoryFromToken,
-  OctokitFactory,
-  octokitFactoryFrom,
-} from '../../octokit-util';
-import {parseBotSecrets} from '../../bot-secrets';
+import {octokitFactoryFromArgsOrEnvironment} from './credentials-loader';
+import {OctokitFactory} from '../../octokit-util';
 
 interface Args {
   destination: string;
   installation: number;
-  githubToken?: string;
+  'github-token'?: string;
 }
 
 export const installCredentialsCommand: yargs.CommandModule<{}, Args> = {
@@ -53,24 +48,10 @@ export const installCredentialsCommand: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    const octokitFactory = argv.githubToken
-      ? octokitFactoryFromToken(argv.githubToken)
-      : await octokitFactoryFromEnvironment(argv.installation);
+    const octokitFactory = await octokitFactoryFromArgsOrEnvironment(argv);
     await installCredentials(octokitFactory, argv.destination);
   },
 };
-
-async function octokitFactoryFromEnvironment(
-  installation: number
-): Promise<OctokitFactory> {
-  const secretsJson = process.env.OWLBOT_SECRETS ?? '';
-  const secrets = parseBotSecrets(secretsJson);
-  return await octokitFactoryFrom({
-    installation: installation,
-    'app-id': secrets.appId,
-    privateKey: secrets.privateKey,
-  });
-}
 
 export async function installCredentials(
   octokitFactory: OctokitFactory,

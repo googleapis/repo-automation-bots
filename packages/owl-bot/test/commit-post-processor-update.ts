@@ -67,7 +67,7 @@ describe('commitPostProcessorUpdate', () => {
   const gitHubToken = 'test-github-token';
   const octokitFactory = {
     getGitHubShortLivedAccessToken: async () => gitHubToken,
-    getShortLivedOctokit: async (token?: string) => new Octokit(),
+    getShortLivedOctokit: async (_token?: string) => new Octokit(),
   };
   let sandbox: sinon.SinonSandbox;
   let pr = 0;

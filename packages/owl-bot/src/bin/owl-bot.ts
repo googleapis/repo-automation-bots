@@ -47,6 +47,7 @@ yargs(process.argv.slice(2))
   .command(copyCodeIntoPullRequestCommand)
   .command(scanAndRetryFailedLockUpdatesCommand)
   .command(commitPostProcessorUpdateCommand)
+  .command(installCredentialsCommand)
   .demandCommand(1)
   .strictCommands()
   .parse();

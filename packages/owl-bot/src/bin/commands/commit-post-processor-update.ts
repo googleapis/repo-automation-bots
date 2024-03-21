@@ -26,12 +26,7 @@ import {newCmd} from '../../cmd';
 import {findCopyTags, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
 import {OWL_BOT_IGNORE} from '../../labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE} from '../../constants';
-import {
-  octokitFactoryFromToken,
-  OctokitFactory,
-  octokitTokenFrom,
-  octokitFactoryFrom,
-} from '../../octokit-util';
+import {OctokitFactory} from '../../octokit-util';
 import * as proc from 'child_process';
 import path = require('path');
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
@@ -39,7 +34,7 @@ import {hasGitChanges} from '../../git-utils';
 import * as fs from 'fs';
 import {resplit, WithRegenerateCheckbox} from '../../create-pr';
 import {OWL_BOT_COPY} from '../../core';
-import {parseBotSecrets} from '../../bot-secrets';
+import {octokitFactoryFromArgsOrEnvironment} from './credentials-loader';
 
 interface Args {
   'dest-repo': string;
@@ -99,9 +94,7 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
       });
   },
   handler: async argv => {
-    const octokitFactory = argv['github-token']
-      ? octokitFactoryFromToken(argv['github-token'])
-      : await octokitFactoryFromEnvironment(argv.installation);
+    const octokitFactory = await octokitFactoryFromArgsOrEnvironment(argv);
     const {pullRequestToPromote} = await commitPostProcessorUpdate({
       ...argv,
       octokitFactory,
@@ -121,18 +114,6 @@ interface PRLocator {
 interface AfterCommitPostProcessorUpdate {
   /// When present, the pull request should be marked ready for review.
   pullRequestToPromote?: PRLocator;
-}
-
-async function octokitFactoryFromEnvironment(
-  installation: number
-): Promise<OctokitFactory> {
-  const secretsJson = process.env.OWLBOT_SECRETS ?? '';
-  const secrets = parseBotSecrets(secretsJson);
-  return await octokitFactoryFrom({
-    installation: installation,
-    'app-id': secrets.appId,
-    privateKey: secrets.privateKey,
-  });
 }
 
 export async function commitPostProcessorUpdate(
