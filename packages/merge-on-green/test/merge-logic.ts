@@ -210,14 +210,6 @@ describe('merge-logic', () => {
       const scopes = [
         getRateLimit(5000),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -248,14 +240,6 @@ describe('merge-logic', () => {
       const scopes = [
         getRateLimit(5000),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -281,57 +265,10 @@ describe('merge-logic', () => {
 
       scopes.forEach(s => s.done());
     });
-    it('fails when a review has not been approved', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-          {
-            user: {login: 'octokitten'},
-            state: 'CHANGES_REQUESTED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'schedule.installation' as any,
-        payload: {
-          cron_type: 'installation',
-          cron_org: 'testOwner',
-          performMerge: true,
-          installation: {id: 1234},
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
 
     it('fails if there is no commit', async () => {
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([]),
         getStatusi('', [
           {state: 'success', context: 'Kokoro - Test: Binary Compatibility'},
@@ -358,14 +295,6 @@ describe('merge-logic', () => {
     it('fails if there are no status checks', async () => {
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
@@ -395,14 +324,6 @@ describe('merge-logic', () => {
     it('fails if the status checks have failed', async () => {
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'failure', context: 'Special Check'},
@@ -429,14 +350,6 @@ describe('merge-logic', () => {
     it('passes if checks are actually check runs', async () => {
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
@@ -470,14 +383,6 @@ describe('merge-logic', () => {
     it('passes if checks are marked neutral check runs', async () => {
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
@@ -511,14 +416,6 @@ describe('merge-logic', () => {
     it('fails if there is a do not merge label', async () => {
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
@@ -546,47 +443,9 @@ describe('merge-logic', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('fails if no one has reviewed the PR', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getReviewsCompleted([]),
-        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
-        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-          name: 'Special Check',
-          conclusion: 'success',
-          status: 'completed',
-        }),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'schedule.installation' as any,
-        payload: {
-          cron_type: 'installation',
-          cron_org: 'testOwner',
-          performMerge: true,
-          installation: {id: 1234},
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
     it('fails if the check is incomplete', async () => {
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
@@ -620,14 +479,6 @@ describe('merge-logic', () => {
       const scopes = [
         getRateLimit(5000),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -660,14 +511,6 @@ describe('merge-logic', () => {
       const scopes = [
         getRateLimit(5000),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -699,14 +542,6 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
@@ -777,14 +612,6 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'failure', context: 'Special Check'},
@@ -829,14 +656,6 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         //Intentionally giving this status check a misleading name. We want subtests to match the beginning
         //of required status checks, not the other way around. i.e., if the required status check is "passes"
@@ -886,14 +705,6 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {
@@ -942,6 +753,11 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        getPR(true, 'clean', 'open', [{name: 'automerge: exact'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -950,11 +766,6 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getPR(true, 'clean', 'open'),
         getCommentsOnPr([]),
         merge(),
         removeMogLabel('automerge%3A%20exact'),
@@ -996,6 +807,10 @@ describe('merge-logic', () => {
       const scopes = [
         getRateLimit(5000),
         mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        getPR(true, 'clean', 'open', [{name: 'automerge: exact'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -1010,12 +825,12 @@ describe('merge-logic', () => {
             id: 12346,
           },
         ]),
-        dismissReview(12345),
-        dismissReview(12346),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
         getCommentsOnPr([]),
+        dismissReview(12346),
+        dismissReview(12345),
+        merge(),
+        removeMogLabel('automerge%3A%20exact'),
+        removeReaction(),
       ];
 
       await probot.receive({
