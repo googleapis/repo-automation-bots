@@ -535,6 +535,8 @@ async function runPostProcessorWithLock(
       );
       return;
     } else {
+      logger.warn(`Error acquiring datastore lock for target ${target}`, err);
+      logger.warn(err as any);
       throw err;
     }
   }
