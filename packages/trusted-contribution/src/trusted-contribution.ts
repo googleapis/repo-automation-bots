@@ -28,6 +28,8 @@ import {
   getAuthenticatedOctokit as getOctokitFromSecretName,
   SECRET_NAME_FOR_COMMENT_PERMISSION,
 } from './utils';
+import {isContributor, buildComment} from './comments';
+import {addOrUpdateIssueComment} from '@google-automations/issue-utils';
 
 const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'renovate-bot',
@@ -89,10 +91,9 @@ export = (app: Probot) => {
     ],
     async context => {
       let octokit: Octokit;
-      if (context.payload.installation?.id) {
-        octokit = await getAuthenticatedOctokit(
-          context.payload.installation.id
-        );
+      const installationId = context.payload.installation?.id;
+      if (installationId) {
+        octokit = await getAuthenticatedOctokit(installationId);
       } else {
         throw new Error(
           'Installation ID not provided in pull_request event.' +
@@ -113,7 +114,8 @@ export = (app: Probot) => {
         context.payload.pull_request.number
       );
 
-      const PR_AUTHOR = context.payload.pull_request.user.login;
+      const prAuthor = context.payload.pull_request.user.login;
+      const prNumber = context.payload.pull_request.number;
       let remoteConfiguration: ConfigurationOptions | null;
       // Since we added a capability of opting out, we quit upon
       // errors when fetching the config.
@@ -138,7 +140,7 @@ export = (app: Probot) => {
         return;
       }
 
-      if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
+      if (isTrustedContribution(remoteConfiguration, prAuthor)) {
         // Synchronize event is interesting, because it can suggest that someone manually
         // clicked the synchronize button, or had to push at an existing branch:
         if (
@@ -183,7 +185,7 @@ export = (app: Probot) => {
         for (const annotation of annotations) {
           if (annotation.type === 'label') {
             const issuesAddLabelsParams = context.repo({
-              issue_number: context.payload.pull_request.number,
+              issue_number: prNumber,
               labels: Array.isArray(annotation.text)
                 ? annotation.text
                 : [annotation.text],
@@ -201,12 +203,28 @@ export = (app: Probot) => {
               );
             }
             await octokitForComment.issues.createComment({
-              issue_number: context.payload.pull_request.number,
+              issue_number: prNumber,
               body: String(annotation.text),
               owner: context.repo().owner,
               repo: context.repo().repo,
             });
           }
+        }
+      } else if (
+        remoteConfiguration.commentInstructions &&
+        !isContributor(context.payload.pull_request.author_association)
+      ) {
+        // Comment on the issue that the maintainers may need to comment with /gcbrun or add a label
+        const comment = buildComment(remoteConfiguration);
+        if (comment) {
+          await addOrUpdateIssueComment(
+            octokit,
+            owner,
+            repo,
+            prNumber,
+            installationId,
+            comment
+          );
         }
       }
     }
