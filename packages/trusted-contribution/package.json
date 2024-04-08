@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^6.1.0",
+    "@google-automations/issue-utils": "^3.0.0",
     "@google-cloud/secret-manager": "^4.1.2",
     "gcf-utils": "^14.2.0",
     "jsonwebtoken": "^9.0.0"
