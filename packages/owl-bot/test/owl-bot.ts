@@ -1567,10 +1567,7 @@ describe('OwlBot', () => {
       payload: payload as any,
       id: 'abc123',
     });
-    sandbox.assert.calledWith(
-      createCheckStub,
-      sinon.match.has('conclusion', 'success')
-    );
+    sandbox.assert.notCalled(createCheckStub);
     githubMock.done();
   });
   it('returns early and adds success status if base is not default branch', async () => {
