@@ -630,7 +630,9 @@ const runPostProcessor = async (
   }
   if (!lockText) {
     // If OwlBot is not configured on a repo, skip creating the check.
-    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}, skip creating the check.`);
+    logger.info(
+      `no .OwlBot.lock.yaml found for ${opts.head}, skip creating the check.`
+    );
     return;
   }
   try {
