@@ -629,15 +629,10 @@ const runPostProcessor = async (
     return;
   }
   if (!lockText) {
-    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
-    // If OwlBot is not configured on repo, indicate success. This makes
-    // it easier to enable OwlBot as a required check during migration:
-    await createCheck({
-      text: 'OwlBot is not yet enabled on this repository',
-      summary: 'OwlBot is not yet enabled on this repository',
-      conclusion: 'success',
-      title: '🦉 OwlBot - success',
-    });
+    // If OwlBot is not configured on a repo, skip creating the check.
+    logger.info(
+      `no .OwlBot.lock.yaml found for ${opts.head}, skip creating the check.`
+    );
     return;
   }
   try {
