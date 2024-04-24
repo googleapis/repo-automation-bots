@@ -41,6 +41,7 @@ import {NodeDependency} from '../src/process-checks/node/dependency';
 import {NodeRelease} from '../src/process-checks/node/release';
 import nock from 'nock';
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',

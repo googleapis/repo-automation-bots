@@ -23,6 +23,7 @@ import sinon from 'sinon';
 import {ConfigurationV2} from '../src/interfaces';
 
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',

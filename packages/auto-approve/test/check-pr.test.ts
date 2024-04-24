@@ -24,6 +24,7 @@ import {File, ValidPr} from '../src/interfaces';
 import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
