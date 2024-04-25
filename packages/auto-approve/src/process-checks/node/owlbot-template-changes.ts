@@ -17,7 +17,9 @@ import {
   checkAuthor,
   checkTitleOrBody,
   reportIndividualChecks,
+  getOpenPRsInRepoFromSameAuthor,
 } from '../../utils-for-pr-checking';
+import {listCommitsOnAPR} from '../../get-pr-info';
 import {Octokit} from '@octokit/rest';
 import {OwlBotTemplateChanges} from '../owl-bot-template-changes';
 
@@ -27,12 +29,14 @@ import {OwlBotTemplateChanges} from '../owl-bot-template-changes';
   - has an author that is 'gcf-owl-bot[bot]'
   - has a title that does NOT include BREAKING, or !
   - has a PR body that does not contain 'PiperOrigin-RevId'
+  - is the first owlbot template PR in a repo (so they are merged in order)
+  - has no other commit authors on the PR
  */
 export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
   classRule = {
     author: 'gcf-owl-bot[bot]',
     // For this particular rule, we want to check a pattern and an antipattern;
-    // we want it to start with regular commit convention, 
+    // we want it to start with regular commit convention,
     // and it should not be breaking or fix or feat
     titleRegex: /$(chore|build|tests|refactor)/,
     titleRegexExclude: /(fix|feat|breaking|!)/,
@@ -60,9 +64,51 @@ export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
       bodyMatches = checkTitleOrBody(incomingPR.body, this.classRule.bodyRegex);
     }
 
+    const openOwlBotPRs = await getOpenPRsInRepoFromSameAuthor(
+      incomingPR.repoOwner,
+      incomingPR.repoName,
+      incomingPR.author,
+      this.octokit
+    );
+
+    let otherOwlBotPRs = true;
+    if (
+      openOwlBotPRs.length > 0 &&
+      incomingPR.prNumber === openOwlBotPRs[0].number
+    ) {
+      otherOwlBotPRs = false;
+    }
+
+    const commitsOnPR = await listCommitsOnAPR(
+      incomingPR.repoOwner,
+      incomingPR.repoName,
+      incomingPR.prNumber,
+      this.octokit
+    );
+
+    const commitAuthors = commitsOnPR.filter(
+      x => x.author?.login !== this.classRule.author
+    );
+    let otherCommitAuthors = false;
+    if (commitAuthors.length > 0) {
+      otherCommitAuthors = true;
+    }
+
     reportIndividualChecks(
-      ['authorshipMatches', 'titleMatches', 'bodyMatches'],
-      [authorshipMatches, titleMatches, !bodyMatches],
+      [
+        'authorshipMatches',
+        'titleMatches',
+        'bodyMatches',
+        'otherOwlBotPRs',
+        'otherCommitAuthors',
+      ],
+      [
+        authorshipMatches,
+        titleMatches,
+        !bodyMatches,
+        otherOwlBotPRs,
+        otherCommitAuthors,
+      ],
       incomingPR.repoOwner,
       incomingPR.repoName,
       incomingPR.prNumber
