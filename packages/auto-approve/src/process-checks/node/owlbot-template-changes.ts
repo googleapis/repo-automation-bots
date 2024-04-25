@@ -115,6 +115,12 @@ export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
     );
 
     // We are looking for an antipattern, i.e., if title does not include fix or feat, and if body does not include PiperOrigin and no other owlBot PRs and no other commit authors
-    return authorshipMatches && titleMatches && !bodyMatches && !otherOwlBotPRs && !otherCommitAuthors;
+    return (
+      authorshipMatches &&
+      titleMatches &&
+      !bodyMatches &&
+      !otherOwlBotPRs &&
+      !otherCommitAuthors
+    );
   }
 }
