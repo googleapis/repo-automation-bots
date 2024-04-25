@@ -28,6 +28,7 @@ import {DockerDependency} from './process-checks/sample-application-repos/docker
 import {NodeDependency} from './process-checks/node/dependency';
 import {NodeGeneratorDependency} from './process-checks/node/generator-dependency';
 import {NodeRelease} from './process-checks/node/release';
+import {OwlBotTemplateChangesNode} from './process-checks/node/owlbot-template-changes';
 import {JavaDependency} from './process-checks/java/dependency';
 import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
 import {OwlBotAPIChanges} from './process-checks/owl-bot-api-changes';
@@ -67,6 +68,10 @@ const typeMap = [
   {
     configValue: 'NodeRelease',
     configType: NodeRelease,
+  },
+  {
+    configValue: 'OwlBotTemplateChangesNode',
+    configType: OwlBotTemplateChangesNode,
   },
   {
     configValue: 'JavaApiaryCodegen',

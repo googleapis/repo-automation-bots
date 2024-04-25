@@ -12,31 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {PullRequest} from '../interfaces';
+import {PullRequest} from '../../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
   reportIndividualChecks,
   getOpenPRsInRepoFromSameAuthor,
-} from '../utils-for-pr-checking';
-import {getFileContent, listCommitsOnAPR} from '../get-pr-info';
+} from '../../utils-for-pr-checking';
+import {listCommitsOnAPR} from '../../get-pr-info';
 import {Octokit} from '@octokit/rest';
-import {BaseLanguageRule} from './base';
+import {OwlBotTemplateChanges} from '../owl-bot-template-changes';
 
 /**
- * The OwlBotAPIChanges class's checkPR function returns
+ * The OwlBotTemplateChanges class's checkPR function returns
  * true if the PR:
   - has an author that is 'gcf-owl-bot[bot]'
-  - has a title that does NOT include breaking, BREAKING, or !
-  - has a PR body that DOES contain 'PiperOrigin-RevId'
-  - has a .repo-metadata.json that contains "library_type": "GAPIC_AUTO"
-  - is in a repository that has no other PRs that have been opened by gcf-owl-bot[bot]
-  - has no other commits from any other authors other than gcf-owl-bot[bot]
+  - has a title that does NOT include BREAKING, or !
+  - has a PR body that does not contain 'PiperOrigin-RevId'
+  - is the first owlbot template PR in a repo (so they are merged in order)
+  - has no other commit authors on the PR
  */
-export class OwlBotAPIChanges extends BaseLanguageRule {
+export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
   classRule = {
     author: 'gcf-owl-bot[bot]',
-    titleRegex: /(breaking|BREAKING|!)/,
+    // For this particular rule, we want to check a pattern and an antipattern;
+    // we want it to start with regular commit convention,
+    // and it should not be breaking or fix or feat
+    titleRegex: /$(chore|build|tests|refactor)/,
+    titleRegexExclude: /(fix|feat|breaking|!)/,
     bodyRegex: /PiperOrigin-RevId/,
   };
 
@@ -50,24 +53,16 @@ export class OwlBotAPIChanges extends BaseLanguageRule {
       incomingPR.author
     );
 
-    const titleMatches = checkTitleOrBody(
-      incomingPR.title,
-      this.classRule.titleRegex
-    );
+    const titleMatches =
+      // We don't want it to include breaking or !
+      !checkTitleOrBody(incomingPR.title, this.classRule.titleRegexExclude) &&
+      // We do want it to have a conventional commit title
+      checkTitleOrBody(incomingPR.title, this.classRule.titleRegex);
 
     let bodyMatches = true;
     if (incomingPR.body) {
       bodyMatches = checkTitleOrBody(incomingPR.body, this.classRule.bodyRegex);
     }
-
-    const fileContent = await getFileContent(
-      incomingPR.repoOwner,
-      incomingPR.repoName,
-      '.repo-metadata.json',
-      this.octokit
-    );
-
-    const isGAPIC = JSON.parse(fileContent).library_type === 'GAPIC_AUTO';
 
     const openOwlBotPRs = await getOpenPRsInRepoFromSameAuthor(
       incomingPR.repoOwner,
@@ -76,9 +71,12 @@ export class OwlBotAPIChanges extends BaseLanguageRule {
       this.octokit
     );
 
-    let otherOwlBotPRs = false;
-    if (openOwlBotPRs.length > 1) {
-      otherOwlBotPRs = true;
+    let otherOwlBotPRs = true;
+    if (
+      openOwlBotPRs.length > 0 &&
+      incomingPR.prNumber === openOwlBotPRs[0].number
+    ) {
+      otherOwlBotPRs = false;
     }
 
     const commitsOnPR = await listCommitsOnAPR(
@@ -101,29 +99,26 @@ export class OwlBotAPIChanges extends BaseLanguageRule {
         'authorshipMatches',
         'titleMatches',
         'bodyMatches',
-        'isGAPIC',
-        'areThereOtherOwlBotPRs',
-        'areThereOtherCommitAuthors',
+        'otherOwlBotPRs',
+        'otherCommitAuthors',
       ],
       [
         authorshipMatches,
-        !titleMatches,
-        bodyMatches,
-        isGAPIC,
-        !otherOwlBotPRs,
-        !otherCommitAuthors,
+        titleMatches,
+        !bodyMatches,
+        otherOwlBotPRs,
+        otherCommitAuthors,
       ],
       incomingPR.repoOwner,
       incomingPR.repoName,
       incomingPR.prNumber
     );
 
-    // We are looking for an antipattern, i.e., if title does not include BREAKING, and if there are no other owlbot PRs and no other authors made commits on the PR
+    // We are looking for an antipattern, i.e., if title does not include fix or feat, and if body does not include PiperOrigin and no other owlBot PRs and no other commit authors
     return (
       authorshipMatches &&
-      !titleMatches &&
-      bodyMatches &&
-      isGAPIC &&
+      titleMatches &&
+      !bodyMatches &&
       !otherOwlBotPRs &&
       !otherCommitAuthors
     );

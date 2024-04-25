@@ -22,6 +22,7 @@
           "JavaApiaryCodegen",
           "JavaDependency",
           "OwlBotTemplateChanges",
+          "OwlBotTemplateChangesNode",
           "OwlBotAPIChanges",
           "PHPApiaryCodegen",
           "PythonSampleAppDependency",
