@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {OwlBotTemplateChangesNode} from '../src/process-checks/node/owlbot-template-changes';
+import {OwlBotNode} from '../src/process-checks/node/owlbot';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import nock from 'nock';
@@ -44,7 +44,7 @@ function listCommitsOnAPR(
     .reply(200, response);
 }
 
-describe('behavior of OwlBotTemplateChangesNode process', () => {
+describe('behavior of OwlBotNode process', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const incomingPR = {
       author: 'testAuthor',
@@ -54,10 +54,10 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      body: 'body',
+      body: 'PiperOrigin-RevId: 413686247',
     };
 
-    const owlBotTemplateChanges = new OwlBotTemplateChangesNode(octokit);
+    const owlBotTemplateChanges = new OwlBotNode(octokit);
 
     const scopes = [
       getPRsOnRepo('testRepoOwner', 'testRepoName', [
@@ -84,9 +84,9 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      body: 'body',
+      body: 'PiperOrigin-RevId: 413686247',
     };
-    const owlBotTemplateChanges = new OwlBotTemplateChangesNode(octokit);
+    const owlBotChanges = new OwlBotNode(octokit);
 
     const scopes = [
       getPRsOnRepo('testRepoOwner', 'testRepoName', [
@@ -97,14 +97,11 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(
-      await owlBotTemplateChanges.checkPR(incomingPR),
-      false
-    );
+    assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
     scopes.forEach(scope => scope.done());
   });
 
-  it('should return false in checkPR if incoming PR includes PiperOrigin-RevId', async () => {
+  it('should return false in checkPR if incoming PR does NOT include PiperOrigin-RevId', async () => {
     const incomingPR = {
       author: 'gcf-owl-bot[bot]',
       title: 'chore: a new PR',
@@ -116,12 +113,11 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       body:
         '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
         'Regenerate this pull request now.' +
-        'PiperOrigin-RevId: 413686247' +
         'Source-Link: googleapis/googleapis@244a89d' +
         'Source-Link: googleapis/googleapis-gen@c485e44' +
         'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9',
     };
-    const owlBotTemplateChanges = new OwlBotTemplateChangesNode(octokit);
+    const owlBotChanges = new OwlBotNode(octokit);
 
     const scopes = [
       getPRsOnRepo('testRepoOwner', 'testRepoName', [
@@ -132,10 +128,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(
-      await owlBotTemplateChanges.checkPR(incomingPR),
-      false
-    );
+    assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
     scopes.forEach(scope => scope.done());
   });
 
@@ -148,8 +141,9 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
+      body: 'PiperOrigin-RevId: 413686247',
     };
-    const owlBotTemplateChanges = new OwlBotTemplateChangesNode(octokit);
+    const owlBotChanges = new OwlBotNode(octokit);
 
     const scopes = [
       getPRsOnRepo('testRepoOwner', 'testRepoName', [
@@ -161,10 +155,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(
-      await owlBotTemplateChanges.checkPR(incomingPR),
-      false
-    );
+    assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
     scopes.forEach(scope => scope.done());
   });
 
@@ -177,8 +168,9 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
+      body: 'PiperOrigin-RevId: 413686247',
     };
-    const owlBotTemplateChanges = new OwlBotTemplateChangesNode(octokit);
+    const owlBotChanges = new OwlBotNode(octokit);
 
     const scopes = [
       getPRsOnRepo('testRepoOwner', 'testRepoName', [
@@ -190,14 +182,11 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(
-      await owlBotTemplateChanges.checkPR(incomingPR),
-      false
-    );
+    assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
     scopes.forEach(scope => scope.done());
   });
 
-  it('should return true in checkPR if incoming PR does match classRules, is the first in the PRs', async () => {
+  it('should return true in checkPR if incoming PR does match classRules, is the first in the PRs, and has no other commits', async () => {
     const incomingPR = {
       author: 'gcf-owl-bot[bot]',
       title: 'chore: a fine title',
@@ -206,9 +195,9 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       repoName: 'testRepoName',
       repoOwner: 'testRepoOwner',
       prNumber: 1,
-      body: 'body',
+      body: 'PiperOrigin-RevId: 413686247',
     };
-    const owlBotTemplateChanges = new OwlBotTemplateChangesNode(octokit);
+    const owlBotChanges = new OwlBotNode(octokit);
 
     const scopes = [
       getPRsOnRepo('testRepoOwner', 'testRepoName', [
@@ -221,10 +210,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       ]),
     ];
 
-    assert.deepStrictEqual(
-      await owlBotTemplateChanges.checkPR(incomingPR),
-      true
-    );
+    assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), true);
     scopes.forEach(scope => scope.done());
   });
 });

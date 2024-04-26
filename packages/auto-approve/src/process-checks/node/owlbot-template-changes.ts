@@ -38,7 +38,7 @@ export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
     // For this particular rule, we want to check a pattern and an antipattern;
     // we want it to start with regular commit convention,
     // and it should not be breaking or fix or feat
-    titleRegex: /$(chore|build|tests|refactor)/,
+    titleRegex: /^(chore|build|tests|refactor)/,
     titleRegexExclude: /(fix|feat|breaking|!)/,
     bodyRegex: /PiperOrigin-RevId/,
   };
@@ -106,8 +106,8 @@ export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
         authorshipMatches,
         titleMatches,
         !bodyMatches,
-        otherOwlBotPRs,
-        otherCommitAuthors,
+        !otherOwlBotPRs,
+        !otherCommitAuthors,
       ],
       incomingPR.repoOwner,
       incomingPR.repoName,
