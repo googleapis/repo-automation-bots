@@ -28,7 +28,7 @@ import {OwlBotTemplateChangesNode} from './owlbot-template-changes';
  * true if the PR:
   - has an author that is 'gcf-owl-bot[bot]'
   - has a title that does NOT include BREAKING, or !
-  - has a PR body that does not contain 'PiperOrigin-RevId'
+  - has a PR body that DOES contain 'PiperOrigin-RevId'
   - is the first owlbot template PR in a repo (so they are merged in order)
   - has no other commit authors on the PR
  */
