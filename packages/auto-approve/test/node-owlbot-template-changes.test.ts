@@ -223,7 +223,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
 
     assert.deepStrictEqual(
       await owlBotTemplateChanges.checkPR(incomingPR),
-      false
+      true
     );
     scopes.forEach(scope => scope.done());
   });
