@@ -92,11 +92,11 @@ export async function scanPullRequest(
   let message = pull_request.title;
   let target = 'The PR title';
 
-  let labels = pull_request.labels
-  .map((label: Label) => {
+  const labels = pull_request.labels.map((label: Label) => {
     return label.name;
   });
-  const hasAutomergeLabel = labels.includes(AUTOMERGE_LABEL) || labels.includes(AUTOMERGE_EXACT_LABEL);
+  const hasAutomergeLabel =
+    labels.includes(AUTOMERGE_LABEL) || labels.includes(AUTOMERGE_EXACT_LABEL);
 
   let refreshed_pr: PullRequest;
 
