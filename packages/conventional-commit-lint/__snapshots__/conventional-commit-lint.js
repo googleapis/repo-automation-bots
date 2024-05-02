@@ -66,3 +66,9 @@ exports['ConventionalCommitLint sets a "success" context on PR with very long li
   "conclusion": "success",
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
 }
+
+exports['ConventionalCommitLint PR With Multiple Commits has a valid title, invalid commit, automerge: exact label 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
