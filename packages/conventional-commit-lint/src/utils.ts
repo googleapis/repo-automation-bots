@@ -42,6 +42,7 @@ type Label = {
 };
 
 const AUTOMERGE_LABEL = 'automerge';
+const AUTOMERGE_EXACT_LABEL = 'automerge: exact';
 
 // modify rules slightly:
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
@@ -91,11 +92,11 @@ export async function scanPullRequest(
   let message = pull_request.title;
   let target = 'The PR title';
 
-  const hasAutomergeLabel = pull_request.labels
-    .map((label: Label) => {
-      return label.name;
-    })
-    .includes(AUTOMERGE_LABEL);
+  const labels = pull_request.labels.map((label: Label) => {
+    return label.name;
+  });
+  const hasAutomergeLabel =
+    labels.includes(AUTOMERGE_LABEL) || labels.includes(AUTOMERGE_EXACT_LABEL);
 
   let refreshed_pr: PullRequest;
 
