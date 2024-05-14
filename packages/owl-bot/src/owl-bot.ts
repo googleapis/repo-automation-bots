@@ -181,6 +181,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
 
   app.on(
     [
+      'merge_group.checks_requested',
       'pull_request.opened',
       'pull_request.synchronize',
       'pull_request.reopened',
