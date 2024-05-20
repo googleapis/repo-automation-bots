@@ -179,6 +179,28 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     }
   });
 
+  app.on('merge_group.checks_requested' as any, async context => {
+    const logger = getContextLogger(context);
+    const installation = context.payload.installation?.id;
+    const headSha = context.payload.merge_group.head_sha;
+    const [owner, repo] = context.payload.repository.full_name.split('/');
+    if (!installation) {
+      throw Error(`no installation token found for ${headSha}`);
+    }
+    const octokit = await getAuthenticatedOctokit(installation);
+
+    logger.info("skipping merge queue check because there's no associated PR");
+    await octokit.checks.create({
+      owner,
+      repo,
+      name: 'OwlBot Post Processor',
+      summary: 'Skipping check for merge_queue',
+      head_sha: headSha,
+      status: 'complete',
+      conclusion: 'skipped',
+    });
+  });
+
   app.on(
     [
       'pull_request.opened',
