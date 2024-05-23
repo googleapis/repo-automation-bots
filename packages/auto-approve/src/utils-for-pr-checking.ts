@@ -25,6 +25,7 @@ import timezone from 'dayjs/plugin/timezone';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 import * as semver from 'semver';
+import {components} from '@octokit/openapi-types/types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -655,14 +656,15 @@ export async function getOpenPRsInRepoFromSameAuthor(
   repo: string,
   author: string,
   octokit: Octokit
-): Promise<number> {
+): Promise<components['schemas']['pull-request-simple'][]> {
   const otherPRs = await octokit.paginate(octokit.rest.pulls.list, {
     owner,
     repo,
     state: 'open',
+    direction: 'asc',
   });
 
   const matchingPRs = otherPRs.filter(x => x.user?.login === author);
 
-  return matchingPRs.length;
+  return matchingPRs;
 }

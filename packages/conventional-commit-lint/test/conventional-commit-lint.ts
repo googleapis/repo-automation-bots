@@ -320,6 +320,29 @@ describe('ConventionalCommitLint', () => {
       requests.done();
     });
 
+    it('has a valid title, invalid commit, automerge: exact label', async () => {
+      stubConfig();
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_automerge_exact'
+      ));
+      // create a history that has one valid commit, and one invalid commit:
+      const invalidCommit = require(resolve(fixturesPath, './invalid_commit'));
+      const requests = nock('https://api.github.com')
+        .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+        .reply(200, invalidCommit)
+        .get('/repos/bcoe/test-release-please/pulls/11')
+        .reply(200, pr11)
+        .post('/repos/bcoe/test-release-please/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      requests.done();
+    });
+
     it('has a valid title, invalid commit, automerge enabled', async () => {
       stubConfig();
       const payload = require(resolve(

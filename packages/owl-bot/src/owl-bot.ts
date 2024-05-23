@@ -179,6 +179,28 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     }
   });
 
+  app.on('merge_group.checks_requested' as any, async context => {
+    const logger = getContextLogger(context);
+    const installation = context.payload.installation?.id;
+    const headSha = context.payload.merge_group.head_sha;
+    const [owner, repo] = context.payload.repository.full_name.split('/');
+    if (!installation) {
+      throw Error(`no installation token found for ${headSha}`);
+    }
+    const octokit = await getAuthenticatedOctokit(installation);
+
+    logger.info("skipping merge queue check because there's no associated PR");
+    await octokit.checks.create({
+      owner,
+      repo,
+      name: 'OwlBot Post Processor',
+      summary: 'Skipping check for merge_queue',
+      head_sha: headSha,
+      status: 'complete',
+      conclusion: 'skipped',
+    });
+  });
+
   app.on(
     [
       'pull_request.opened',
@@ -535,6 +557,8 @@ async function runPostProcessorWithLock(
       );
       return;
     } else {
+      logger.warn(`Error acquiring datastore lock for target ${target}`, err);
+      logger.warn(err as any);
       throw err;
     }
   }
@@ -627,15 +651,10 @@ const runPostProcessor = async (
     return;
   }
   if (!lockText) {
-    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
-    // If OwlBot is not configured on repo, indicate success. This makes
-    // it easier to enable OwlBot as a required check during migration:
-    await createCheck({
-      text: 'OwlBot is not yet enabled on this repository',
-      summary: 'OwlBot is not yet enabled on this repository',
-      conclusion: 'success',
-      title: '🦉 OwlBot - success',
-    });
+    // If OwlBot is not configured on a repo, skip creating the check.
+    logger.info(
+      `no .OwlBot.lock.yaml found for ${opts.head}, skip creating the check.`
+    );
     return;
   }
   try {

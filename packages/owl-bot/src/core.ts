@@ -184,6 +184,9 @@ function summarizeBuild(
   if (conclusion === 'success') {
     text = `successfully ran ${build.steps.length} steps 🎉!`;
   }
+  if (build.logsBucket) {
+    text += `\nView the full log at ${build.logsBucket}/log-${build.id}.txt\n`;
+  }
   return {
     conclusion,
     summary,
