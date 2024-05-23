@@ -23,6 +23,7 @@ import sinon from 'sinon';
 import {ConfigurationV2} from '../src/interfaces';
 
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
@@ -35,7 +36,7 @@ function getPRsOnRepo(
   response: {id: number; user: {login: string}}[]
 ) {
   return nock('https://api.github.com')
-    .get(`/repos/${owner}/${repo}/pulls?state=open`)
+    .get(`/repos/${owner}/${repo}/pulls?state=open&direction=asc`)
     .reply(200, response);
 }
 
@@ -108,6 +109,9 @@ describe('check pr against config', async () => {
           [{filename: 'requirements.txt', sha: '1234'}],
           200
         ),
+        getPRsOnRepo('GoogleCloudPlatform', 'python-docs-samples-1', [
+          {id: 1, user: {login: 'gcf-owl-bot[bot]'}},
+        ]),
         listCommitsOnAPR('GoogleCloudPlatform', 'python-docs-samples-1', [
           {author: {login: 'gcf-owl-bot[bot]'}},
         ]),
@@ -131,9 +135,6 @@ describe('check pr against config', async () => {
               'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
           }
         ),
-        getPRsOnRepo('GoogleCloudPlatform', 'python-docs-samples-1', [
-          {id: 2, user: {login: 'gcf-owl-bot[bot]'}},
-        ]),
       ];
 
       const pr = require(resolve(

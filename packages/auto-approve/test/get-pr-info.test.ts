@@ -25,6 +25,7 @@ import {describe, it} from 'mocha';
 import assert from 'assert';
 
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
