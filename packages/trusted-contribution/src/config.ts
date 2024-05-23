@@ -21,6 +21,7 @@ export interface ConfigurationOptions {
   trustedContributors?: string[];
   annotations?: Annotation[];
   disabled?: boolean;
+  commentInstructions?: boolean;
 }
 
 export const WELL_KNOWN_CONFIGURATION_FILE = 'trusted-contribution.yml';

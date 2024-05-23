@@ -44,6 +44,7 @@ const sandbox = sinon.createSandbox();
 
 describe('OwlBot', () => {
   let probot: Probot;
+  let octokit: Octokit;
   beforeEach(async () => {
     sandbox.stub(process, 'env').value({
       APP_ID: '1234354',
@@ -71,7 +72,8 @@ describe('OwlBot', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    octokit = new Octokit();
+    getAuthenticatedOctokitStub.resolves(octokit);
     await probot.load((app: Probot) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       owlbot.OwlBot('abc123', app, sandbox.stub() as any);
@@ -1567,10 +1569,7 @@ describe('OwlBot', () => {
       payload: payload as any,
       id: 'abc123',
     });
-    sandbox.assert.calledWith(
-      createCheckStub,
-      sinon.match.has('conclusion', 'success')
-    );
+    sandbox.assert.notCalled(createCheckStub);
     githubMock.done();
   });
   it('returns early and adds success status if base is not default branch', async () => {
@@ -1674,6 +1673,38 @@ describe('OwlBot', () => {
       )
     );
     githubMock.done();
+  });
+
+  describe('merge_group', () => {
+    it('skips the check', async () => {
+      const payload = {
+        action: 'checks_requested',
+        installation: {
+          id: 12345,
+        },
+        sender: {
+          login: 'rennie',
+        },
+        merge_group: {
+          head_sha: 'abc123',
+          head_ref: 'refs/heads/some-feature',
+          base_sha: 'def234',
+          base_ref: 'refs/heads/main',
+        },
+        repository: {
+          name: 'Hello-World',
+          full_name: 'octocat/Hello-World',
+        },
+      };
+      const createCheckStub = sandbox.stub(octokit.checks, 'create');
+      await probot.receive({
+        name: 'merge_group' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
+        id: 'abc123',
+      });
+      sandbox.assert.calledOnce(createCheckStub);
+    });
   });
 });
 
