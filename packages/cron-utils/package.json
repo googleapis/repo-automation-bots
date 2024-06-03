@@ -1,12 +1,12 @@
 {
   "name": "@google-automations/cron-utils",
-  "version": "3.2.2",
+  "version": "4.0.0",
   "description": "Utilities for setting up bot crons",
   "scripts": {
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch ./build/test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
     "fix": "gts fix",
     "lint": "gts check"
@@ -41,7 +41,7 @@
     "typescript": "^4.9.4"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   },
   "keywords": [],
   "author": "Jeff Ching <chingor@google.com>",

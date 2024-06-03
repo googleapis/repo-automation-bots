@@ -113,7 +113,7 @@ describe('behavior of Python Sample Dependency process', () => {
     assert.deepStrictEqual(await pythonDependency.checkPR(incomingPR), false);
   });
 
-  it('should return false if the dependency changed is not a google dependency', async () => {
+  it('should return false if the dependency changed is in the exclude list', async () => {
     const incomingPR = {
       author: 'renovate-bot',
       title: 'chore(deps): update dependency django-environ to v0.9.0',
@@ -121,15 +121,15 @@ describe('behavior of Python Sample Dependency process', () => {
       changedFiles: [
         {
           sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
-          filename: 'composer/workflows/requirements.txt',
+          filename: 'workflows/requirements.txt',
           additions: 1,
           deletions: 1,
           changes: 2,
           patch:
             '@@ -1,2 +1,2 @@\n' +
             ' google-cloud-videointelligence==2.5.1\n' +
-            '-django-environ==0.7.0\n' +
-            '+django-environ==0.9.0',
+            '-airflow==0.7.0\n' +
+            '+airflow==0.9.0',
         },
       ],
       repoName: 'testRepoName',
@@ -160,6 +160,49 @@ describe('behavior of Python Sample Dependency process', () => {
             ' google-cloud-videointelligence==2.5.1\n' +
             '-google-cloud-storage==1.42.3\n' +
             '+google-cloud-storage==1.43.0',
+        },
+      ],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+
+    const pythonDependency = new PythonSampleDependency(octokit);
+
+    assert.ok(await pythonDependency.checkPR(incomingPR));
+  });
+
+  it('should return true in checkPR if incoming PR matches for dependabot', async () => {
+    const incomingPR = {
+      author: 'dependabot[bot]',
+      title:
+        'chore(deps): bump django from 4.1.7 to 4.1.13 in /appengine/standard_python3/bundled-services/blobstore/django',
+      fileCount: 1,
+      changedFiles: [
+        {
+          sha: '7238a9cd2d395d453b1ebb6278440a99574e055e',
+          filename:
+            'appengine/standard_python3/bundled-services/blobstore/django/requirements.txt',
+          status: 'modified',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          blob_url:
+            'https://github.com/GoogleCloudPlatform/python-docs-samples/blob/57fe78fbf19010405481f129646fa16904a4b413/appengine%2Fstandard_python3%2Fbundled-services%2Fblobstore%2Fdjango%2Frequirements.txt',
+          raw_url:
+            'https://github.com/GoogleCloudPlatform/python-docs-samples/raw/57fe78fbf19010405481f129646fa16904a4b413/appengine%2Fstandard_python3%2Fbundled-services%2Fblobstore%2Fdjango%2Frequirements.txt',
+          contents_url:
+            'https://api.github.com/repos/GoogleCloudPlatform/python-docs-samples/contents/appengine%2Fstandard_python3%2Fbundled-services%2Fblobstore%2Fdjango%2Frequirements.txt?ref=57fe78fbf19010405481f129646fa16904a4b413',
+          patch:
+            '@@ -1,5 +1,5 @@\n' +
+            ' Django==3.2.18; python_version<"3.8"\n' +
+            '-Django==4.1.7; python_version>"3.7"\n' +
+            '+Django==4.1.13; python_version>"3.7"\n' +
+            ' django-environ==0.10.0\n' +
+            ' google-cloud-logging==3.5.0\n' +
+            ' appengine-python-standard>=0.2.3\n' +
+            '\\ No newline at end of file',
         },
       ],
       repoName: 'testRepoName',

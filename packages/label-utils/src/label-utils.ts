@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import {createHash} from 'crypto';
-import {logger} from 'gcf-utils';
-import {DatastoreLock} from '@google-automations/datastore-lock';
+import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
+import {withDatastoreLock} from '@google-automations/datastore-lock';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 
@@ -38,26 +38,36 @@ export async function syncLabels(
   octokit: Octokit,
   owner: string,
   repo: string,
-  labels: Array<Label>
+  labels: Array<Label>,
+  logger: GCFLogger = defaultLogger
 ): Promise<void> {
-  const l = new DatastoreLock('label-sync', `${owner}/${repo}`);
-  const lockResult = await l.acquire();
-  if (!lockResult) {
-    logger.error(`Failed to acquire the lock for ${owner}/${repo}`);
-    return;
-  }
   try {
-    return syncLabelsImpl(octokit, owner, repo, labels);
-  } finally {
-    await l.release();
+    await withDatastoreLock(
+      {
+        lockId: 'label-sync',
+        target: `${owner}/${repo}`,
+      },
+      async () => {
+        return await syncLabelsImpl(octokit, owner, repo, labels, logger);
+      }
+    );
+  } catch (e) {
+    logger.error('Failed to acquire the lock:', e);
   }
+}
+
+interface GitHubLabel {
+  name: string;
+  color: string;
+  description: string;
 }
 
 async function syncLabelsImpl(
   octokit: Octokit,
   owner: string,
   repo: string,
-  labels: Array<Label>
+  labels: Array<Label>,
+  logger: GCFLogger = defaultLogger
 ): Promise<void> {
   const newLabels: Array<LabelWithColor> = [];
   for (const l of labels) {
@@ -67,11 +77,14 @@ async function syncLabelsImpl(
       color: getLabelColor(l.name.toLowerCase()),
     });
   }
-  const oldLabels = await octokit.paginate(octokit.issues.listLabelsForRepo, {
-    owner,
-    repo,
-    per_page: 100,
-  });
+  const oldLabels: GitHubLabel[] = await octokit.paginate(
+    octokit.issues.listLabelsForRepo as any,
+    {
+      owner,
+      repo,
+      per_page: 100,
+    }
+  );
   for (const l of newLabels) {
     const match = oldLabels.find(x => x.name.toLowerCase() === l.name);
     if (match) {

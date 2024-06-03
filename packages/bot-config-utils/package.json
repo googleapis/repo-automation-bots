@@ -1,12 +1,12 @@
 {
   "name": "@google-automations/bot-config-utils",
-  "version": "6.1.3",
+  "version": "7.0.0",
   "description": "Utilities for github bot config",
   "scripts": {
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
     "fix": "gts fix",
@@ -19,7 +19,7 @@
   "dependencies": {
     "ajv": "^8.11.0",
     "ajv-formats": "^2.1.1",
-    "gcf-utils": "^14.0.1",
+    "gcf-utils": "^15.0.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0"
   },
@@ -40,7 +40,7 @@
     "typescript": "^4.9.4"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   },
   "keywords": [
     "Bot config",

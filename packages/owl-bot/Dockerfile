@@ -16,7 +16,7 @@
 
 # Use the official lightweight Node.js 14 image.
 # https://hub.docker.com/_/node
-FROM node:14-alpine
+FROM node:18-alpine
 
 # Bump the heap size
 ENV NODE_OPTIONS='--max-old-space-size=8192'
@@ -34,8 +34,8 @@ RUN apk update && apk upgrade && \
 # Install production dependencies.
 # If you add a package-lock.json, speed your build by switching to 'npm ci'.
 # RUN npm ci --only=production
-RUN npm install
-RUN npm run compile
+RUN npm install && \
+    npm run compile
 
 # Make sure users besides root can run the app.
 RUN chmod a+rx -R .

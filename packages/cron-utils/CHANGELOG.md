@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.2.2...cron-utils-v4.0.0) (2023-09-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* require node 18 ([#5225](https://github.com/googleapis/repo-automation-bots/issues/5225))
+
+### Features
+
+* require node 18 ([#5225](https://github.com/googleapis/repo-automation-bots/issues/5225)) ([b2f851a](https://github.com/googleapis/repo-automation-bots/commit/b2f851a741d191719f2e3840b09e4230de9826f9))
+
 ## [3.2.2](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v3.2.1...cron-utils-v3.2.2) (2023-01-12)
 
 

@@ -1,13 +1,13 @@
 {
-  "packages/bot-config-utils": "6.1.3",
-  "packages/cron-utils": "3.2.2",
+  "packages/bot-config-utils": "7.0.0",
+  "packages/cron-utils": "4.0.0",
   "packages/datastore-lock": "5.0.0",
   "packages/flakybot": "1.2.0",
-  "packages/gcf-utils": "15.0.0",
-  "packages/git-file-utils": "1.2.6",
+  "packages/gcf-utils": "15.0.1",
+  "packages/git-file-utils": "2.0.0",
   "packages/issue-utils": "3.0.0",
-  "packages/label-utils": "3.0.2",
+  "packages/label-utils": "4.0.0",
   "packages/mono-repo-publish": "1.7.0",
-  "packages/object-selector": "3.0.2",
+  "packages/object-selector": "4.0.0",
   "packages/release-brancher": "1.3.3"
 }

@@ -41,6 +41,7 @@ import {NodeDependency} from '../src/process-checks/node/dependency';
 import {NodeRelease} from '../src/process-checks/node/release';
 import nock from 'nock';
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
@@ -1135,7 +1136,7 @@ describe('run additional versioning checks', () => {
   describe('getting all open PRs in a repo from an author', async () => {
     it('should return the number of PRs from anotherAuthor', async () => {
       const prRequest = nock('https://api.github.com')
-        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open&direction=asc')
         .reply(200, [{id: 1, user: {login: 'anotherAuthor'}}]);
 
       const prCount = await getOpenPRsInRepoFromSameAuthor(
@@ -1146,12 +1147,12 @@ describe('run additional versioning checks', () => {
       );
 
       prRequest.done();
-      assert.deepStrictEqual(prCount, 1);
+      assert.deepStrictEqual(prCount.length, 1);
     });
 
     it('should return the number of PRs from someOtherAuthor', async () => {
       const prRequest = nock('https://api.github.com')
-        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open&direction=asc')
         .reply(200, [{id: 1, user: {login: 'anotherAuthor'}}]);
 
       const prCount2 = await getOpenPRsInRepoFromSameAuthor(
@@ -1162,7 +1163,7 @@ describe('run additional versioning checks', () => {
       );
 
       prRequest.done();
-      assert.deepStrictEqual(prCount2, 0);
+      assert.deepStrictEqual(prCount2.length, 0);
     });
 
     it('should throw an error if prs are not received', async () => {

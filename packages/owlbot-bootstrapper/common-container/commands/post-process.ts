@@ -85,6 +85,11 @@ export const postProcessCommand: yargs.CommandModule<{}, CliArgs> = {
         describe: 'does not create issues if failure',
         type: 'string',
         default: 'false',
+      })
+      .option('sourceCl', {
+        describe: 'source CL for tracking',
+        type: 'number',
+        demand: true,
       });
   },
   async handler(argv: CliArgs) {

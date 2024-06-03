@@ -24,6 +24,7 @@ import {File, ValidPr} from '../src/interfaces';
 import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
@@ -136,7 +137,7 @@ describe('check pr against config', async () => {
       ) as {rules: ValidPr[]};
 
       const fileRequest = nock('https://api.github.com')
-        .get('/repos/GoogleCloudPlatform/python-docs-samples/pulls/1/files')
+        .get('/repos/GoogleCloudPlatform/python-docs-samples-1/pulls/1/files')
         .reply(200, [{filename: 'requirements.txt', sha: '1234'}]);
 
       const pr = require(resolve(

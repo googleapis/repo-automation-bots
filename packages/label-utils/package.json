@@ -1,12 +1,12 @@
 {
   "name": "@google-automations/label-utils",
-  "version": "3.0.2",
+  "version": "4.0.0",
   "description": "Utilities for github labels",
   "scripts": {
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch ./build/test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
     "fix": "gts fix",
     "lint": "gts check"
@@ -16,8 +16,8 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@google-automations/datastore-lock": "^4.0.0",
-    "gcf-utils": "^14.0.1",
+    "@google-automations/datastore-lock": "^5.0.0",
+    "gcf-utils": "^15.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
@@ -36,7 +36,7 @@
     "typescript": "~4.8.2"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   },
   "keywords": [
     "github labels",

@@ -18,6 +18,7 @@ import assert from 'assert';
 import nock from 'nock';
 
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',

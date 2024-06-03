@@ -18,6 +18,7 @@ import {
   fetchOwlBotLock,
   parseOwlBotLock,
   triggerPostProcessBuild,
+  OPERATIONAL_DOCUMENT,
 } from '../../core';
 import {promisify} from 'util';
 import {readFile} from 'fs';
@@ -111,7 +112,7 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
           installation: argv.installation,
           pr: argv.pr,
           repo: argv.repo,
-          text: buildStatus.text,
+          text: `${buildStatus.text}. ${OPERATIONAL_DOCUMENT}`,
           summary: buildStatus.summary,
           conclusion: buildStatus.conclusion,
           detailsURL: buildStatus.detailsURL,

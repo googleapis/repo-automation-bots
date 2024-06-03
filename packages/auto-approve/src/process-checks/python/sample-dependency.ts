@@ -30,21 +30,25 @@ import {BaseLanguageRule} from '../base';
 /**
  * The PythonSampleDependency class's checkPR function returns
  * true if the PR:
-  - has an author that is 'renovate-bot'
+  - has an author that is 'renovate-bot' or 'dependabot'
   - has a title that matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+    or /^(chore)\(deps\): bump (@?\S*) from \S* to (\S*) in \S/
   - Each file path must match one of these regexps:
     - /requirements.txt$/
   - All files must:
     - Match this regexp: /requirements.txt$/
     - Increase the non-major package version of a dependency
-    - Only change one dependency, that must be a google dependency
+    - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
     - Not match any regexes in the 'excluded' list
  */
 export class PythonSampleDependency extends BaseLanguageRule {
   classRule = {
-    author: 'renovate-bot',
-    titleRegex: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+    authors: ['renovate-bot', 'dependabot[bot]'],
+    titleRegex: [
+      /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+      /^(chore)\(deps\): bump (@?\S*) from \S* to (\S*) in \S*/,
+    ],
     fileNameRegex: [/requirements.txt$/],
   };
   fileRules = [
@@ -53,14 +57,15 @@ export class PythonSampleDependency extends BaseLanguageRule {
       // @Python team: please add API paths here to exclude from auto-approving
       targetFileToExclude: [/airflow/, /composer/],
       // This would match: fix(deps): update dependency @octokit to v1
-      dependencyTitle: new RegExp(
-        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
-      ),
+      dependencyTitles: [
+        /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+        /^(chore)\(deps\): bump (@?\S*) from \S* to v?([0-9]*)\.([0-9]*\.?[0-9]*) in \S*/,
+      ],
       // This would match: '-google-cloud-storage==1.39.0
       oldVersion: new RegExp(/[\s]-(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
       // This would match: '+google-cloud-storage==1.40.0
       newVersion: new RegExp(/[\s]\+(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
-      regexForDepToInclude: [/google/],
+      regexForDepToNotInclude: [/airflow/, /composer/, /secretmanager/],
     },
   ];
 
@@ -69,15 +74,19 @@ export class PythonSampleDependency extends BaseLanguageRule {
   }
 
   public async checkPR(incomingPR: PullRequest): Promise<boolean> {
-    const authorshipMatches = checkAuthor(
-      this.classRule.author,
-      incomingPR.author
-    );
+    let authorshipMatches = false;
+    for (const author of this.classRule.authors) {
+      if (checkAuthor(author, incomingPR.author)) {
+        authorshipMatches = true;
+      }
+    }
 
-    const titleMatches = checkTitleOrBody(
-      incomingPR.title,
-      this.classRule.titleRegex
-    );
+    let titleMatches = false;
+    for (const titleRegex of this.classRule.titleRegex) {
+      if (checkTitleOrBody(incomingPR.title, titleRegex)) {
+        titleMatches = true;
+      }
+    }
 
     const filePatternsMatch = checkFilePathsMatch(
       incomingPR.changedFiles.map(x => x.filename),
@@ -117,16 +126,23 @@ export class PythonSampleDependency extends BaseLanguageRule {
         return false;
       }
 
-      const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
-        versions,
-        // We can assert this exists since we're in the class rule that contains it
-        fileMatch.dependencyTitle!,
-        incomingPR.title
-      );
+      let doesDependencyMatch = false;
+      for (const dependencyTitle of fileMatch.dependencyTitles) {
+        if (
+          doesDependencyChangeMatchPRTitleV2(
+            versions,
+            // We can assert this exists since we're in the class rule that contains it
+            dependencyTitle,
+            incomingPR.title
+          )
+        ) {
+          doesDependencyMatch = true;
+        }
+      }
 
-      const doesDependencyConformToRegexes = doesDependencyMatchAgainstRegexes(
+      const doesDependencyConformToRegexes = !doesDependencyMatchAgainstRegexes(
         versions,
-        fileMatch.regexForDepToInclude
+        fileMatch.regexForDepToNotInclude
       );
 
       const isVersionValid = runVersioningValidation(versions);

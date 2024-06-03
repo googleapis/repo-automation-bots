@@ -33,9 +33,11 @@ processes:
   - "PythonSampleAppDependency"
   - "JavaSampleAppDependency"
   - "NodeGeneratorDependency"
+  - "OwlBotTemplateChangesNode"
+  - "OwlBotPRsNode"
 ```
 
-These seven processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
+These processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
 
 Below is what each process checks for:
 
@@ -69,14 +71,15 @@ Below is what each process checks for:
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
 * PythonSampleDependency:
-  - Checks that the author is 'renovate-bot'
+  - Checks that the author is 'renovate-bot' or 'dependabot'
   - Checks that the title of the PR matches the regexp: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
+  or /^(chore)\(deps\): bump (@?\S*) from \S* to (\S*) in \S/
   - Each file path must match one of these regexps:
     - /requirements.txt$/
   - All files must: 
     - Match this regexp: /requirements.txt$/
     - Increase the non-major package version of a dependency
-    - Only change one dependency, that must be a google dependency
+    - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR
     - Not match any regexes in the 'excluded' list
 * NodeDependency:
@@ -186,7 +189,20 @@ Below is what each process checks for:
       - /package.json$/, /\.bzl$/, or /pnpm-lock\.yaml$/
     - Increase the non-major package version of a dependency
     - Change the dependency that was there previously, and that is on the title of the PR
-
+* OwlBotTemplateChangesNode:
+  - Checks that the author is 'gcf-owl-bot[bot]'
+  - Checks that the title of the PR does NOT include BREAKING, feat, fix, !
+  - Checks that the title of the PR starts with chore, build, test, refactor
+  - Checks that the body of the PR does not contain 'PiperOrigin-RevId'
+  - Checks that the PR is the first of owlbot PRs in the repo (so that they are not merged out of order)
+  - Checks that there are no other commit authors other than owlbot on the repo
+* OwlBotPRsNode:
+  - Checks that the author is 'gcf-owl-bot[bot]'
+  - Checks that the title of the PR does NOT include BREAKING, !
+  - Checks that the title of the PR starts with chore, build, test, refactor, feat, fix,
+  - Checks that the body of the PR DOES contain 'PiperOrigin-RevId'
+  - Checks that the PR is the first of owlbot PRs in the repo (so that they are not merged out of order)
+  - Checks that there are no other commit authors other than owlbot on the repo
   
 
 This change in configuration permits the following:

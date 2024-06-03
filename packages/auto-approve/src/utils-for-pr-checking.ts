@@ -25,6 +25,7 @@ import timezone from 'dayjs/plugin/timezone';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 import * as semver from 'semver';
+import {components} from '@octokit/openapi-types/types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -298,9 +299,12 @@ export function doesDependencyChangeMatchPRTitleV2(
   if (titleRegex) {
     dependencyName = titleRegex[2];
   }
+
   return (
-    versions.newDependencyName === versions.oldDependencyName &&
-    dependencyName === versions.newDependencyName
+    versions.newDependencyName.toLocaleLowerCase() ===
+      versions.oldDependencyName.toLocaleLowerCase() &&
+    dependencyName.toLocaleLowerCase() ===
+      versions.newDependencyName.toLocaleLowerCase()
   );
 }
 
@@ -321,7 +325,13 @@ export function isMajorVersionChanging(versions: Versions): boolean {
  * @returns whether the minor version was upgraded.
  */
 export function isMinorVersionUpgraded(versions: Versions): boolean {
-  return Number(versions.newMinorVersion) > Number(versions.oldMinorVersion);
+  const [oldMinor, oldPatch] = versions.oldMinorVersion.split('.');
+  const [newMinor, newPatch] = versions.newMinorVersion.split('.');
+  return (
+    (Number(newMinor) > Number(oldMinor) ||
+      Number(newPatch) > Number(oldPatch)) &&
+    Number(versions.oldMinorVersion) !== Number(versions.newMinorVersion)
+  );
 }
 
 /**
@@ -646,14 +656,15 @@ export async function getOpenPRsInRepoFromSameAuthor(
   repo: string,
   author: string,
   octokit: Octokit
-): Promise<number> {
+): Promise<components['schemas']['pull-request-simple'][]> {
   const otherPRs = await octokit.paginate(octokit.rest.pulls.list, {
     owner,
     repo,
     state: 'open',
+    direction: 'asc',
   });
 
   const matchingPRs = otherPRs.filter(x => x.user?.login === author);
 
-  return matchingPRs.length;
+  return matchingPRs;
 }
