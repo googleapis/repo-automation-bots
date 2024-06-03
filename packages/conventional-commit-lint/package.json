@@ -23,7 +23,7 @@
     "compile": "tsc -p .",
     "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -32,6 +32,7 @@
     "@commitlint/config-conventional": "^17.1.0",
     "@commitlint/lint": "^17.1.0",
     "@google-automations/bot-config-utils": "^6.1.0",
+    "@octokit/graphql": "^5.0.4",
     "@octokit/openapi-types": "^14.0.0",
     "@octokit/webhooks-types": "^6.3.6",
     "gcf-utils": "^14.2.0",
@@ -54,6 +55,6 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   }
 }

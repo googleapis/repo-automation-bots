@@ -73,7 +73,7 @@ export async function scanPullRequest(
   const commits: PullsListCommitsResponseData = [];
   try {
     for await (const response of octokit.paginate.iterator(
-      octokit.rest.pulls.listCommits,
+      'GET /repos/{owner}/{repo}/pulls/{pull_number}/commits',
       commitParams
     )) {
       commits.push(...response.data);
