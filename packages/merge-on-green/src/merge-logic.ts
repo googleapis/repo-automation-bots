@@ -16,6 +16,7 @@ import {GCFLogger} from 'gcf-utils';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+import {MERGE_ON_GREEN_LABEL_SECURE} from './labels';
 
 export interface Label {
   name: string;
@@ -373,18 +374,14 @@ function cleanReviews(reviewsCompleted: Reviews[]): Reviews[] {
  * @param github unique installation id for each function
  * @returns a boolean of whether there has been at least one review, and all reviews are approved
  */
-async function checkReviews(
+async function maybeDismissReviews(
   owner: string,
   repo: string,
   pr: number,
-  author: string,
-  label: string,
-  secureLabel: string,
   headSha: string,
   github: Octokit,
   logger: GCFLogger
-): Promise<boolean> {
-  const start = Date.now();
+) {
   logger.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
   const reviewsCompletedDirty = await getReviewsCompleted(
     owner,
@@ -393,51 +390,24 @@ async function checkReviews(
     github,
     logger
   );
-  let reviewsPassed = true;
   const reviewsCompleted = cleanReviews(reviewsCompletedDirty);
-  logger.info(
-    `fetched completed reviews in ${
-      Date.now() - start
-    }ms ${owner}/${repo}/${pr}`
-  );
-  if (reviewsCompleted.length !== 0) {
-    reviewsCompleted.forEach(review => {
-      if (review.state !== 'APPROVED' && review.user.login !== author) {
-        logger.info(
-          `One of your reviewers did not approve the PR ${owner}/${repo}/${pr} state = ${review.state}`
-        );
-        reviewsPassed = false;
-        return;
-      }
-    });
-    if (label === secureLabel) {
-      //if we get to here, it means that all the reviews are in the approved state
-      for (const review of reviewsCompleted) {
-        if (review.commit_id !== headSha) {
-          reviewsPassed = false;
-          logger.info(
-            `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headSha}; will dismiss review.`
-          );
-          await github.pulls
-            .dismissReview({
-              owner,
-              repo,
-              pull_number: pr,
-              review_id: review.id,
-              message:
-                'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
-            })
-            .catch(logger.error);
-        }
-      }
-      return reviewsPassed;
+  for (const review of reviewsCompleted) {
+    if (review.commit_id !== headSha) {
+      logger.info(
+        `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headSha}; will dismiss review.`
+      );
+      await github.pulls
+        .dismissReview({
+          owner,
+          repo,
+          pull_number: pr,
+          review_id: review.id,
+          message:
+            'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
+        })
+        .catch(logger.error);
     }
-  } else {
-    //if no one has reviewed it, fail the merge
-    logger.info(`No one has reviewed your PR ${owner}/${repo}/${pr}`);
-    return false;
   }
-  return reviewsPassed;
 }
 
 export function cleanGHLinks(ghBody: string): string {
@@ -543,7 +513,6 @@ async function maybeLogMergeability(
   repo: string,
   pr: number,
   github: Octokit,
-  checkReviews: boolean,
   checkStatus: boolean,
   logger: GCFLogger
 ) {
@@ -554,7 +523,6 @@ async function maybeLogMergeability(
       number: pr,
       mergeable: prInfo.mergeable,
       mergeable_state: prInfo.mergeable_state,
-      checkReviews,
       checkStatus,
     });
   }
@@ -599,18 +567,7 @@ export async function mergeOnGreen(
 
   const headSha = await getLatestCommit(owner, repo, pr, github);
 
-  const [checkReview, checkStatus, commentsOnPR] = await Promise.all([
-    checkReviews(
-      owner,
-      repo,
-      pr,
-      author,
-      mogLabel,
-      labelNames[1],
-      headSha,
-      github,
-      logger
-    ),
+  const [checkStatus, commentsOnPR] = await Promise.all([
     statusesForRef(owner, repo, pr, requiredChecks, headSha, github, logger),
     getCommentsOnPR(owner, repo, pr, github),
   ]);
@@ -622,26 +579,25 @@ export async function mergeOnGreen(
     'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.';
 
   logger.info(
-    `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
+    `checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
   );
 
   // TODO(sofisl): Remove once metrics have been collected (06/15/21)
-  maybeLogMergeability(
-    owner,
-    repo,
-    pr,
-    github,
-    checkStatus,
-    checkReview,
-    logger
-  );
+  maybeLogMergeability(owner, repo, pr, github, checkStatus, logger);
   //if the reviews and statuses are green, let's try to merge
-  if (checkReview === true && checkStatus === true) {
+  if (checkStatus === true) {
     const prInfo = await getPR(owner, repo, pr, github);
     const hasDNMLabel = prInfo.labels?.some(l => l.name === 'do not merge');
+    const hasAutomergeExact = prInfo.labels?.some(
+      l => l.name === MERGE_ON_GREEN_LABEL_SECURE
+    );
     if (hasDNMLabel) {
       logger.info(`${owner}/${repo}/${pr} has do not merge label`);
       return false;
+    }
+    if (hasAutomergeExact) {
+      logger.info(`${owner}/${repo}/${pr} has automerge exact label`);
+      maybeDismissReviews(owner, repo, pr, headSha, github, logger);
     }
     let merged = false;
     try {
