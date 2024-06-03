@@ -31,7 +31,7 @@ import schema from './config-schema.json';
 const CONFIGURATION_FILE_PATH = 'cherry-pick-bot.yml';
 
 // See https://docs.github.com/en/graphql/reference/enums#commentauthorassociation
-const ALLOWED_COMMENTER_ASSOCIATIONS = new Set([
+const DEFAULT_ALLOWED_COMMENTER_ASSOCIATIONS = new Set([
   'COLLABORATOR', // Author has been invited to collaborate on the repository.
   'OWNER', // Author is the owner of the repository.
   'MEMBER', // Author is a member of the organization that owns the repository.
@@ -40,6 +40,7 @@ const ALLOWED_COMMENTER_ASSOCIATIONS = new Set([
 interface Configuration {
   enabled?: boolean;
   preservePullRequestTitle?: boolean;
+  allowedAuthorAssociations?: string[];
 }
 
 export = (app: Probot) => {
@@ -71,11 +72,11 @@ export = (app: Probot) => {
       return;
     }
 
-    if (
-      !ALLOWED_COMMENTER_ASSOCIATIONS.has(
-        context.payload.comment.author_association
-      )
-    ) {
+    const allowedAssociations = remoteConfig.allowedAuthorAssociations
+      ? new Set(remoteConfig.allowedAuthorAssociations)
+      : DEFAULT_ALLOWED_COMMENTER_ASSOCIATIONS;
+
+    if (!allowedAssociations.has(context.payload.comment.author_association)) {
       logger.debug(
         `comment author (${context.payload.comment.author_association}) is not authorized to cherry-pick`
       );
@@ -212,7 +213,12 @@ export = (app: Probot) => {
       logger.info(
         `${comment.user?.login} requested cherry-pick to branch ${targetBranch}`
       );
-      if (!ALLOWED_COMMENTER_ASSOCIATIONS.has(comment.author_association)) {
+
+      const allowedAssociations = remoteConfig.allowedAuthorAssociations
+        ? new Set(remoteConfig.allowedAuthorAssociations)
+        : DEFAULT_ALLOWED_COMMENTER_ASSOCIATIONS;
+
+      if (!allowedAssociations.has(comment.author_association)) {
         logger.debug(
           `comment author (${comment.author_association}) is not authorized to cherry-pick`
         );
