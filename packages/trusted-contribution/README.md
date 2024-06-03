@@ -18,26 +18,31 @@ To configure the bot, you can create a configuration file:
 `.github/trusted-contribution.yml`. The contents of this file allow for the following
 options:
 
-| Name | Description | Type | Default |
-|----- | ----------- | ---- | ------- |
-| `trustedContributors` | List of user login names that are considered trusted  | `string[]` | `['renovate-bot', 'release-please[bot]', 'gcf-merge-on-green[bot]']` |
-| `annotations` | The list of annotation objects to leave the on the PR | `object` | `{ type: 'label'; text: 'kokoro:force-run' }` |
-| `annotation.type` | Configure the bot to either comment on the PR or add a label | `comment`|`label` | `label` |
-| `annotation.text` | The label text or comment text to be left on the PR | `string` | `kokoro:force-run`
+| Name                  | Description                                                        | Type       | Default                                                              |
+| --------------------- | ------------------------------------------------------------------ | ---------- | -------------------------------------------------------------------- |
+| `trustedContributors` | List of user login names that are considered trusted               | `string[]` | `['renovate-bot', 'release-please[bot]', 'gcf-merge-on-green[bot]']` |
+| `commentInstructions` | Whether to comment on the PR with instructions for the maintainers | `boolean`  | `false`                                                              |
+| `annotations`         | The list of annotation objects to leave the on the PR              | `object`   | `{ type: 'label'; text: 'kokoro:force-run' }`                        |
+| `annotation.type`     | Configure the bot to either comment on the PR or add a label       | `comment`  | `label`                                                              |
+| `annotation.text`     | The label text or comment text to be left on the PR                | `string`   | `kokoro:force-run`                                                   |
 
 ## Deployment and Permissions
 
 ### Repository permissions
+
 - metadata - read
 - pull requests - read & write
 
 ### Organization permissions
+
 - None
 
 ### User permissions
+
 - None
 
 ## Subscribe to events
+
 - pull request
 
 ## Testing

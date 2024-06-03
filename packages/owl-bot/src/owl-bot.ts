@@ -34,6 +34,7 @@ import {
   parseOwlBotLock,
   CheckArgs,
   OWL_BOT_COPY,
+  OPERATIONAL_DOCUMENT,
 } from './core';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
@@ -176,6 +177,28 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       });
       await core.triggerRegeneratePullRequest(octokitFactory, regenerate);
     }
+  });
+
+  app.on('merge_group.checks_requested' as any, async context => {
+    const logger = getContextLogger(context);
+    const installation = context.payload.installation?.id;
+    const headSha = context.payload.merge_group.head_sha;
+    const [owner, repo] = context.payload.repository.full_name.split('/');
+    if (!installation) {
+      throw Error(`no installation token found for ${headSha}`);
+    }
+    const octokit = await getAuthenticatedOctokit(installation);
+
+    logger.info("skipping merge queue check because there's no associated PR");
+    await octokit.checks.create({
+      owner,
+      repo,
+      name: 'OwlBot Post Processor',
+      summary: 'Skipping check for merge_queue',
+      head_sha: headSha,
+      status: 'complete',
+      conclusion: 'skipped',
+    });
   });
 
   app.on(
@@ -534,6 +557,8 @@ async function runPostProcessorWithLock(
       );
       return;
     } else {
+      logger.warn(`Error acquiring datastore lock for target ${target}`, err);
+      logger.warn(err as any);
       throw err;
     }
   }
@@ -618,7 +643,7 @@ const runPostProcessor = async (
     lockText = await core.fetchOwlBotLock(opts.base, opts.prNumber, octokit);
   } catch (e) {
     await createCheck({
-      text: String(e),
+      text: `${String(e)}. ${OPERATIONAL_DOCUMENT}`,
       summary: 'Failed to fetch the lock file',
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -626,22 +651,17 @@ const runPostProcessor = async (
     return;
   }
   if (!lockText) {
-    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
-    // If OwlBot is not configured on repo, indicate success. This makes
-    // it easier to enable OwlBot as a required check during migration:
-    await createCheck({
-      text: 'OwlBot is not yet enabled on this repository',
-      summary: 'OwlBot is not yet enabled on this repository',
-      conclusion: 'success',
-      title: '🦉 OwlBot - success',
-    });
+    // If OwlBot is not configured on a repo, skip creating the check.
+    logger.info(
+      `no .OwlBot.lock.yaml found for ${opts.head}, skip creating the check.`
+    );
     return;
   }
   try {
     lock = parseOwlBotLock(lockText);
   } catch (e) {
     await createCheck({
-      text: String(e),
+      text: `${String(e)}. ${OPERATIONAL_DOCUMENT}`,
       summary: 'The OwlBot lock file on this repository is corrupt',
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -671,7 +691,7 @@ const runPostProcessor = async (
     logger.warn(message);
 
     await createCheck({
-      text: message,
+      text: `${message}. ${OPERATIONAL_DOCUMENT}`,
       summary: message,
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -699,7 +719,7 @@ const runPostProcessor = async (
   if (null === buildStatus) {
     // Update pull request with status of job:
     await createCheck({
-      text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+      text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label. ${OPERATIONAL_DOCUMENT}`,
       summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
       conclusion: 'success',
       title: '🦉 OwlBot - ignored',
@@ -709,7 +729,7 @@ const runPostProcessor = async (
 
   // Update pull request with status of job:
   await createCheck({
-    text: buildStatus.text,
+    text: `${buildStatus.text} ${OPERATIONAL_DOCUMENT}`,
     summary: buildStatus.summary,
     conclusion: buildStatus.conclusion,
     title: `🦉 OwlBot - ${buildStatus.summary}`,

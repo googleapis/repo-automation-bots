@@ -49,6 +49,8 @@ steps:
     - "$_INTER_CONTAINER_VARS_PATH"
     - "--skipIssueOnFailure"
     - "$_SKIP_ISSUE_ON_FAILURE"
+    - "--sourceCl"
+    - "$_SOURCE_CL"
   # Generates the basic files necessary for a minimal implementation of a library
   # Current working directory contains the branch of the target repo in branchName.md
   # Keeping this as env variables so as to not force parsing on language-specific containers;
@@ -64,6 +66,7 @@ steps:
     - 'MONO_REPO_PATH=$_MONO_REPO_PATH'
     - 'SERVICE_CONFIG_PATH=$_SERVICE_CONFIG_PATH'
     - 'INTER_CONTAINER_VARS_PATH=$_INTER_CONTAINER_VARS_PATH'
+    - 'SOURCE_CL=$_SOURCE_CL'
   # Commits and pushes changes to a branch; if the repo is nonempty, opens a PR
   - name: ${_CONTAINER}
     args:
@@ -94,4 +97,6 @@ steps:
     - "$_INTER_CONTAINER_VARS_PATH"
     - "--skipIssueOnFailure"
     - "$_SKIP_ISSUE_ON_FAILURE"
+    - "--sourceCl"
+    - "$_SOURCE_CL"
 

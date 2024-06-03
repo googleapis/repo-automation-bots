@@ -35,6 +35,7 @@ const API_LIBRARY_TYPES = [
 // Manually curated list of allowed api_shortname entries
 const EXTRA_ALLOWED_API_SHORTNAMES = [
   'bigquery', // handwritten client that has no protos
+  'runtimeconfig', // handwritten client that has no protos
 ];
 
 interface ApiIndex {

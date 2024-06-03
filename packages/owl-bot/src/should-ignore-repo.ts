@@ -32,6 +32,6 @@ export function shouldIgnoreRepo(ownerSlashRepo: string): boolean {
   // subdirectories of google-cloud-php and never accept pull requests.
   const regexp = process.env.IGNORE_REPO_REGEXP
     ? new RegExp(process.env.IGNORE_REPO_REGEXP)
-    : /googleapis\/(googleapis(-gen)?|google-cloud-php-.+)/;
+    : /googleapis\/(googleapis(-gen)?|google-cloud-php-.+|php-.+)/;
   return regexp.test(ownerSlashRepo);
 }
