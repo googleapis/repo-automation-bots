@@ -21,7 +21,7 @@
     "compile": "tsc",
     "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
-    "test": "cross-env c8 mocha --exit build/test",
+    "test": "cross-env c8 mocha --node-option no-experimental-fetch --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -56,6 +56,6 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   }
 }
