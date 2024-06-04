@@ -108,7 +108,7 @@ configuration names are often the "dasherized" versions of these camel-cased nam
 | `draft` | Whether to create the release as a draft | `boolean` | `false` |
 | `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
 | `pullRequestTitlePattern` | Customize the pull request title | `string` | |
-| `monorepoTags` | Whether to include the component name in the release | `boolean` | `false |
+| `monorepoTags` | Whether to include the component name in the release | `boolean` | `false` |
 
 `BranchConfiguration`:
 
