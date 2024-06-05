@@ -25,6 +25,7 @@ import {
   Comment,
   getLatestCommit,
   cleanGHLinks,
+  Commit,
 } from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import * as gcfUtilsModule from 'gcf-utils';
@@ -32,10 +33,6 @@ import * as gcfUtilsModule from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 
 const sandbox = sinon.createSandbox();
-
-interface HeadSha {
-  sha: string;
-}
 
 interface CheckRuns {
   name: string;
@@ -51,7 +48,7 @@ function getReviewsCompleted(response: Reviews[]) {
     .reply(200, response);
 }
 
-function mockLatestCommit(response: HeadSha[]) {
+function mockLatestCommit(response: Partial<Commit>[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1/commits')
     .reply(200, response);
@@ -850,6 +847,73 @@ describe('merge-logic', () => {
     });
   });
 
+  it('does not dismiss review if automerge label is set to exact but the last commit was the post processor', async () => {
+    sandbox.stub(handler, 'getDatastore').resolves([
+      [
+        {
+          repo: 'testRepo',
+          number: 1,
+          owner: 'testOwner',
+          created: Date.now(),
+          branchProtection: ['Special Check'],
+          label: 'automerge: exact',
+          author: 'testOwner',
+          reactionId: 1,
+        },
+      ],
+    ]);
+
+    const scopes = [
+      getRateLimit(5000),
+      mockLatestCommit([
+        {
+          sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+          commit: {
+            committer: {name: 'Owl Bot'},
+            message: 'Updates from OwlBot post-processor',
+          },
+        },
+      ]),
+      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+        {state: 'success', context: 'Special Check'},
+      ]),
+      getPR(true, 'clean', 'open', [{name: 'automerge: exact'}]),
+      getReviewsCompleted([
+        {
+          user: {login: 'octocat'},
+          state: 'APPROVED',
+          commit_id: '12345',
+          id: 12345,
+        },
+        {
+          user: {login: 'octokitten'},
+          state: 'APPROVED',
+          commit_id: '12346',
+          id: 12346,
+        },
+      ]),
+      getCommentsOnPr([]),
+      merge(),
+      removeMogLabel('automerge%3A%20exact'),
+      removeReaction(),
+    ];
+
+    await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.installation' as any,
+      payload: {
+        cron_type: 'installation',
+        cron_org: 'testOwner',
+        performMerge: true,
+        installation: {id: 1234},
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
   describe('gets latest commit', () => {
     it('gets the latest commit if there were more than 100', async () => {
       const arrayOfCommits = [];
@@ -870,7 +934,7 @@ describe('merge-logic', () => {
         new Octokit({auth: 'abc123'})
       );
       lastCommitRequest.done();
-      assert.match(lastCommit, /lastcommit/);
+      assert.match(lastCommit.sha, /lastcommit/);
     });
   });
 

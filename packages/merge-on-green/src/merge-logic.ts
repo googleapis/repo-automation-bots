@@ -58,6 +58,21 @@ interface PullRequest {
   }>;
 }
 
+export interface Commit {
+  sha: string;
+  node_id: string;
+  html_url: string;
+  comments_url: string;
+  commit: {
+    committer: {
+      name?: string;
+      email?: string;
+      date?: string;
+    };
+    message: string;
+  };
+}
+
 interface Merge {
   sha: string;
   merged: boolean;
@@ -77,17 +92,13 @@ export async function getLatestCommit(
   repo: string,
   pr: number,
   github: Octokit
-): Promise<string> {
-  try {
-    const commits = await github.paginate(github.pulls.listCommits, {
-      owner,
-      repo,
-      pull_number: pr,
-    });
-    return commits[commits.length - 1].sha;
-  } catch (err) {
-    return '';
-  }
+): Promise<Commit> {
+  const commits = await github.paginate(github.pulls.listCommits, {
+    owner,
+    repo,
+    pull_number: pr,
+  });
+  return commits[commits.length - 1] as Commit;
 }
 
 /**
@@ -274,7 +285,7 @@ async function statusesForRef(
 
   let mergeable = true;
   let checkRuns;
-  if (headSha.length !== 0) {
+  if (headSha) {
     logger.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
       logger.info(
@@ -378,7 +389,7 @@ async function maybeDismissReviews(
   owner: string,
   repo: string,
   pr: number,
-  headSha: string,
+  headCommit: Commit,
   github: Octokit,
   logger: GCFLogger
 ) {
@@ -392,9 +403,15 @@ async function maybeDismissReviews(
   );
   const reviewsCompleted = cleanReviews(reviewsCompletedDirty);
   for (const review of reviewsCompleted) {
-    if (review.commit_id !== headSha) {
+    if (
+      review.commit_id !== headCommit.sha &&
+      headCommit.commit?.committer?.name !== 'Owl Bot' &&
+      !headCommit.commit?.message?.includes(
+        'Updates from OwlBot post-processor'
+      )
+    ) {
       logger.info(
-        `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headSha}; will dismiss review.`
+        `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headCommit.sha}; will dismiss review.`
       );
       await github.pulls
         .dismissReview({
@@ -403,7 +420,7 @@ async function maybeDismissReviews(
           pull_number: pr,
           review_id: review.id,
           message:
-            'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
+            'This review does not reference the most recent commit and/or post-processor commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
         })
         .catch(logger.error);
     }
@@ -565,10 +582,18 @@ export async function mergeOnGreen(
 
   logger.info(`${owner}/${repo} checking merge on green PR status`);
 
-  const headSha = await getLatestCommit(owner, repo, pr, github);
+  const headCommit = await getLatestCommit(owner, repo, pr, github);
 
   const [checkStatus, commentsOnPR] = await Promise.all([
-    statusesForRef(owner, repo, pr, requiredChecks, headSha, github, logger),
+    statusesForRef(
+      owner,
+      repo,
+      pr,
+      requiredChecks,
+      headCommit.sha,
+      github,
+      logger
+    ),
     getCommentsOnPR(owner, repo, pr, github),
   ]);
   const failedMesssage =
@@ -597,7 +622,7 @@ export async function mergeOnGreen(
     }
     if (hasAutomergeExact) {
       logger.info(`${owner}/${repo}/${pr} has automerge exact label`);
-      maybeDismissReviews(owner, repo, pr, headSha, github, logger);
+      maybeDismissReviews(owner, repo, pr, headCommit, github, logger);
     }
     let merged = false;
     try {
