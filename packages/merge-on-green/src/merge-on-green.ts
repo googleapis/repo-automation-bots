@@ -31,7 +31,7 @@ import {forAllInAsyncGroups} from './parallel-work';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
-const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
+const MAX_TEST_TIME = 1000 * 60 * 60 * 24; // 6 hr.
 const MAX_ENTRIES = 25;
 
 handler.allowlist = [
