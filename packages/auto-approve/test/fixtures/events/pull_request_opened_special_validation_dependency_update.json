@@ -9,7 +9,7 @@
       "diff_url": "https://github.com/testuser2/testRepo/pull/6.diff",
       "patch_url": "https://github.com/testuser2/testRepo/pull/6.patch",
       "issue_url": "https://api.github.com/repos/testuser2/testRepo/issues/6",
-      "number": 6,
+      "number": 1,
       "state": "open",
       "locked": false,
       "title": "fix(deps): update dependency @octokit/auth-app to v3",

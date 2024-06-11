@@ -209,15 +209,18 @@ export function handler(app: Probot) {
       'pull_request.reopened',
       'pull_request.edited',
       'pull_request.synchronize',
+      'pull_request_review.dismissed',
     ],
-    async (context: Context<'pull_request'>) => {
+    async (
+      context: Context<'pull_request' | 'pull_request_review.dismissed'>
+    ) => {
       const logger = getContextLogger(context);
       const pr = context.payload;
       const owner = pr.repository.owner.login;
       const repoHead = pr.pull_request.head.repo.name;
       const repoHeadOwner = pr.pull_request.head.repo.owner.login;
       const repo = pr.pull_request.base.repo.name;
-      const prNumber = pr.number;
+      const prNumber = pr.pull_request.number;
 
       // During codefreeze, simply set the RELEASE_FREEZE environment variable.
       // if a PR is from release-please, it will not be merged:

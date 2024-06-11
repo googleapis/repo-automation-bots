@@ -9,7 +9,7 @@
       "diff_url":"https://github.com/GoogleCloudPlatform/python-docs-samples/pull/6422.diff",
       "patch_url":"https://github.com/GoogleCloudPlatform/python-docs-samples/pull/6422.patch",
       "issue_url":"https://api.github.com/repos/GoogleCloudPlatform/python-docs-samples/issues/6422",
-      "number":6422,
+      "number":1,
       "state":"open",
       "locked":false,
       "title":"chore(deps): update dependency requests to v2.26.0",
