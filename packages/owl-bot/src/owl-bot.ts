@@ -775,7 +775,7 @@ function userCheckedRegenerateBox(
   }
 
   if (author != 'gcf-owl-bot[bot]') {
-    logger.warning(
+    logger.info(
       `Owlbot did not create PR #${prNumber}, taking no action`
     );
     return null;
