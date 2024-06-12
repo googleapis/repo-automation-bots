@@ -18,16 +18,16 @@ import {
   DatastoreLock,
   DatastoreLockError,
 } from '@google-automations/datastore-lock';
-import { FirestoreConfigsStore, Db } from './database';
+import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
-import { Probot, Logger } from 'probot';
+import {Probot, Logger} from 'probot';
 import {
   logger as defaultLogger,
   getAuthenticatedOctokit,
   getContextLogger,
   GCFLogger,
 } from 'gcf-utils';
-import { syncLabels } from '@google-automations/label-utils';
+import {syncLabels} from '@google-automations/label-utils';
 import {
   core,
   RegenerateArgs,
@@ -36,10 +36,10 @@ import {
   OWL_BOT_COPY,
   OPERATIONAL_DOCUMENT,
 } from './core';
-import { Octokit } from '@octokit/rest';
+import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import { RequestError } from '@octokit/types';
-import { onPostProcessorPublished, refreshConfigs } from './handlers';
+import {RequestError} from '@octokit/types';
+import {onPostProcessorPublished, refreshConfigs} from './handlers';
 import {
   PullRequestEditedEvent,
   PullRequestLabeledEvent,
@@ -50,11 +50,11 @@ import {
   OWL_BOT_IGNORE,
   OWL_BOT_LABELS,
 } from './labels';
-import { OwlBotLock } from './config-files';
-import { octokitFactoryFrom } from './octokit-util';
-import { githubRepo } from './github-repo';
-import { REGENERATE_CHECKBOX_TEXT } from './create-pr';
-import { shouldIgnoreRepo } from './should-ignore-repo';
+import {OwlBotLock} from './config-files';
+import {octokitFactoryFrom} from './octokit-util';
+import {githubRepo} from './github-repo';
+import {REGENERATE_CHECKBOX_TEXT} from './create-pr';
+import {shouldIgnoreRepo} from './should-ignore-repo';
 
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
@@ -72,7 +72,7 @@ interface PubSubContext {
 }
 
 const LOCK_TIMEOUT = 25 * 1000;
-class LockError extends Error { }
+class LockError extends Error {}
 async function acquireLock(target: string): Promise<DatastoreLock> {
   const lock = new DatastoreLock('owlbot', target, LOCK_TIMEOUT);
   if (await lock.peek()) {
@@ -144,7 +144,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     } else {
       throw new Error(
         `Installation ID not provided in ${context.payload.action} event.` +
-        ' We cannot authenticate Octokit.'
+          ' We cannot authenticate Octokit.'
       );
     }
     await owlbot.handlePullRequestLabeled(
@@ -218,7 +218,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       ) {
         logger.info(
           `skipping draft PR ${context.payload.pull_request.issue_url}` +
-          ' with labels ',
+            ' with labels ',
           ...context.payload.pull_request.labels
         );
         return;
@@ -293,7 +293,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       const configStore = new FirestoreConfigsStore(db!);
       const dockerImageDigest = typedContext.payload.digest.split('@')[1];
       const dockerImageName = typedContext.payload.tag;
-      logger.info({ dockerImageDigest, dockerImageName });
+      logger.info({dockerImageDigest, dockerImageName});
       await onPostProcessorPublished(
         configStore,
         privateKey,
@@ -360,7 +360,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       } else {
         throw new Error(
           'Installation ID not provided in schedule.repository event.' +
-          ' We cannot authenticate Octokit.'
+            ' We cannot authenticate Octokit.'
         );
       }
       if (ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
@@ -775,9 +775,7 @@ function userCheckedRegenerateBox(
   }
 
   if (author != 'gcf-owl-bot[bot]') {
-    logger.info(
-      `Owlbot did not create PR #${prNumber}, taking no action`
-    );
+    logger.info(`Owlbot did not create PR #${prNumber}, taking no action`);
     return null;
   }
 
