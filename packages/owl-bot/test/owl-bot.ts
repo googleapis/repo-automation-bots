@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import { core } from '../src/core';
-import { DatastoreLock } from '@google-automations/datastore-lock';
+import {core} from '../src/core';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 import {
   OWLBOT_RUN_LABEL,
   OWL_BOT_COPY_COMMAND_LABEL,
@@ -22,22 +22,22 @@ import {
   OWL_BOT_LABELS,
 } from '../src/labels';
 import * as handlers from '../src/handlers';
-import { describe, it, beforeEach } from 'mocha';
-import { logger } from 'gcf-utils';
-import { owlbot } from '../src/owl-bot';
+import {describe, it, beforeEach} from 'mocha';
+import {logger} from 'gcf-utils';
+import {owlbot} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
-import { Probot, createProbot, ProbotOctokit } from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
-import { Octokit } from '@octokit/rest';
-import { PullRequestEditedEvent } from '@octokit/webhooks-types';
+import {Octokit} from '@octokit/rest';
+import {PullRequestEditedEvent} from '@octokit/webhooks-types';
 import * as sinon from 'sinon';
 import nock from 'nock';
-import { Configs } from '../src/configs-store';
-import { OWL_BOT_LOCK_PATH } from '../src/config-files';
+import {Configs} from '../src/configs-store';
+import {OWL_BOT_LOCK_PATH} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import * as gcfUtilsModule from 'gcf-utils';
-import { FirestoreConfigsStore } from '../src/database';
-import { REGENERATE_CHECKBOX_TEXT } from '../src/create-pr';
+import {FirestoreConfigsStore} from '../src/database';
+import {REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -57,8 +57,8 @@ describe('OwlBot', () => {
       overrides: {
         githubToken: 'abc123',
         Octokit: ProbotOctokit.defaults({
-          retry: { enabled: false },
-          throttle: { enabled: false },
+          retry: {enabled: false},
+          throttle: {enabled: false},
         }),
       },
     });
@@ -99,7 +99,7 @@ describe('OwlBot', () => {
             login: 'googleapis',
           },
           syncLabels: true,
-          installation: { id: 1234 },
+          installation: {id: 1234},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -130,7 +130,7 @@ describe('OwlBot', () => {
             login: 'testOrg',
           },
           syncLabels: true,
-          installation: { id: 1234 },
+          installation: {id: 1234},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
         id: 'abc123',
@@ -659,7 +659,7 @@ describe('OwlBot', () => {
       pull_request: {
         number: 33,
         draft: false,
-        labels: [{ name: 'owl-bot-copy' }],
+        labels: [{name: 'owl-bot-copy'}],
         head: {
           repo: {
             full_name: 'googleapis/owl-bot-testing',
@@ -689,7 +689,7 @@ describe('OwlBot', () => {
       })
       .get('/repos/googleapis/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{ filename: OWL_BOT_LOCK_PATH }])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
@@ -724,7 +724,7 @@ describe('OwlBot', () => {
       pull_request: {
         number: 33,
         draft: false,
-        labels: [{ name: core.OWL_BOT_LOCK_UPDATE }],
+        labels: [{name: core.OWL_BOT_LOCK_UPDATE}],
         head: {
           repo: {
             full_name: 'googleapis/owl-bot-testing',
@@ -754,7 +754,7 @@ describe('OwlBot', () => {
       })
       .get('/repos/googleapis/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{ filename: OWL_BOT_LOCK_PATH }])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
@@ -785,8 +785,8 @@ describe('OwlBot', () => {
       overrides: {
         githubToken: 'abc123',
         Octokit: ProbotOctokit.defaults({
-          retry: { enabled: false },
-          throttle: { enabled: false },
+          retry: {enabled: false},
+          throttle: {enabled: false},
         }),
       },
     });
@@ -868,7 +868,7 @@ describe('OwlBot', () => {
 
       // Ensure `refreshConfigs` was called correctly
       assert.strictEqual(refreshConfigsStub.callCount, 1);
-      const [{ args: callArgs }] = refreshConfigsStub.getCalls();
+      const [{args: callArgs}] = refreshConfigsStub.getCalls();
 
       assert.ok(callArgs[0] instanceof FirestoreConfigsStore);
       assert.strictEqual(callArgs[1], customConfig);
@@ -1296,7 +1296,7 @@ describe('OwlBot', () => {
         login: 'googleapis',
       },
       pull_request: {
-        labels: [{ name: 'cla:yes' }],
+        labels: [{name: 'cla:yes'}],
         head: {
           repo: {
             full_name: 'googleapis/owl-bot-testing',
@@ -1335,7 +1335,7 @@ describe('OwlBot', () => {
         login: 'googleapis',
       },
       pull_request: {
-        labels: [{ name: 'cla:yes' }],
+        labels: [{name: 'cla:yes'}],
         head: {
           repo: {
             full_name: 'googleapis/owl-bot-testing',
@@ -1374,7 +1374,7 @@ describe('OwlBot', () => {
         login: 'googleapis',
       },
       pull_request: {
-        labels: [{ name: OWLBOT_RUN_LABEL }, { name: 'cla:yes' }],
+        labels: [{name: OWLBOT_RUN_LABEL}, {name: 'cla:yes'}],
         head: {
           repo: {
             full_name: 'googleapis/owl-bot-testing',
@@ -1725,8 +1725,8 @@ describe('locking behavior', () => {
       overrides: {
         githubToken: 'abc123',
         Octokit: ProbotOctokit.defaults({
-          retry: { enabled: false },
-          throttle: { enabled: false },
+          retry: {enabled: false},
+          throttle: {enabled: false},
         }),
       },
     });
@@ -2009,7 +2009,7 @@ function pullRequestEditedEventFrom(
       number: 48,
       body: newBody,
       user: {
-        login: 'gcf-owl-bot[bot]'
+        login: 'gcf-owl-bot[bot]',
       },
     },
     changes: {
