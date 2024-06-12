@@ -2008,6 +2008,9 @@ function pullRequestEditedEventFrom(
       },
       number: 48,
       body: newBody,
+      user: {
+        login: 'gcf-owl-bot[bot]',
+      },
     },
     changes: {
       body: {

@@ -759,6 +759,7 @@ function userCheckedRegenerateBox(
   const base = payload.pull_request.base.repo.full_name;
   const [owner, repo] = base.split('/');
   const prNumber = payload.pull_request.number;
+  const author = payload.pull_request.user.login;
 
   const newBody = payload.pull_request.body ?? '';
   const oldBody = payload.changes.body?.from ?? '';
@@ -770,6 +771,11 @@ function userCheckedRegenerateBox(
     logger.info(
       `The user didn't check the regenerate me box for PR #${prNumber}`
     );
+    return null;
+  }
+
+  if (author !== 'gcf-owl-bot[bot]') {
+    logger.info(`Owlbot did not create PR #${prNumber}, taking no action`);
     return null;
   }
 
