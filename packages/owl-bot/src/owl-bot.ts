@@ -326,6 +326,16 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       return;
     }
 
+    if (
+      !context.payload.repository.full_name.startsWith('googleapis/') &&
+      !context.payload.repository.full_name.startsWith('GoogleCloudPlatform/')
+    ) {
+      logger.info(
+        `Only run on allowlisted orgs, not ${context.payload.repository.full_name}`
+      );
+      return;
+    }
+
     const configs = await configStore.getConfigs(
       context.payload.repository.full_name
     );

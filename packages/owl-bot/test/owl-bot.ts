@@ -836,7 +836,7 @@ describe('OwlBot', () => {
         },
         repository: {
           default_branch: 'default_branch',
-          full_name: 'full_name',
+          full_name: 'googleapis/name',
           name: 'name',
         },
       };
