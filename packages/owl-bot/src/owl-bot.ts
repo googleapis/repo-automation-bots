@@ -301,6 +301,8 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         appId,
         dockerImageName,
         dockerImageDigest,
+        // This installation ID is also hard-coded in the GCB trigger, can/should we
+        // find this programmatically?
         GOOGLEAPIS_INSTALLATION_ID
       );
     }
