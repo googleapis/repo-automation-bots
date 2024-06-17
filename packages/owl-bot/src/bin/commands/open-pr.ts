@@ -18,6 +18,7 @@
 import {ConfigsStore} from '../../configs-store';
 import yargs = require('yargs');
 import {triggerOneBuildForUpdatingLock} from '../../handlers';
+import {octokitFactoryFromToken} from '../../octokit-util';
 
 interface Args {
   'docker-image': string;
@@ -78,6 +79,8 @@ export const openPR: yargs.CommandModule<{}, Args> = {
         'gcloud project id must be provided via project arg or environment variable PROJECT_ID'
       );
     }
+    // It's unclear how this CLI command is used - there are no additional references to it.
+    const octokitFactory = octokitFactoryFromToken('fake-token');
     await triggerOneBuildForUpdatingLock(
       fakeConfigStore,
       argv.repo,
@@ -89,6 +92,7 @@ export const openPR: yargs.CommandModule<{}, Args> = {
       },
       project,
       argv.trigger,
+      octokitFactory,
       undefined,
       argv['owl-bot-cli']
     );
