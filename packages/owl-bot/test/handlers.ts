@@ -138,6 +138,7 @@ describe('handlers', () => {
               projectId: 'test-project',
               substitutions: {
                 _CONTAINER: 'foo-image@sha256:abc123',
+                _GITHUB_TOKEN: 'fake-github-token',
                 _LOCK_FILE_PATH: '.github/.OwlBot.lock.yaml',
                 _OWL_BOT_CLI: 'gcr.io/repo-automation-bots/owlbot-cli',
                 _PR_BRANCH: 'owl-bot-update-lock-abc123',
