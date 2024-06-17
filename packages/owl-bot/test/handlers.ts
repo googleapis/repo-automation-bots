@@ -42,6 +42,7 @@ import * as fs from 'fs';
 import path from 'path';
 import {newCmd} from '../src/cmd';
 import * as fc from '../src/fetch-configs';
+import {octokitFactoryFromToken} from '../src/octokit-util';
 
 const sandbox = sinon.createSandbox();
 
@@ -50,6 +51,7 @@ describe('handlers', () => {
     sandbox.restore();
   });
   describe('triggerOneBuildForUpdatingLock', () => {
+    const octokitFactory = octokitFactoryFromToken('fake-github-token');
     it('creates a cloud build if no existing build id found', async () => {
       const lock = {
         docker: {
@@ -123,7 +125,8 @@ describe('handlers', () => {
         'owl/test',
         lock,
         'test-project',
-        'test-trigger'
+        'test-trigger',
+        octokitFactory
       );
       assert.strictEqual(expectedBuildId, '73');
       assert.strictEqual(recordedId, '73');
@@ -135,6 +138,7 @@ describe('handlers', () => {
               projectId: 'test-project',
               substitutions: {
                 _CONTAINER: 'foo-image@sha256:abc123',
+                _GITHUB_TOKEN: 'fake-github-token',
                 _LOCK_FILE_PATH: '.github/.OwlBot.lock.yaml',
                 _OWL_BOT_CLI: 'gcr.io/repo-automation-bots/owlbot-cli',
                 _PR_BRANCH: 'owl-bot-update-lock-abc123',
@@ -210,7 +214,8 @@ describe('handlers', () => {
         'owl/test',
         lock,
         'test-project',
-        'test-trigger'
+        'test-trigger',
+        octokitFactory
       );
       assert.strictEqual(expectedURI, 'https://github.com/owl/test/pull/99');
     });

@@ -35,7 +35,10 @@ export const maybeCreatePullRequestForLockUpdateCommand: yargs.CommandModule<
       .option('pem-path', {
         describe: 'provide path to private key for requesting JWT',
         type: 'string',
-        demand: true,
+      })
+      .option('github-token', {
+        describe: 'Short-lived GitHub token.',
+        type: 'string',
       })
       .option('app-id', {
         describe: 'GitHub AppID',
