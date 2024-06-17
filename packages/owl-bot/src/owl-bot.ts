@@ -59,6 +59,7 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
 const ALLOWED_ORGANIZATIONS = ['googleapis', 'googlecloudplatform'];
+const GOOGLEAPIS_INSTALLATION_ID = 14695777;
 
 interface PubSubContext {
   github: Octokit;
@@ -299,7 +300,8 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         privateKey,
         appId,
         dockerImageName,
-        dockerImageDigest
+        dockerImageDigest,
+        GOOGLEAPIS_INSTALLATION_ID,
       );
     }
   });
