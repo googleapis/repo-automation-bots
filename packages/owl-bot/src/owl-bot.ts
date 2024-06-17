@@ -301,7 +301,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         appId,
         dockerImageName,
         dockerImageDigest,
-        GOOGLEAPIS_INSTALLATION_ID,
+        GOOGLEAPIS_INSTALLATION_ID
       );
     }
   });

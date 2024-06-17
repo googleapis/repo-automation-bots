@@ -20,7 +20,11 @@ import {core} from './core';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints, RequestError} from '@octokit/types';
-import {createIssueIfTitleDoesntExist, OctokitFactory, octokitFactoryFrom} from './octokit-util';
+import {
+  createIssueIfTitleDoesntExist,
+  OctokitFactory,
+  octokitFactoryFrom,
+} from './octokit-util';
 import {
   GithubRepo,
   githubRepo,
@@ -52,7 +56,7 @@ export async function onPostProcessorPublished(
   appId: number,
   dockerImageName: string,
   dockerImageDigest: string,
-  installation: number,
+  installation: number
 ): Promise<void> {
   // Examine all the repos that use the specified docker image for post
   // processing.
@@ -145,7 +149,8 @@ export async function triggerOneBuildForUpdatingLock(
   const cb = core.getCloudBuildInstance();
   const [, digest] = lock.docker.digest.split(':'); // Strip sha256: prefix
   logger.info(`triggering build for ${repoFull}.`);
-  const shortLivedAppToken = await octokitFactory.getGitHubShortLivedAccessToken()
+  const shortLivedAppToken =
+    await octokitFactory.getGitHubShortLivedAccessToken();
   const [resp] = await cb.runBuildTrigger({
     projectId: project,
     triggerId: triggerId,

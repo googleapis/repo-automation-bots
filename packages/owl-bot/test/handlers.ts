@@ -51,7 +51,7 @@ describe('handlers', () => {
     sandbox.restore();
   });
   describe('triggerOneBuildForUpdatingLock', () => {
-    let octokitFactory = octokitFactoryFromToken('fake-github-token');
+    const octokitFactory = octokitFactoryFromToken('fake-github-token');
     it('creates a cloud build if no existing build id found', async () => {
       const lock = {
         docker: {
