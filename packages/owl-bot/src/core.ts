@@ -20,6 +20,7 @@ import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
+import {retry} from '@octokit/plugin-retry';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
@@ -363,7 +364,8 @@ export async function getAuthenticatedOctokit(
   } else {
     tokenString = auth;
   }
-  const octokit = new Octokit({
+  const MyOctokit = Octokit.plugin(retry);
+  const octokit = new MyOctokit({
     auth: tokenString,
   });
   if (cache) cachedOctokit = octokit;
