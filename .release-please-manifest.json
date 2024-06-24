@@ -2,7 +2,7 @@
   "packages/bot-config-utils": "7.0.0",
   "packages/cron-utils": "4.0.0",
   "packages/datastore-lock": "5.0.0",
-  "packages/flakybot": "1.2.0",
+  "packages/flakybot": "1.2.1",
   "packages/gcf-utils": "15.0.1",
   "packages/git-file-utils": "2.0.0",
   "packages/issue-utils": "3.0.0",
