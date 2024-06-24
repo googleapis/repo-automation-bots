@@ -143,3 +143,5 @@ steps:
       - '14695777'
       - --force
     dir: '${_REPOSITORY}'
+
+logsBucket: 'gs://repo-automation-bots-post-processor-logs'
