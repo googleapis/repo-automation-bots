@@ -44,6 +44,12 @@ function listCommitsOnAPR(
     .reply(200, response);
 }
 
+function listOrgMembers(response: {login: string}[]) {
+  return nock('https://api.github.com')
+    .get('/orgs/googleapis/members')
+    .reply(200, response);
+}
+
 describe('behavior of OwlBotNode process', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const incomingPR = {
@@ -66,6 +72,7 @@ describe('behavior of OwlBotNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(
@@ -95,6 +102,7 @@ describe('behavior of OwlBotNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
@@ -126,6 +134,7 @@ describe('behavior of OwlBotNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
@@ -153,6 +162,7 @@ describe('behavior of OwlBotNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
@@ -180,6 +190,7 @@ describe('behavior of OwlBotNode process', () => {
         {author: {login: 'testAuthor'}},
         {author: {login: 'gcf-owl-bot[bot]'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), false);
@@ -208,6 +219,7 @@ describe('behavior of OwlBotNode process', () => {
         {author: {login: 'gcf-owl-bot[bot]'}},
         {author: {login: 'gcf-owl-bot[bot]'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(await owlBotChanges.checkPR(incomingPR), true);

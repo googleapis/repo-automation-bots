@@ -30,7 +30,7 @@ import {OwlBotTemplateChanges} from '../owl-bot-template-changes';
   - has a title that does NOT include BREAKING, or !
   - has a PR body that does not contain 'PiperOrigin-RevId'
   - is the first owlbot template PR in a repo (so they are merged in order)
-  - has no other commit authors on the PR
+  - has no other commit authors on the PR other than owlbot or googleapis members
  */
 export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
   classRule = {
@@ -86,12 +86,29 @@ export class OwlBotTemplateChangesNode extends OwlBotTemplateChanges {
       this.octokit
     );
 
-    const commitAuthors = commitsOnPR.filter(
-      x => x.author?.login !== this.classRule.author
-    );
+    const commitAuthors = commitsOnPR.map(x => x.author?.login);
+
+    const membersOfOrg = (
+      await this.octokit.rest.orgs.listMembers({
+        org: 'googleapis',
+      })
+    ).data;
+
+    // Assume there are no other commitAuthors on the PR
     let otherCommitAuthors = false;
-    if (commitAuthors.length > 0) {
-      otherCommitAuthors = true;
+
+    for (const author of commitAuthors) {
+      // If one of the authors is not allowed AND it is not a part of googleapis,
+      // then set commitAuthors to true
+      if (
+        author !== this.classRule.author &&
+        !membersOfOrg.find(x => {
+          return x.login === author;
+        })
+      ) {
+        otherCommitAuthors = true;
+        break;
+      }
     }
 
     reportIndividualChecks(
