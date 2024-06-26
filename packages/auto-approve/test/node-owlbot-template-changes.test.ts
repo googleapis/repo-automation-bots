@@ -44,6 +44,12 @@ function listCommitsOnAPR(
     .reply(200, response);
 }
 
+function listOrgMembers(response: {login: string}[]) {
+  return nock('https://api.github.com')
+    .get('/orgs/googleapis/members')
+    .reply(200, response);
+}
+
 describe('behavior of OwlBotTemplateChangesNode process', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const incomingPR = {
@@ -66,6 +72,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(
@@ -95,6 +102,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(
@@ -130,6 +138,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(
@@ -159,6 +168,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
       listCommitsOnAPR('testRepoOwner', 'testRepoName', [
         {author: {login: 'testAuthor'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(
@@ -188,6 +198,7 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
         {author: {login: 'testAuthor'}},
         {author: {login: 'gcf-owl-bot[bot]'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(
@@ -219,6 +230,40 @@ describe('behavior of OwlBotTemplateChangesNode process', () => {
         {author: {login: 'gcf-owl-bot[bot]'}},
         {author: {login: 'gcf-owl-bot[bot]'}},
       ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
+    ];
+
+    assert.deepStrictEqual(
+      await owlBotTemplateChanges.checkPR(incomingPR),
+      true
+    );
+    scopes.forEach(scope => scope.done());
+  });
+
+  it('should return true in checkPR if incoming PR does match classRules, and there are other commit authors that are a part of googleapis', async () => {
+    const incomingPR = {
+      author: 'gcf-owl-bot[bot]',
+      title: 'chore: a fine title',
+      fileCount: 2,
+      changedFiles: [{filename: 'hello', sha: '2345'}],
+      repoName: 'testRepoName',
+      repoOwner: 'testRepoOwner',
+      prNumber: 1,
+      body: 'body',
+    };
+    const owlBotTemplateChanges = new OwlBotTemplateChangesNode(octokit);
+
+    const scopes = [
+      getPRsOnRepo('testRepoOwner', 'testRepoName', [
+        {number: 1, user: {login: 'gcf-owl-bot[bot]'}},
+        {number: 2, user: {login: 'gcf-owl-bot[bot]'}},
+      ]),
+      listCommitsOnAPR('testRepoOwner', 'testRepoName', [
+        {author: {login: 'sofisl'}},
+        {author: {login: 'chingor'}},
+        {author: {login: 'gcf-owl-bot[bot]'}},
+      ]),
+      listOrgMembers([{login: 'sofisl'}, {login: 'chingor'}]),
     ];
 
     assert.deepStrictEqual(
