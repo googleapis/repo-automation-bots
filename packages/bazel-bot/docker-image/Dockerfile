@@ -17,7 +17,7 @@
 
 ##########################################################
 # Build the command-line tool that lets us sign JWTs.
-FROM rust:1.49-buster
+FROM rust:1.79-buster
 RUN git clone https://github.com/mike-engel/jwt-cli.git
 WORKDIR /jwt-cli
 RUN git checkout 652b5c4b2a9d9a236aa3826a8dd34204ca7e1dad
