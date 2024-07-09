@@ -1,6 +1,11 @@
 {
   "extends": [
+    "config:recommended",
     // update base images in Dockerfiles
     ":docker",
+  ],
+  "enabledManagers": [
+    "dockerfile", 
+    "github-actions",
   ]
 }
