@@ -1,0 +1,6 @@
+{
+  "extends": [
+    // update base images in Dockerfiles
+    ":docker",
+  ]
+}
