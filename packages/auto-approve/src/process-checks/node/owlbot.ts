@@ -30,7 +30,7 @@ import {OwlBotTemplateChangesNode} from './owlbot-template-changes';
   - has a title that does NOT include BREAKING, or !
   - has a PR body that DOES contain 'PiperOrigin-RevId'
   - is the first owlbot template PR in a repo (so they are merged in order)
-  - has no other commit authors on the PR
+  - has no other commit authors on the PR other than owlbot or googleapis members
  */
 export class OwlBotNode extends OwlBotTemplateChangesNode {
   classRule = {
