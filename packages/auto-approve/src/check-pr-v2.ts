@@ -38,6 +38,7 @@ import {PHPApiaryCodegen} from './process-checks/php/apiary-codegen';
 import {PythonSampleDependency} from './process-checks/python/sample-dependency';
 import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {GoApiaryCodegen} from './process-checks/go/apiary-codegen';
+import {RubyApiaryCodegen} from './process-checks/ruby/apiary-codegen';
 // This file manages the logic to check whether a given PR matches the config in the repository
 
 // We need this typeMap to convert the JSON input (string) into a corresponding type.
@@ -121,6 +122,10 @@ const typeMap = [
   {
     configValue: 'NodeGeneratorDependency',
     configType: NodeGeneratorDependency,
+  },
+  {
+    configValue: 'RubyApiaryCodegen',
+    configType: RubyApiaryCodegen,
   },
 ];
 
