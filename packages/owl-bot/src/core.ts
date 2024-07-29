@@ -20,6 +20,7 @@ import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
+import {retry} from '@octokit/plugin-retry';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
@@ -84,6 +85,7 @@ interface Token {
 
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
+export const OPERATIONAL_DOCUMENT = 'Logs: go/cloud-sdk-automation-howtos#logs';
 // Check back on the build every 1/3 of a minute (20000ms)
 const PING_DELAY = 20000;
 // 60 min * 3 hours * 3 * 1/3s of a minute (3 hours)
@@ -182,6 +184,9 @@ function summarizeBuild(
   }
   if (conclusion === 'success') {
     text = `successfully ran ${build.steps.length} steps 🎉!`;
+  }
+  if (build.logsBucket) {
+    text += `\nView the full log at ${build.logsBucket}/log-${build.id}.txt\n`;
   }
   return {
     conclusion,
@@ -359,7 +364,8 @@ export async function getAuthenticatedOctokit(
   } else {
     tokenString = auth;
   }
-  const octokit = new Octokit({
+  const MyOctokit = Octokit.plugin(retry);
+  const octokit = new MyOctokit({
     auth: tokenString,
   });
   if (cache) cachedOctokit = octokit;

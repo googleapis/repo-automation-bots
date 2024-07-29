@@ -77,7 +77,7 @@ export class OwlBotAPIChanges extends BaseLanguageRule {
     );
 
     let otherOwlBotPRs = false;
-    if (openOwlBotPRs > 1) {
+    if (openOwlBotPRs.length > 1) {
       otherOwlBotPRs = true;
     }
 

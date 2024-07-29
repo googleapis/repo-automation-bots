@@ -33,9 +33,12 @@ processes:
   - "PythonSampleAppDependency"
   - "JavaSampleAppDependency"
   - "NodeGeneratorDependency"
+  - "OwlBotTemplateChangesNode"
+  - "OwlBotPRsNode"
+  - "RubyApiaryCodegen"
 ```
 
-These seven processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
+These processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
 
 Below is what each process checks for:
 
@@ -187,8 +190,23 @@ Below is what each process checks for:
       - /package.json$/, /\.bzl$/, or /pnpm-lock\.yaml$/
     - Increase the non-major package version of a dependency
     - Change the dependency that was there previously, and that is on the title of the PR
-
-  
+* OwlBotTemplateChangesNode:
+  - Checks that the author is 'gcf-owl-bot[bot]'
+  - Checks that the title of the PR does NOT include BREAKING, feat, fix, !
+  - Checks that the title of the PR starts with chore, build, test, refactor
+  - Checks that the body of the PR does not contain 'PiperOrigin-RevId'
+  - Checks that the PR is the first of owlbot PRs in the repo (so that they are not merged out of order)
+  - Checks that there are no other commit authors other than owlbot on the repo
+* OwlBotPRsNode:
+  - Checks that the author is 'gcf-owl-bot[bot]'
+  - Checks that the title of the PR does NOT include BREAKING, !
+  - Checks that the title of the PR starts with chore, build, test, refactor, feat, fix,
+  - Checks that the body of the PR DOES contain 'PiperOrigin-RevId'
+  - Checks that the PR is the first of owlbot PRs in the repo (so that they are not merged out of order)
+  - Checks that there are no other commit authors other than owlbot on the repo
+* RubyApiaryCodegen
+  - Checks that the author is 'yoshi-code-bot'
+  - Checks that the title of the PR matches the regexp: /^feat: Automated regeneration of .* client$/
 
 This change in configuration permits the following:
 * Allows for more complete testing as described by c8, by codifying the logic in TS as opposed to the JSON validation schema

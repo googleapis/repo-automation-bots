@@ -8,7 +8,7 @@
     "build/src"
   ],
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "start-backend": "node ./build/src/server-backend.js",
@@ -19,7 +19,7 @@
     "fix": "gts fix",
     "lint": "gts check",
     "mocha": "npm run compile && c8 mocha build/test",
-    "test": "c8 mocha build/test && node ./build/src/bin/owl-bot.js --help",
+    "test": "c8 mocha --node-option no-experimental-fetch build/test && node ./build/src/bin/owl-bot.js --help",
     "system-test": "c8 mocha build/system-test",
     "pretest": "npm run compile",
     "presystem-test": "npm run compile",
@@ -69,6 +69,8 @@
     "@google-automations/datastore-lock": "^4.0.1",
     "@google-automations/label-utils": "^3.0.0",
     "@google-cloud/cloudbuild": "^3.1.1",
+    "@octokit/core": "^4.0.0",
+    "@octokit/plugin-retry": "^5.0.5",
     "@octokit/rest": "^19.0.4",
     "@octokit/types": "^8.0.0",
     "@octokit/webhooks-types": "^6.3.6",

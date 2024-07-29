@@ -109,6 +109,43 @@ describe('cherry-pick-bot config validation', () => {
     requests.done();
   });
 
+  it('submits a failing check with an invalid enum', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened'
+    ));
+    const files_payload = require(resolve(
+      fixturesPath,
+      'data',
+      'pull_request_files_config_added'
+    ));
+    const configBlob = createConfigResponse(
+      'config/broken-allowed-authors.yml'
+    );
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/Codertocat/Hello-World/pulls/2/files?per_page=50')
+      .reply(200, files_payload)
+      .get(
+        '/repos/Codertocat/Hello-World/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob)
+      .post('/repos/Codertocat/Hello-World/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    requests.done();
+  });
+
   it('does not submits a failing check with a correct config file', async () => {
     const payload = require(resolve(
       fixturesPath,
@@ -121,6 +158,36 @@ describe('cherry-pick-bot config validation', () => {
       'pull_request_files_config_added'
     ));
     const configBlob = createConfigResponse('config/valid-config.yml');
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/Codertocat/Hello-World/pulls/2/files?per_page=50')
+      .reply(200, files_payload)
+      .get(
+        '/repos/Codertocat/Hello-World/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob);
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    requests.done();
+  });
+
+  it('does not submits a failing check with a correct config file with allowed authors', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened'
+    ));
+    const files_payload = require(resolve(
+      fixturesPath,
+      'data',
+      'pull_request_files_config_added'
+    ));
+    const configBlob = createConfigResponse('config/allowed-authors.yml');
 
     const requests = nock('https://api.github.com')
       .get('/repos/Codertocat/Hello-World/pulls/2/files?per_page=50')
@@ -277,6 +344,51 @@ describe('cherry-pick-bot', () => {
       });
 
       sinon.assert.notCalled(cherryPickPullRequestStub);
+    });
+
+    it('allows overriding allow author association', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_comment_created_non_member'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1')
+        .reply(200, {
+          merge_commit_sha: 'abc123',
+          base: {ref: 'main'},
+          merged: true,
+        });
+
+      sandbox.stub(botConfigUtilsModule, 'getConfig').resolves({
+        enabled: true,
+        allowedAuthorAssociations: ['OWNER', 'FIRST_TIMER'],
+      });
+      sandbox
+        .stub(branchProtectionModule, 'branchRequiresReviews')
+        .withArgs(
+          sinon.match.any,
+          'Codertocat',
+          'Hello-World',
+          'feature-branch'
+        )
+        .resolves(false);
+      cherryPickPullRequestStub.resolves({
+        number: 123,
+        html_url: 'https://github.com/Codertocat/Hello-World/pull/123',
+        title: 'chore: cherry-pick abc123',
+        body: null,
+      });
+
+      await probot.receive({
+        name: 'issue_comment',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(cherryPickPullRequestStub);
+      requests.done();
     });
 
     it('ignores issues', async () => {

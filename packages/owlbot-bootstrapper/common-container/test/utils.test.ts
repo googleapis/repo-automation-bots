@@ -110,7 +110,8 @@ describe('common utils tests', async () => {
       'nodejs-kms',
       'google.cloud.kms.v1',
       '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-      'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0='
+      'Copy-Tag: eyJwIjoicGFja2FnZXMvZ29vZ2xlLWNsb3VkLWttcy8uZ2l0aHViLy5Pd2xCb3QueWFtbCIsImgiOiI2ZGNiMDliNWI1Nzg3NWYzMzRmNjFhZWJlZDY5NWUyZTQxOTNkYjVlIn0=',
+      2345
     );
     scope.done();
   });
@@ -145,7 +146,8 @@ describe('common utils tests', async () => {
       '6dcb09b5b57875f334f61aebed695e2e4193db5e',
       `Copy-Tag:${Buffer.from(
         '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'
-      ).toString('base64')}`
+      ).toString('base64')}`,
+      2345
     );
     const expectation = `Source-Link: https://googleapis-gen@6dcb09b5b57875f334f61aebed695e2e4193db5e\nCopy-Tag:${Buffer.from(
       '{"p":"packages/google-cloud-kms/.github/.OwlBot.yaml","h":"6dcb09b5b57875f334f61aebed695e2e4193db5e"}'

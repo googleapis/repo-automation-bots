@@ -34,6 +34,7 @@ import {
   parseOwlBotLock,
   CheckArgs,
   OWL_BOT_COPY,
+  OPERATIONAL_DOCUMENT,
 } from './core';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
@@ -58,6 +59,7 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
 const ALLOWED_ORGANIZATIONS = ['googleapis', 'googlecloudplatform'];
+const GOOGLEAPIS_INSTALLATION_ID = 14695777;
 
 interface PubSubContext {
   github: Octokit;
@@ -178,6 +180,28 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     }
   });
 
+  app.on('merge_group.checks_requested' as any, async context => {
+    const logger = getContextLogger(context);
+    const installation = context.payload.installation?.id;
+    const headSha = context.payload.merge_group.head_sha;
+    const [owner, repo] = context.payload.repository.full_name.split('/');
+    if (!installation) {
+      throw Error(`no installation token found for ${headSha}`);
+    }
+    const octokit = await getAuthenticatedOctokit(installation);
+
+    logger.info("skipping merge queue check because there's no associated PR");
+    await octokit.checks.create({
+      owner,
+      repo,
+      name: 'OwlBot Post Processor',
+      summary: 'Skipping check for merge_queue',
+      head_sha: headSha,
+      status: 'complete',
+      conclusion: 'skipped',
+    });
+  });
+
   app.on(
     [
       'pull_request.opened',
@@ -276,7 +300,10 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         privateKey,
         appId,
         dockerImageName,
-        dockerImageDigest
+        dockerImageDigest,
+        // This installation ID is also hard-coded in the GCB trigger, can/should we
+        // find this programmatically?
+        GOOGLEAPIS_INSTALLATION_ID
       );
     }
   });
@@ -299,6 +326,16 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     if (shouldIgnoreRepo(context.payload.repository.full_name)) {
       logger.info(
         `Ignoring pull_request.closed for ${context.payload.repository.full_name}`
+      );
+      return;
+    }
+
+    if (
+      !context.payload.repository.full_name.startsWith('googleapis/') &&
+      !context.payload.repository.full_name.startsWith('GoogleCloudPlatform/')
+    ) {
+      logger.info(
+        `Only run on allowlisted orgs, not ${context.payload.repository.full_name}`
       );
       return;
     }
@@ -534,6 +571,8 @@ async function runPostProcessorWithLock(
       );
       return;
     } else {
+      logger.warn(`Error acquiring datastore lock for target ${target}`, err);
+      logger.warn(err as any);
       throw err;
     }
   }
@@ -618,7 +657,7 @@ const runPostProcessor = async (
     lockText = await core.fetchOwlBotLock(opts.base, opts.prNumber, octokit);
   } catch (e) {
     await createCheck({
-      text: String(e),
+      text: `${String(e)}. ${OPERATIONAL_DOCUMENT}`,
       summary: 'Failed to fetch the lock file',
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -626,22 +665,17 @@ const runPostProcessor = async (
     return;
   }
   if (!lockText) {
-    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
-    // If OwlBot is not configured on repo, indicate success. This makes
-    // it easier to enable OwlBot as a required check during migration:
-    await createCheck({
-      text: 'OwlBot is not yet enabled on this repository',
-      summary: 'OwlBot is not yet enabled on this repository',
-      conclusion: 'success',
-      title: '🦉 OwlBot - success',
-    });
+    // If OwlBot is not configured on a repo, skip creating the check.
+    logger.info(
+      `no .OwlBot.lock.yaml found for ${opts.head}, skip creating the check.`
+    );
     return;
   }
   try {
     lock = parseOwlBotLock(lockText);
   } catch (e) {
     await createCheck({
-      text: String(e),
+      text: `${String(e)}. ${OPERATIONAL_DOCUMENT}`,
       summary: 'The OwlBot lock file on this repository is corrupt',
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -671,7 +705,7 @@ const runPostProcessor = async (
     logger.warn(message);
 
     await createCheck({
-      text: message,
+      text: `${message}. ${OPERATIONAL_DOCUMENT}`,
       summary: message,
       conclusion: 'failure',
       title: '🦉 OwlBot - failure',
@@ -699,7 +733,7 @@ const runPostProcessor = async (
   if (null === buildStatus) {
     // Update pull request with status of job:
     await createCheck({
-      text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+      text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label. ${OPERATIONAL_DOCUMENT}`,
       summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
       conclusion: 'success',
       title: '🦉 OwlBot - ignored',
@@ -709,7 +743,7 @@ const runPostProcessor = async (
 
   // Update pull request with status of job:
   await createCheck({
-    text: buildStatus.text,
+    text: `${buildStatus.text} ${OPERATIONAL_DOCUMENT}`,
     summary: buildStatus.summary,
     conclusion: buildStatus.conclusion,
     title: `🦉 OwlBot - ${buildStatus.summary}`,
@@ -739,6 +773,7 @@ function userCheckedRegenerateBox(
   const base = payload.pull_request.base.repo.full_name;
   const [owner, repo] = base.split('/');
   const prNumber = payload.pull_request.number;
+  const author = payload.pull_request.user.login;
 
   const newBody = payload.pull_request.body ?? '';
   const oldBody = payload.changes.body?.from ?? '';
@@ -750,6 +785,11 @@ function userCheckedRegenerateBox(
     logger.info(
       `The user didn't check the regenerate me box for PR #${prNumber}`
     );
+    return null;
+  }
+
+  if (author !== 'gcf-owl-bot[bot]') {
+    logger.info(`Owlbot did not create PR #${prNumber}, taking no action`);
     return null;
   }
 

@@ -14,9 +14,33 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
+FROM node:18.20.4-bullseye AS BASE
+
+# Install pyenv dependencies
+RUN apt-get update && \
+    apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+    xz-utils tk-dev libffi-dev liblzma-dev python3-openssl
+
+USER node
+
+# Install pyenv
+RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv && \
+    echo 'export PATH="/home/node/.pyenv/bin:$PATH"' >> ~/.profile && \
+    echo 'export PATH="/home/node/.pyenv/shims:$PATH"' >> ~/.profile && \
+    echo 'eval "$(pyenv init -)"' >> ~/.profile && \
+    echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.profile
+
+ENV PATH="/home/node/.pyenv/bin:/home/node/.pyenv/shims:${PATH}"
+
+# Install python
+RUN pyenv install 3.10.13 && \
+    pyenv global 3.10.13 && \
+    python3 -m pip install --upgrade pip setuptools
+
 # Use the Yoshi Node.js 14 image - it has python3 installed
 # https://github.com/googleapis/testing-infra-docker/tree/master/node/14-user
-FROM gcr.io/cloud-devrel-kokoro-resources/node:14-user AS BUILD
+FROM BASE AS BUILD
 
 WORKDIR /home/node
 
@@ -33,7 +57,7 @@ COPY . ./
 
 RUN npm run compile
 
-FROM gcr.io/cloud-devrel-kokoro-resources/node:14-user
+FROM BASE
 
 WORKDIR /home/node
 

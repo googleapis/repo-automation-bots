@@ -18,6 +18,7 @@ import assert from 'assert';
 import nock from 'nock';
 
 const {Octokit} = require('@octokit/rest');
+nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
@@ -29,7 +30,7 @@ function getPRsOnRepo(
   response: {id: number; user: {login: string}}[]
 ) {
   return nock('https://api.github.com')
-    .get(`/repos/${owner}/${repo}/pulls?state=open`)
+    .get(`/repos/${owner}/${repo}/pulls?state=open&direction=asc`)
     .reply(200, response);
 }
 

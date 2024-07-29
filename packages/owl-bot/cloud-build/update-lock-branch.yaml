@@ -92,19 +92,57 @@ steps:
     env:
       - 'DEFAULT_BRANCH_PATH=/workspace/default-branch.txt'
 
-  # Fetch our github credentials because we may need to push to github.
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/owl-bot-github-key.pem" ]
+  # Install credentials *after* running the container.
+  - name: 'bash'
+    args:
+      - '-eEuo'
+      - 'pipefail'
+      - '-c'
+      - |-
+        echo https://x-access-token:$$GITHUB_TOKEN@github.com >> /workspace/.git-credentials
+    env:
+      - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+      - 'HOME=/workspace'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - credential.helper
+      - 'store --file /workspace/.git-credentials'
+    env:
+      - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+      - 'HOME=/workspace'
+
+  # TODO: remove when we find a better resolution.
+  # See: https://github.com/orgs/community/discussions/55820
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - http.postBuffer
+      - '157286400'
+    env:
+      - 'HOME=/workspace'
+
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - http.version
+      - 'HTTP/1.1'
+    env:
+      - 'HOME=/workspace'
 
   # Examine the changed files and possibly create a pull request.
   - name: ${_OWL_BOT_CLI}
     args:
       - maybe-create-pull-request-for-lock-update
-      - --pem-path
-      - /workspace/owl-bot-github-key.pem
+      - --github-token
+      - ${_GITHUB_TOKEN}
       - --app-id
       - '99011'
       - --installation
       - '14695777'
     dir: '${_REPOSITORY}'
+
+logsBucket: 'gs://repo-automation-bots-post-processor-logs'

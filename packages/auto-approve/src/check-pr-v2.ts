@@ -28,6 +28,8 @@ import {DockerDependency} from './process-checks/sample-application-repos/docker
 import {NodeDependency} from './process-checks/node/dependency';
 import {NodeGeneratorDependency} from './process-checks/node/generator-dependency';
 import {NodeRelease} from './process-checks/node/release';
+import {OwlBotTemplateChangesNode} from './process-checks/node/owlbot-template-changes';
+import {OwlBotNode} from './process-checks/node/owlbot';
 import {JavaDependency} from './process-checks/java/dependency';
 import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
 import {OwlBotAPIChanges} from './process-checks/owl-bot-api-changes';
@@ -36,6 +38,7 @@ import {PHPApiaryCodegen} from './process-checks/php/apiary-codegen';
 import {PythonSampleDependency} from './process-checks/python/sample-dependency';
 import {logger as defaultLogger, GCFLogger} from 'gcf-utils';
 import {GoApiaryCodegen} from './process-checks/go/apiary-codegen';
+import {RubyApiaryCodegen} from './process-checks/ruby/apiary-codegen';
 // This file manages the logic to check whether a given PR matches the config in the repository
 
 // We need this typeMap to convert the JSON input (string) into a corresponding type.
@@ -67,6 +70,14 @@ const typeMap = [
   {
     configValue: 'NodeRelease',
     configType: NodeRelease,
+  },
+  {
+    configValue: 'OwlBotTemplateChangesNode',
+    configType: OwlBotTemplateChangesNode,
+  },
+  {
+    configValue: 'OwlBotPRsNode',
+    configType: OwlBotNode,
   },
   {
     configValue: 'JavaApiaryCodegen',
@@ -111,6 +122,10 @@ const typeMap = [
   {
     configValue: 'NodeGeneratorDependency',
     configType: NodeGeneratorDependency,
+  },
+  {
+    configValue: 'RubyApiaryCodegen',
+    configType: RubyApiaryCodegen,
   },
 ];
 
