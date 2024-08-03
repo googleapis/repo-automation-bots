@@ -14,7 +14,7 @@
 
 # Use the official lightweight Node.js 12 image.
 # https://hub.docker.com/_/node
-FROM node:18-alpine AS BUILD
+FROM node:20-alpine AS BUILD
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -29,7 +29,7 @@ COPY . ./
 
 RUN npm run compile
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
