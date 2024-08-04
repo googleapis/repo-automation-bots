@@ -43,6 +43,8 @@ should copy other fields into your config file.
 Normally our bot reads configuration file from the default branch, but
 this bot is exceptionally reading the config file from the PR head.
 
+If you want to trigger the bot on a particular PR, add the label `header-checker-lint:force-run` to the PR.
+
 ## Development
 
 ### Setup

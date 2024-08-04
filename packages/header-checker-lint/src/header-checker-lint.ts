@@ -16,6 +16,7 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
 import {LicenseType, detectLicenseHeader} from './header-parser';
 import {ConfigurationOptions, WELL_KNOWN_CONFIGURATION_FILE} from './config';
 import * as minimatch from 'minimatch';
@@ -39,6 +40,8 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   ignoreLicenseYear: false,
   sourceFileExtensions: ['ts', 'js', 'java'],
 };
+
+const FORCE_RUN_LABEL = 'header-checker-lint:force-run';
 
 class Configuration {
   private options: ConfigurationOptions;
@@ -86,6 +89,7 @@ export const appMain = (app: Probot, getCurrentYear: () => number) => {
       'pull_request.reopened',
       'pull_request.edited',
       'pull_request.synchronize',
+      'pull_request.labeled',
     ],
     async context => {
       const {owner, repo} = context.repo();
@@ -94,6 +98,19 @@ export const appMain = (app: Probot, getCurrentYear: () => number) => {
         WELL_KNOWN_CONFIGURATION_FILE
       );
       const logger = getContextLogger(context);
+
+      if (context.payload.action === 'labeled') {
+        const labelPayload = context.payload as PullRequestLabeledEvent;
+        if (labelPayload.label?.name !== FORCE_RUN_LABEL) {
+          return;
+        }
+        context.octokit.issues.removeLabel({
+          owner,
+          repo,
+          issue_number: context.payload.pull_request.number,
+          name: FORCE_RUN_LABEL,
+        });
+      }
 
       let octokit: Octokit;
       if (context.payload.installation && context.payload.installation.id) {
