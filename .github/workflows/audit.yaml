@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3
         with:
-          node-version: 14
+          node-version: 18
       - id: interrogate
         run: node ./.github/workflows/list-node-paths-for-deps.js
   updateDeps:
@@ -30,9 +30,10 @@ jobs:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 18
       - run: echo ./packages/${{ matrix.package }}
       - run: cd ./packages/${{ matrix.package }} && npm audit fix
+        continue-on-error: true
       - uses: googleapis/code-suggester@9c92ffb751cbdc880473aa650013b3a3292f743a # v4
         env:
           ACCESS_TOKEN: ${{ secrets.YOSHI_CODE_BOT_TOKEN }}
