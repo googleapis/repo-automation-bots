@@ -29,8 +29,6 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^6.1.0",
-    "@octokit/rest": "^19.0.4",
-    "@octokit/webhooks": "^10.1.5",
     "gcf-utils": "^14.2.0",
     "jsonwebtoken": "^9.0.0",
     "minimatch": "^5.1.0"
