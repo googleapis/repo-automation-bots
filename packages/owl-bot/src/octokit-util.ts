@@ -26,12 +26,16 @@ export interface OctokitParams {
   privateKey?: string;
   'app-id': number;
   installation: number;
+  'github-token'?: string;
 }
 
 /**
  * Creates an authenticated token for octokit.
  */
 export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
+  if (argv['github-token']) {
+    return argv['github-token'];
+  }
   let privateKey = '';
   if (argv['pem-path']) {
     privateKey = await readFileAsync(argv['pem-path'], 'utf8');

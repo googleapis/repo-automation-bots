@@ -836,7 +836,7 @@ describe('OwlBot', () => {
         },
         repository: {
           default_branch: 'default_branch',
-          full_name: 'full_name',
+          full_name: 'googleapis/name',
           name: 'name',
         },
       };
@@ -2008,6 +2008,9 @@ function pullRequestEditedEventFrom(
       },
       number: 48,
       body: newBody,
+      user: {
+        login: 'gcf-owl-bot[bot]',
+      },
     },
     changes: {
       body: {

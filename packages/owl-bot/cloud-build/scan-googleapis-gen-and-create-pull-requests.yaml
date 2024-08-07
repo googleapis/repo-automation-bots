@@ -69,3 +69,4 @@ steps:
       - ${_FIRESTORE_PROJECT}
 
 timeout: '14400s'
+logsBucket: 'gs://repo-automation-bots-owlbot-gcb-logs'

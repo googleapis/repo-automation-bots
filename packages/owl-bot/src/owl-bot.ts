@@ -59,6 +59,7 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
 const ALLOWED_ORGANIZATIONS = ['googleapis', 'googlecloudplatform'];
+const GOOGLEAPIS_INSTALLATION_ID = 14695777;
 
 interface PubSubContext {
   github: Octokit;
@@ -299,7 +300,10 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         privateKey,
         appId,
         dockerImageName,
-        dockerImageDigest
+        dockerImageDigest,
+        // This installation ID is also hard-coded in the GCB trigger, can/should we
+        // find this programmatically?
+        GOOGLEAPIS_INSTALLATION_ID
       );
     }
   });
@@ -322,6 +326,16 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     if (shouldIgnoreRepo(context.payload.repository.full_name)) {
       logger.info(
         `Ignoring pull_request.closed for ${context.payload.repository.full_name}`
+      );
+      return;
+    }
+
+    if (
+      !context.payload.repository.full_name.startsWith('googleapis/') &&
+      !context.payload.repository.full_name.startsWith('GoogleCloudPlatform/')
+    ) {
+      logger.info(
+        `Only run on allowlisted orgs, not ${context.payload.repository.full_name}`
       );
       return;
     }
@@ -759,6 +773,7 @@ function userCheckedRegenerateBox(
   const base = payload.pull_request.base.repo.full_name;
   const [owner, repo] = base.split('/');
   const prNumber = payload.pull_request.number;
+  const author = payload.pull_request.user.login;
 
   const newBody = payload.pull_request.body ?? '';
   const oldBody = payload.changes.body?.from ?? '';
@@ -770,6 +785,11 @@ function userCheckedRegenerateBox(
     logger.info(
       `The user didn't check the regenerate me box for PR #${prNumber}`
     );
+    return null;
+  }
+
+  if (author !== 'gcf-owl-bot[bot]') {
+    logger.info(`Owlbot did not create PR #${prNumber}, taking no action`);
     return null;
   }
 

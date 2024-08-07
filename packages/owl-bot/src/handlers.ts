@@ -20,7 +20,11 @@ import {core} from './core';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints, RequestError} from '@octokit/types';
-import {createIssueIfTitleDoesntExist, OctokitFactory} from './octokit-util';
+import {
+  createIssueIfTitleDoesntExist,
+  OctokitFactory,
+  octokitFactoryFrom,
+} from './octokit-util';
 import {
   GithubRepo,
   githubRepo,
@@ -51,7 +55,8 @@ export async function onPostProcessorPublished(
   privateKey: string,
   appId: number,
   dockerImageName: string,
-  dockerImageDigest: string
+  dockerImageDigest: string,
+  installation: number
 ): Promise<void> {
   // Examine all the repos that use the specified docker image for post
   // processing.
@@ -88,12 +93,18 @@ export async function onPostProcessorPublished(
         );
       }
       const triggerId: string = process.env.UPDATE_LOCK_BUILD_TRIGGER_ID;
+      const octokitFactory = octokitFactoryFrom({
+        'app-id': appId,
+        privateKey,
+        installation,
+      });
       await triggerOneBuildForUpdatingLock(
         configsStore,
         repo,
         lock,
         project,
         triggerId,
+        octokitFactory,
         configs
       );
       // We were hitting GitHub's abuse detection algorithm,
@@ -122,6 +133,7 @@ export async function triggerOneBuildForUpdatingLock(
   lock: OwlBotLock,
   project: string,
   triggerId: string,
+  octokitFactory: OctokitFactory,
   configs?: Configs,
   owlBotCli = 'gcr.io/repo-automation-bots/owlbot-cli'
 ): Promise<string> {
@@ -137,6 +149,8 @@ export async function triggerOneBuildForUpdatingLock(
   const cb = core.getCloudBuildInstance();
   const [, digest] = lock.docker.digest.split(':'); // Strip sha256: prefix
   logger.info(`triggering build for ${repoFull}.`);
+  const shortLivedAppToken =
+    await octokitFactory.getGitHubShortLivedAccessToken();
   const [resp] = await cb.runBuildTrigger({
     projectId: project,
     triggerId: triggerId,
@@ -149,6 +163,7 @@ export async function triggerOneBuildForUpdatingLock(
         _LOCK_FILE_PATH: OWL_BOT_LOCK_PATH,
         _CONTAINER: `${lock.docker.image}@${lock.docker.digest}`,
         _OWL_BOT_CLI: owlBotCli,
+        _GITHUB_TOKEN: shortLivedAppToken,
       },
     },
   });
