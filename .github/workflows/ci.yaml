@@ -54,7 +54,7 @@ jobs:
         module: ${{fromJson(needs.changeFinder.outputs.goPaths)}}
     steps:
     - name: Install Go
-      uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
       with:
         go-version: '^1.16'
     - name: Install goimports
