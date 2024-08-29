@@ -14,7 +14,7 @@
 
 # The Dockerfile for owlbot-cli
 
-# Use the official lightweight Node.js 14 image.
+# Use the official lightweight Node.js image.
 # https://hub.docker.com/_/node
 FROM node:18-alpine
 
