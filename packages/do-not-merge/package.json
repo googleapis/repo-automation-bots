@@ -27,8 +27,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^6.1.0",
-    "gcf-utils": "^14.2.0",
+    "@google-automations/bot-config-utils": "^8.0.0",
+    "gcf-utils": "^16.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
