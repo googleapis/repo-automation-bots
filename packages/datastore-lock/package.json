@@ -15,8 +15,8 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@google-cloud/datastore": "^7.0.0",
-    "gcf-utils": "^15.0.0",
+    "@google-cloud/datastore": "^9.0.0",
+    "gcf-utils": "^16.0.0",
     "jsonwebtoken": "^9.0.0",
     "uuid": "^9.0.0"
   },
@@ -46,5 +46,10 @@
   "license": "Apache-2.0",
   "files": [
     "build/src"
-  ]
+  ],
+  "overrides": {
+    "google-datastore-emulator": {
+      "@google-cloud/datastore": "9.1.0"
+    }
+  }
 }
