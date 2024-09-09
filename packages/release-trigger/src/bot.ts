@@ -20,8 +20,8 @@ import {
   getAuthenticatedOctokit,
   getContextLogger,
   GCFLogger,
-  addOrUpdateIssueComment,
 } from 'gcf-utils';
+import { addOrUpdateIssueComment } from '@google-automations/issue-utils';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';

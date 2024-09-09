@@ -21,6 +21,8 @@ import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
+// Cannot mock re-exported function
+import * as issueUtilsModule from '@google-automations/issue-utils/build/src/issue-comments';
 import * as releaseTriggerModule from '../src/release-trigger';
 import * as gcfUtils from 'gcf-utils';
 import {TriggerError} from '../src/release-trigger';
@@ -169,7 +171,7 @@ describe('bot', () => {
         .stub(releaseTriggerModule, 'markTriggered')
         .resolves();
       const commentStub = sandbox
-        .stub(gcfUtils, 'addOrUpdateIssueComment')
+        .stub(issueUtilsModule, 'addOrUpdateIssueComment')
         .resolves();
 
       await probot.receive({
@@ -291,7 +293,7 @@ describe('bot', () => {
         .stub(releaseTriggerModule, 'markFailed')
         .resolves();
       const commentStub = sandbox
-        .stub(gcfUtils, 'addOrUpdateIssueComment')
+        .stub(issueUtilsModule, 'addOrUpdateIssueComment')
         .resolves();
 
       await probot.receive({
@@ -529,7 +531,7 @@ describe('bot', () => {
         .stub(releaseTriggerModule, 'markFailed')
         .resolves();
       const commentStub = sandbox
-        .stub(gcfUtils, 'addOrUpdateIssueComment')
+        .stub(issueUtilsModule, 'addOrUpdateIssueComment')
         .resolves();
 
       await probot.receive({
