@@ -79,11 +79,14 @@ export async function getLatestCommit(
   github: Octokit
 ): Promise<string> {
   try {
-    const commits = await github.paginate(github.pulls.listCommits, {
-      owner,
-      repo,
-      pull_number: pr,
-    });
+    const commits = await github.paginate(
+      'GET /repos/{owner}/{repo}/pulls/{pull_number}/commits',
+      {
+        owner,
+        repo,
+        pull_number: pr,
+      }
+    );
     return commits[commits.length - 1].sha;
   } catch (err) {
     return '';
@@ -171,7 +174,7 @@ async function getStatuses(
   const start = Date.now();
   try {
     const responses = await github.paginate(
-      await github.repos.listCommitStatusesForRef,
+      'GET /repos/{owner}/{repo}/commits/{ref}/statuses',
       {
         owner,
         repo,
@@ -208,11 +211,14 @@ async function getCheckRuns(
 ): Promise<CheckRun[]> {
   const start = Date.now();
   try {
-    const responses = await github.paginate(github.checks.listForRef, {
-      owner,
-      repo,
-      ref: headSha,
-    });
+    const responses = await github.paginate(
+      'GET /repos/{owner}/{repo}/commits/{ref}/check-runs',
+      {
+        owner,
+        repo,
+        ref: headSha,
+      }
+    );
     logger.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
     );
