@@ -23,7 +23,7 @@
     "start-frontend": "node ./build/src/server-frontend.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -66,6 +66,6 @@
     "fsevents": "*"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   }
 }

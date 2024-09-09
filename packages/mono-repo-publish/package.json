@@ -8,7 +8,7 @@
     "compile": "tsc",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
@@ -44,6 +44,6 @@
     "yargs": "^17.5.1"
   },
   "engines": {
-    "node": ">= 12.18.2"
+    "node": ">= 18"
   }
 }
