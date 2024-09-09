@@ -32,6 +32,7 @@
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
+    "@octokit/graphql": "^5.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
