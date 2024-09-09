@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.2.0...flakybot-v1.2.1) (2024-09-06)
+
+
+### Bug Fixes
+
+* update base node image for flakybot to node:18-slim ([#5289](https://github.com/googleapis/repo-automation-bots/issues/5289)) ([15ba411](https://github.com/googleapis/repo-automation-bots/commit/15ba411cb15d89a32bc8fde20ba782248779e778))
+
 ## [1.2.0](https://github.com/googleapis/repo-automation-bots/compare/flakybot-1.1.0...flakybot-v1.2.0) (2023-02-27)
 
 

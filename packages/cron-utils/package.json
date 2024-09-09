@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/cron-utils",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "Utilities for setting up bot crons",
   "scripts": {
     "compile": "tsc -p .",
@@ -17,9 +17,9 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@google-cloud/run": "^0.3.0",
-    "@google-cloud/scheduler": "^3.0.3",
-    "google-auth-library": "^8.5.1",
+    "@google-cloud/run": "^1.4.0",
+    "@google-cloud/scheduler": "^4.3.0",
+    "google-auth-library": "^9.6.3",
     "js-yaml": "^4.1.0",
     "yargs": "^17.5.1"
   },
