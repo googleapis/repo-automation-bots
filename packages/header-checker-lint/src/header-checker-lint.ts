@@ -161,7 +161,7 @@ export const appMain = (app: Probot, getCurrentYear: () => number) => {
 
       try {
         const files = await octokit.paginate(
-          octokit.pulls.listFiles,
+          'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
           listFilesParams
         );
 
