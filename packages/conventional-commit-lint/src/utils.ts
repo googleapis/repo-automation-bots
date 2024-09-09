@@ -22,7 +22,8 @@ import {Octokit} from '@octokit/rest';
 //import {ILint} from '@commitlint/lint';
 import lint from '@commitlint/lint';
 
-import {addOrUpdateIssueComment, GCFLogger} from 'gcf-utils';
+import {GCFLogger} from 'gcf-utils';
+import {addOrUpdateIssueComment} from '@google-automations/issue-utils';
 
 import {rules} from '@commitlint/config-conventional';
 
@@ -177,7 +178,9 @@ export async function scanPullRequest(
           prNumber,
           installationId as number,
           message,
-          false
+          {
+            onlyUpdate: false,
+          }
         );
       } catch (err) {
         // This is a solely convenience feature, so we ignore errors.
