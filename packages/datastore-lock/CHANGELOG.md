@@ -1,5 +1,16 @@
 # Changelog
 
+## [6.0.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v5.0.0...datastore-lock-v6.0.0) (2024-09-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** update gcf-utils to v16 ([#5465](https://github.com/googleapis/repo-automation-bots/issues/5465))
+
+### Bug Fixes
+
+* **deps:** update gcf-utils to v16 ([#5465](https://github.com/googleapis/repo-automation-bots/issues/5465)) ([2507b12](https://github.com/googleapis/repo-automation-bots/commit/2507b1271380b30229c8d7a91c5ce7a3d3af1e86))
+
 ## [5.0.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v4.1.0...datastore-lock-v5.0.0) (2023-09-18)
 
 
