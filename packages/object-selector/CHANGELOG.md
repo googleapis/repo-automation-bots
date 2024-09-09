@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/googleapis/repo-automation-bots/compare/object-selector-v4.0.0...object-selector-v5.0.0) (2024-09-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** update gcf-utils to v16 ([#5464](https://github.com/googleapis/repo-automation-bots/issues/5464))
+
+### Bug Fixes
+
+* **deps:** update gcf-utils to v16 ([#5464](https://github.com/googleapis/repo-automation-bots/issues/5464)) ([d9d19ce](https://github.com/googleapis/repo-automation-bots/commit/d9d19ce7a46c7b605ce46dc489c05c16bd8d7c9b))
+
 ## [4.0.0](https://github.com/googleapis/repo-automation-bots/compare/object-selector-v3.0.2...object-selector-v4.0.0) (2023-09-18)
 
 
