@@ -21,18 +21,17 @@
     "compile": "tsc -p . && cp src/labels.json build/src",
     "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/storage": "^6.4.2",
+    "@google-cloud/storage": "^7.0.0",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^14.2.0",
+    "gcf-utils": "^16.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "@probot/octokit-plugin-config": "^1.1.6",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
@@ -47,6 +46,6 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">= 12.18.2"
+    "node": ">= 18"
   }
 }

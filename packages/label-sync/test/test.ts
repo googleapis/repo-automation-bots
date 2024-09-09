@@ -22,9 +22,8 @@ import {Probot, Context, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
 import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
-import {config} from '@probot/octokit-plugin-config';
 import {GCFLogger} from 'gcf-utils';
-const TestingOctokit = ProbotOctokit.plugin(config).defaults({
+const TestingOctokit = ProbotOctokit.defaults({
   retry: {enabled: false},
   throttle: {enabled: false},
 });
