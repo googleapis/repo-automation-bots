@@ -22,16 +22,16 @@
     "start": "node ./build/src/server.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^6.1.0",
-    "@google-automations/label-utils": "^3.0.0",
-    "@google-cloud/storage": "^6.4.2",
-    "gcf-utils": "^14.2.0",
+    "@google-automations/bot-config-utils": "^8.0.0",
+    "@google-automations/label-utils": "^5.0.0",
+    "@google-cloud/storage": "^7.12.1",
+    "gcf-utils": "^16.0.1",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
@@ -53,6 +53,6 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   }
 }
