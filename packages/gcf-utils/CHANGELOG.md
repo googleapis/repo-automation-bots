@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [16.0.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.0.0...gcf-utils-v16.0.1) (2024-09-09)
+
+
+### Bug Fixes
+
+* **deps:** lock octokit/graphql to commonjs version ([#5471](https://github.com/googleapis/repo-automation-bots/issues/5471)) ([47d51a3](https://github.com/googleapis/repo-automation-bots/commit/47d51a3b47f5176fc8c699ca0744d70a040e5569))
+
 ## [16.0.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v15.0.1...gcf-utils-v16.0.0) (2024-09-06)
 
 
