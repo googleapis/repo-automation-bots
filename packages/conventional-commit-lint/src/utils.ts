@@ -179,7 +179,7 @@ export async function scanPullRequest(
           installationId as number,
           message,
           {
-            onlyUpdate: false
+            onlyUpdate: false,
           }
         );
       } catch (err) {
