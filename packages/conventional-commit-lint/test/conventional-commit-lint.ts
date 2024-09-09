@@ -15,6 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as configUtilsModule from '@google-automations/bot-config-utils';
+import * as issueUtilsModule from '@google-automations/issue-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {logger} from 'gcf-utils';
 import {readFileSync} from 'fs';
@@ -74,7 +75,7 @@ describe('ConventionalCommitLint', () => {
     });
     probot.load(myProbotApp);
     addOrUpdateIssueCommentStub = sandbox.stub(
-      gcfUtilsModule,
+      issueUtilsModule,
       'addOrUpdateIssueComment'
     );
     getAuthenticatedOctokitStub = sandbox.stub(
