@@ -23,7 +23,7 @@
     "start": "node ./build/src/server.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch --exit build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
@@ -51,6 +51,6 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   }
 }
