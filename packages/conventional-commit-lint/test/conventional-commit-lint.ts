@@ -15,7 +15,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as configUtilsModule from '@google-automations/bot-config-utils';
-import * as issueUtilsModule from '@google-automations/issue-utils';
+// cannot sinon mock re-exported function in a module
+import * as issueUtilsModule from '@google-automations/issue-utils/build/src/issue-comments';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {logger} from 'gcf-utils';
 import {readFileSync} from 'fs';
