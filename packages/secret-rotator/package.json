@@ -35,7 +35,6 @@
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
     "gaxios": "^5.0.1",
-    "google-gax": "^3.5.2",
     "gts": "^4.0.0",
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
@@ -44,11 +43,11 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "@google-cloud/secret-manager": "^4.1.2",
-    "@googleapis/iam": "^3.0.1",
+    "@google-cloud/secret-manager": "^5.6.0",
+    "@googleapis/iam": "^23.0.0",
     "express": "^4.18.1",
-    "gcf-utils": "^14.2.0",
-    "google-auth-library": "^8.7.0",
+    "gcf-utils": "^16.0.1",
+    "google-auth-library": "^9.14.1",
     "jsonwebtoken": "^9.0.0"
   },
   "optionalDependencies": {
