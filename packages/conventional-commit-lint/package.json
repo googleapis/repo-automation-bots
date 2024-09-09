@@ -31,11 +31,12 @@
   "dependencies": {
     "@commitlint/config-conventional": "^17.1.0",
     "@commitlint/lint": "^17.1.0",
-    "@google-automations/bot-config-utils": "^6.1.0",
+    "@google-automations/bot-config-utils": "^8.0.0",
+    "@google-automations/issue-utils": "4.0.0",
     "@octokit/graphql": "^5.0.4",
     "@octokit/openapi-types": "^14.0.0",
     "@octokit/webhooks-types": "^6.3.6",
-    "gcf-utils": "^14.2.0",
+    "gcf-utils": "^16.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
