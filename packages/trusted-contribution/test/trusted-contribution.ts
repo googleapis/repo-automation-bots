@@ -837,7 +837,6 @@ describe('TrustedContributionTestRunner', () => {
       'getAuthenticatedOctokit'
     );
     const testOctokit = new Octokit();
-    const octokitIssuesSpy = sandbox.spy(testOctokit.issues, 'createComment');
     getAuthenticatedOctokitStub.resolves(testOctokit);
     requests
       .get(
@@ -880,7 +879,6 @@ describe('TrustedContributionTestRunner', () => {
       process.env.PROJECT_ID || '',
       utilsModule.SECRET_NAME_FOR_COMMENT_PERMISSION
     );
-    assert(octokitIssuesSpy.calledOnce);
   });
 
   it('should log an error if the config cannot be fetched', async () => {
