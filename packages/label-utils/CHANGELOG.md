@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v4.0.0...label-utils-v5.0.0) (2024-09-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** update gcf-utils to v16 ([#5475](https://github.com/googleapis/repo-automation-bots/issues/5475))
+
+### Bug Fixes
+
+* **deps:** update gcf-utils to v16 ([#5475](https://github.com/googleapis/repo-automation-bots/issues/5475)) ([c2ed8b5](https://github.com/googleapis/repo-automation-bots/commit/c2ed8b590390d6e1ed51b95e502f15919c57c3e4))
+
 ## [4.0.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v3.0.2...label-utils-v4.0.0) (2023-09-18)
 
 
