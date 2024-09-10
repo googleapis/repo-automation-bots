@@ -16,7 +16,7 @@ jobs:
           node-version: 18
       - run: |
           # for each package-lock.json, run npm audit fix
-          for `find packages -type d -name node_modules -prune -o -name package-lock.json -print | grep -v test`
+          for $(find packages -type d -name node_modules -prune -o -name package-lock.json -print | grep -v test)
           do
             # ignore failures and continue
             npm audit fix || true
