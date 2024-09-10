@@ -54,10 +54,13 @@ describe('SyncRepoSettings', () => {
   });
 
   it('should fill in default values', async () => {
-    const updateRepo = sandbox.stub(octokit.repos, 'update');
-    const updateBranch = sandbox.stub(octokit.repos, 'updateBranchProtection');
+    const updateRepo = sandbox.stub(octokit.rest.repos, 'update');
+    const updateBranch = sandbox.stub(
+      octokit.rest.repos,
+      'updateBranchProtection'
+    );
     const updateTeams = sandbox.stub(
-      octokit.teams,
+      octokit.rest.teams,
       'addOrUpdateRepoPermissionsInOrg'
     );
     const config = loadConfig('localConfig.yaml');

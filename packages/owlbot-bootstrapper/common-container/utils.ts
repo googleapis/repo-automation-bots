@@ -50,7 +50,7 @@ export async function setConfig(directoryPath?: string) {
 export async function getLatestShaGoogleapisGen(
   octokit: Octokit
 ): Promise<string> {
-  const commits = await octokit.paginate(octokit.repos.listCommits, {
+  const commits = await octokit.paginate('GET /repos/{owner}/{repo}/commits', {
     owner: ORG,
     repo: 'googleapis-gen',
   });

@@ -17,12 +17,12 @@ import {Context, Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {
-  addOrUpdateIssueComment,
   getAuthenticatedOctokit,
   getContextLogger,
   GCFLogger,
   logger,
 } from 'gcf-utils';
+import {addOrUpdateIssueComment} from '@google-automations/issue-utils';
 import {load} from 'js-yaml';
 import jp from 'jsonpath';
 import {match} from 'minimatch';
@@ -162,11 +162,14 @@ export async function getPullRequestFiles(
   pullNumber: number
 ): Promise<string[]> {
   const pullRequestFiles: string[] = [];
-  for (const file of await github.paginate(github.pulls.listFiles, {
-    owner,
-    repo,
-    pull_number: pullNumber,
-  })) {
+  for (const file of await github.paginate(
+    'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
+    {
+      owner,
+      repo,
+      pull_number: pullNumber,
+    }
+  )) {
     pullRequestFiles.push(file.filename);
   }
   return pullRequestFiles;

@@ -179,7 +179,7 @@ class FailureChecker {
   private async *pullRequestIterator(label: string) {
     const now = TimeMethods.Date().getTime();
     for await (const response of this.octokit.paginate.iterator(
-      this.octokit.issues.listForRepo,
+      'GET /repos/{owner}/{repo}/issues',
       {
         owner: this.owner,
         repo: this.repo,

@@ -19,11 +19,6 @@ import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {
-  PullRequestLabeledEvent,
-  PullRequestClosedEvent,
-  PullRequestReopenedEvent,
-} from '@octokit/webhooks-types';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
@@ -910,7 +905,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestLabeledEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -938,7 +933,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestLabeledEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -965,7 +960,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestLabeledEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -993,7 +988,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestLabeledEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -1021,7 +1016,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestLabeledEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -1052,7 +1047,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestLabeledEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -1076,7 +1071,7 @@ describe('ReleasePleaseBot', () => {
       ));
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestLabeledEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -1131,7 +1126,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestClosedEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -1144,7 +1139,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestClosedEvent,
+        payload: payload as any,
         id: 'abc123',
       });
     });
@@ -1155,7 +1150,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestClosedEvent,
+        payload: payload as any,
         id: 'abc123',
       });
     });
@@ -1177,7 +1172,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestReopenedEvent,
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -1190,7 +1185,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         name: 'pull_request',
-        payload: payload as PullRequestReopenedEvent,
+        payload: payload as any,
         id: 'abc123',
       });
     });
