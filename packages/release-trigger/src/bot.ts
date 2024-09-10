@@ -16,12 +16,8 @@
 import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {
-  getAuthenticatedOctokit,
-  getContextLogger,
-  GCFLogger,
-} from 'gcf-utils';
-import { addOrUpdateIssueComment } from '@google-automations/issue-utils';
+import {getAuthenticatedOctokit, getContextLogger, GCFLogger} from 'gcf-utils';
+import {addOrUpdateIssueComment} from '@google-automations/issue-utils';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
