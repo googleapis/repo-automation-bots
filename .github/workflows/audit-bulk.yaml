@@ -14,13 +14,8 @@ jobs:
       - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4
         with:
           node-version: 18
-      - run: |
-          # for each package-lock.json, run npm audit fix
-          for `find packages -type d -name node_modules -prune -o -name package-lock.json -print | grep -v test`
-          do
-            # ignore failures and continue
-            npm audit fix || true
-          done
+      - run: npm run run -- npm audit fix
+        continue-on-error: true
       - uses: googleapis/code-suggester@9c92ffb751cbdc880473aa650013b3a3292f743a # v4
         env:
           ACCESS_TOKEN: ${{ secrets.YOSHI_CODE_BOT_TOKEN }}
