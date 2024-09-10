@@ -3,6 +3,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "rootDir": ".",
+    "skipLibCheck": true,
     "outDir": "build"
   },
   "include": [
