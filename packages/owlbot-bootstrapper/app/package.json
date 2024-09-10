@@ -21,7 +21,7 @@
     "compile": "tsc -p .",
     "start": "probot run ./build/src/owlbot-bootstrapper.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch --exit build/test",
     "fix": "npm i; gts fix",
     "lint": "npm i; gts check"
   },
@@ -38,6 +38,6 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   }
 }

@@ -12,7 +12,7 @@
     "lint": "gts check",
     "fix": "gts fix",
     "pretest": "npm run compile",
-    "test": "c8 mocha build/test",
+    "test": "c8 mocha --node-option no-experimental-fetch build/test",
     "compile": "tsc",
     "generate-bot": "node build/src/run.js"
   },
@@ -41,6 +41,6 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">=12.18.2"
+    "node": ">= 18"
   }
 }

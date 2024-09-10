@@ -21,7 +21,7 @@
     "compile": "tsc -p .",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch --exit build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
@@ -53,6 +53,6 @@
     }
   },
   "engines": {
-    "node": ">= 12.16.0"
+    "node": ">= 18"
   }
 }
