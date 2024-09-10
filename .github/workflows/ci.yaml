@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
       - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4
         with:
-          node-version: ${{ (endsWith(matrix.package, '-utils') || matrix.package == 'auto-approve' || matrix.package == 'auto-label' || matrix.package == 'blunderbuss' || matrix.package == 'canary-bot' || matrix.package == 'cherry-pick-bot' || matrix.package == 'conventional-commit-lint' || matrix.package == 'datastore-lock' || matrix.package == 'do-not-merge' || matrix.package == 'flakybot' || matrix.package == 'label-sync' || matrix.package == 'loadtest-bot' || matrix.package == 'object-selector' || matrix.package == 'policy' || matrix.package == 'release-please' || matrix.package == 'secret-rotator' || matrix.package == 'trusted-contribution' || matrix.package == 'owl-bot' ) && 18 || 14 }}
+          node-version: 18
       - run: echo ./packages/${{ matrix.package }}
       - run: cd ./packages/${{ matrix.package }}
       - run: npm ci

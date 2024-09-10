@@ -23,6 +23,6 @@
     "lint": "cd cli && npm i && npm run lint && cd ../app && npm i && npm run lint && cd ../common-container && npm i && npm run lint"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 18"
   }
 }
