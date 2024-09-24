@@ -41,6 +41,7 @@ FROM node:18.20.4-slim
 
 RUN apt update \
     && apt install -y git-core \
+    && apt-get update -y \
     && rm -rf /var/cache/apt/*
 
 # Create and change to the app directory.
