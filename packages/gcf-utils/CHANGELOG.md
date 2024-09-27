@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [16.1.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.0.1...gcf-utils-v16.1.0) (2024-09-27)
+
+
+### Features
+
+* add ability to configure app to skip throttling on rate limits ([#5517](https://github.com/googleapis/repo-automation-bots/issues/5517)) ([fc03235](https://github.com/googleapis/repo-automation-bots/commit/fc0323503fb62dfa0873e58aaf2b701273103d0f))
+
 ## [16.0.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.0.0...gcf-utils-v16.0.1) (2024-09-09)
 
 
