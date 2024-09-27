@@ -136,6 +136,9 @@ export interface WrapOptions {
 
   // Delay in task scheduling flow control
   flowControlDelayInSeconds?: number;
+
+  // Whether or not to throttle on rate limiting. Defaults to `true`.
+  throttleOnRateLimits?: boolean;
 }
 
 // Default logger, in general, you will want to configure a local logger that
@@ -529,8 +532,9 @@ export class GCFBootstrapper {
               requestLogger.warn('Rate limit exceeded', rateLimits);
               // On GitHub quota issues, return a 503 to throttle our task queues
               // https://cloud.google.com/tasks/docs/common-pitfalls#backoff_errors_and_enforced_rates
-              response.status(503).send({
-                statusCode: 503,
+              const statusCode = wrapConfig.throttleOnRateLimits ? 503 : 500;
+              response.status(statusCode).send({
+                statusCode: statusCode,
                 body: JSON.stringify({
                   ...rateLimits,
                   message: 'Rate Limited',

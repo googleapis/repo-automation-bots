@@ -32,6 +32,8 @@ export interface WrapConfig {
   // When batch scheduling cron requests, delay groups of requests by X seconds
   // to avoid flooding
   flowControlDelayInSeconds: number;
+  // Whether or not to throttle on rate limiting
+  throttleOnRateLimits: boolean;
 }
 
 // Default configuration options
@@ -42,4 +44,5 @@ export const DEFAULT_WRAP_CONFIG: WrapConfig = {
   maxRetries: 10,
   maxPubSubRetries: 0,
   flowControlDelayInSeconds: DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND,
+  throttleOnRateLimits: true,
 };
