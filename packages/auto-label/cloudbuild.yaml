@@ -39,7 +39,7 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
-      - "nodejs14"
+      - "nodejs18"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
