@@ -193,7 +193,7 @@ export function commitOwlbotUpdate(repoDir: string) {
   // misinterpreting commit message.
   const commitMessage = OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE;
   console.log(`git commit -m "${commitMessage}"`);
-  proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
+  proc.spawnSync('git', ['commit', '-m', commitMessage, '--no-verify'], {cwd: repoDir});
 }
 
 async function promoteFromDraft(
