@@ -1,5 +1,5 @@
 # Repo Automation Bots
-
+## Development environment
 A collection of bots, based on [probot](https://github.com/probot/probot), for
 performing common maintenance tasks across the open-source repos managed
 by Google on GitHub.
@@ -28,7 +28,7 @@ by Google on GitHub.
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
 
-## Development environment
+
 
 You need to install node.js version 12 or higher.
 
