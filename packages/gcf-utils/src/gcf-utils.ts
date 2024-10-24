@@ -808,7 +808,15 @@ export class GCFBootstrapper {
             continue;
           }
         }
-
+        log.info(
+          `Installation: ${installation.login}(${installation.targetType},
+           suspended:${installation.suspended})`
+        );
+        if (installation.suspended) {
+          log.info("Skipping this installation because it's suspended");
+          continue;
+        }
+        
         const generator = eachInstalledRepository(installation.id, wrapConfig);
         const extraParams: Scheduled = {
           installation: {
