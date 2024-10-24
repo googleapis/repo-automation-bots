@@ -33,7 +33,9 @@ printf "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 SCRIPT=$(realpath $(dirname $0)/./publish-single.sh)
 
 if [[ -n "${RELEASE_PACKAGE}" ]]; then
-  # A specific package to release. RELEASE_PACKAGE=gcf-utils
+  # A specific package to release. E.g., RELEASE_PACKAGE=gcf-utils
+  # With this environment variable manually set in manual Kokoro
+  # invocations, the release does not rely on GitHub APIs.
   echo "Releasing the specified package ${RELEASE_PACKAGE}"
   cd "$(dirname $0)/../packages/${RELEASE_PACKAGE}"
   bash "${SCRIPT}"
