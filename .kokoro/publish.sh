@@ -31,4 +31,13 @@ NPM_TOKEN=$(cat "${KOKORO_GFILE_DIR}/secret_manager/repo_automation_bots_npm_pub
 printf "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 
 SCRIPT=$(realpath $(dirname $0)/./publish-single.sh)
-npx @google-cloud/mono-repo-publish custom --script="${SCRIPT}" --pr-url="${AUTORELEASE_PR}" --exclude-files=**/samples/*
+
+if [[ -n "${}" ]]; then
+  # A specific package to release. RELEASE_PACKAGE=gcf-utils
+  echo "Releasing the specified package "${RELEASE_PACKAGE}"
+  cd "$(dirname $0)/../packages/${RELEASE_PACKAGE}"
+  bash "${SCRIPT}"
+else
+  echo "Releasing the modules changed in ${AUTORELEASE_PR}"
+  npx @google-cloud/mono-repo-publish custom --script="${SCRIPT}" --pr-url="${AUTORELEASE_PR}" --exclude-files=**/samples/*
+fi
