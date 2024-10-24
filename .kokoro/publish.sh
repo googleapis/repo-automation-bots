@@ -34,7 +34,7 @@ SCRIPT=$(realpath $(dirname $0)/./publish-single.sh)
 
 if [[ -n "${RELEASE_PACKAGE}" ]]; then
   # A specific package to release. RELEASE_PACKAGE=gcf-utils
-  echo "Releasing the specified package "${RELEASE_PACKAGE}"
+  echo "Releasing the specified package ${RELEASE_PACKAGE}"
   cd "$(dirname $0)/../packages/${RELEASE_PACKAGE}"
   bash "${SCRIPT}"
 else
