@@ -816,7 +816,6 @@ export class GCFBootstrapper {
           log.info("Skipping this installation because it's suspended");
           continue;
         }
-        
         const generator = eachInstalledRepository(installation.id, wrapConfig);
         const extraParams: Scheduled = {
           installation: {
