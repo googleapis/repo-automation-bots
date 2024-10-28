@@ -2,7 +2,7 @@
   "name": "secret-rotator",
   "version": "1.0.0",
   "description": "rotate secrets for service accounts",
-  "main": "build/src/index.js",
+  "main": "build/src/cli.js",
   "files": [
     "build/src"
   ],
@@ -33,6 +33,7 @@
     "@types/express": "^4.17.13",
     "@types/mocha": "^10.0.0",
     "@types/sinon": "^10.0.13",
+    "@types/yargs": "^17.0.33",
     "c8": "^7.12.0",
     "gaxios": "^5.0.1",
     "gts": "^4.0.0",
@@ -48,7 +49,8 @@
     "express": "^4.18.1",
     "gcf-utils": "^16.0.1",
     "google-auth-library": "^9.14.1",
-    "jsonwebtoken": "^9.0.0"
+    "jsonwebtoken": "^9.0.0",
+    "yargs": "^17.7.2"
   },
   "optionalDependencies": {
     "fsevents": "*"
