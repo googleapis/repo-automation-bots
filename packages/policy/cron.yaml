@@ -1,5 +1,0 @@
-cron:
-  - name: policy
-    schedule: 0 2 * * *
-    params:
-      cron_type: "repository"
