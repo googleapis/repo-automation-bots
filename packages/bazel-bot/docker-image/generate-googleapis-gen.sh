@@ -107,8 +107,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # Some API always fails to build.  One failing API should not prevent all other
     # APIs from being updated.
     set +e
-    # Invoke bazel build.
-    (cd "$GOOGLEAPIS" && bazelisk build $BAZEL_FLAGS -k $targets)
+    # Invoke bazel build. Limiting job count helps to avoid memory error b/376777535.
+    (cd "$GOOGLEAPIS" && bazelisk build --jobs=8 $BAZEL_FLAGS -k $targets)
 
     # Clear out the existing contents of googleapis-gen before we copy back into it,
     # so that deleted APIs will be be removed.
