@@ -36,7 +36,7 @@
     "@octokit/webhooks": "^10.1.5",
     "gcf-utils": "^16.1.0",
     "jsonwebtoken": "^9.0.0",
-    "release-please": "^16.14.2"
+    "release-please": "^16.14.4"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.0",
