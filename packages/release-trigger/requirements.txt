@@ -121,9 +121,9 @@ cryptography==43.0.1 \
     # via
     #   -r requirements.in
     #   gcp-releasetool
-gcp-releasetool==2.1.1 \
-    --hash=sha256:25639269f4eae510094f9dbed9894977e1966933211eb155a451deebc3fc0b30 \
-    --hash=sha256:845f4ded3d9bfe8cc7fdaad789e83f4ea014affa77785259a7ddac4b243e099e
+gcp-releasetool==2.3.0 \
+    --hash=sha256:510516c6a2135e55503fd58f5c8e9d93506d8fba4ebed381a1eccb3d8f9b6740 \
+    --hash=sha256:804547a3d2e022924bceadcc453fc49e3059a42a607b99e55b1e2a2d10cb5323
     # via -r requirements.in
 google-auth==2.28.1 \
     --hash=sha256:25141e2d7a14bfcba945f5e9827f98092716e99482562f15306e5b026e21aa72 \
