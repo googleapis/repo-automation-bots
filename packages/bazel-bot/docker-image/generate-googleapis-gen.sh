@@ -137,6 +137,11 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     let failed_percent="100 * ${#failed_targets[@]} / $target_count"
     set -e
     echo "$failed_percent% of targets failed to build."
+
+    if [ "${failed_percent}" -gt 10 ]; then
+        echo "More than 10% targets failed. Exiting."
+        exit 1
+    fi
     printf '%s\n' "${failed_targets[@]}"
 
     # Tell git about the new source code we just copied into googleapis-gen.
