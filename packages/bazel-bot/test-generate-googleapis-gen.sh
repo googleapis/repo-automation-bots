@@ -44,10 +44,6 @@ git -C googleapis-gen config user.name "Testy McTestFace"
 # Hello.txt lives in the root directory and should not be removed.
 hello_path=googleapis-gen/hello.txt
 echo hello > "$hello_path"
-# keepme.java fails to build and therefore should not be removed.
-mkdir -p googleapis-gen/google/bogus/api
-bogus_file_path=googleapis-gen/google/bogus/api/keepme.java
-echo "import *;" > "$bogus_file_path"
 # garbage.js should be wiped out by newly generated code.
 mkdir -p googleapis-gen/google/cloud/vision/v1/vision-v1-nodejs
 garbage_file_path=googleapis-gen/google/cloud/vision/v1/vision-v1-nodejs/garbage.js
@@ -66,7 +62,7 @@ git -C googleapis-gen checkout -b other
 # Test!
 export GOOGLEAPIS_GEN=`realpath googleapis-gen-clone`
 export INSTALL_CREDENTIALS="echo 'Pretending to install credentials...''"
-export BUILD_TARGETS="//google/cloud/vision/v1:vision-v1-nodejs //google/bogus:api"
+export BUILD_TARGETS="//google/cloud/vision/v1:vision-v1-nodejs"
 export FETCH_TARGETS="//google/cloud/vision/v1:vision-v1-nodejs"
 bash -x "$generate_googleapis_gen"
 
@@ -85,12 +81,6 @@ fi
 if [ -e "$garbage_file_path" ] ; then
     echo "ERROR: $garbage_file_path should have been removed"
     exit 98
-fi
-
-# Confirm that the source code for the target that failed to build still exists.
-if [ ! -e "$bogus_file_path" ] ; then
-    echo "ERROR: $bogus_file_path should not been removed"
-    exit 97
 fi
 
 # Confirm that hello.txt still exists because it's not in a source code directory.

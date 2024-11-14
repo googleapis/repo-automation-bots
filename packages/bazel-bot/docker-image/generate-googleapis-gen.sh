@@ -44,6 +44,7 @@ mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:="$mydir/install-credentials.sh"}
 
 # Pull both repos to make sure we're up to date.
+echo `date` " pulling changes in $$GOOGLEAPIS"
 git -C "$GOOGLEAPIS" pull
 git -C "$GOOGLEAPIS_GEN" pull
 
