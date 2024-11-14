@@ -44,6 +44,7 @@ mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:="$mydir/install-credentials.sh"}
 
 # Pull both repos to make sure we're up to date.
+echo `date` " pulling changes in $$GOOGLEAPIS"
 git -C "$GOOGLEAPIS" pull
 git -C "$GOOGLEAPIS_GEN" pull
 
@@ -137,6 +138,11 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     let failed_percent="100 * ${#failed_targets[@]} / $target_count"
     set -e
     echo "$failed_percent% of targets failed to build."
+
+    if [ "${failed_percent}" -gt 0 ]; then
+        echo "More than 0% targets failed. Exiting."
+        exit 1
+    fi
     printf '%s\n' "${failed_targets[@]}"
 
     # Tell git about the new source code we just copied into googleapis-gen.
