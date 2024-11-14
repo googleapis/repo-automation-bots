@@ -138,7 +138,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     set -e
     echo "$failed_percent% of targets failed to build."
 
-    if [ "${failed_percent}" -gt 10 ]; then
+    if [ "${failed_percent}" -gt 0 ]; then
         echo "More than 10% targets failed. Exiting."
         exit 1
     fi
