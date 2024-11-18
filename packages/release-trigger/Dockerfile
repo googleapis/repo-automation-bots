@@ -14,7 +14,7 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-FROM node:18.20.4-bullseye AS BASE
+FROM node:18.20.5-bullseye AS BASE
 
 # Install pyenv dependencies
 RUN apt-get update && \
