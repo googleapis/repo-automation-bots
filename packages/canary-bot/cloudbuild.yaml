@@ -62,12 +62,19 @@ steps:
       - "build"
       - "-t"
       - "gcr.io/$PROJECT_ID/canary-bot-cloud-run"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/canary-bot"
       - "."
 
   - name: gcr.io/cloud-builders/docker
     id: "push-docker"
     waitFor: ["build-docker"]
     args: ["push", "gcr.io/$PROJECT_ID/canary-bot-cloud-run"]
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker"
+    waitFor: ["build-docker"]
+    args: ["push", "gcr.io/$PROJECT_ID/canary-bot"]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
