@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Currently making sure the build works
-
-steps:
-  - name: gcr.io/cloud-builders/npm
-    id: "build"
+steps: 
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker"
     waitFor: ["-"]
-    entrypoint: bash
+    dir: packages/secret-rotator
     args:
-      - "-e"
-      - "./scripts/build-function.sh"
-      - "$_DIRECTORY"
+      - "build"
+      - "-f"
+      - "Dockerfile.cli"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/secret-rotator-cli"
+      - "."
+
+images:
+  - gcr.io/$PROJECT_ID/secret-rotator-cli
+
+options:
+  logging: CLOUD_LOGGING_ONLY

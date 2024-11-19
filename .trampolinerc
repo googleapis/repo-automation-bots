@@ -22,6 +22,7 @@ required_envvars+=(
 pass_down_envvars+=(
     "AUTORELEASE_PR"
     "VERSION"
+    "RELEASE_PACKAGE"
 )
 
 # Prevent unintentional override on the default image.

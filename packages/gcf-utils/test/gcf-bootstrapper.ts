@@ -677,6 +677,54 @@ describe('GCFBootstrapper', () => {
       assert.strictEqual(response.statusCode, 503);
     });
 
+    it('returns 500 on rate limit errors if configured to skip throttling', async () => {
+      await mockBootstrapper({throttleOnRateLimits: false}, async app => {
+        app.on('issues', async () => {
+          throw new RequestError(
+            'API rate limit exceeded for user ID 3456',
+            403,
+            {
+              response: {
+                headers: {
+                  'x-ratelimit-remaining': '0',
+                  'x-ratelimit-reset': '1653880306',
+                  'x-ratelimit-limit': '5000',
+                  'x-ratelimit-resource': 'core',
+                },
+                status: 403,
+                url: '',
+                data: '',
+              },
+              request: {
+                headers: {},
+                method: 'POST',
+                url: '',
+              },
+            }
+          );
+        });
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.called(sendStub);
+
+      assert.strictEqual(response.statusCode, 500);
+    });
+
     it('returns 503 on secondary rate limit errors', async () => {
       await mockBootstrapper(undefined, async app => {
         app.on('issues', async () => {

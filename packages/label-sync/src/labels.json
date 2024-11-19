@@ -279,6 +279,11 @@
       "name": "asset: pattern",
       "description": "DEE Asset tagging - Pattern.",
       "color": "EFDE28"      
+    },
+    {
+      "name": "generated: genai",
+      "description": "Contains Generative AI based code, requesting an additional reviewer.",
+      "color": "FFCC00"
     }
   ]
 }

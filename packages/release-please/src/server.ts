@@ -19,7 +19,7 @@ const bootstrap = new GCFBootstrapper({
   taskTargetEnvironment: 'run',
   taskTargetName: 'release-please-backend',
 });
-const server = bootstrap.server(api.handler);
+const server = bootstrap.server(api.handler, {throttleOnRateLimits: false});
 const port = process.env.PORT ?? 8080;
 
 server

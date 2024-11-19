@@ -4,6 +4,9 @@ cron:
     description: snippet-bot syncing labels
     params:
       cron_type: "repository"
+      allowed_organizations:
+        - "googleapis"
+        - "googlecloudplatform"
   - name: snippet-bot-cache-products
     schedule: 0 2 * * *
     description: snippet-bot cache products

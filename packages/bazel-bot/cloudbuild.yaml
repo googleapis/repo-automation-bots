@@ -37,5 +37,5 @@ steps:
 timeout: '10800s'
 
 options:
-  machineType: 'N1_HIGHCPU_8'
+  machineType: 'E2_HIGHCPU_32'
 logsBucket: 'gs://repo-automation-bots-bazel-gcb-logs'
