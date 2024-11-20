@@ -66,5 +66,5 @@ steps:
       - "--platform"
       - "managed"
       - "--region"
-      - "$_FUNCTION_REGION"
+      - "$_REGION"
       - "--quiet"
