@@ -26,7 +26,7 @@ steps:
     id: "publish-function"
     waitFor: ["build"]
     entrypoint: gcloud
-    dir: "$_DIRECTORY"
+    dir: "targets/flakybot"
     args:
       - "functions"
       - "deploy"
