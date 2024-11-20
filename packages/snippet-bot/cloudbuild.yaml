@@ -31,47 +31,19 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/snippet-bot"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-backend"
+    id: "deploy-cloud-run-backend"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
-      - "SERVICE_NAME=snippet-bot-backend"
-      - "MEMORY=4G"
-      - "CONCURRENCY=32"
-      - "NUMBER_OF_CPU=4"
-      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
-      - "TASK_MAX_CONCURRENT_DISPATCHES=20"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
-      - "snippet-bot"
-      # timeout
-      - "3600"
-      # minInstances: To avoid "no instance" error
-      - "1"
-
-  - name: gcr.io/cloud-builders/npm
-    id: "cron-deploy"
-    waitFor: ["-"]
-    entrypoint: bash
-    env:
-      - "TARGET_TYPE=run"
-      - "FUNCTION_NAME=snippet_bot"
-    args:
-      - "-e"
-      - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
-      - "$_FUNCTION_REGION"
-      - "$_REGION"
-      - "$_DIRECTORY"
+      - "run"
+      - "deploy"
+      - "snippet-bot-backend"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/snippet-bot"
+      - "--platform"
+      - "managed"
+      - "--quiet"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker-frontend"
@@ -91,26 +63,16 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/snippet-bot-frontend"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-frontend"
+    id: "deploy-cloud-run"
     waitFor: ["push-docker-frontend"]
-    entrypoint: bash
-    env:
-      - "IMAGE_NAME=gcr.io/$PROJECT_ID/snippet-bot-frontend"
-      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
-      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
-      - "TASK_MAX_CONCURRENT_DISPATCHES=20"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
+      - "run"
+      - "deploy"
       - "snippet-bot"
-      # timeout
-      - "3600"
-      # minInstances: We want to serve Github webhook quickly, so keep one instance.
-      - "1"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/snippet-bot-frontend"
+      - "--platform"
+      - "managed"
+      - "--quiet"

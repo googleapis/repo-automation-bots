@@ -25,34 +25,15 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-function"
     waitFor: ["build"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: "$_DIRECTORY"
     args:
-      - "-e"
-      - "./scripts/publish-function.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
+      - "functions"
+      - "deploy"
+      - "canary_bot"
+      - "--trigger-http"
+      - "--runtime"
       - "nodejs18"
-
-  - name: gcr.io/cloud-builders/npm
-    id: "cron-deploy"
-    waitFor: ["-"]
-    entrypoint: bash
-    env:
-      - "TARGET_TYPE=run"
-      - "FUNCTION_NAME=canary-bot-cloud-run"
-    args:
-      - "-e"
-      - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
-      - "$_FUNCTION_REGION"
-      - "$_REGION"
-      - "$_DIRECTORY"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
@@ -77,39 +58,51 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/canary-bot"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
+    id: "deploy-cloud-run-frontend"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # override the bot name
-      - canary-bot-cloud-run
+      - "run"
+      - "deploy"
+      - "canary-bot-cloud-run"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/canary-bot-cloud-run"
+      - "--platform"
+      - "managed"
+      - "--quiet"
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run-backend"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_NAME=canary-bot-cloud-run-backend"
-      - "SECURE_ACCESS=true"
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # override the bot name
-      - canary-bot-cloud-run
+      - "run"
+      - "deploy"
+      - "canary-bot-cloud-run-backend"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/canary-bot-cloud-run"
+      - "--platform"
+      - "managed"
+      - "--quiet"
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker-gcf-frontend"
+    waitFor: ["build-docker"]
+    args: ["push", "gcr.io/$PROJECT_ID/canary-bot"]
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run-gcf-frontend"
+    waitFor: ["push-docker-gcf-frontend"]
+    entrypoint: gcloud
+    dir: $_DIRECTORY
+    args:
+      - "run"
+      - "deploy"
+      - "canary-bot"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/canary-bot"
+      - "--platform"
+      - "managed"
+      - "--quiet"

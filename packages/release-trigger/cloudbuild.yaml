@@ -29,30 +29,19 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/release-trigger"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-backend"
+    id: "deploy-cloud-run-backend"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
-      - "MEMORY=8G"
-      - "SERVICE_NAME=release-trigger-backend"
-      - "CONCURRENCY=32"
-      - "NUMBER_OF_CPU=4"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
-      - "release-trigger"
-      # timeout
-      - "3600"
-      # minInstances: To avoid "no instance" error
-      - "2"
+      - "run"
+      - "deploy"
+      - "release-trigger-backend"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/release-trigger"
+      - "--platform"
+      - "managed"
+      - "--quiet"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker-frontend"
@@ -72,34 +61,16 @@ steps:
     args: ["push", "gcr.io/$PROJECT_ID/release-trigger-frontend"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-frontend"
+    id: "deploy-cloud-run"
     waitFor: ["push-docker-frontend"]
-    entrypoint: bash
-    env:
-      - "IMAGE_NAME=gcr.io/$PROJECT_ID/release-trigger-frontend"
-      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
-      - "MEMORY=1G"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-
-  - name: gcr.io/cloud-builders/npm
-    id: "cron-deploy"
-    waitFor: ["-"]
-    entrypoint: bash
-    env:
-      - "TARGET_TYPE=run"
-      - "FUNCTION_NAME=release_trigger"
-    args:
-      - "-e"
-      - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
-      - "$_FUNCTION_REGION"
-      - "$_REGION"
-      - "$_DIRECTORY"
+      - "run"
+      - "deploy"
+      - "release-trigger"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/release-trigger-frontend"
+      - "--platform"
+      - "managed"
+      - "--quiet"

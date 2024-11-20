@@ -25,18 +25,14 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-function"
     waitFor: ["build"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: "$_DIRECTORY"
     args:
-      - "-e"
-      - "./scripts/publish-function.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
+      - "functions"
+      - "deploy"
+      - "failurechecker"
+      - "--trigger-http"
+      - "--runtime"
       - "nodejs18"
 
   - name: gcr.io/cloud-builders/docker
@@ -59,33 +55,14 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
+      - "run"
+      - "deploy"
       - "failurechecker"
-      # timeout
-      - "3600"
-      # minInstances: We want to serve Github webhook quickly, so keep one instance.
-      - "1"
-
-  - name: gcr.io/cloud-builders/npm
-    id: "cron-deploy"
-    waitFor: ["-"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
-      - "$_FUNCTION_REGION"
-      - "$_REGION"
-      - "$_DIRECTORY"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/failurechecker"
+      - "--platform"
+      - "managed"
+      - "--quiet"

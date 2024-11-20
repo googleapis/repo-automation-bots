@@ -25,20 +25,14 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-function"
     waitFor: ["build"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
-      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
-      - "TASK_MAX_CONCURRENT_DISPATCHES=20"
+    entrypoint: gcloud
+    dir: "$_DIRECTORY"
     args:
-      - "-e"
-      - "./scripts/publish-function.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
+      - "functions"
+      - "deploy"
+      - "blunderbuss"
+      - "--trigger-http"
+      - "--runtime"
       - "nodejs18"
 
   - name: gcr.io/cloud-builders/docker
@@ -61,35 +55,14 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
-      - "TASK_MAX_DISPATCHES_PER_SECOND=100"
-      - "TASK_MAX_CONCURRENT_DISPATCHES=20"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
+      - "run"
+      - "deploy"
       - "blunderbuss"
-      # timeout
-      - "3600"
-      # minInstances: We want to serve Github webhook quickly, so keep one instance.
-      - "1"
-
-  - name: gcr.io/cloud-builders/npm
-    id: "cron-deploy"
-    waitFor: ["-"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
-      - "$_FUNCTION_REGION"
-      - "$_REGION"
-      - "$_DIRECTORY"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/blunderbuss"
+      - "--platform"
+      - "managed"
+      - "--quiet"
