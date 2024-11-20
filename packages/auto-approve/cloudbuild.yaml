@@ -26,12 +26,14 @@ steps:
     id: "publish-function"
     waitFor: ["build"]
     entrypoint: gcloud
-    dir: "$_DIRECTORY"
+    dir: "targets/auto-approve"
     args:
       - "functions"
       - "deploy"
       - "auto_approve"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -65,4 +67,6 @@ steps:
       - "gcr.io/$PROJECT_ID/auto-approve"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

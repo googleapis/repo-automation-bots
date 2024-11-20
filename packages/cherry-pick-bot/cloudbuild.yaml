@@ -31,15 +31,33 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
+      - "run"
+      - "deploy"
+      - "cherry-pick-bot"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/cherry-pick-bot"
+      - "--platform"
+      - "managed"
+      - "--region"
+      - "$_REGION"
+      - "--quiet"
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run"
+    waitFor: ["push-docker"]
+    entrypoint: gcloud
+    dir: $_DIRECTORY
+    args:
+      - "run"
+      - "deploy"
+      - "cherry-pick-bot-backend"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/cherry-pick-bot"
+      - "--platform"
+      - "managed"
+      - "--region"
+      - "$_REGION"
+      - "--quiet"

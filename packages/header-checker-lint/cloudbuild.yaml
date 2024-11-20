@@ -25,18 +25,16 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-function"
     waitFor: ["build"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-backend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: "targets/header-checker-lint"
     args:
-      - "-e"
-      - "./scripts/publish-function.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
+      - "functions"
+      - "deploy"
+      - "header_checker_lint"
+      - "--trigger-http"
+      - "--region"
+      - "$_REGION"
+      - "--runtime"
       - "nodejs18"
 
   - name: gcr.io/cloud-builders/docker
@@ -59,21 +57,16 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
     waitFor: ["push-docker"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
+      - "run"
+      - "deploy"
       - "header-checker-lint"
-      # timeout
-      - "3600"
-      # minInstances: We want to serve Github webhook quickly, so keep one instance.
-      - "1"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/header-checker-lint"
+      - "--platform"
+      - "managed"
+      - "--region"
+      - "$_REGION"
+      - "--quiet"
