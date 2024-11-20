@@ -22,7 +22,7 @@ steps:
     args:
       - "-e"
       - "./scripts/build-function.sh"
-      - "$_DIRECTORY"
+      - "packages/snippet-bot"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
