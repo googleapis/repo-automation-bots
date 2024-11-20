@@ -54,11 +54,6 @@ steps:
     waitFor: ["build-docker"]
     args: ["push", "gcr.io/$PROJECT_ID/canary-bot-cloud-run"]
 
-  - name: gcr.io/cloud-builders/docker
-    id: "push-docker-gcf-frontend"
-    waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/canary-bot"]
-
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run-frontend"
     waitFor: ["push-docker"]
