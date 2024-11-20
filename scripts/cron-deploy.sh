@@ -21,6 +21,9 @@ if [ $# -ne 4 ]; then
     echo "Wrong number of arguments passed" && exit 1
 fi
 
+echo "Cron deployment is managed in now managed via terraform"
+exit 0
+
 SCHEDULER_SERVICE_ACCOUNT_EMAIL=$1
 FUNCTION_REGION=$2
 REGION=$3
