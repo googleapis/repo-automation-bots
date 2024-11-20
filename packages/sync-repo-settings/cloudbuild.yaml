@@ -65,4 +65,6 @@ steps:
       - "gcr.io/$PROJECT_ID/sync-repo-settings"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_FUNCTION_REGION"
       - "--quiet"
