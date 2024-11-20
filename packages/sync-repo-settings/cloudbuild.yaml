@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "sync_repo_settings"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 

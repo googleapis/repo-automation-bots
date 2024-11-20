@@ -43,6 +43,8 @@ steps:
       - "gcr.io/$PROJECT_ID/snippet-bot"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"
 
   - name: gcr.io/cloud-builders/docker
@@ -75,4 +77,6 @@ steps:
       - "gcr.io/$PROJECT_ID/snippet-bot-frontend"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

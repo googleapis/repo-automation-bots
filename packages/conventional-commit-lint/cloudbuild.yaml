@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "conventional_commit_lint"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -65,4 +67,6 @@ steps:
       - "gcr.io/$PROJECT_ID/conventional-commit-lint"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

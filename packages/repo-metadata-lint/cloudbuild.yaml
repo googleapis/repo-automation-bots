@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "repo_metadata_lint"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -65,4 +67,6 @@ steps:
       - "gcr.io/$PROJECT_ID/repo-metadata-lint"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

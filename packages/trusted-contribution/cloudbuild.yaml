@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "trusted_contribution"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -65,4 +67,6 @@ steps:
       - "gcr.io/$PROJECT_ID/trusted-contribution"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

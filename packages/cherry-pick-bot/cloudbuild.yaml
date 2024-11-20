@@ -41,6 +41,8 @@ steps:
       - "gcr.io/$PROJECT_ID/cherry-pick-bot"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"
 
   - name: gcr.io/cloud-builders/gcloud
@@ -56,4 +58,6 @@ steps:
       - "gcr.io/$PROJECT_ID/cherry-pick-bot"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

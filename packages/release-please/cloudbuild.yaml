@@ -43,6 +43,8 @@ steps:
       - "gcr.io/$PROJECT_ID/release-please"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"
 
   - name: gcr.io/cloud-builders/gcloud
@@ -58,4 +60,6 @@ steps:
       - "gcr.io/$PROJECT_ID/release-please"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

@@ -41,6 +41,8 @@ steps:
       - "gcr.io/$PROJECT_ID/release-trigger"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"
 
   - name: gcr.io/cloud-builders/docker
@@ -73,4 +75,6 @@ steps:
       - "gcr.io/$PROJECT_ID/release-trigger-frontend"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

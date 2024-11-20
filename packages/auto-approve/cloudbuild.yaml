@@ -23,14 +23,6 @@ steps:
       - "$_DIRECTORY"
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "debug-publish-function"
-    waitFor: ["build"]
-    entrypoint: find
-    dir: "targets/auto-approve"
-    args:
-      - "."
-
-  - name: gcr.io/cloud-builders/gcloud
     id: "publish-function"
     waitFor: ["build"]
     entrypoint: gcloud

@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "canary_bot"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -70,6 +72,8 @@ steps:
       - "gcr.io/$PROJECT_ID/canary-bot-cloud-run"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"
 
   - name: gcr.io/cloud-builders/gcloud
@@ -85,6 +89,8 @@ steps:
       - "gcr.io/$PROJECT_ID/canary-bot-cloud-run"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"
 
   - name: gcr.io/cloud-builders/docker
@@ -105,4 +111,6 @@ steps:
       - "gcr.io/$PROJECT_ID/canary-bot"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

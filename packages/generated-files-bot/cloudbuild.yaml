@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "generated_files_bot"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -65,4 +67,6 @@ steps:
       - "gcr.io/$PROJECT_ID/generated-files-bot"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

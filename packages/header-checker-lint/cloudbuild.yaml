@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "header_checker_lint"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -65,4 +67,6 @@ steps:
       - "gcr.io/$PROJECT_ID/header-checker-lint"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"

@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "auto_label"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -65,16 +67,6 @@ steps:
       - "gcr.io/$PROJECT_ID/auto-label"
       - "--platform"
       - "managed"
-      - "--quiet"
-
-  - name: gcr.io/cloud-builders/npm
-    id: "cron-deploy"
-    waitFor: ["-"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
-      - "$_FUNCTION_REGION"
+      - "--region"
       - "$_REGION"
-      - "$_DIRECTORY"
+      - "--quiet"

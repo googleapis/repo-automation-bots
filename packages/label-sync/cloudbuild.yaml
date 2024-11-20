@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "label_sync"
       - "--trigger-http"
+      - "--region"
+      - "$_REGION"
       - "--runtime"
       - "nodejs18"
 
@@ -77,4 +79,6 @@ steps:
       - "gcr.io/$PROJECT_ID/label-sync"
       - "--platform"
       - "managed"
+      - "--region"
+      - "$_REGION"
       - "--quiet"
