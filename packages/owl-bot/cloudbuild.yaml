@@ -29,33 +29,17 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-function"
     waitFor: ["build"]
-    entrypoint: bash
-    env:
-      - "SERVICE_ACCOUNT=owl-bot-web-backend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: "targets/owl-bot"
     args:
-      - "-e"
-      - "./scripts/publish-function.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      - "nodejs18"
-      - "540s"
-      - "68a5145e-8907-4301-a4b6-b7e37892a510"
-
-  - name: gcr.io/cloud-builders/npm
-    id: "cron-deploy"
-    waitFor: ["-"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
-      - "$_FUNCTION_REGION"
+      - "functions"
+      - "deploy"
+      - "owl_bot"
+      - "--trigger-http"
+      - "--region"
       - "$_REGION"
-      - "$_DIRECTORY"
+      - "--runtime"
+      - "nodejs18"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker-frontend"
@@ -77,28 +61,19 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run-frontend"
     waitFor: ["push-docker-frontend"]
-    entrypoint: bash
-    env:
-      - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-frontend"
-      - "SERVICE_ACCOUNT=web-frontend@repo-automation-bots.iam.gserviceaccount.com"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
+      - "run"
+      - "deploy"
       - "owl-bot"
-      # timeout
-      - "3600"
-      # minInstances: We want to serve Github webhook quickly.
-      - "3"
-      # concurrency: We saw some errors in gRPC stack (#2265) with the default
-      # 80 concurrency.
-      - "40"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/owl-bot-frontend"
+      - "--platform"
+      - "managed"
+      - "--region"
+      - "$_REGION"
+      - "--quiet"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker-backend"
@@ -120,30 +95,16 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run-backend"
     waitFor: ["push-docker-backend"]
-    entrypoint: bash
-    env:
-      - "IMAGE_NAME=gcr.io/$PROJECT_ID/owl-bot-backend"
-      - "SERVICE_NAME=owl-bot-backend"
-      - "MEMORY=4G"
-      - "SERVICE_ACCOUNT=owl-bot-web-backend@repo-automation-bots.iam.gserviceaccount.com"
-      # we could go higher
-      - "CONCURRENCY=20"
-      # Substitutions
-      - "APP_ID=${_APP_ID}"
-      - "CLOUD_BUILD_TRIGGER=${_CLOUD_BUILD_TRIGGER}"
-      - "CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST=${_CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST}"
-      - "FIRESTORE_PROJECT_ID=${_FIRESTORE_PROJECT_ID}"
-      - "UPDATE_LOCK_BUILD_TRIGGER_ID=${_UPDATE_LOCK_BUILD_TRIGGER_ID}"
+    entrypoint: gcloud
+    dir: $_DIRECTORY
     args:
-      - "-e"
-      - "./packages/owl-bot/publish-cloud-run-backend.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
-      - "owl-bot"
-      # timeout
-      - "3600"
+      - "run"
+      - "deploy"
+      - "owl-bot-backend"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/owl-bot-backend"
+      - "--platform"
+      - "managed"
+      - "--region"
+      - "$_REGION"
+      - "--quiet"
