@@ -46,7 +46,7 @@ steps:
       - "--quiet"
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
+    id: "deploy-cloud-run-backend"
     waitFor: ["push-docker"]
     entrypoint: gcloud
     dir: $_DIRECTORY
