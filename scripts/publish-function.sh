@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion> [functionRuntime] [timeout]"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion> [functionRuntime]"
   exit 1
 fi
 
@@ -35,84 +35,17 @@ else
     functionRuntime=nodejs10
 fi
 
-if [ $# -ge 8 ]; then
-    timeout=$8
-else
-    # default to the max timeout (9 minutes)
-    timeout=540s
-fi
-
-# TODO(bcoe): figure out better approach for setting environment variables for
-# cloud functions (this list is getting too long).
-if [ $# -ge 9 ]; then
-    regenerate_trigger=$9
-else
-    regenerate_trigger=none
-fi
-
-if [ "${project}" == "repo-automation-bots" ]; then
-    webhookTmpBucket=tmp-webhook-payloads
-elif [ "${project}" == "repo-automation-bots-staging" ]; then
-    webhookTmpBucket=tmp-webhook-payloads-staging
-else
-    echo "deploying to '${project}' is not supported"
-    exit 1
-fi
-
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
-workdir=$(pwd)
-targetDir="${workdir}/targets/${botName}"
 
 pushd "${targetDir}"
 functionName=${botName//-/_}
-queueName=${botName//_/-}
 
 deployArgs=(
   "--trigger-http"
   "--runtime"
   "${functionRuntime}"
-  "--region"
-  "${functionRegion}"
-  "--update-env-vars"
-  "BOT_RUNTIME=functions,DRIFT_PRO_BUCKET=${bucket},KEY_LOCATION=${keyLocation},KEY_RING=${keyRing},GCF_SHORT_FUNCTION_NAME=${functionName},PROJECT_ID=${project},GCF_LOCATION=${functionRegion},PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=${webhookTmpBucket},CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST=${regenerate_trigger}"
-  "--timeout"
-  "${timeout}"
 )
-if [ -n "${SERVICE_ACCOUNT}" ]; then
-  deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
-fi
+
 echo "About to publish function ${functionName}"
 echo gcloud functions deploy "${functionName}" "${deployArgs[@]}"
 gcloud functions deploy "${functionName}" "${deployArgs[@]}"
-
-if [ -z "${SECURE_ACCESS}" ]; then
-  echo "Adding ability for allUsers to execute the Function"
-  gcloud functions add-iam-policy-binding "${functionName}" \
-    --region="${functionRegion}" \
-    --member=allUsers \
-    --role=roles/cloudfunctions.invoker
-fi
-
-echo "Deploying Queue ${queueName}"
-
-maxConcurrentDispatches="2048"
-if [ -n "${TASK_MAX_CONCURRENT_DISPATCHES}" ]; then
-  maxConcurrentDispatches="${TASK_MAX_CONCURRENT_DISPATCHES}"
-fi
-
-maxDispatchesPerSecond="500"
-if [ -n "${TASK_MAX_DISPATCHES_PER_SECOND}" ]; then
-  maxDispatchesPerSecond="${TASK_MAX_DISPATCHES_PER_SECOND}"
-fi
-
-verb="create"
-if gcloud tasks queues describe "${queueName}"  &>/dev/null; then
-  verb="update"
-fi
-
-gcloud --quiet tasks queues ${verb} "${queueName}" \
-  --max-concurrent-dispatches="${maxConcurrentDispatches}" \
-  --max-attempts="100" \
-  --max-retry-duration="43200s" \
-  --max-dispatches-per-second="${maxDispatchesPerSecond}" \
-  --min-backoff="5s"
