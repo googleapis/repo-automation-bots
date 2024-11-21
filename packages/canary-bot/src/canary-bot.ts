@@ -132,19 +132,22 @@ export = (app: Probot) => {
       const installations = await appOctokit.apps.listInstallations();
       const addition = `This app has ${installations.data.length} installation(s).`;
 
-      await withDatastoreLock({
-        lockId: 'canary-bot',
-        target: 'issue-handler',
-      }, async () => {
-        await addOrUpdateIssueComment(
-          await getAuthenticatedOctokit(context.payload.installation?.id),
-          owner,
-          repo,
-          context.payload.issue.number,
-          context.payload.installation!.id,
-          getIssueBody(addition)
-        );
-      })
+      await withDatastoreLock(
+        {
+          lockId: 'canary-bot',
+          target: 'issue-handler',
+        },
+        async () => {
+          await addOrUpdateIssueComment(
+            await getAuthenticatedOctokit(context.payload.installation?.id),
+            owner,
+            repo,
+            context.payload.issue.number,
+            context.payload.installation!.id,
+            getIssueBody(addition)
+          );
+        }
+      );
     } else if (context.payload.issue.title.includes('canary-bot error')) {
       // For testing gcf-utils' error handling.
       throw new Error(
