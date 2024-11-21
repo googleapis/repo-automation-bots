@@ -18,7 +18,6 @@ branchProtectionRules:
     - 'serverless-scheduler-proxy-test (repo-automation-bots)'
   requiredApprovingReviewCount: 1
   requiresCodeOwnerReviews: true
-  requiresStrictStatusChecks: true
 permissionRules:
   - team: Googlers
     permission: pull
