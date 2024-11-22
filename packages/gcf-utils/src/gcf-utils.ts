@@ -279,6 +279,7 @@ export class GCFBootstrapper {
         functionName: process.env.GCF_SHORT_FUNCTION_NAME,
         location: process.env.GCF_LOCATION,
         payloadBucket: process.env.WEBHOOK_TMP,
+        taskCaller: process.env.TASK_CALLER_SERVICE_ACCOUNT,
       },
       ...options,
     };
@@ -1019,7 +1020,7 @@ export class GCFBootstrapper {
     delayInSeconds = 0
   ) {
     log.info(
-      `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}`
+      `scheduling cloud task targeting: ${this.taskTargetEnvironment}, service: ${this.taskTargetName}, oidc: ${this.taskCaller}`
     );
     // Make a task here and return 200 as this is coming from GitHub
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
