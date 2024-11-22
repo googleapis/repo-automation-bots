@@ -31,6 +31,7 @@ steps:
       - "functions"
       - "deploy"
       - "canary_bot"
+      - "--no-gen2"
       - "--trigger-http"
       - "--region"
       - "$_REGION"
