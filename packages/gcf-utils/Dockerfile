@@ -16,13 +16,11 @@ FROM node:16-stretch
 
 USER root
 
-ENV PROJECT_ID=repo-automation-bots
-ENV GCF_SHORT_FUNCTION_NAME=snippet_bot
-ENV INSTALLATION_ID=9602930
-ENV GCF_LOCATION=us-central1
-
-COPY . /workspace
-RUN cd /workspace/packages/gcf-utils && \
+COPY . /code
+RUN cd /code && \
     npm --version && \
-    npm i && \
-    npm run system-test
+    npm i
+WORKDIR /code
+
+ENTRYPOINT [ "npm" ]
+CMD ["run", "system-test"]
