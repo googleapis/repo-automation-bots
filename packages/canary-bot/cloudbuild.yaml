@@ -32,6 +32,8 @@ steps:
       - "deploy"
       - "canary_bot"
       - "--no-gen2"
+      - "--service-account"
+      - "canary-bot-frontend@repo-automation-bots.iam.gserviceaccount.com"
       - "--trigger-http"
       - "--region"
       - "$_REGION"
