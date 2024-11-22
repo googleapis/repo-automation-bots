@@ -26,6 +26,7 @@ import nock from 'nock';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import assert from 'assert';
 import * as sinon from 'sinon';
+import * as datastoreLockModule from '@google-automations/datastore-lock';
 
 nock.disableNetConnect();
 
@@ -176,6 +177,13 @@ describe('canary-bot', () => {
   describe('responds to events', () => {
     it('responds to issues', async () => {
       getAuthenticatedOctokitStub.resolves(new Octokit());
+      sandbox.replace(
+        datastoreLockModule,
+        'withDatastoreLock',
+        async (details: any, f: () => Promise<any>) => {
+          return f();
+        }
+      );
       const scope = nock('https://api.github.com')
         .get('/app/installations')
         .reply(200, []);

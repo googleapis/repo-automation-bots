@@ -27,6 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@google-automations/datastore-lock": "^6.0.0",
     "@google-automations/issue-utils": "^4.0.0",
     "dayjs": "^1.11.5",
     "gcf-utils": "^16.0.1",
