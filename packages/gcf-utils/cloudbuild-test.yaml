@@ -1,6 +1,32 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: [ 'build', '--network=cloudbuild', '-t', 'test-result', '-f', 'packages/gcf-utils/Dockerfile', '.']
+    id: build
+    dir: packages/gcf-utils
+    args:
+    - 'build'
+    - '--network=cloudbuild'
+    - '-t'
+    - 'test-image'
+    - '-f'
+    - 'Dockerfile'
+    - '.'
+  - name: test-image
+    waitFor: ['build']
+    dir: /code
+    env:
+    - 'PROJECT_ID=$PROJECT_ID'
+    - 'GCF_SHORT_FUNCTION_NAME=snippet_bot'
+    - 'INSTALLATION_ID=9602930'
+    - 'GCF_LOCATION=us-central1'
+
+  - name: test-image
+    waitFor: ['build']
+    dir: /code
+    env:
+    - 'PROJECT_ID=$PROJECT_ID'
+    - 'BOT_NAME=snippet_bot'
+    - 'INSTALLATION_ID=9602930'
+    - 'BOT_LOCATION=us-central1'
 
 options:
   logging: CLOUD_LOGGING_ONLY

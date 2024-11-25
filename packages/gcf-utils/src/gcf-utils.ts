@@ -178,7 +178,10 @@ export async function getBotSecrets(
   options: BotSecretsOptions = {}
 ): Promise<BotSecrets> {
   const projectId = options.projectId ?? process.env.PROJECT_ID;
-  const botName = options.botName ?? process.env.GCF_SHORT_FUNCTION_NAME;
+  const botName =
+    options.botName ??
+    process.env.GCF_SHORT_FUNCTION_NAME ??
+    process.env.BOT_NAME;
   const secretsClient =
     options.secretsClient ??
     new SecretManagerV1.SecretManagerServiceClient({
@@ -276,8 +279,9 @@ export class GCFBootstrapper {
     options = {
       ...{
         projectId: process.env.PROJECT_ID,
-        functionName: process.env.GCF_SHORT_FUNCTION_NAME,
-        location: process.env.GCF_LOCATION,
+        functionName:
+          process.env.GCF_SHORT_FUNCTION_NAME ?? process.env.BOT_NAME,
+        location: process.env.GCF_LOCATION ?? process.env.BOT_LOCATION,
         payloadBucket: process.env.WEBHOOK_TMP,
         taskCaller: process.env.TASK_CALLER_SERVICE_ACCOUNT,
       },
@@ -304,13 +308,13 @@ export class GCFBootstrapper {
     this.projectId = options.projectId;
     if (!options.functionName) {
       throw new Error(
-        'Missing required `functionName`. Please provide as a constructor argument or set the GCF_SHORT_FUNCTION_NAME env variable.'
+        'Missing required `functionName`. Please provide as a constructor argument or set the GCF_SHORT_FUNCTION_NAME or BOT_NAME env variable.'
       );
     }
     this.functionName = options.functionName;
     if (!options.location) {
       throw new Error(
-        'Missing required `location`. Please provide as a constructor argument or set the GCF_LOCATION env variable.'
+        'Missing required `location`. Please provide as a constructor argument or set the GCF_LOCATION or BOT_LOCATION env variable.'
       );
     }
     this.location = options.location;
@@ -994,7 +998,8 @@ export class GCFBootstrapper {
   ): Promise<string> {
     if (this.taskTargetEnvironment === 'functions') {
       // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green
-      return `https://${location}-${projectId}.cloudfunctions.net/${botName}`;
+      const functionName = botName.replace(/-/g, '_');
+      return `https://${location}-${projectId}.cloudfunctions.net/${functionName}`;
     } else if (this.taskTargetEnvironment === 'run') {
       if (this.cloudRunURL) {
         return this.cloudRunURL;

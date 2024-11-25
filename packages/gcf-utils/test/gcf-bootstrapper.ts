@@ -1875,7 +1875,7 @@ describe('GCFBootstrapper', () => {
               'X-GitHub-Delivery': 'some-request-id',
               'Content-Type': 'application/json',
             }),
-            url: 'https://my-location-my-project.cloudfunctions.net/my-function-name',
+            url: 'https://my-location-my-project.cloudfunctions.net/my_function_name',
           },
         },
       });
@@ -1911,7 +1911,7 @@ describe('GCFBootstrapper', () => {
               'X-GitHub-Delivery': 'some-request-id',
               'Content-Type': 'application/json',
             }),
-            url: 'https://my-location-my-project.cloudfunctions.net/my-function-name',
+            url: 'https://my-location-my-project.cloudfunctions.net/my_function_name',
           },
         },
       });
@@ -2116,7 +2116,7 @@ describe('GCFBootstrapper', () => {
               'X-GitHub-Delivery': 'some-request-id',
               'Content-Type': 'application/json',
             }),
-            url: 'https://my-location-my-project.cloudfunctions.net/my-function-name-backend',
+            url: 'https://my-location-my-project.cloudfunctions.net/my_function_name_backend',
           },
         },
       });
