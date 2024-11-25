@@ -87,6 +87,19 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [16.2.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.1.1...gcf-utils-v16.2.0) (2024-11-25)
+
+
+### Features
+
+* allow overriding the service account for background tasks ([4667a4e](https://github.com/googleapis/repo-automation-bots/commit/4667a4e5a9989bafdc1699741b916dca8983a9bf))
+* handle BOT_NAME and BOT_LOCATION configuration via env ([#5583](https://github.com/googleapis/repo-automation-bots/issues/5583)) ([2bbb00c](https://github.com/googleapis/repo-automation-bots/commit/2bbb00c155f1eebfd55395964f105b1dd1742dcb))
+
+
+### Bug Fixes
+
+* ensure that Cloud Function URL uses underscored name of bot ([2bbb00c](https://github.com/googleapis/repo-automation-bots/commit/2bbb00c155f1eebfd55395964f105b1dd1742dcb))
+
 ## [16.1.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.1.0...gcf-utils-v16.1.1) (2024-10-24)
 
 
