@@ -258,6 +258,19 @@ function defaultTaskEnvironment(): BotEnvironment {
   return process.env.BOT_RUNTIME === 'run' ? 'run' : 'functions';
 }
 
+function defaultTaskTarget(
+  botEnvironment: BotEnvironment,
+  botName: string
+): string {
+  if (botEnvironment === 'run') {
+    // Cloud Run defaults to dasherized bot name + '-backend'
+    return `${botName.replace(/_/g, '-')}-backend`;
+  } else {
+    // Cloud Functions defaults to underscored bot name
+    return botName.replace(/-/g, '_');
+  }
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
@@ -319,7 +332,9 @@ export class GCFBootstrapper {
     }
     this.location = options.location;
     this.payloadBucket = options.payloadBucket;
-    this.taskTargetName = options.taskTargetName || this.functionName;
+    this.taskTargetName =
+      options.taskTargetName ||
+      defaultTaskTarget(this.taskTargetEnvironment, this.functionName);
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
     this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
     this.cloudRunURL = undefined;

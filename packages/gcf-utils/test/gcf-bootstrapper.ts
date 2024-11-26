@@ -1988,7 +1988,7 @@ describe('GCFBootstrapper', () => {
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sinon.assert.calledOnceWithExactly(getServiceStub as any, {
-        name: 'projects/my-project/locations/my-location/services/my-function-name',
+        name: 'projects/my-project/locations/my-location/services/my-function-name-backend',
       });
       // Make sure the Cloud Run service URL is cached.
       await bootstrapper.enqueueTask({
@@ -2040,7 +2040,7 @@ describe('GCFBootstrapper', () => {
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sinon.assert.calledOnceWithExactly(getServiceStub as any, {
-        name: 'projects/my-project/locations/my-location/services/my-function-name',
+        name: 'projects/my-project/locations/my-location/services/my-function-name-backend',
       });
     });
 
@@ -2084,7 +2084,7 @@ describe('GCFBootstrapper', () => {
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sinon.assert.calledOnceWithExactly(getServiceStub as any, {
-        name: 'projects/my-project/locations/my-location/services/my-function-name',
+        name: 'projects/my-project/locations/my-location/services/my-function-name-backend',
       });
     });
 
