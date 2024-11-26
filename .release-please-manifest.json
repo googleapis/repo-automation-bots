@@ -3,7 +3,7 @@
   "packages/cron-utils": "5.0.0",
   "packages/datastore-lock": "6.0.0",
   "packages/flakybot": "1.2.2",
-  "packages/gcf-utils": "16.2.0",
+  "packages/gcf-utils": "16.2.1",
   "packages/git-file-utils": "2.0.0",
   "packages/issue-utils": "4.0.0",
   "packages/label-utils": "5.0.0",
