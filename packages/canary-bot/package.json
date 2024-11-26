@@ -30,7 +30,7 @@
     "@google-automations/datastore-lock": "^6.0.0",
     "@google-automations/issue-utils": "^4.0.0",
     "dayjs": "^1.11.5",
-    "gcf-utils": "^16.0.1",
+    "gcf-utils": "^16.2.1",
     "jsonwebtoken": "^9.0.0",
     "lru-cache": "^7.14.0"
   },
