@@ -616,7 +616,9 @@ const runPostProcessor = async (
 ) => {
   // If the pull request is from a fork, skip.
   if (opts.head !== opts.base) {
-    logger.info(`head ${opts.head} does not match base ${opts.base} skipping PR from fork`);
+    logger.info(
+      `head ${opts.head} does not match base ${opts.base}, skipping PR from fork`
+    );
     return;
   }
   // Fetch the .Owlbot.lock.yaml from head of PR:
