@@ -922,7 +922,7 @@ describe('OwlBot', () => {
     });
   });
 
-  it('triggers build when "owlbot:run" label is added to fork', async () => {
+  it('does not trigger build when "owlbot:run" label is added to fork', async () => {
     const payload = {
       action: 'labeled',
       installation: {
@@ -959,15 +959,6 @@ describe('OwlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/googleapis/owl-bot-testing/pulls/33')
-      .reply(200, payload.pull_request)
-      .get(
-        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
-      )
-      .reply(200, {
-        content: Buffer.from(config).toString('base64'),
-        encoding: 'base64',
-      })
       .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const triggerBuildStub = sandbox
@@ -992,10 +983,10 @@ describe('OwlBot', () => {
       payload: payload as any,
       id: 'abc123',
     });
-    sandbox.assert.calledOnce(triggerBuildStub);
-    sandbox.assert.calledOnce(createCheckStub);
+    sandbox.assert.notCalled(triggerBuildStub);
+    sandbox.assert.notCalled(createCheckStub);
     sandbox.assert.notCalled(hasOwlBotLoopStub);
-    sandbox.assert.calledOnce(updatePullRequestStub);
+    sandbox.assert.notCalled(updatePullRequestStub);
     githubMock.done();
   });
   it('triggers build when "owlbot:run" label is added to PR from same repo', async () => {
