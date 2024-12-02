@@ -921,8 +921,7 @@ describe('OwlBot', () => {
       assert.strictEqual(refreshConfigsStub.called, false);
     });
   });
-
-  it('triggers build when "owlbot:run" label is added to fork', async () => {
+  it('does not trigger build when "owlbot:run" label is added to fork', async () => {
     const payload = {
       action: 'labeled',
       installation: {
@@ -959,10 +958,82 @@ describe('OwlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(200);
+    const triggerBuildStub = sandbox
+      .stub(core, 'triggerPostProcessBuild')
+      .resolves({
+        text: 'the text for check',
+        summary: 'summary for check',
+        conclusion: 'success',
+        detailsURL: 'http://www.example.com',
+      });
+    const updatePullRequestStub = sandbox.stub(
+      core,
+      'updatePullRequestAfterPostProcessor'
+    );
+    const hasOwlBotLoopStub = sandbox
+      .stub(core, 'hasOwlBotLoop')
+      .resolves(false);
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    const loggerStub = sandbox.stub(logger, 'info');
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*skipping PR from fork*/)
+    );
+    sandbox.assert.notCalled(triggerBuildStub);
+    sandbox.assert.notCalled(createCheckStub);
+    sandbox.assert.notCalled(hasOwlBotLoopStub);
+    sandbox.assert.notCalled(updatePullRequestStub);
+    githubMock.done();
+  });
+  it('triggers build when "owlbot:run" label is added to yoshi-code-bot fork PR', async () => {
+    const payload = {
+      action: 'labeled',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'yoshi-code-bot',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'yoshi-code-bot/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          ref: 'blerg',
+          repo: {
+            full_name: 'googleapis/owl-bot-testing',
+          },
+        },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+    const githubMock = nock('https://api.github.com')
       .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/yoshi-code-bot/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),

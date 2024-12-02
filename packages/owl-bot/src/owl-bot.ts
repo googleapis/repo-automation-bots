@@ -59,6 +59,7 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
 const ALLOWED_ORGANIZATIONS = ['googleapis', 'googlecloudplatform'];
+const ALLOWED_FORK_OWNERS = ['yoshi-code-bot'];
 const GOOGLEAPIS_INSTALLATION_ID = 14695777;
 
 interface PubSubContext {
@@ -614,6 +615,14 @@ const runPostProcessor = async (
   logger: GCFLogger,
   breakLoop = true
 ) => {
+  // If the pull request is from a fork and not from allowlist, skip.
+  const forkOwner = opts.head.split('/')[0];
+  if (opts.head !== opts.base && !ALLOWED_FORK_OWNERS.includes(forkOwner)) {
+    logger.info(
+      `head ${opts.head} does not match base ${opts.base}, skipping PR from fork`
+    );
+    return;
+  }
   // Fetch the .Owlbot.lock.yaml from head of PR:
   let lock: OwlBotLock | undefined = undefined;
   async function createCheck(
