@@ -977,7 +977,7 @@ describe('OwlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     const loggerStub = sandbox.stub(logger, 'info');
-        await probot.receive({
+    await probot.receive({
       name: 'pull_request',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       payload: payload as any,
