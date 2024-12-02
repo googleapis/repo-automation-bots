@@ -615,8 +615,9 @@ const runPostProcessor = async (
   logger: GCFLogger,
   breakLoop = true
 ) => {
-  // If the pull request is from a fork, skip.
-  if (opts.head !== opts.base || ALLOWED_FORK_OWNERS.includes(opts.owner)) {
+  // If the pull request is from a fork and not from allowlist, skip.
+  const forkOwner = opts.head.split('/')[0];
+  if (opts.head !== opts.base && !ALLOWED_FORK_OWNERS.includes(forkOwner)) {
     logger.info(
       `head ${opts.head} does not match base ${opts.base}, skipping PR from fork`
     );
