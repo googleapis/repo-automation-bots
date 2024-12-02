@@ -59,6 +59,7 @@ import {shouldIgnoreRepo} from './should-ignore-repo';
 // We use lower case organization names here, so we need to always
 // check against lower cased owner.
 const ALLOWED_ORGANIZATIONS = ['googleapis', 'googlecloudplatform'];
+const ALLOWED_FORK_OWNERS = ['yoshi-code-bot'];
 const GOOGLEAPIS_INSTALLATION_ID = 14695777;
 
 interface PubSubContext {
@@ -615,7 +616,7 @@ const runPostProcessor = async (
   breakLoop = true
 ) => {
   // If the pull request is from a fork, skip.
-  if (opts.head !== opts.base) {
+  if (opts.head !== opts.base || ALLOWED_FORK_OWNERS.includes(opts.owner)) {
     logger.info(
       `head ${opts.head} does not match base ${opts.base}, skipping PR from fork`
     );

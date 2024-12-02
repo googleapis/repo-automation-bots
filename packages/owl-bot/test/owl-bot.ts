@@ -921,7 +921,6 @@ describe('OwlBot', () => {
       assert.strictEqual(refreshConfigsStub.called, false);
     });
   });
-
   it('does not trigger build when "owlbot:run" label is added to fork', async () => {
     const payload = {
       action: 'labeled',
@@ -940,7 +939,7 @@ describe('OwlBot', () => {
         ],
         head: {
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'yoshi-code-bot/owl-bot-testing',
           },
           ref: 'abc123',
         },
