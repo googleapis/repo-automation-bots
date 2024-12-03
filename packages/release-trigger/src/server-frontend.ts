@@ -16,10 +16,7 @@
 import {Probot} from 'probot';
 import {GCFBootstrapper} from 'gcf-utils';
 
-const bootstrap = new GCFBootstrapper({
-  taskTargetEnvironment: 'run',
-  taskTargetName: 'release-trigger-backend',
-});
+const bootstrap = new GCFBootstrapper();
 
 // We only need to deploy gcf-utils in the frontend server because only thing
 // it does is to enqueue a task for the backend. Thus we deploy a dummy
