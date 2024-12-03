@@ -32,7 +32,7 @@
     "@google-automations/label-utils": "^5.0.0",
     "@octokit/openapi-types": "^14.0.0",
     "@octokit/types": "^8.0.0",
-    "gcf-utils": "^16.0.1",
+    "gcf-utils": "^16.2.1",
     "jsonwebtoken": "^9.0.0",
     "probot": "^12.2.8",
     "xml-js": "^1.6.11"

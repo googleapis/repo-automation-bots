@@ -36,7 +36,7 @@
     "@octokit/graphql": "^5.0.4",
     "@octokit/openapi-types": "^14.0.0",
     "@octokit/webhooks-types": "^6.3.6",
-    "gcf-utils": "^16.0.0",
+    "gcf-utils": "^16.2.1",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
