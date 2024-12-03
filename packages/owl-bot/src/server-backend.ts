@@ -20,10 +20,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 
 import {owlbot} from './owl-bot';
 
-const bootstrap = new GCFBootstrapper({
-  taskTargetEnvironment: 'run',
-  taskTargetName: 'owl-bot-backend',
-});
+const bootstrap = new GCFBootstrapper();
 
 // Initialize firestore app here to avoid race condition.
 admin.initializeApp({
