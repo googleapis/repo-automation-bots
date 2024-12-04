@@ -20,13 +20,15 @@ FROM node:18.20.5-bullseye-slim AS BASE
 RUN apt-get update && \
     apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-    xz-utils tk-dev libffi-dev liblzma-dev python3-openssl git && \
+    xz-utils tk-dev libffi-dev liblzma-dev python3-openssl && \
     apt-get upgrade -y
 
 USER node
 
 # Install pyenv
-RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv && \
+RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tags/v2.4.20.tar.gz && \
+    mkdir ~/.pyenv && \
+    tar -xzvf /tmp/pyenv.tar.gz -C ~/.pyenv --strip-components=1 && \
     echo 'export PATH="/home/node/.pyenv/bin:$PATH"' >> ~/.profile && \
     echo 'export PATH="/home/node/.pyenv/shims:$PATH"' >> ~/.profile && \
     echo 'eval "$(pyenv init -)"' >> ~/.profile && \
