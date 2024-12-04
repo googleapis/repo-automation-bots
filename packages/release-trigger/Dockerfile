@@ -16,9 +16,6 @@
 
 FROM node:18.20.5-bullseye AS BASE
 
-# Remove base python3 installation, as we install our own version.
-RUN rm -r /usr/bin/python3
-
 # Install pyenv dependencies
 RUN apt-get update && \
     apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
@@ -27,6 +24,9 @@ RUN apt-get update && \
     apt-get upgrade -y
 
 USER node
+
+# Remove base python3 installation, as we install our own version.
+RUN rm -r /usr/bin/python3
 
 # Install pyenv
 RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv && \
