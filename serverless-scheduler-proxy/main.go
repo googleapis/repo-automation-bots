@@ -113,7 +113,7 @@ func rewriteBotContainerURL(c botConfig) func(*http.Request) {
 			log.Printf("handling container pubsub message for subscription: %v\n", pay.Subscription)
 			// TODO: pull bot name and location into configuration, once
 			// we validate this approach:
-			return "owl_bot", "us-central1", "function"
+			return "owl_bot", "us-central1", "run"
 		}
 		rewriteBotURL(c, parser, req)
 	}
