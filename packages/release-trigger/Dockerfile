@@ -14,7 +14,7 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-FROM node:18.20.5-bullseye AS BASE
+FROM us-docker.pkg.dev/artifact-foundry-prod/docker-3p-trusted/node:18 AS BASE
 
 # Install pyenv dependencies
 RUN apt-get update && \

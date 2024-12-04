@@ -13,9 +13,19 @@
 # limitations under the License.
 
 steps:
+  - name: gcr.io/cloud-builders/gcloud
+    id: "configure-registry"
+    waitFor: ["-"]
+    entrypoint: gcloud
+    dir: $_DIRECTORY
+    args:
+      - "auth"
+      - "configure-docker"
+      - "us-docker.pkg.dev"
+
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
-    waitFor: ["-"]
+    waitFor: ["configure-registry"]
     dir: packages/release-trigger
     args:
       - "build"
