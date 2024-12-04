@@ -14,7 +14,7 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-FROM node:18.20.5-bullseye AS BASE
+FROM node:18.20.5-bullseye-slim AS BASE
 
 # Install pyenv dependencies
 RUN apt-get update && \
@@ -23,10 +23,15 @@ RUN apt-get update && \
     xz-utils tk-dev libffi-dev liblzma-dev python3-openssl && \
     apt-get upgrade -y
 
+# Remove base python3 installation, as we install our own version.
+RUN rm -r /usr/bin/python3
+
 USER node
 
 # Install pyenv
-RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv && \
+RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tags/v2.4.20.tar.gz && \
+    mkdir ~/.pyenv && \
+    tar -xzvf /tmp/pyenv.tar.gz -C ~/.pyenv --strip-components=1 && \
     echo 'export PATH="/home/node/.pyenv/bin:$PATH"' >> ~/.profile && \
     echo 'export PATH="/home/node/.pyenv/shims:$PATH"' >> ~/.profile && \
     echo 'eval "$(pyenv init -)"' >> ~/.profile && \
