@@ -23,10 +23,10 @@ RUN apt-get update && \
     xz-utils tk-dev libffi-dev liblzma-dev python3-openssl && \
     apt-get upgrade -y
 
-USER node
-
 # Remove base python3 installation, as we install our own version.
 RUN rm -r /usr/bin/python3
+
+USER node
 
 # Install pyenv
 RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv && \
