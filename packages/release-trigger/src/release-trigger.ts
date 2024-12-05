@@ -63,7 +63,11 @@ export const execFile = function (
   });
 };
 
-export const ALLOWED_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
+export const ALLOWED_ORGANIZATIONS = [
+  'googleapis',
+  'GoogleCloudDataproc',
+  'GoogleCloudPlatform',
+];
 
 export const FAILED_LABEL = 'autorelease: failed';
 export const TAGGED_LABEL = 'autorelease: tagged';
