@@ -344,7 +344,7 @@ describe('snippet-bot', () => {
   let probot: Probot;
 
   const tarBall = fs.readFileSync(
-    resolve(fixturesPath, 'googleapis-python-docs-samples-abcde.tar.gz')
+    resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
   );
 
   const sandbox = sinon.createSandbox();
@@ -533,7 +533,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
@@ -630,7 +630,7 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       getFileContentsStub.rejects(new FileNotFoundError('test.py'));
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const diffRequests = nock('https://github.com')
         .get('/googleapis/repo-automation-bots/pull/14.diff')
@@ -683,7 +683,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .delete(
@@ -799,7 +799,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .delete(
@@ -860,7 +860,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .get(
@@ -1201,7 +1201,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
@@ -1274,7 +1274,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
@@ -1352,7 +1352,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .get(
@@ -1411,7 +1411,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
@@ -1476,7 +1476,7 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
