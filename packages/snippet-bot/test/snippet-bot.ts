@@ -202,20 +202,20 @@ describe('snippet-bot config validation', () => {
 
     const configBlob = createConfigResponse('broken_config.yaml');
     const requests = nock('https://api.github.com')
-      .get('/repos/googleapis/repo-automation-bots/pulls/14/files?per_page=50')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
       .reply(200, files_payload)
       .get(
-        '/repos/googleapis/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+        '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
       )
       .reply(200, configBlob)
-      .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+      .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
         snapshot(body);
         return true;
       })
       .reply(200);
 
     const diffRequests = nock('https://github.com')
-      .get('/googleapis/repo-automation-bots/pull/14.diff')
+      .get('/tmatsuo/repo-automation-bots/pull/14.diff')
       .reply(200, '');
 
     await probot.receive({
@@ -237,15 +237,15 @@ describe('snippet-bot config validation', () => {
 
     const configBlob = createConfigResponse('correct_config.yaml');
     const requests = nock('https://api.github.com')
-      .get('/repos/googleapis/repo-automation-bots/pulls/14/files?per_page=50')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
       .reply(200, files_payload)
       .get(
-        '/repos/googleapis/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+        '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
       )
       .reply(200, configBlob);
 
     const diffRequests = nock('https://github.com')
-      .get('/googleapis/repo-automation-bots/pull/14.diff')
+      .get('/tmatsuo/repo-automation-bots/pull/14.diff')
       .reply(200, '');
 
     await probot.receive({
@@ -303,20 +303,20 @@ describe('snippet-bot bot-config-utils integration', () => {
     const scopes = [
       nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
         .reply(200, createConfigResponse('empty.yaml'))
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200),
       nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, ''),
     ];
 
@@ -329,7 +329,7 @@ describe('snippet-bot bot-config-utils integration', () => {
     sinon.assert.calledOnceWithExactly(
       validateConfigStub,
       sinon.match.instanceOf(Octokit),
-      'googleapis',
+      'tmatsuo',
       'repo-automation-bots',
       'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
       14
@@ -344,7 +344,7 @@ describe('snippet-bot', () => {
   let probot: Probot;
 
   const tarBall = fs.readFileSync(
-    resolve(fixturesPath, 'googleapis-python-docs-samples-abcde.tar.gz')
+    resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
   );
 
   const sandbox = sinon.createSandbox();
@@ -399,7 +399,7 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, '');
 
       await probot.receive({
@@ -412,7 +412,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -420,7 +420,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
         14
@@ -432,7 +432,7 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(404, '');
 
       await assert.rejects(async () => {
@@ -447,7 +447,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -455,7 +455,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
         14
@@ -505,7 +505,7 @@ describe('snippet-bot', () => {
       sinon.assert.notCalled(getFileContentsStub);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -518,7 +518,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -533,34 +533,34 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -574,7 +574,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -590,11 +590,11 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           postdata => {
             assert.doesNotMatch(postdata.body, /violation/);
             return true;
@@ -603,7 +603,7 @@ describe('snippet-bot', () => {
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -617,7 +617,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -630,10 +630,10 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       getFileContentsStub.rejects(new FileNotFoundError('test.py'));
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -646,7 +646,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -667,7 +667,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -683,39 +683,39 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .delete(
           // For removing the label.
-          '/repos/googleapis/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -730,7 +730,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -760,16 +760,16 @@ describe('snippet-bot', () => {
       const prResponse = require(resolve(fixturesPath, './pr_response'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/googleapis/repo-automation-bots/pulls/14')
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14')
         .reply(200, prResponse)
 
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, []);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, '');
 
       await probot.receive({
@@ -784,7 +784,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -799,39 +799,39 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .delete(
           // For removing the label.
-          '/repos/googleapis/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
         .reply(404, 'Not Found')
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -845,7 +845,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -860,29 +860,29 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -896,7 +896,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -916,11 +916,11 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
@@ -929,7 +929,7 @@ describe('snippet-bot', () => {
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -943,7 +943,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -965,33 +965,33 @@ describe('snippet-bot', () => {
       });
 
       const requests = nock('https://api.github.com')
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1005,7 +1005,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1027,17 +1027,17 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1051,7 +1051,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1073,17 +1073,17 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1097,7 +1097,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1119,7 +1119,7 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [
           {
@@ -1128,21 +1128,21 @@ describe('snippet-bot', () => {
           },
         ])
         .patch(
-          '/repos/googleapis/repo-automation-bots/issues/comments/42',
+          '/repos/tmatsuo/repo-automation-bots/issues/comments/42',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1156,7 +1156,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1178,7 +1178,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         validateConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
         14
@@ -1201,39 +1201,39 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1249,7 +1249,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1274,44 +1274,44 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1327,7 +1327,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1352,29 +1352,29 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1390,7 +1390,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1411,34 +1411,34 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1453,7 +1453,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1476,39 +1476,39 @@ describe('snippet-bot', () => {
       const content = Buffer.from(blob.content, 'base64').toString('utf8');
 
       getFileContentsStub.resolves({parsedContent: content});
-      getFileContentsStub.calledOnceWithExactly('test.py', 'googleapis-patch-13');
+      getFileContentsStub.calledOnceWithExactly('test.py', 'tmatsuo-patch-13');
 
       const requests = nock('https://api.github.com')
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
         .get(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments?per_page=50'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
         .post(
-          '/repos/googleapis/repo-automation-bots/issues/14/comments',
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
           body => {
             snapshot(body);
             return true;
           }
         )
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
-        .post('/repos/googleapis/repo-automation-bots/check-runs', body => {
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
-        .get('/googleapis/repo-automation-bots/pull/14.diff')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(200, diffResponse);
 
       await probot.receive({
@@ -1524,7 +1524,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'repo-automation-bots',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1545,7 +1545,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'python-docs-samples',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1556,14 +1556,14 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './issue_event'));
 
       const requests = nock('https://api.github.com')
-        .patch('/repos/googleapis/python-docs-samples/issues/10', body => {
+        .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const tarBallRequests = nock('https://github.com')
-        .get('/googleapis/python-docs-samples/tarball/master')
+        .get('/tmatsuo/python-docs-samples/tarball/master')
         .reply(403, 'Forbidden');
 
       await probot.receive({
@@ -1577,7 +1577,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'python-docs-samples',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
@@ -1588,14 +1588,14 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './issue_event'));
 
       const requests = nock('https://api.github.com')
-        .patch('/repos/googleapis/python-docs-samples/issues/10', body => {
+        .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
       const tarBallRequests = nock('https://github.com')
-        .get('/googleapis/python-docs-samples/tarball/master')
+        .get('/tmatsuo/python-docs-samples/tarball/master')
         .reply(200, tarBall, {
           'Content-Type': 'application/tar+gzip',
         });
@@ -1611,7 +1611,7 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnceWithExactly(
         getConfigStub,
         sinon.match.instanceOf(Octokit),
-        'googleapis',
+        'tmatsuo',
         'python-docs-samples',
         CONFIGURATION_FILE_PATH,
         {schema: schema}
