@@ -217,18 +217,6 @@ export class SyncRepoSettings {
     logger.info(`Update team access for ${repo}`);
     const [owner, name] = repo.split('/');
 
-    // Cloud DPEs and Cloud DevRel PgMs are given default write access to all repositories we manage.
-    rules.push(
-      {
-        permission: 'push',
-        team: 'cloud-dpe',
-      },
-      {
-        permission: 'push',
-        team: 'cloud-devrel-pgm',
-      }
-    );
-
     try {
       await Promise.all(
         rules.map(membership => {
