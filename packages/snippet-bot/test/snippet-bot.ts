@@ -116,38 +116,38 @@ describe('snippet-bot scheduler handler', () => {
     sinon.assert.notCalled(syncLabelsStub);
   });
   it('does not call syncLabels for repos not allowlisted', async () => {
-       getConfigStub.resolves({
-            alwaysCreateStatusCheck: false,
-            ignoreFiles: [],
-          });
-      await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'schedule.repository' as any,
-        payload: {
-          repository: {
-            name: 'testRepo',
-            owner: {
-              login: 'testOwner',
-            },
-          },
-          organization: {
-            login: 'nonAllowlistedOwner',
-          },
-          installation: {id: 1234},
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
-        id: 'abc123',
-      });
-      sinon.assert.calledOnceWithExactly(
-        getConfigStub,
-        sinon.match.instanceOf(Octokit),
-        'nonAllowlistedOwner',
-        'testRepo',
-        CONFIGURATION_FILE_PATH,
-        {schema: schema}
-      );
-      sinon.assert.notCalled(syncLabelsStub);
+    getConfigStub.resolves({
+      alwaysCreateStatusCheck: false,
+      ignoreFiles: [],
     });
+    await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
+      payload: {
+        repository: {
+          name: 'testRepo',
+          owner: {
+            login: 'testOwner',
+          },
+        },
+        organization: {
+          login: 'nonAllowlistedOwner',
+        },
+        installation: {id: 1234},
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+      id: 'abc123',
+    });
+    sinon.assert.calledOnceWithExactly(
+      getConfigStub,
+      sinon.match.instanceOf(Octokit),
+      'nonAllowlistedOwner',
+      'testRepo',
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
+    );
+    sinon.assert.notCalled(syncLabelsStub);
+  });
   it('calls syncLabels for repos with the config', async () => {
     getConfigStub.resolves({
       alwaysCreateStatusCheck: false,
@@ -1223,9 +1223,9 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './pr_event_invalid_repo'));
       getConfigStub.reset();
       getConfigStub.resolves({
-          ignoreFiles: ['test.py'],
-          aggregateChecks: true,
-        });
+        ignoreFiles: ['test.py'],
+        aggregateChecks: true,
+      });
       await probot.receive({
         name: 'pull_request',
         payload,
