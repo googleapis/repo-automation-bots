@@ -7,7 +7,7 @@
         "status": "IMPLEMENTED",
         "current_locations": [
           {
-            "repository_path": "tmatsuo/repo-automation-bots",
+            "repository_path": "googleapis/repo-automation-bots",
             "filename": "test.py",
             "commit": "xxx",
             "branch": "master",
@@ -26,7 +26,7 @@
         "status": "CONFLICT",
         "current_locations": [
           {
-            "repository_path": "tmatsuo/repo-automation-bots",
+            "repository_path": "googleapis/repo-automation-bots",
             "filename": "test.py",
             "commit": "xxx",
             "branch": "master"
@@ -43,7 +43,7 @@
         "status": "UNTRACKED",
         "current_locations": [
           {
-            "repository_path": "tmatsuo/repo-automation-bots",
+            "repository_path": "googleapis/repo-automation-bots",
             "filename": "test.py",
             "commit": "xxx",
             "branch": "master",
