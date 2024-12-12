@@ -71,7 +71,7 @@ describe('SyncRepoSettings', () => {
     });
     sinon.assert.calledOnce(updateRepo);
     sinon.assert.calledOnce(updateBranch);
-    sinon.assert.calledThrice(updateTeams);
+    sinon.assert.calledOnce(updateTeams);
 
     // grab first arg of first call
     const branchProtection = updateBranch.args[0][0];
@@ -98,7 +98,7 @@ describe('SyncRepoSettings', () => {
     });
     sinon.assert.calledOnce(updateRepo);
     sinon.assert.calledOnce(updateBranch);
-    sinon.assert.calledThrice(updateTeams);
+    sinon.assert.calledOnce(updateTeams);
 
     // grab first arg of first call
     const branchProtection = updateBranch.args[0][0];
@@ -127,6 +127,6 @@ describe('SyncRepoSettings', () => {
     });
     sinon.assert.calledOnce(updateRepo);
     sinon.assert.calledTwice(updateBranch);
-    sinon.assert.calledThrice(updateTeams);
+    sinon.assert.calledOnce(updateTeams);
   });
 });
