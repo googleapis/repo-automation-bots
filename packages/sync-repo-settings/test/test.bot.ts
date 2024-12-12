@@ -179,8 +179,6 @@ describe('Sync repo settings', () => {
     getConfigStub.resolves(null);
     const scopes = [
       nockLanguagesList(org, repo, {kotlin: 1}),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
       nockDefaultBranch('Codertocat/Hello-World', 'main'),
     ];
     await receive(org, repo);
@@ -217,8 +215,6 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-admins', org, repo),
       nockUpdateTeamMembership('yoshi-nodejs-admins', org, repo),
       nockUpdateTeamMembership('yoshi-nodejs', org, repo),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
       nockDefaultBranch('googleapis/nodejs-dialogflow', 'main'),
     ];
     await receive(org, repo);
@@ -240,8 +236,6 @@ describe('Sync repo settings', () => {
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
       nockUpdateTeamMembership('team1', org, repo),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
       nockDefaultBranch('googleapis/fake', 'main'),
     ];
     await receive(org, repo);
@@ -257,8 +251,6 @@ describe('Sync repo settings', () => {
     const scopes = [
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateTeamMembership('team1', org, repo),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
       nockDefaultBranch('googleapis/fake', 'main'),
     ];
     await receive(org, repo);
@@ -479,11 +471,7 @@ describe('Sync repo settings', () => {
     const org = 'Codertocat';
     const repo = 'Hello-World';
     getConfigStub.resolves(null);
-    const scopes = [
-      nockLanguagesList(org, repo, {kotlin: 1}),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-    ];
+    const scopes = [nockLanguagesList(org, repo, {kotlin: 1})];
     await probot.receive({
       name: 'push',
       payload: {
@@ -515,11 +503,7 @@ describe('Sync repo settings', () => {
     const org = 'Codertocat';
     const repo = 'Hello-World';
     getConfigStub.resolves(null);
-    const scopes = [
-      nockLanguagesList(org, repo, {kotlin: 1}),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-    ];
+    const scopes = [nockLanguagesList(org, repo, {kotlin: 1})];
     const payload = require(resolve(fixturesPath, 'repository_transferred'));
     await probot.receive({
       name: 'repository',
