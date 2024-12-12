@@ -21,10 +21,7 @@ import {Octokit} from '@octokit/rest';
 
 //import {ILint} from '@commitlint/lint';
 import lint from '@commitlint/lint';
-
 import {GCFLogger} from 'gcf-utils';
-import {addOrUpdateIssueComment} from '@google-automations/issue-utils';
-
 import {rules} from '@commitlint/config-conventional';
 
 type PullsListCommitsResponseData = components['schemas']['commit'][];
@@ -159,33 +156,24 @@ export async function scanPullRequest(
         `commit message: ${commits[0].commit.message.split('\n')[0]}`
       );
       logger.info(`PR title: ${pull_request.title}`);
-      const owner = pull_request.base.repo.owner?.login;
-      const repo = context.payload.repository.name;
-      const prNumber = pull_request.number;
-      const installationId = context.payload.installation?.id;
-      const message =
+      const summary =
         '🤖 I detect that the PR title and the commit message' +
         " differ and there's only one commit. To use the PR title for the" +
         " commit history, you can use Github's automerge feature with" +
         ' squashing, or use `automerge` label. Good luck human!\n\n' +
         ' -- conventional-commit-lint bot\n' +
         'https://conventionalcommits.org/';
-      try {
-        await addOrUpdateIssueComment(
-          octokit,
-          owner as string,
-          repo,
-          prNumber,
-          installationId as number,
-          message,
-          {
-            onlyUpdate: false,
-          }
-        );
-      } catch (err) {
-        // This is a solely convenience feature, so we ignore errors.
-        logger.warn(`Failed to add a comment: ${err}`);
-      }
+      await octokit.checks.create({
+        owner: pull_request.base.repo.owner?.login,
+        repo: context.payload.repository.name,
+        head_sha: commits[commits.length - 1].sha as string,
+        conclusion: 'failure',
+        output: {
+          title: 'PR title does not match commit message',
+          summary,
+          text: summary,
+        },
+      });
     }
   }
 

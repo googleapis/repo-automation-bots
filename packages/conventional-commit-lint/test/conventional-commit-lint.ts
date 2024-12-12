@@ -15,8 +15,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as configUtilsModule from '@google-automations/bot-config-utils';
-// cannot sinon mock re-exported function in a module
-import * as issueUtilsModule from '@google-automations/issue-utils/build/src/issue-comments';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {logger} from 'gcf-utils';
 import {readFileSync} from 'fs';
@@ -47,7 +45,6 @@ function loadConfig(configFile: string) {
 describe('ConventionalCommitLint', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
-  let addOrUpdateIssueCommentStub: sinon.SinonStub;
   let getAuthenticatedOctokitStub: sinon.SinonStub;
   const pr11 = require(resolve(fixturesPath, './pr11'));
 
@@ -75,10 +72,6 @@ describe('ConventionalCommitLint', () => {
       }),
     });
     probot.load(myProbotApp);
-    addOrUpdateIssueCommentStub = sandbox.stub(
-      issueUtilsModule,
-      'addOrUpdateIssueComment'
-    );
     getAuthenticatedOctokitStub = sandbox.stub(
       gcfUtilsModule,
       'getAuthenticatedOctokit'
@@ -93,7 +86,6 @@ describe('ConventionalCommitLint', () => {
 
   it('sets a "failure" context on PR, if commits fail linting', async () => {
     stubConfig();
-    addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithBadMessage = require(resolve(
       fixturesPath,
       './pr11WithBadMessage'
@@ -117,12 +109,10 @@ describe('ConventionalCommitLint', () => {
       .reply(200);
     await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
-    sinon.assert.notCalled(addOrUpdateIssueCommentStub);
   });
 
-  it('adds a comment when the commit message and the PR title differ', async () => {
+  it('adds an additional check when the commit message and the PR title differ', async () => {
     stubConfig();
-    addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithCorrectMessage = require(resolve(
       fixturesPath,
       './pr11WithCorrectMessage'
@@ -143,15 +133,14 @@ describe('ConventionalCommitLint', () => {
         snapshot(body);
         return true;
       })
+      .twice()
       .reply(200);
     await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
-    sinon.assert.calledOnce(addOrUpdateIssueCommentStub);
   });
 
   it('should post "success" context on PR with always_check_pr_title set to true', async () => {
     stubConfig('always_check_pr_title.yaml');
-    addOrUpdateIssueCommentStub.resolves(null);
     const pr11WithCorrectMessage = require(resolve(
       fixturesPath,
       './pr11WithCorrectMessage'
