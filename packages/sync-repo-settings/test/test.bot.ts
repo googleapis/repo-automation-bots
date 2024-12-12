@@ -471,9 +471,7 @@ describe('Sync repo settings', () => {
     const org = 'Codertocat';
     const repo = 'Hello-World';
     getConfigStub.resolves(null);
-    const scopes = [
-      nockLanguagesList(org, repo, {kotlin: 1}),
-    ];
+    const scopes = [nockLanguagesList(org, repo, {kotlin: 1})];
     await probot.receive({
       name: 'push',
       payload: {
@@ -505,9 +503,7 @@ describe('Sync repo settings', () => {
     const org = 'Codertocat';
     const repo = 'Hello-World';
     getConfigStub.resolves(null);
-    const scopes = [
-      nockLanguagesList(org, repo, {kotlin: 1}),
-    ];
+    const scopes = [nockLanguagesList(org, repo, {kotlin: 1})];
     const payload = require(resolve(fixturesPath, 'repository_transferred'));
     await probot.receive({
       name: 'repository',
