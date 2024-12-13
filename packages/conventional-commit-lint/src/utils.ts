@@ -168,6 +168,7 @@ export async function scanPullRequest(
         repo: context.payload.repository.name,
         head_sha: commits[commits.length - 1].sha as string,
         conclusion: 'failure',
+        name: 'conventionalcommits.org - Title Mismatch',
         output: {
           title: 'PR title does not match commit message',
           summary,
