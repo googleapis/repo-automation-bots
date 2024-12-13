@@ -65,6 +65,7 @@ exports['ConventionalCommitLint PR With Multiple Commits has a valid title, inva
 exports['ConventionalCommitLint adds an additional check when the commit message and the PR title differ 1'] = {
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
   "conclusion": "failure",
+  "name": "conventionalcommits.org - Title Mismatch",
   "output": {
     "title": "PR title does not match commit message",
     "summary": "🤖 I detect that the PR title and the commit message differ and there's only one commit. To use the PR title for the commit history, you can use Github's automerge feature with squashing, or use `automerge` label. Good luck human!\n\n -- conventional-commit-lint bot\nhttps://conventionalcommits.org/",
