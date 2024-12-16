@@ -85,7 +85,7 @@ const REFRESH_STRING = '- [x] Refresh this comment';
 // Github issue comment API has a limit of 65536 characters.
 const MAX_CHARS_IN_COMMENT = 64000;
 
-const ALLOWED_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
+const ALLOWED_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform', 'googlemaps', 'googlemaps-samples'];
 
 async function getFiles(dir: string, allFiles: string[]) {
   const files = (await pfs.readdir(dir)).map(f => path.join(dir, f));
