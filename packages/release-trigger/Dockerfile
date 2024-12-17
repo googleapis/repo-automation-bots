@@ -26,6 +26,9 @@ RUN apt-get update && \
 # Remove base python3 installation, as we install our own version.
 RUN rm -r /usr/bin/python3
 
+# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
+RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+
 USER node
 
 # Install pyenv

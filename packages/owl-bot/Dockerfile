@@ -18,6 +18,9 @@
 # https://hub.docker.com/_/node
 FROM node:18-alpine
 
+# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
+RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+
 # Bump the heap size
 ENV NODE_OPTIONS='--max-old-space-size=8192'
 
