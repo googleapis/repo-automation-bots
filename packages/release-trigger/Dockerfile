@@ -48,6 +48,9 @@ RUN pyenv install 3.10.13 && \
 # https://github.com/googleapis/testing-infra-docker/tree/master/node/14-user
 FROM BASE AS BUILD
 
+# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
+RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+
 WORKDIR /home/node
 
 # Copy application dependency manifests to the container image.
