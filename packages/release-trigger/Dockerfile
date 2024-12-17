@@ -26,6 +26,9 @@ RUN apt-get update && \
 # Remove base python3 installation, as we install our own version.
 RUN rm -r /usr/bin/python3
 
+# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
+RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+
 USER node
 
 # Install pyenv
@@ -47,9 +50,6 @@ RUN pyenv install 3.10.13 && \
 # Use the Yoshi Node.js 14 image - it has python3 installed
 # https://github.com/googleapis/testing-infra-docker/tree/master/node/14-user
 FROM BASE AS BUILD
-
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
 
 WORKDIR /home/node
 
