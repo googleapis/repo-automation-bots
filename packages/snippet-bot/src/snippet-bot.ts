@@ -86,6 +86,7 @@ const REFRESH_STRING = '- [x] Refresh this comment';
 const MAX_CHARS_IN_COMMENT = 64000;
 
 const ALLOWED_ORGANIZATIONS = [
+  'android',
   'googleapis',
   'GoogleCloudPlatform',
   'googlemaps',
