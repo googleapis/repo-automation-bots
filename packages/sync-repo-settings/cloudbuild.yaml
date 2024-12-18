@@ -70,3 +70,7 @@ steps:
       - "--region"
       - "$_REGION"
       - "--quiet"
+
+logsBucket: 'gs://sync-repo-settings-deploy-logs'
+options:
+  logging: GCS_ONLY
