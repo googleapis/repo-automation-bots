@@ -47,3 +47,7 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/snippet-bot-frontend"
       - "."
+
+logsBucket: 'gs://snippet-bot-deploy-logs'
+options:
+  logging: GCS_ONLY

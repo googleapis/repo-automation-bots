@@ -80,3 +80,7 @@ steps:
       - "--region"
       - "$_REGION"
       - "--quiet"
+
+logsBucket: 'gs://snippet-bot-deploy-logs'
+options:
+  logging: GCS_ONLY
