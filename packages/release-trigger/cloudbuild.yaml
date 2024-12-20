@@ -78,3 +78,7 @@ steps:
       - "--region"
       - "$_REGION"
       - "--quiet"
+
+logsBucket: 'gs://release-trigger-deploy-logs'
+options:
+  logging: GCS_ONLY

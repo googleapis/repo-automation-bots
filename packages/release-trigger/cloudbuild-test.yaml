@@ -45,3 +45,7 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/release-trigger"
       - "."
+
+logsBucket: 'gs://release-trigger-deploy-logs'
+options:
+  logging: GCS_ONLY

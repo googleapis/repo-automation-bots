@@ -25,3 +25,7 @@ steps:
 
   # TODO: create container test
   # TODO: create unit & integration tests
+
+logsBucket: 'gs://cherry-pick-bot-deploy-logs'
+options:
+  logging: GCS_ONLY
