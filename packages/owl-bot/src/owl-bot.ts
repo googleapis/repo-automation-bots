@@ -615,14 +615,6 @@ const runPostProcessor = async (
   logger: GCFLogger,
   breakLoop = true
 ) => {
-  // If the pull request is from a fork and not from allowlist, skip.
-  const forkOwner = opts.head.split('/')[0];
-  if (opts.head !== opts.base && !ALLOWED_FORK_OWNERS.includes(forkOwner)) {
-    logger.info(
-      `head ${opts.head} does not match base ${opts.base}, skipping PR from fork`
-    );
-    return;
-  }
   // Fetch the .Owlbot.lock.yaml from head of PR:
   let lock: OwlBotLock | undefined = undefined;
   async function createCheck(
@@ -656,6 +648,22 @@ const runPostProcessor = async (
       return;
     }
     logger.info(`Created ${logLine}`);
+  }
+
+  // If the pull request is from a fork and not from allowlist, skip.
+  const forkOwner = opts.head.split('/')[0];
+  if (opts.head !== opts.base && !ALLOWED_FORK_OWNERS.includes(forkOwner)) {
+    logger.info(
+      `head ${opts.head} does not match base ${opts.base}, skipping PR from fork`
+    );
+    await createCheck({
+      text: 'Ignored by Owl Bot because the pull request was created from a fork. See go/owlbot-skip-forks.',
+      summary:
+        'Ignored by Owl Bot because the pull request was created from a fork',
+      conclusion: 'success',
+      title: '🦉 OwlBot - skipped this pull request from a fork',
+    });
+    return;
   }
 
   // Attempt to load the OwlBot lock file for a repository, if the lock
