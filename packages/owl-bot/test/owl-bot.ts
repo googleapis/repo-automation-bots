@@ -988,7 +988,17 @@ describe('OwlBot', () => {
       sandbox.match(/.*skipping PR from fork*/)
     );
     sandbox.assert.notCalled(triggerBuildStub);
-    sandbox.assert.notCalled(createCheckStub);
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('conclusion', 'success')
+    );
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has(
+        'text',
+        'Ignored by Owl Bot because the pull request was created from a fork. See go/owlbot-skip-forks.'
+      )
+    );
     sandbox.assert.notCalled(hasOwlBotLoopStub);
     sandbox.assert.notCalled(updatePullRequestStub);
     githubMock.done();
