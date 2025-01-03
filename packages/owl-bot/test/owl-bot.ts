@@ -990,7 +990,7 @@ describe('OwlBot', () => {
     sandbox.assert.notCalled(triggerBuildStub);
     sandbox.assert.calledWith(
       createCheckStub,
-      sinon.match.has('conclusion', 'success')
+      sinon.match.has('conclusion', 'skipped')
     );
     sandbox.assert.calledWith(
       createCheckStub,

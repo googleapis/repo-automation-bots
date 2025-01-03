@@ -50,7 +50,7 @@ export interface CheckArgs {
   pr: number;
   repo: string;
   summary: string;
-  conclusion: 'success' | 'failure';
+  conclusion: 'success' | 'failure' | 'skipped';
   detailsURL: string;
   text: string;
   title: string;

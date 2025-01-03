@@ -660,7 +660,7 @@ const runPostProcessor = async (
       text: 'Ignored by Owl Bot because the pull request was created from a fork. See go/owlbot-skip-forks.',
       summary:
         'Ignored by Owl Bot because the pull request was created from a fork',
-      conclusion: 'success',
+      conclusion: 'skipped',
       title: '🦉 OwlBot - skipped this pull request from a fork',
     });
     return;
