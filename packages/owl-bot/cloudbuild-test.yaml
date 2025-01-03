@@ -24,5 +24,8 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/owl-bot"
       - "."
+logsBucket: 'gs://owl-bot-deploy-logs'
+options:
+  logging: GCS_ONLY
 
   # TODO: run container test and functional/integration test
