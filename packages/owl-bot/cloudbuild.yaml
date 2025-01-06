@@ -108,3 +108,7 @@ steps:
       - "--region"
       - "$_REGION"
       - "--quiet"
+
+logsBucket: 'gs://owl-bot-deploy-logs'
+options:
+  logging: GCS_ONLY
