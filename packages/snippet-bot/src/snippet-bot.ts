@@ -91,6 +91,7 @@ const ALLOWED_ORGANIZATIONS = [
   'GoogleCloudPlatform',
   'googlemaps',
   'googlemaps-samples',
+  'terraform-google-modules',
 ];
 
 async function getFiles(dir: string, allFiles: string[]) {
