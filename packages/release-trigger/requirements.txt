@@ -121,10 +121,9 @@ cryptography==43.0.1 \
     # via
     #   -r requirements.in
     #   gcp-releasetool
-    #   secretstorage
-gcp-releasetool==2.3.0 \
-    --hash=sha256:510516c6a2135e55503fd58f5c8e9d93506d8fba4ebed381a1eccb3d8f9b6740 \
-    --hash=sha256:804547a3d2e022924bceadcc453fc49e3059a42a607b99e55b1e2a2d10cb5323
+gcp-releasetool==2.5.0 \
+    --hash=sha256:3ff79f53a8357b080ba9c66d7adb1282ff23fe1d46912c3f4d7a31d28553d539 \
+    --hash=sha256:b6fe993c9f7fa90b6551585161efeaf7a92bf98d4676a5f933f23b3361ef3bb7
     # via -r requirements.in
 google-auth==2.28.1 \
     --hash=sha256:25141e2d7a14bfcba945f5e9827f98092716e99482562f15306e5b026e21aa72 \
@@ -144,12 +143,6 @@ jaraco-classes==3.2.3 \
     # via
     #   keyring
     #   keyrings-alt
-jeepney==0.8.0 \
-    --hash=sha256:5efe48d255973902f6badc3ce55e2aa6c5c3b3bc642059ef3a91247bcfcc5806 \
-    --hash=sha256:c0a454ad016ca575060802ee4d590dd912e35c122fa04e70306de3d076cce755
-    # via
-    #   keyring
-    #   secretstorage
 jinja2==3.1.5 \
     --hash=sha256:8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb \
     --hash=sha256:aba0f4dc9ed8013c424088f68a5c226f7d6097ed89b246d7749c2ec4175c6adb
@@ -258,10 +251,6 @@ rsa==4.9 \
     --hash=sha256:90260d9058e514786967344d0ef75fa8727eed8a7d2e43ce9f4bcf1b536174f7 \
     --hash=sha256:e38464a49c6c85d7f1351b0126661487a7e0a14a50f1675ec50eb34d4f20ef21
     # via google-auth
-secretstorage==3.3.3 \
-    --hash=sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77 \
-    --hash=sha256:f356e6628222568e3af06f2eba8df495efa13b3b63081dafd4f7d9a7b7bc9f99
-    # via keyring
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
