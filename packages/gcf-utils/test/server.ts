@@ -277,6 +277,23 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(enqueueTask);
         sinon.assert.notCalled(issueSpy);
       });
+
+      it('should return error for missing payloads', async () => {
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-github-event': 'issues',
+          },
+          // don't throw on non-success error codes
+          validateStatus: () => {
+            return true;
+          },
+        });
+        assert.deepStrictEqual(response.status, 500);
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+      });
     });
   });
 });
