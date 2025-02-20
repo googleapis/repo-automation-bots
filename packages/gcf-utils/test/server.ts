@@ -262,7 +262,7 @@ describe('GCFBootstrapper', () => {
           headers: {
             'x-github-delivery': '123',
             'x-github-event': 'issues',
-            'x-hub-signature-256': 'bad-signature',
+            'X-Hub-Signature': 'bad-signature',
           },
           // don't throw on non-success error codes
           validateStatus: () => {
