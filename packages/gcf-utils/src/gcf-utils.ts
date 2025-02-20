@@ -458,7 +458,7 @@ export class GCFBootstrapper {
             body: JSON.stringify({message: 'Invalid signature'}),
           });
           return;
-       }
+        }
       } catch (err) {
         response.status(500).send({
           statusCode: 500,
