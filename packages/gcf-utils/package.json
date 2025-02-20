@@ -21,11 +21,15 @@
   "dependencies": {
     "@google-cloud/run": "^1.4.0",
     "@google-cloud/secret-manager": "^5.6.0",
-    "@google-cloud/storage": "^7.12.1",
+    "@google-cloud/storage": "^7.15.1",
     "@google-cloud/tasks": "^5.5.0",
     "@octokit/auth-app": "^4.0.5",
+    "@octokit/core": "^5.0.2",
     "@octokit/graphql": "^5.0.0",
     "@octokit/plugin-enterprise-compatibility": "^2.0.3",
+    "@octokit/plugin-paginate-rest": "9.2.2",
+    "@octokit/request": "^8.4.1",
+    "@octokit/request-error": "^5.1.1",
     "@octokit/rest": "^19.0.4",
     "@octokit/types": "^9.0.0",
     "@probot/octokit-plugin-config": "^1.1.6",
@@ -45,13 +49,10 @@
     "jsonwebtoken": "^9.0.0",
     "octokit-auth-probot": "^1.2.8",
     "pino": "^8.4.2",
-    "probot": "^12.2.7",
+    "probot": "^13.4.3",
     "tmp": "^0.2.1",
     "uuid": "^9.0.0",
-    "yargs": "^17.0.0",
-    "@octokit/request": "^8.4.1",
-    "@octokit/plugin-paginate-rest": "^9.2.2",
-    "@octokit/request-error": "^5.1.1"
+    "yargs": "^17.0.0"
   },
   "devDependencies": {
     "@types/get-stream": "^3.0.2",
@@ -73,10 +74,7 @@
     "snap-shot-it": "^7.9.6",
     "sonic-boom": "^3.2.0",
     "stream-mock": "^2.0.5",
-    "typescript": "^4.9.4",
-    "@octokit/request": "^8.4.1",
-    "@octokit/plugin-paginate-rest": "^9.2.2",
-    "@octokit/request-error": "^5.1.1"
+    "typescript": "^5.7.3"
   },
   "engines": {
     "node": ">= 18"
