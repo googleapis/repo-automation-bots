@@ -257,13 +257,17 @@ describe('GCFBootstrapper', () => {
       });
 
       it('should reject bad signatures with 400 on webhooks', async () => {
+        const payload = '{  "foo": "bar"  }';
         const response = await gaxios.request({
           url: `http://localhost:${TEST_SERVER_PORT}/`,
           headers: {
             'x-github-delivery': '123',
             'x-github-event': 'issues',
-            'X-Hub-Signature': 'bad-signature',
+            'x-hub-signature': 'bad-signature',
+            'content-type': 'application/json',
           },
+          method: 'POST',
+          body: payload,
           // don't throw on non-success error codes
           validateStatus: () => {
             return true;
