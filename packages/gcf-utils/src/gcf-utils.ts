@@ -445,24 +445,16 @@ export class GCFBootstrapper {
       const botRequest = parseBotRequest(request);
 
       // validate the signature
-      try {
-        if (
-          !wrapConfig.skipVerification &&
-          !(await this.probot.webhooks.verify(
-            request.rawBody ? request.rawBody.toString() : request.body,
-            botRequest.signature
-          ))
-        ) {
-          response.status(400).send({
-            statusCode: 400,
-            body: JSON.stringify({message: 'Invalid signature'}),
-          });
-          return;
-        }
-      } catch (err) {
+      if (
+        !wrapConfig.skipVerification &&
+        !(await this.probot.webhooks.verify(
+          JSON.stringify(request.rawBody ? request.rawBody.toString() : request.body),
+          botRequest.signature
+        ))
+      ) {
         response.status(400).send({
           statusCode: 400,
-          body: JSON.stringify({message: err.message}),
+          body: JSON.stringify({message: 'Invalid signature'}),
         });
         return;
       }
