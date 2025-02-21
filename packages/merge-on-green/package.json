@@ -30,7 +30,7 @@
     "@google-automations/label-utils": "^5.0.0",
     "@google-cloud/datastore": "^9.1.0",
     "aggregate-error": "^3.1.0",
-    "gcf-utils": "^16.2.1",
+    "gcf-utils": "^16.2.2",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
@@ -45,7 +45,9 @@
     "nock": "^13.2.9",
     "sinon": "^18.0.0",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.9.0"
+    "typescript": "~5.7.3",
+    "@octokit/rest": "^19.0.4",
+    "probot": "^13.4.3"
   },
   "engines": {
     "node": ">= 18"
