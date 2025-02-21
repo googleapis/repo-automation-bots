@@ -290,7 +290,7 @@ describe('GCFBootstrapper', () => {
             return true;
           },
         });
-        assert.deepStrictEqual(response.status, 500);
+        assert.deepStrictEqual(response.status, 400);
         sinon.assert.notCalled(enqueueTask);
         sinon.assert.notCalled(issueSpy);
       });

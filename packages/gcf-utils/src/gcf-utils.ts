@@ -460,8 +460,8 @@ export class GCFBootstrapper {
           return;
         }
       } catch (err) {
-        response.status(500).send({
-          statusCode: 500,
+        response.status(400).send({
+          statusCode: 400,
           body: JSON.stringify({message: err.message}),
         });
         return;
