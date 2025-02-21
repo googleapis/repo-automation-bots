@@ -448,9 +448,9 @@ export class GCFBootstrapper {
       if (
         !wrapConfig.skipVerification &&
         !(await this.probot.webhooks.verify(
-          JSON.stringify(
-            request.rawBody ? request.rawBody.toString() : request.body
-          ),
+          request.rawBody
+            ? request.rawBody.toString()
+            : request.body.toString(),
           botRequest.signature
         ))
       ) {
