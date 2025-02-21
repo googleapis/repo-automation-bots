@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.2.2...flakybot-v1.2.3) (2025-02-21)
+
+
+### Bug Fixes
+
+* **deps:** update golang/x/net to 0.33.0 ([#5639](https://github.com/googleapis/repo-automation-bots/issues/5639)) ([5e55922](https://github.com/googleapis/repo-automation-bots/commit/5e5592231d83bd3de0fda18070dadc1aa4722bf0))
+
 ## [1.2.2](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.2.1...flakybot-v1.2.2) (2024-09-27)
 
 
