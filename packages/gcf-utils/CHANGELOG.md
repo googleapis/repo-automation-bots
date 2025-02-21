@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [16.2.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.2.1...gcf-utils-v16.2.2) (2025-02-21)
+
+
+### Bug Fixes
+
+* need to pass in string to webhooks.verify ([#5673](https://github.com/googleapis/repo-automation-bots/issues/5673)) ([eb5c6c5](https://github.com/googleapis/repo-automation-bots/commit/eb5c6c55abc728a6b126931960cc87fa3815acee))
+
 ## [16.2.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.2.0...gcf-utils-v16.2.1) (2024-11-26)
 
 
