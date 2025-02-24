@@ -6,7 +6,7 @@
     "compile": "tsc -p .",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test": "NODE_OPTIONS='--no-deprecation' cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
     "fix": "gts fix",
     "lint": "gts check"
@@ -23,14 +23,14 @@
     "@google-cloud/secret-manager": "^5.6.0",
     "@google-cloud/storage": "^7.12.1",
     "@google-cloud/tasks": "^5.5.0",
-    "@octokit/auth-app": "^4.0.5",
-    "@octokit/core": "^5.0.2",
-    "@octokit/graphql": "^5.0.0",
-    "@octokit/plugin-enterprise-compatibility": "^2.0.3",
-    "@octokit/plugin-paginate-rest": "9.2.2",
-    "@octokit/request": "^8.4.1",
+    "@octokit/auth-app": "^7.1.5",
+    "@octokit/core": "^6.1.4",
+    "@octokit/graphql": "^8.2.1",
+    "@octokit/plugin-enterprise-compatibility": "^5.0.1",
+    "@octokit/plugin-paginate-rest": "^11.4.3",
+    "@octokit/request": "^9.2.2",
     "@octokit/request-error": "^5.1.1",
-    "@octokit/rest": "^19.0.4",
+    "@octokit/rest": "^21.1.1",
     "@octokit/types": "^9.0.0",
     "@probot/octokit-plugin-config": "^1.1.6",
     "@types/bunyan": "^1.8.8",
@@ -53,6 +53,19 @@
     "tmp": "^0.2.1",
     "uuid": "^9.0.0",
     "yargs": "^17.0.0"
+  },
+  "overrides": {
+    "probot": {
+      "@octokit/plugin-paginate-rest": "^11.4.3",
+      "@octokit/request": "^9.2.2",
+      "@octokit/request-error": "^5.1.1",
+      "@octokit/core": "^6.1.4",
+      "@octokit/rest": "^21.1.1"
+    },
+    "octokit-auth-probot": {
+      "@octokit/request": "^9.2.2",
+      "@octokit/request-error": "^5.1.1"
+    }
   },
   "devDependencies": {
     "@types/get-stream": "^3.0.2",
