@@ -24,10 +24,10 @@
     "@google-cloud/storage": "^7.12.1",
     "@google-cloud/tasks": "^5.5.0",
     "@octokit/auth-app": "^7.1.5",
-    "@octokit/core": "^6.1.4",
+    "@octokit/core": "^5.2.0",
     "@octokit/graphql": "^8.2.1",
     "@octokit/plugin-enterprise-compatibility": "^5.0.1",
-    "@octokit/plugin-paginate-rest": "^11.4.3",
+    "@octokit/plugin-paginate-rest": "^9.2.2",
     "@octokit/request": "^8.4.1",
     "@octokit/request-error": "^5.1.1",
     "@octokit/rest": "^21.1.1",
@@ -56,20 +56,21 @@
   },
   "overrides": {
     "probot": {
-      "@octokit/plugin-paginate-rest": "^11.4.3",
+      "@octokit/plugin-paginate-rest": "^9.2.2",
       "@octokit/request": "^8.4.1",
       "@octokit/request-error": "^5.1.1",
-      "@octokit/core": "^6.1.4",
-      "@octokit/rest": "^21.1.1",
-      "@octokit/auth-app":"^7.1.5"
-
+      "@octokit/core": "^5.2.0",
+      "@octokit/rest": "^21.1.1"
     },
     "octokit-auth-probot": {
       "@octokit/request": "^8.4.1",
-      "@octokit/request-error": "^5.1.1",
-      "@octokit/auth-app":"^7.1.5"
+      "@octokit/request-error": "^5.1.1"
     },
     "@octokit/auth-unauthenticated": {
+      "@octokit/request-error": "^5.1.1"
+    },
+    "@octokit/core": {
+      "@octokit/request": "^8.4.1",
       "@octokit/request-error": "^5.1.1"
     }
   },
@@ -93,6 +94,7 @@
     "snap-shot-it": "^7.9.6",
     "sonic-boom": "^3.2.0",
     "stream-mock": "^2.0.5",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   },
   "engines": {
