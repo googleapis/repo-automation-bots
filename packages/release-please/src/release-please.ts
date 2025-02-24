@@ -498,6 +498,8 @@ const handler = (app: Probot) => {
       logger
     );
 
+    // Using a set to de-duplicate the commits
+    const commits: Set<string> = new Set();
     for (const branchConfiguration of branchConfigurations) {
       // if branch is configured for on-demand releases, then skip the push event
       // unless it looks like a release (we)
@@ -520,6 +522,49 @@ const handler = (app: Probot) => {
         octokit,
         {logger, skipPullRequest: branchConfiguration.onDemand}
       );
+      if (branchConfiguration.tagPullRequestNumber) {
+        context.payload.commits.forEach(c => commits.add(c.id));
+      }
+    }
+    const commitsAsList = [...commits];
+    if (commitsAsList.length !== 1) {
+      logger.info(
+        'The number of commits is not 1. Did the PR get squash-merged properly? Commits:',
+        commitsAsList
+      );
+      return;
+    } else {
+      const releaseSha = commitsAsList[0];
+      let pullRequestNumber: number | undefined = undefined;
+      // Find last 30 merged pull request to find the pull request that
+      // made the commit to the branch. Very likely it's the first one.
+      for await (const pullRequest of github.pullRequestIterator(
+        branch,
+        'MERGED',
+        20
+      )) {
+        logger.debug(
+          `Looking pull request that has ${releaseSha}`,
+          pullRequest
+        );
+        if (pullRequest.mergeCommitOid === releaseSha) {
+          pullRequestNumber = pullRequest.number;
+          break;
+        }
+      }
+      if (pullRequestNumber === undefined) {
+        logger.info(
+          `Could not find a pull request that created commit ${releaseSha}`
+        );
+        return;
+      }
+      const tagResponse = await octokit.git.createRef({
+        owner: owner,
+        repo: repo,
+        ref: `refs/tags/release-please-${pullRequestNumber}`,
+        sha: releaseSha,
+      });
+      logger.info('Got tag response: ', tagResponse);
     }
   });
 
