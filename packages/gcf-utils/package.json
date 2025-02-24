@@ -65,6 +65,9 @@
     "octokit-auth-probot": {
       "@octokit/request": "^9.2.2",
       "@octokit/request-error": "^5.1.1"
+    },
+    "@octokit/auth-unauthenticated": {
+      "@octokit/request-error": "^5.1.1"
     }
   },
   "devDependencies": {
