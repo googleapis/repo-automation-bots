@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v2.0.0...git-file-utils-v3.0.0) (2025-02-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** update octokit/rest to v20 ([#5680](https://github.com/googleapis/repo-automation-bots/issues/5680))
+
+### Bug Fixes
+
+* **deps:** update octokit/rest to v20 ([#5680](https://github.com/googleapis/repo-automation-bots/issues/5680)) ([0b37656](https://github.com/googleapis/repo-automation-bots/commit/0b3765620e4e6240153484d0621db7ff8738d139))
+
 ## [2.0.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v1.2.6...git-file-utils-v2.0.0) (2023-09-18)
 
 
