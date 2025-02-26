@@ -3,6 +3,7 @@
   "compilerOptions": {
     "lib": ["es2018", "dom"],
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": "build"

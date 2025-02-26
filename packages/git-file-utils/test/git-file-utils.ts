@@ -17,6 +17,7 @@ import {expect} from 'chai';
 import {describe, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
+const fetch = require('node-fetch');
 import {
   BranchFileCache,
   FileNotFoundError,
@@ -29,6 +30,9 @@ nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'sometoken',
+  request: {
+    fetch,
+  },
 });
 const fixturesPath = './test/fixtures';
 
