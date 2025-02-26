@@ -18,11 +18,15 @@ import {describe, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import {BranchFileCache} from '../src/git-file-utils';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'sometoken',
+  request: {
+    fetch,
+  },
 });
 const fixturesPath = './test/fixtures';
 
