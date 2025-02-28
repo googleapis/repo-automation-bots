@@ -48,6 +48,7 @@ import {
   configSchema,
   Logger,
   PluginType,
+  CreatedRelease,
 } from 'release-please';
 import schema from './config-schema.json';
 import {
@@ -269,7 +270,7 @@ async function runBranchConfigurationWithConfigurationHandling(
   branchConfiguration: BranchConfiguration,
   octokit: Octokit,
   options: RunBranchOptions
-) {
+): Promise<CreatedRelease[] | undefined> {
   const target = `${repoUrl}---${branchConfiguration.branch}`;
   await withDatastoreLock(
     {
@@ -279,7 +280,7 @@ async function runBranchConfigurationWithConfigurationHandling(
       lockAcquireTimeout: RP_LOCK_ACQUIRE_TIMEOUT_MS,
     },
     async () => {
-      await runBranchConfigurationWithConfigurationHandlingWithoutLock(
+      return await runBranchConfigurationWithConfigurationHandlingWithoutLock(
         github,
         repoLanguage,
         repoUrl,
@@ -297,10 +298,10 @@ async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
   branchConfiguration: BranchConfiguration,
   octokit: Octokit,
   options: RunBranchOptions
-) {
+): Promise<CreatedRelease[] | undefined> {
   const logger = options.logger ?? defaultLogger;
   try {
-    await runBranchConfiguration(
+    return await runBranchConfiguration(
       github,
       repoLanguage,
       repoUrl,
@@ -357,7 +358,7 @@ async function runBranchConfiguration(
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
   options: RunBranchOptions
-) {
+): Promise<CreatedRelease[] | undefined>  {
   const logger = options.logger ?? defaultLogger;
   const plugins: Array<PluginType> = [
     ...(isSentenceCaseEnabled(repoUrl)
@@ -383,13 +384,14 @@ async function runBranchConfiguration(
       plugins
     );
     try {
-      const numReleases = await Runner.createReleases(manifest);
-      logger.info(`Created ${numReleases} releases`);
-      if (numReleases > 0) {
+      const releases = await Runner.createReleases(manifest);
+      logger.info(`Created ${releases.length} releases`);
+      if (releases.length > 0) {
         // we created a release, reload config which may include the latest
         // version
         manifest = null;
       }
+      return releases;
     } catch (e) {
       if (e instanceof Errors.DuplicateReleaseError) {
         // In the future, this could raise an issue against the
@@ -521,7 +523,6 @@ const handler = (app: Probot) => {
         {logger, skipPullRequest: branchConfiguration.onDemand}
       );
     }
-  });
 
   // See: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
