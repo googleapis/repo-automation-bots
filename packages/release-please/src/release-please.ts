@@ -305,6 +305,7 @@ async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
       repoLanguage,
       repoUrl,
       branchConfiguration,
+      octokit,
       options
     );
   } catch (e) {
@@ -356,6 +357,7 @@ async function runBranchConfiguration(
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
+  octokit: Octokit,
   options: RunBranchOptions
 ) {
   const logger = options.logger ?? defaultLogger;
@@ -383,12 +385,26 @@ async function runBranchConfiguration(
       plugins
     );
     try {
-      const numReleases = await Runner.createReleases(manifest);
-      logger.info(`Created ${numReleases} releases`);
-      if (numReleases > 0) {
+      const releases = await Runner.createReleases(manifest);
+      logger.info(`Created ${releases.length} releases`);
+      if (releases.length > 0) {
         // we created a release, reload config which may include the latest
         // version
         manifest = null;
+      }
+      if (releases.length > 0 && branchConfiguration.tagPullRequestNumber) {
+        // All releases from one Git push event share the same pull request
+        // number and commit SHA. We just use the first one.
+        const firstRelease = releases[0];
+        const tagRefName = `refs/tags/release-please-${firstRelease.prNumber}`;
+        logger.info(`Creating ${tagRefName} pointing to ${firstRelease.sha}`);
+        const tagResponse = await octokit.git.createRef({
+          owner: github.repository.owner,
+          repo: github.repository.repo,
+          ref: tagRefName,
+          sha: firstRelease.sha,
+        });
+        logger.info('Got tag response: ', tagResponse);
       }
     } catch (e) {
       if (e instanceof Errors.DuplicateReleaseError) {

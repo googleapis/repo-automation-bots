@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Manifest} from 'release-please';
+import {CreatedRelease, Manifest} from 'release-please';
 
 export class Runner {
   static createPullRequests = async (manifest: Manifest) => {
     await manifest.createPullRequests();
   };
-  static createReleases = async (manifest: Manifest): Promise<number> => {
+  static createReleases = async (manifest: Manifest): Promise<CreatedRelease[]> => {
     const releases = await manifest.createReleases();
-    return releases.filter(release => !!release).length;
+    return releases.filter(release => !!release);
   };
 }
