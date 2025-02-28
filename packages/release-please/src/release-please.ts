@@ -392,19 +392,29 @@ async function runBranchConfiguration(
         // version
         manifest = null;
       }
-      if (releases.length > 0 && branchConfiguration.tagPullRequestNumber) {
-        // All releases from one Git push event share the same pull request
-        // number and commit SHA. We just use the first one.
-        const firstRelease = releases[0];
-        const tagRefName = `refs/tags/release-please-${firstRelease.prNumber}`;
-        logger.info(`Creating ${tagRefName} pointing to ${firstRelease.sha}`);
-        const tagResponse = await octokit.git.createRef({
-          owner: github.repository.owner,
-          repo: github.repository.repo,
-          ref: tagRefName,
-          sha: firstRelease.sha,
-        });
-        logger.info('Got tag response: ', tagResponse);
+      if (branchConfiguration.tagPullRequestNumber) {
+        // Record the pull request number to the commit as
+        // a tag.
+
+        // It's possible for manifest.createReleases() to create
+        // releases for multiple pull requests. Find the unique
+        // pair of pull request numbers and their commit SHAs.
+        var prNumberToSha = new Map<number, string>();
+        for (const release of releases) {
+          prNumberToSha.set(release.prNumber, release.sha);
+        }
+        for (const prNumber of (prNumberToSha.keys())) {
+          const sha = prNumberToSha.get(prNumber)!;
+          const tagRefName = `refs/tags/release-please-${prNumber}`;
+          logger.info(`Creating ${tagRefName} pointing to ${sha}`);
+          const tagResponse = await octokit.git.createRef({
+            owner: github.repository.owner,
+            repo: github.repository.repo,
+            ref: tagRefName,
+            sha: sha,
+          });
+          logger.debug('Got tag response: ', tagResponse);
+        }
       }
     } catch (e) {
       if (e instanceof Errors.DuplicateReleaseError) {

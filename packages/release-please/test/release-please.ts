@@ -72,6 +72,19 @@ describe('ReleasePleaseBot', () => {
     ) {
       await f();
     } as any);
+
+    createReleasesStub.resolves([
+      {
+        id: 'v4.5.6',
+        path: 'foo',
+        version: 'v4.5.6',
+        major: 1,
+        minor: 2,
+        patch: 3,
+        prNumber: 123,
+      }
+    ])
+
   });
 
   afterEach(() => {
@@ -309,7 +322,7 @@ describe('ReleasePleaseBot', () => {
 
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
-        sinon.assert.calledOnceWithExactly(
+        sinon.assert.alwaysCalledWithExactly(
           fromConfigStub,
           sinon.match.instanceOf(GitHub),
           'master',
@@ -696,7 +709,7 @@ describe('ReleasePleaseBot', () => {
 
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
-        sinon.assert.calledOnce(fromManifestStub);
+        sinon.assert.calledTwice(fromManifestStub);
       });
 
       it('should ignore the repo language not being supported', async () => {
@@ -868,7 +881,7 @@ describe('ReleasePleaseBot', () => {
 
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.calledOnce(createReleasesStub);
-        sinon.assert.calledOnceWithExactly(
+        sinon.assert.alwaysCalledWithExactly(
           fromConfigStub,
           sinon.match.instanceOf(GitHub),
           'feature-branch',
@@ -939,7 +952,7 @@ describe('ReleasePleaseBot', () => {
 
       requests.done();
       sinon.assert.calledOnce(createPullRequestsStub);
-      sinon.assert.calledOnceWithExactly(
+      sinon.assert.alwaysCalledWithExactly(
         fromConfigStub,
         sinon.match.instanceOf(GitHub),
         'master',
@@ -995,7 +1008,7 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       sinon.assert.calledOnce(createPullRequestsStub);
       sinon.assert.calledOnce(createReleasesStub);
-      sinon.assert.calledOnceWithExactly(
+      sinon.assert.alwaysCalledWithExactly(
         fromConfigStub,
         sinon.match.instanceOf(GitHub),
         'master',
@@ -1023,7 +1036,7 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       sinon.assert.calledOnce(createPullRequestsStub);
       sinon.assert.calledOnce(createReleasesStub);
-      sinon.assert.calledOnceWithExactly(
+      sinon.assert.alwaysCalledWithExactly(
         fromConfigStub,
         sinon.match.instanceOf(GitHub),
         'master',
