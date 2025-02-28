@@ -399,11 +399,11 @@ async function runBranchConfiguration(
         // It's possible for manifest.createReleases() to create
         // releases for multiple pull requests. Find the unique
         // pair of pull request numbers and their commit SHAs.
-        var prNumberToSha = new Map<number, string>();
+        const prNumberToSha = new Map<number, string>();
         for (const release of releases) {
           prNumberToSha.set(release.prNumber, release.sha);
         }
-        for (const prNumber of (prNumberToSha.keys())) {
+        for (const prNumber of prNumberToSha.keys()) {
           const sha = prNumberToSha.get(prNumber)!;
           const tagRefName = `refs/tags/release-please-${prNumber}`;
           logger.info(`Creating ${tagRefName} pointing to ${sha}`);

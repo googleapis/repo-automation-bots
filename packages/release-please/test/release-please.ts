@@ -82,9 +82,8 @@ describe('ReleasePleaseBot', () => {
         minor: 2,
         patch: 3,
         prNumber: 123,
-      }
-    ])
-
+      },
+    ]);
   });
 
   afterEach(() => {
