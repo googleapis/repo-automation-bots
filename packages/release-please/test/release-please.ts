@@ -31,6 +31,7 @@ import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
 import * as errorHandlingModule from '@google-automations/issue-utils';
 import {Octokit} from '@octokit/rest';
+import snapshot from 'snap-shot-it';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -739,7 +740,10 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
-      it('should add a tag to record the pull request number when configured', async ()  => {
+      it('should tag pull request number if configured', async ()  => {
+        getConfigStub.resolves(loadConfig('manifest_tag_pr_number.yml'));
+
+        // We want the PR number 789 to be in the tag
         const exampleRelease = {
           id: 'v4.5.6',
           path: 'foo',
@@ -749,7 +753,29 @@ describe('ReleasePleaseBot', () => {
           patch: 3,
           prNumber: 789,
         };
-        
+        createReleasesStub.resolves([exampleRelease]);
+
+        const requests = nock('https://api.github.com')
+        .post(
+          '/repos/chingor13/google-auth-library-java/git/refs', body => {
+            // The snapshot has "release-please-789" as the tag name.
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+        requests.done();
+  
+        sinon.assert.calledOnce(createReleasesStub);
+        // When there's a release, it reloads the manifest.
+        sinon.assert.calledTwice(fromManifestStub);
+
+        // Should it create pull request?
+        sinon.assert.notCalled(createPullRequestsStub);
       });
     });
 

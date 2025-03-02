@@ -404,6 +404,11 @@ async function runBranchConfiguration(
           prNumberToSha.set(release.prNumber, release.sha);
         }
         for (const prNumber of prNumberToSha.keys()) {
+          // A Git tag is a ref. A lightweight tag only requires this
+          // create references API call, rather than a tag objec
+          // (/repos/{owner}/{repo}/git/tags).
+          // https://docs.github.com/en/rest/git/tags?apiVersion=2022-11-28#create-a-tag-object
+          // https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28#create-a-reference
           const sha = prNumberToSha.get(prNumber)!;
           const tagRefName = `refs/tags/release-please-${prNumber}`;
           logger.info(`Creating ${tagRefName} pointing to ${sha}`);
