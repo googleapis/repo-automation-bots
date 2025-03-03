@@ -31,7 +31,6 @@ import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
 import * as errorHandlingModule from '@google-automations/issue-utils';
 import {Octokit} from '@octokit/rest';
-import assert from 'assert';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -48,6 +47,7 @@ describe('ReleasePleaseBot', () => {
   let getConfigStub: sinon.SinonStub;
   let createPullRequestsStub: sinon.SinonStub;
   let createReleasesStub: sinon.SinonStub;
+  let createLightweightTagStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -63,6 +63,7 @@ describe('ReleasePleaseBot', () => {
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     createPullRequestsStub = sandbox.stub(Runner, 'createPullRequests');
     createReleasesStub = sandbox.stub(Runner, 'createReleases');
+    createLightweightTagStub = sandbox.stub(Runner, 'createLightweightTag');
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
       .resolves(new Octokit({auth: 'faketoken'}));
@@ -754,24 +755,23 @@ describe('ReleasePleaseBot', () => {
           sha: '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9',
         };
         createReleasesStub.resolves([exampleRelease]);
+        createLightweightTagStub.resolves({});
 
-        const requests = nock('https://api.github.com')
-          .post('/repos/chingor13/google-auth-library-java/git/refs', body => {
-            assert.equal(body['ref'], 'refs/tags/release-please-789');
-            assert.equal(
-              body['sha'],
-              '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9'
-            );
-            return true;
-          })
-          .reply(200);
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {name: 'push', payload: payload as any, id: 'abc123'}
         );
-        requests.done();
 
         sinon.assert.calledOnce(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          createLightweightTagStub,
+          sinon.match.instanceOf(Octokit),
+          sinon.match
+            .has('repo', 'google-auth-library-java')
+            .and(sinon.match.has('owner', 'chingor13')),
+          'release-please-789',
+          '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9'
+        );
         // When there's a release, it reloads the manifest.
         sinon.assert.calledTwice(fromManifestStub);
         sinon.assert.calledOnce(createPullRequestsStub);
@@ -814,35 +814,15 @@ describe('ReleasePleaseBot', () => {
           sha: 'f5528f1d94206836a8ceb9bed5eeaa768e002fb4',
         };
         createReleasesStub.resolves([release1, release2, release3]);
-
-        const requests = nock('https://api.github.com')
-          .post('/repos/chingor13/google-auth-library-java/git/refs', body => {
-            // Create a reference for PR 789
-            assert.equal(body['ref'], 'refs/tags/release-please-789');
-            assert.equal(
-              body['sha'],
-              '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9'
-            );
-            return true;
-          })
-          .reply(200)
-          .post('/repos/chingor13/google-auth-library-java/git/refs', body => {
-            // Create a reference for PR 790
-            assert.equal(body['ref'], 'refs/tags/release-please-790');
-            assert.equal(
-              body['sha'],
-              'f5528f1d94206836a8ceb9bed5eeaa768e002fb4'
-            );
-            return true;
-          })
-          .reply(200);
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {name: 'push', payload: payload as any, id: 'abc123'}
         );
-        requests.done();
 
         sinon.assert.calledOnce(createReleasesStub);
+        // Because the first 2 releases share the pull request and SHA,
+        // there should be 2 new tags.
+        sinon.assert.calledTwice(createLightweightTagStub);
         // When there's a release, it reloads the manifest.
         sinon.assert.calledTwice(fromManifestStub);
         sinon.assert.calledOnce(createPullRequestsStub);
