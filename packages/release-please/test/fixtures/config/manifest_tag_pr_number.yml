@@ -1,0 +1,4 @@
+primaryBranch: master
+manifest: true
+handleGHRelease: true
+tagPullRequestNumber: true

@@ -47,6 +47,7 @@ describe('ReleasePleaseBot', () => {
   let getConfigStub: sinon.SinonStub;
   let createPullRequestsStub: sinon.SinonStub;
   let createReleasesStub: sinon.SinonStub;
+  let createLightweightTagStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -62,6 +63,7 @@ describe('ReleasePleaseBot', () => {
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     createPullRequestsStub = sandbox.stub(Runner, 'createPullRequests');
     createReleasesStub = sandbox.stub(Runner, 'createReleases');
+    createLightweightTagStub = sandbox.stub(Runner, 'createLightweightTag');
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
       .resolves(new Octokit({auth: 'faketoken'}));
@@ -72,6 +74,9 @@ describe('ReleasePleaseBot', () => {
     ) {
       await f();
     } as any);
+
+    // No release for test cases except explicitly set in each case.
+    createReleasesStub.resolves([]);
   });
 
   afterEach(() => {
@@ -734,6 +739,93 @@ describe('ReleasePleaseBot', () => {
             logger: sinon.match.object,
           })
         );
+      });
+
+      it('should tag pull request number if configured', async () => {
+        getConfigStub.resolves(loadConfig('manifest_tag_pr_number.yml'));
+        // We want the PR number 789 to be in the tag
+        const exampleRelease = {
+          id: 'v4.5.6',
+          path: 'foo',
+          version: 'v4.5.6',
+          major: 4,
+          minor: 5,
+          patch: 6,
+          prNumber: 789,
+          sha: '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9',
+        };
+        createReleasesStub.resolves([exampleRelease]);
+        createLightweightTagStub.resolves({});
+
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          createLightweightTagStub,
+          sinon.match.instanceOf(Octokit),
+          sinon.match
+            .has('repo', 'google-auth-library-java')
+            .and(sinon.match.has('owner', 'chingor13')),
+          'release-please-789',
+          '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9'
+        );
+        // When there's a release, it reloads the manifest.
+        sinon.assert.calledTwice(fromManifestStub);
+        sinon.assert.calledOnce(createPullRequestsStub);
+      });
+
+      it('should tag each SHA for pull requests number if configured', async () => {
+        getConfigStub.resolves(loadConfig('manifest_tag_pr_number.yml'));
+        // 2 pull requests created 3 releases. First
+        // two share the same SHA and PR number.
+        const release1 = {
+          id: 'foo/v3.0.1',
+          path: 'foo',
+          version: 'v3.0.1',
+          major: 3,
+          minor: 0,
+          patch: 1,
+          prNumber: 789,
+          sha: '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9',
+        };
+        const release2 = {
+          id: 'bar/v4.0.1',
+          path: 'bar',
+          version: 'v4.0.1',
+          major: 4,
+          minor: 0,
+          patch: 1,
+          // These values below are the same as the
+          // release1's.
+          prNumber: 789,
+          sha: '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9',
+        };
+        const release3 = {
+          id: 'v5.0.2',
+          path: 'foo',
+          version: 'v5.0.2',
+          major: 5,
+          minor: 0,
+          patch: 2,
+          prNumber: 790,
+          sha: 'f5528f1d94206836a8ceb9bed5eeaa768e002fb4',
+        };
+        createReleasesStub.resolves([release1, release2, release3]);
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createReleasesStub);
+        // Because the first 2 releases share the pull request and SHA,
+        // there should be 2 new tags.
+        sinon.assert.calledTwice(createLightweightTagStub);
+        // When there's a release, it reloads the manifest.
+        sinon.assert.calledTwice(fromManifestStub);
+        sinon.assert.calledOnce(createPullRequestsStub);
       });
     });
 

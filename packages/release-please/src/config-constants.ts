@@ -42,6 +42,7 @@ export interface BranchOptions {
   changelogType?: ChangelogNotesType;
   initialVersion?: string;
   onDemand?: boolean;
+  tagPullRequestNumber?: boolean;
 }
 
 export interface BranchConfiguration extends BranchOptions {

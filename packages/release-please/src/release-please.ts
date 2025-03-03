@@ -305,6 +305,7 @@ async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
       repoLanguage,
       repoUrl,
       branchConfiguration,
+      octokit,
       options
     );
   } catch (e) {
@@ -356,6 +357,7 @@ async function runBranchConfiguration(
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
+  octokit: Octokit,
   options: RunBranchOptions
 ) {
   const logger = options.logger ?? defaultLogger;
@@ -383,12 +385,36 @@ async function runBranchConfiguration(
       plugins
     );
     try {
-      const numReleases = await Runner.createReleases(manifest);
-      logger.info(`Created ${numReleases} releases`);
-      if (numReleases > 0) {
+      const releases = await Runner.createReleases(manifest);
+      logger.info(`Created ${releases.length} releases`);
+      if (releases.length > 0) {
         // we created a release, reload config which may include the latest
         // version
         manifest = null;
+      }
+      if (branchConfiguration.tagPullRequestNumber) {
+        // Record the pull request number to the commit as
+        // a tag.
+
+        // It's possible for manifest.createReleases() to create
+        // releases for multiple pull requests. Find the unique
+        // pair of pull request numbers and their commit SHAs.
+        const prNumberToSha = new Map<number, string>();
+        for (const release of releases) {
+          prNumberToSha.set(release.prNumber, release.sha);
+        }
+        for (const [prNumber, sha] of prNumberToSha.entries()) {
+          // A Git (lightweight) tag is a ref.
+          const tagName = `release-please-${prNumber}`;
+          logger.info(`Creating ${tagName} pointing to ${sha}`);
+          const tagResponse = await Runner.createLightweightTag(
+            octokit,
+            github.repository,
+            tagName,
+            sha
+          );
+          logger.debug('Got tag response: ', tagResponse);
+        }
       }
     } catch (e) {
       if (e instanceof Errors.DuplicateReleaseError) {
