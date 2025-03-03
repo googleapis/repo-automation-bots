@@ -65,6 +65,9 @@
                 "handleGHRelease": {
                     "type": "boolean"
                 },
+                "tagPullRequestNumber": {
+                    "type": "boolean"
+                },
                 "bumpMinorPreMajor": {
                     "type": "boolean"
                 },
@@ -156,6 +159,7 @@
         "releaseType": true,
         "packageName": true,
         "handleGHRelease": true,
+        "tagPullRequestNumber": true,
         "bumpMinorPreMajor": true,
         "bumpPatchForMinorPreMajor": true,
         "path": true,
