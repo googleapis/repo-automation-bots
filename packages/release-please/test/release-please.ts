@@ -31,7 +31,7 @@ import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
 import * as errorHandlingModule from '@google-automations/issue-utils';
 import {Octokit} from '@octokit/rest';
-import snapshot from 'snap-shot-it';
+import assert from 'assert';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -740,42 +740,112 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
-      it('should tag pull request number if configured', async ()  => {
+      it('should tag pull request number if configured', async () => {
         getConfigStub.resolves(loadConfig('manifest_tag_pr_number.yml'));
-
         // We want the PR number 789 to be in the tag
         const exampleRelease = {
           id: 'v4.5.6',
           path: 'foo',
           version: 'v4.5.6',
-          major: 1,
-          minor: 2,
-          patch: 3,
+          major: 4,
+          minor: 5,
+          patch: 6,
           prNumber: 789,
+          sha: '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9',
         };
         createReleasesStub.resolves([exampleRelease]);
 
         const requests = nock('https://api.github.com')
-        .post(
-          '/repos/chingor13/google-auth-library-java/git/refs', body => {
-            // The snapshot has "release-please-789" as the tag name.
-            snapshot(body);
+          .post('/repos/chingor13/google-auth-library-java/git/refs', body => {
+            assert.equal(body['ref'], 'refs/tags/release-please-789');
+            assert.equal(
+              body['sha'],
+              '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9'
+            );
             return true;
-          }
-        )
-        .reply(200);
+          })
+          .reply(200);
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {name: 'push', payload: payload as any, id: 'abc123'}
         );
         requests.done();
-  
+
         sinon.assert.calledOnce(createReleasesStub);
         // When there's a release, it reloads the manifest.
         sinon.assert.calledTwice(fromManifestStub);
+        sinon.assert.calledOnce(createPullRequestsStub);
+      });
 
-        // Should it create pull request?
-        sinon.assert.notCalled(createPullRequestsStub);
+      it('should tag each SHA for pull requests number if configured', async () => {
+        getConfigStub.resolves(loadConfig('manifest_tag_pr_number.yml'));
+        // 2 pull requests created 3 releases. First
+        // two share the same SHA and PR number.
+        const release1 = {
+          id: 'foo/v3.0.1',
+          path: 'foo',
+          version: 'v3.0.1',
+          major: 3,
+          minor: 0,
+          patch: 1,
+          prNumber: 789,
+          sha: '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9',
+        };
+        const release2 = {
+          id: 'bar/v4.0.1',
+          path: 'bar',
+          version: 'v4.0.1',
+          major: 4,
+          minor: 0,
+          patch: 1,
+          // These values below are the same as the
+          // release1's.
+          prNumber: 789,
+          sha: '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9',
+        };
+        const release3 = {
+          id: 'v5.0.2',
+          path: 'foo',
+          version: 'v5.0.2',
+          major: 5,
+          minor: 0,
+          patch: 2,
+          prNumber: 790,
+          sha: 'f5528f1d94206836a8ceb9bed5eeaa768e002fb4',
+        };
+        createReleasesStub.resolves([release1, release2, release3]);
+
+        const requests = nock('https://api.github.com')
+          .post('/repos/chingor13/google-auth-library-java/git/refs', body => {
+            // Create a reference for PR 789
+            assert.equal(body['ref'], 'refs/tags/release-please-789');
+            assert.equal(
+              body['sha'],
+              '853ab2395d7777f8f3f8cb2b7106d3a3d17490e9'
+            );
+            return true;
+          })
+          .reply(200)
+          .post('/repos/chingor13/google-auth-library-java/git/refs', body => {
+            // Create a reference for PR 790
+            assert.equal(body['ref'], 'refs/tags/release-please-790');
+            assert.equal(
+              body['sha'],
+              'f5528f1d94206836a8ceb9bed5eeaa768e002fb4'
+            );
+            return true;
+          })
+          .reply(200);
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+        requests.done();
+
+        sinon.assert.calledOnce(createReleasesStub);
+        // When there's a release, it reloads the manifest.
+        sinon.assert.calledTwice(fromManifestStub);
+        sinon.assert.calledOnce(createPullRequestsStub);
       });
     });
 
