@@ -14,7 +14,7 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-FROM node:18.20.5-bullseye-slim AS BASE
+FROM node:22.14.0-bullseye-slim AS BASE
 
 # Install pyenv dependencies
 RUN apt-get update && \
