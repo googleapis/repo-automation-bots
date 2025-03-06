@@ -125,6 +125,7 @@ cryptography==44.0.1 \
     # via
     #   -r requirements.in
     #   gcp-releasetool
+    #   secretstorage
 gcp-releasetool==2.6.0 \
     --hash=sha256:3a3d3940bae9158ad17d77beaee3167d70b433aec2be26fb1cd3e00c0a83bf04 \
     --hash=sha256:bb65b1c4c14fb7acafba7feb002729575f5ae85863fe8120ea9448ba7cf3aedc
@@ -153,9 +154,9 @@ jeepney==0.8.0 \
     # via
     #   keyring
     #   secretstorage
-jinja2==3.1.5 \
-    --hash=sha256:8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb \
-    --hash=sha256:aba0f4dc9ed8013c424088f68a5c226f7d6097ed89b246d7749c2ec4175c6adb
+jinja2==3.1.6 \
+    --hash=sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d \
+    --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
     # via gcp-releasetool
 keyring==23.11.0 \
     --hash=sha256:3dd30011d555f1345dec2c262f0153f2f0ca6bca041fb1dc4588349bb4c0ac1e \
