@@ -201,6 +201,7 @@
                             "releaseType": true,
                             "packageName": true,
                             "handleGHRelease": true,
+                            "tagPullRequestNumber": true,
                             "bumpMinorPreMajor": true,
                             "bumpPatchForMinorPreMajor": true,
                             "path": true,
