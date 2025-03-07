@@ -30,13 +30,13 @@
     "@google-automations/datastore-lock": "^6.0.0",
     "@google-automations/issue-utils": "^4.0.0",
     "dayjs": "^1.11.5",
-    "gcf-utils": "^16.2.1",
+    "gcf-utils": "^16.2.2",
     "jsonwebtoken": "^9.0.0",
     "lru-cache": "^7.14.0"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.7.15",
+    "@types/node": "^18.19.76",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
