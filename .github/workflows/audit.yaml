@@ -31,7 +31,7 @@ jobs:
       - run: echo ./packages/${{ matrix.package }}
       - run: cd ./packages/${{ matrix.package }} && npm audit fix
         continue-on-error: true
-      - uses: googleapis/code-suggester@9c92ffb751cbdc880473aa650013b3a3292f743a # v4
+      - uses: googleapis/code-suggester@589b3ac11ac2575fd561afa45034907f301a375b # v4
         env:
           ACCESS_TOKEN: ${{ secrets.YOSHI_CODE_BOT_TOKEN }}
         with:
