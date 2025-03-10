@@ -1,6 +1,6 @@
 {
   "name": "gcf-utils",
-  "version": "16.2.2",
+  "version": "16.2.3",
   "description": "An extension for running Probot in Google Cloud Functions",
   "scripts": {
     "compile": "tsc -p .",
@@ -70,25 +70,6 @@
     "sonic-boom": "^3.2.0",
     "stream-mock": "^2.0.5",
     "typescript": "^5.7.3"
-  },
-  "overrides": {
-    "@octokit/auth-oauth-app": {
-      "@octokit/request": "8.4.1",
-      "@octokit/request-error": "5.1.1"
-    },
-    "@octokit/auth-app": {
-      "@octokit/request": "8.4.1",
-      "@octokit/request-error": "5.1.1"
-    },
-    "@octokit/core": {
-      "@octokit/graphql": "^7.1.1",
-      "@octokit/request": "8.4.1",
-      "@octokit/request-error": "5.1.1"
-    },
-    "@octokit/oauth-methods": {
-      "@octokit/request": "8.4.1",
-      "@octokit/request-error": "5.1.1"
-    }
   },
   "engines": {
     "node": ">= 18"
