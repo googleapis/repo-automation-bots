@@ -53,7 +53,7 @@ branchProtectionRules:
   requiresStatusChecks: true
   # Is pushing to matching branches restricted.
   # Defaults to `false`
-  restrictPushes: false
+  restrictsPushes: false
   # Is dismissal of pull request reviews restricted.
   # Defaults to `false`
   restrictsReviewDismissals: false
