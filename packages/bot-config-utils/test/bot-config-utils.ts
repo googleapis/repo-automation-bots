@@ -25,6 +25,7 @@ import {Octokit} from '@octokit/rest';
 import {getAuthenticatedOctokit} from 'gcf-utils';
 import * as gcfUtilsModule from 'gcf-utils';
 import * as sinon from 'sinon';
+const fetch = require('node-fetch');
 
 import {
   getConfig,
@@ -212,8 +213,9 @@ describe('config test app with config.yml', () => {
     probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
-        retru: {enabled: false},
+        retry: {enabled: false},
         throttle: {enabled: false},
+        request: {fetch},
       }),
     });
     probot.load(app2);
@@ -222,7 +224,7 @@ describe('config test app with config.yml', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
   afterEach(() => {
     nock.cleanAll();
@@ -253,8 +255,11 @@ describe('config test app', () => {
     probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
-        retru: {enabled: false},
+        retry: {enabled: false},
         throttle: {enabled: false},
+        request: {
+          fetch,
+        }
       }),
     });
     probot.load(app);
@@ -265,7 +270,7 @@ describe('config test app', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
   afterEach(() => {
     nock.cleanAll();
@@ -360,8 +365,9 @@ describe('config test app with multiple schema files', () => {
     probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
-        retru: {enabled: false},
+        retry: {enabled: false},
         throttle: {enabled: false},
+        request: {fetch},
       }),
     });
     probot.load(app3);
@@ -372,7 +378,7 @@ describe('config test app with multiple schema files', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
   afterEach(() => {
     nock.cleanAll();
@@ -425,8 +431,9 @@ describe('config test app with formatted schemas', () => {
     probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
-        retru: {enabled: false},
+        retry: {enabled: false},
         throttle: {enabled: false},
+        request: {fetch},
       }),
     });
     probot.load(app4);
@@ -437,7 +444,7 @@ describe('config test app with formatted schemas', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
   afterEach(() => {
     nock.cleanAll();
@@ -533,7 +540,7 @@ function getConfigFile(
 }
 
 describe('config', () => {
-  const octokit = new Octokit({auth: '123'});
+  const octokit = new Octokit({auth: '123', request: {fetch}});
 
   describe('getConfig', () => {
     beforeEach(() => {
