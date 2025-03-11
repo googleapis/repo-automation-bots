@@ -87,6 +87,17 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [17.0.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.2.2...gcf-utils-v17.0.0) (2025-03-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* octokit request/request-error sec vuln fixes
+
+### Bug Fixes
+
+* octokit request/request-error sec vuln fixes ([232ca85](https://github.com/googleapis/repo-automation-bots/commit/232ca854b74efbb13b199051db11d98812a02edc))
+
 ## [16.2.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.2.1...gcf-utils-v16.2.2) (2025-02-21)
 
 
