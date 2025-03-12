@@ -27,10 +27,10 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/datastore-lock": "^6.0.0",
-    "@google-automations/issue-utils": "^4.0.0",
+    "@google-automations/datastore-lock": "^7.0.0",
+    "@google-automations/issue-utils": "^5.0.0",
     "dayjs": "^1.11.5",
-    "gcf-utils": "^16.2.1",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0",
     "lru-cache": "^7.14.0"
   },
@@ -43,6 +43,7 @@
     "gts": "^4.0.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
+    "node-fetch": "^2.6.9",
     "sinon": "^15.0.0",
     "smee-client": "^1.2.3",
     "typescript": "~4.9.0"
