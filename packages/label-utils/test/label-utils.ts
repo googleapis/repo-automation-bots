@@ -21,6 +21,7 @@ import {DatastoreLock} from '@google-automations/datastore-lock';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 import {syncLabels, getLabelColor} from '../src/label-utils';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -85,7 +86,7 @@ function updateLabel(
 }
 
 describe('label-utils', () => {
-  const octokit = new Octokit();
+  const octokit = new Octokit({request: {fetch}});
   const owner = 'testOwner';
   const repo = 'testRepo';
   const sandbox = sinon.createSandbox();
