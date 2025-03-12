@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/object-selector",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "Utilities for selecting objects",
   "scripts": {
     "compile": "tsc -p .",
