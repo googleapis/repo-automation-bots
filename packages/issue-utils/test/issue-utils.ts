@@ -19,9 +19,10 @@ import {addOrUpdateIssue, closeIssue} from '../src/issue-utils';
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
-const octokit = new Octokit({auth: '123'});
+const octokit = new Octokit({auth: '123', request: {fetch}});
 
 describe('addOrUpdateIssue', () => {
   beforeEach(() => {

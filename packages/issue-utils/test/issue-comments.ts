@@ -18,9 +18,10 @@ import nock from 'nock';
 import {Octokit} from '@octokit/rest';
 import {addOrUpdateIssueComment} from '../src/issue-comments';
 import assert from 'assert';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
-const octokit = new Octokit({auth: '123'});
+const octokit = new Octokit({auth: '123', request: {fetch}});
 
 const NEW_COMMENT_BODY = 'This is the new comment body';
 const EXPECTED_NEW_COMMENT_BODY = `<!-- probot comment [2345]-->\n${NEW_COMMENT_BODY}`;
