@@ -32,6 +32,7 @@ import * as gcfUtilsModule from 'gcf-utils';
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import {appMain} from '../src/header-checker-lint';
 import schema from '../src/config-schema.json';
+const fetch = require('node-fetch');
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 nock.disableNetConnect();
@@ -46,6 +47,7 @@ describe('HeaderCheckerLint', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     const myProbotApp = (app: Probot) => appMain(app, () => 2022);
@@ -73,7 +75,7 @@ describe('HeaderCheckerLint', () => {
         gcfUtilsModule,
         'getAuthenticatedOctokit'
       );
-      getAuthenticatedOctokitStub.resolves(new Octokit());
+      getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     });
 
     afterEach(() => {
@@ -391,7 +393,7 @@ describe('HeaderCheckerLint', () => {
         gcfUtilsModule,
         'getAuthenticatedOctokit'
       );
-      getAuthenticatedOctokitStub.resolves(new Octokit());
+      getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     });
 
     afterEach(() => {
