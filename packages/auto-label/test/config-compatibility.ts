@@ -29,6 +29,7 @@ import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as helper from '../src/helper';
 import {GCFLogger} from 'gcf-utils';
 import * as gcfUtilsModule from 'gcf-utils';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -81,6 +82,7 @@ describe('getConfigWithDefault', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(handler);
@@ -94,7 +96,7 @@ describe('getConfigWithDefault', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -185,6 +187,7 @@ describe('validateConfigChanges', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(handler);
@@ -198,7 +201,7 @@ describe('validateConfigChanges', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {

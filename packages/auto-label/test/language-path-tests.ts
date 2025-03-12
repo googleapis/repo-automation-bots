@@ -28,6 +28,7 @@ import {loadConfig} from './test-helper';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as gcfUtilsModule from 'gcf-utils';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -48,6 +49,7 @@ describe('language-and-path-labeling', () => {
         retry: {enabled: false},
         throttle: {enabled: false},
       }),
+      request: {fetch},
     });
     probot.load(handler);
     getConfigWithDefaultStub = sandbox.stub(
@@ -64,7 +66,7 @@ describe('language-and-path-labeling', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {

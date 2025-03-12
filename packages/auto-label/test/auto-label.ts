@@ -37,6 +37,7 @@ import {logger} from 'gcf-utils';
 import * as gcfUtilsModule from 'gcf-utils';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
+const fetch = require('node-fetch');
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -69,6 +70,7 @@ describe('auto-label', () => {
         retry: {enabled: false},
         throttle: {enabled: false},
       }),
+      request: {fetch},
     });
 
     probot.load(handler);
@@ -88,7 +90,7 @@ describe('auto-label', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     // We test the config schema compatibility in config-compatibility.ts
     validateConfigStub.resolves();
     sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
@@ -951,6 +953,7 @@ describe('auto-label', () => {
         } as any,
         id: 'abc123',
       });
+      console.log(ghRequests);
       ghRequests.done();
     });
   });
