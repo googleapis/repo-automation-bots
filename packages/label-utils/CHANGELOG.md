@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.0.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v5.0.0...label-utils-v6.0.0) (2025-03-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** update @google-automations/datastore-lock to v7
+* **deps:** update gcf-utils to v17 ([#5697](https://github.com/googleapis/repo-automation-bots/issues/5697))
+
+### Bug Fixes
+
+* **deps:** update @google-automations/datastore-lock to v7 ([2577f0c](https://github.com/googleapis/repo-automation-bots/commit/2577f0c639819bd65a3f1b7246f3a946218e0f79))
+* **deps:** update gcf-utils to v17 ([#5697](https://github.com/googleapis/repo-automation-bots/issues/5697)) ([2577f0c](https://github.com/googleapis/repo-automation-bots/commit/2577f0c639819bd65a3f1b7246f3a946218e0f79))
+
 ## [5.0.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v4.0.0...label-utils-v5.0.0) (2024-09-09)
 
 
