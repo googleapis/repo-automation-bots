@@ -259,7 +259,7 @@ describe('config test app', () => {
         throttle: {enabled: false},
         request: {
           fetch,
-        }
+        },
       }),
     });
     probot.load(app);
