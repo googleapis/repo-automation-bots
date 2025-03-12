@@ -22,6 +22,7 @@ import snapshot from 'snap-shot-it';
 import {Octokit} from '@octokit/rest';
 import {MultiConfigChecker} from '../src/bot-config-utils';
 import schema from './test-config-schema.json';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -39,7 +40,7 @@ function createConfigResponse(configFile: string) {
 
 describe('MultiConfigChecker', () => {
   let scope: nock.Scope;
-  const testOctokit = new Octokit({auth: 'abc123'});
+  const testOctokit = new Octokit({auth: 'abc123', request: {fetch}});
   describe('with config changes', () => {
     beforeEach(() => {
       scope = nock('https://api.github.com')

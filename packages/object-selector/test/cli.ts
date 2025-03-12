@@ -19,8 +19,11 @@ import nock from 'nock';
 import mockedEnv from 'mocked-env';
 import {RestoreFn} from 'mocked-env';
 import fs from 'fs';
+const fetch = require('node-fetch');
+import {Octokit} from '@octokit/rest';
 
 import * as cli from '../src/cli';
+import * as octokitModule from '../src/octokit';
 
 const sandbox = sinon.createSandbox();
 
@@ -28,6 +31,11 @@ nock.disableNetConnect();
 
 describe('cli', () => {
   let restore: RestoreFn;
+
+  beforeEach(() => {
+    const getOctokitStub = sandbox.stub(octokitModule, 'getOctokit');
+    getOctokitStub.returns(new Octokit({request: {fetch}}));
+  });
 
   afterEach(() => {
     sandbox.restore();

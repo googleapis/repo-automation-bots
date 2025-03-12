@@ -77,9 +77,8 @@ function issueNeedsUpdating(issue: Issue, expectedBody: string) {
  * @return {string} The username of the authenticated app
  */
 async function getAuthenticatedBotUser(octokit: Octokit): Promise<string> {
-  const {
-    data: {slug},
-  } = await octokit.apps.getAuthenticated();
+  const {data} = await octokit.rest.apps.getAuthenticated();
+  const slug = data?.slug ?? 'unknown';
   return `${slug}[bot]`;
 }
 

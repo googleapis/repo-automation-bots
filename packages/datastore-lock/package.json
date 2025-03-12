@@ -16,7 +16,7 @@
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
     "@google-cloud/datastore": "^9.0.0",
-    "gcf-utils": "^16.0.0",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0",
     "uuid": "^9.0.0"
   },

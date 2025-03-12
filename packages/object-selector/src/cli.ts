@@ -15,8 +15,6 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
 
 import fs from 'fs';
@@ -28,6 +26,8 @@ import {
   ObjectSelector,
   RepoDescriptorConvertor,
 } from './object-selector';
+
+import {getOctokit} from './octokit';
 
 const DEFAULT_DUMP_FILE = 'repositories-dump.json';
 
@@ -42,7 +42,7 @@ export interface Args {
 }
 
 export async function dumpCommand(argv: Args) {
-  const octokit = new Octokit();
+  const octokit = getOctokit();
   const repos = new Array<Repository>();
   for (const org of ['googleapis', 'GoogleCloudPlatform']) {
     const repositoriesPaginated = octokit.paginate.iterator(
