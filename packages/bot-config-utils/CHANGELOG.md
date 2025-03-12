@@ -1,5 +1,16 @@
 # Changelog
 
+## [9.0.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v8.0.0...bot-config-utils-v9.0.0) (2025-03-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** update gcf-utils to v17 ([#5695](https://github.com/googleapis/repo-automation-bots/issues/5695))
+
+### Bug Fixes
+
+* **deps:** update gcf-utils to v17 ([#5695](https://github.com/googleapis/repo-automation-bots/issues/5695)) ([0dbb4c6](https://github.com/googleapis/repo-automation-bots/commit/0dbb4c697894c78121bc37c37c31ab5d9158c0b6))
+
 ## [8.0.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v7.0.0...bot-config-utils-v8.0.0) (2024-09-06)
 
 
