@@ -15,6 +15,7 @@
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {DatastoreLock} from '@google-automations/datastore-lock';
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
