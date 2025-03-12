@@ -15,6 +15,7 @@
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {DatastoreLock} from '@google-automations/datastore-lock';
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -24,6 +25,7 @@ import * as fs from 'fs';
 import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
+const fetch = require('node-fetch');
 
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import * as labelUtilsModule from '@google-automations/label-utils';
@@ -130,6 +132,7 @@ describe('flakybot', () => {
         retry: {enabled: false},
         throttle: {enabled: false},
       }),
+      request: {fetch},
     });
     probot.load(flakybot);
     getAuthenticatedOctokitStub = sandbox.stub(
