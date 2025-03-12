@@ -27,6 +27,7 @@ import {describe, it, afterEach, beforeEach} from 'mocha';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import * as datastoreLockModule from '@google-automations/datastore-lock';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -52,6 +53,7 @@ describe('canary-bot', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     await probot.load(myProbotApp);
@@ -63,6 +65,7 @@ describe('canary-bot', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(async () => {
@@ -90,7 +93,6 @@ describe('canary-bot', () => {
       } as any);
     });
     it('creates an issue', async () => {
-      getAuthenticatedOctokitStub.resolves(new Octokit());
       const scopes = [
         listIssues('googleapis', 'repo-automation-bots', [{}]),
         nock('https://api.github.com')
@@ -130,7 +132,6 @@ describe('canary-bot', () => {
     });
 
     it('comments on a correct issue', async () => {
-      getAuthenticatedOctokitStub.resolves(new Octokit());
       const scopes = [
         listIssues('googleapis', 'repo-automation-bots', [
           {title: 'A canary is not chirping', number: 6},
@@ -176,7 +177,6 @@ describe('canary-bot', () => {
 
   describe('responds to events', () => {
     it('responds to issues', async () => {
-      getAuthenticatedOctokitStub.resolves(new Octokit());
       sandbox.replace(
         datastoreLockModule,
         'withDatastoreLock',
