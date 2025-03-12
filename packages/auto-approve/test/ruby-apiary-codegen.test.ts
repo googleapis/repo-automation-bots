@@ -16,9 +16,11 @@ import {RubyApiaryCodegen} from '../src/process-checks/ruby/apiary-codegen';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 const {Octokit} = require('@octokit/rest');
+const fetch = require('node-fetch');
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 describe('RubyApiaryCodegen', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {

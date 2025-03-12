@@ -37,6 +37,7 @@ import {logger} from 'gcf-utils';
 import * as gcfUtilsModule from 'gcf-utils';
 
 const {Octokit} = require('@octokit/rest');
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -148,6 +149,7 @@ describe('auto-approve', () => {
       defaults: {
         githubToken: 'abc123',
         Octokit: TestingOctokit,
+        request: {fetch},
       },
     });
     probot.load(autoApprove.handler);
@@ -165,7 +167,7 @@ describe('auto-approve', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -177,7 +179,7 @@ describe('auto-approve', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
         getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
 
         const payload = require(resolve(
@@ -213,7 +215,7 @@ describe('auto-approve', () => {
       it('still attempts to add an automerge: exact label if there is an approval', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
         getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
 
         const payload = require(resolve(
@@ -255,7 +257,7 @@ describe('auto-approve', () => {
       it('approves and tags a PR if everything is valid, and it is coming from a fork', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
         getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
 
         const payload = require(resolve(
@@ -295,7 +297,7 @@ describe('auto-approve', () => {
       it('retries if etag is not current', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
         getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
 
         const payload = require(resolve(
@@ -335,7 +337,7 @@ describe('auto-approve', () => {
       it('stops retrying to add the label after 3 attempts, even if it is never successful', async () => {
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
         getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
 
         const payload = require(resolve(
@@ -388,7 +390,7 @@ describe('auto-approve', () => {
           'testOwner',
           'testRepo',
           1,
-          new Octokit()
+          new Octokit({request: {fetch}})
         );
         scopes.forEach(scope => scope.done());
       });
@@ -497,7 +499,7 @@ describe('auto-approve', () => {
         getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
         checkPRAgainstConfigV2Stub.returns(true);
         checkAutoApproveStub.returns('');
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
 
         const payload = require(resolve(
           fixturesPath,
@@ -539,7 +541,7 @@ describe('auto-approve', () => {
         getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
         checkPRAgainstConfigStub.returns(true);
         checkAutoApproveStub.returns('');
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
 
         const payload = require(resolve(
           fixturesPath,
@@ -672,7 +674,7 @@ describe('auto-approve', () => {
           'pull_request_opened'
         ));
 
-        getSecretStub.returns(new Octokit({auth: '123'}));
+        getSecretStub.returns(new Octokit({auth: '123', request: {fetch}}));
         checkPRAgainstConfigStub.returns(true);
         getBlobFromPRFilesStub.returns(undefined);
         checkAutoApproveStub.returns('');
@@ -710,7 +712,7 @@ describe('auto-approve', () => {
       checkAutoApproveStub.returns('');
       getChangedFilesStub.returns([{sha: '1234', filename: 'filename.txt'}]);
 
-      const secretOctokit = new Octokit({auth: '123'});
+      const secretOctokit = new Octokit({auth: '123', request: {fetch}});
       sandbox.spy(secretOctokit.pulls, 'createReview');
       sandbox.spy(secretOctokit.issues, 'addLabels');
       getSecretStub.returns(secretOctokit);

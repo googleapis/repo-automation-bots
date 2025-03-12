@@ -42,9 +42,11 @@ import {NodeRelease} from '../src/process-checks/node/release';
 import nock from 'nock';
 const {Octokit} = require('@octokit/rest');
 nock.disableNetConnect();
+const fetch = require('node-fetch');
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 describe('run additional versioning checks', () => {
   describe('get target file tests', () => {

@@ -16,9 +16,11 @@ import {JavaSampleAppDependency} from '../src/process-checks/sample-application-
 import {describe, it} from 'mocha';
 import assert from 'assert';
 const {Octokit} = require('@octokit/rest');
+const fetch = require('node-fetch');
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 describe('behavior of Java Dependency process', () => {
   it('should return false in checkPR if incoming PR does not match classRules', async () => {

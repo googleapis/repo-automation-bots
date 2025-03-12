@@ -26,9 +26,11 @@ import assert from 'assert';
 
 const {Octokit} = require('@octokit/rest');
 nock.disableNetConnect();
+const fetch = require('node-fetch');
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 
 describe('get PR info tests', async () => {
