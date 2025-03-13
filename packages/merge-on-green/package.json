@@ -27,10 +27,10 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/label-utils": "^5.0.0",
+    "@google-automations/label-utils": "^6.0.0",
     "@google-cloud/datastore": "^9.1.0",
     "aggregate-error": "^3.1.0",
-    "gcf-utils": "^16.2.1",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
