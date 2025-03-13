@@ -29,13 +29,13 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^9.0.0",
-    "@google-automations/git-file-utils": "^3.0.0",
-    "@google-automations/issue-utils": "^5.0.0",
-    "@google-automations/label-utils": "^6.0.0",
+    "@google-automations/bot-config-utils": "^8.0.0",
+    "@google-automations/git-file-utils": "^1.2.6",
+    "@google-automations/issue-utils": "^4.0.0",
+    "@google-automations/label-utils": "^5.0.0",
     "@google-cloud/storage": "^7.12.1",
     "follow-redirects": "^1.15.1",
-    "gcf-utils": "^17.0.0",
+    "gcf-utils": "^16.2.1",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
     "lru-cache": "^7.14.0",
