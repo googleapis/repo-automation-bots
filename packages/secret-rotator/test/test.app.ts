@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import * as app from '../src/app';
+import fetch from 'node-fetch';
 import {SecretRotator} from '../src/secret-rotator';
 import sinon, {SinonStub} from 'sinon';
-import * as gaxios from 'gaxios';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as http from 'http';
@@ -39,16 +39,17 @@ describe('behavior of Cloud Run service', async () => {
   });
 
   it('should get 200 when posting, and parse correctly', async () => {
-    const response = await gaxios.request({
+    const response = await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
       method: 'POST',
-      url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
-      data: {
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
         serviceAccountProjectId: 'test-service-account',
         serviceAccountEmail: 'test-service-account-email',
         secretManagerProjectId: 'test-secret-project-manager-Id',
         secretName: 'test-secret-name',
-      },
+      }),
     });
+    const json = await response.json();
 
     assert.ok(rotateSecretStub.calledOnce);
     assert.ok(
@@ -60,77 +61,88 @@ describe('behavior of Cloud Run service', async () => {
       )
     );
     assert.deepStrictEqual(response.status, 200);
+    assert.deepStrictEqual(json, {
+      serviceAccountProjectId: 'test-service-account',
+      serviceAccountEmail: 'test-service-account-email',
+      secretManagerProjectId: 'test-secret-project-manager-Id',
+      secretName: 'test-secret-name',
+    });
   });
 
   it('should throw an error if service account is falsy', async () => {
     await assert.rejects(async () => {
-      await gaxios.request({
+      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
-        data: {
+        body: JSON.stringify({
           serviceAccountProjectId: '',
           serviceAccountEmail: 'test-service-account-email',
           secretManagerProjectId: 'test-secret-project-manager-Id',
           secretName: 'test-secret-name',
-        },
+        }),
+      }).then(res => {
+        throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 400/);
   });
 
   it('should throw an error if service account email is falsy', async () => {
     await assert.rejects(async () => {
-      await gaxios.request({
+      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
-        data: {
+        body: JSON.stringify({
           serviceAccountProjectId: 'test-service-account',
           serviceAccountEmail: '',
           secretManagerProjectId: 'test-secret-project-manager-Id',
           secretName: 'test-secret-name',
-        },
+        }),
+      }).then(res => {
+        throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 400/);
   });
 
   it('should throw an error if secret manager project ID is falsy', async () => {
     await assert.rejects(async () => {
-      await gaxios.request({
+      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
-        data: {
+        body: JSON.stringify({
           serviceAccountProjectId: 'test-service-account',
           serviceAccountEmail: 'test-service-account-email',
           secretManagerProjectId: '',
           secretName: 'test-secret-name',
-        },
+        }),
+      }).then(res => {
+        throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 400/);
   });
 
   it('should throw an error if secret name is falsy', async () => {
     await assert.rejects(async () => {
-      await gaxios.request({
+      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
-        data: {
+        body: JSON.stringify({
           serviceAccountProjectId: 'test-service-account',
           serviceAccountEmail: 'test-service-account-email',
           secretManagerProjectId: 'test-secret-project-manager-Id',
           secretName: '',
-        },
+        }),
+      }).then(res => {
+        throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 400/);
   });
 
   it('should get 404 when calling with any other method', async () => {
     await assert.rejects(async () => {
-      await gaxios.request({
+      await fetch(`http://localhost:${TEST_SERVER_PORT}/`, {
         method: 'GET',
-        url: `http://localhost:${TEST_SERVER_PORT}/`,
+      }).then(res => {
+        throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 404/);
   });
