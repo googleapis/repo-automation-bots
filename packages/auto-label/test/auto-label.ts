@@ -38,6 +38,7 @@ import * as gcfUtilsModule from 'gcf-utils';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 nock.disableNetConnect();
+const fetch = require('node-fetch');
 const sandbox = sinon.createSandbox();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -88,7 +89,7 @@ describe('auto-label', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     // We test the config schema compatibility in config-compatibility.ts
     validateConfigStub.resolves();
     sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
