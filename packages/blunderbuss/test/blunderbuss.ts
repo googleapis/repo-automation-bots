@@ -34,6 +34,7 @@ import * as sinon from 'sinon';
 import * as assert from 'assert';
 import {GCFLogger} from 'gcf-utils';
 import * as gcfUtilsModule from 'gcf-utils';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -69,6 +70,7 @@ describe('Blunderbuss', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
 
@@ -91,7 +93,7 @@ describe('Blunderbuss', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     // Sleep does nothing.
     sleepStub.resolves();
   });
@@ -772,6 +774,7 @@ describe('Blunderbuss getConfigWithDefault', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
 
@@ -790,7 +793,7 @@ describe('Blunderbuss getConfigWithDefault', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     // Sleep does nothing.
     sleepStub.resolves();
   });
@@ -907,6 +910,7 @@ describe('Blunderbuss validateConfigChanges', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
 
@@ -927,7 +931,7 @@ describe('Blunderbuss validateConfigChanges', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     // Sleep does nothing.
     sleepStub.resolves();
   });

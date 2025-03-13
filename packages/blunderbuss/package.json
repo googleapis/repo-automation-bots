@@ -28,15 +28,14 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^8.0.0",
-    "@google-automations/datastore-lock": "^6.0.0",
-    "@google-automations/label-utils": "^5.0.0",
-    "gcf-utils": "^16.2.1",
+    "@google-automations/bot-config-utils": "^9.0.0",
+    "@google-automations/datastore-lock": "^7.0.0",
+    "@google-automations/label-utils": "^6.0.0",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "@octokit/types": "^8.0.0",
-    "@octokit/webhooks": "^10.1.5",
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.13",
     "@types/sinon": "^10.0.13",
@@ -47,6 +46,7 @@
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
+    "node-fetch": "^2.6.9",
     "sinon": "^15.0.0",
     "smee-client": "^1.2.3",
     "snap-shot-it": "^7.9.6",
