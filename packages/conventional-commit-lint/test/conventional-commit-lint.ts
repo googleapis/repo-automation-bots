@@ -30,6 +30,7 @@ import * as assert from 'assert';
 import * as gcfUtilsModule from 'gcf-utils';
 import * as sinon from 'sinon';
 import yaml from 'js-yaml';
+const fetch = require('node-fetch');
 
 import myProbotApp from '../src/conventional-commit-lint';
 
@@ -69,6 +70,7 @@ describe('ConventionalCommitLint', () => {
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
         throttle: {enabled: false},
+        request: {fetch},
       }),
     });
     probot.load(myProbotApp);
@@ -76,7 +78,7 @@ describe('ConventionalCommitLint', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
