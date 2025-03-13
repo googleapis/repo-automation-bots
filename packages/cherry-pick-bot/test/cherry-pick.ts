@@ -25,6 +25,7 @@ import {
 } from '../src/cherry-pick';
 import * as CherryPickModule from '../src/cherry-pick';
 import sinon from 'sinon';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -58,6 +59,7 @@ describe('cherryPickCommits', () => {
   beforeEach(() => {
     octokit = new Octokit({
       auth: 'fakeToken',
+      request: {fetch},
     });
   });
 
@@ -200,6 +202,7 @@ describe('cherryPickAsPullRequest', () => {
   beforeEach(() => {
     octokit = new Octokit({
       auth: 'fakeToken',
+      request: {fetch},
     });
   });
 
