@@ -742,8 +742,9 @@ const handler = (app: Probot) => {
     const headSha = context.payload.pull_request.head.sha;
     const defaultBranch = context.payload.pull_request.base.repo.default_branch;
 
-    const headOwner = context.payload.pull_request.head.repo.owner.login;
-    const headRepo = context.payload.pull_request.head.repo.name;
+    const headOwner =
+      context.payload.pull_request.head.repo?.owner.login ?? 'unknown';
+    const headRepo = context.payload.pull_request.head.repo?.name ?? 'unknown';
     const headBranch = context.payload.pull_request.head.ref;
     let octokit: Octokit;
     if (context.payload.installation?.id) {

@@ -31,6 +31,7 @@ import {RequestError} from '@octokit/request-error';
 import {Errors, Manifest, GitHub} from 'release-please';
 import * as errorHandlingModule from '@google-automations/issue-utils';
 import {Octokit} from '@octokit/rest';
+const fetch = require('node-fetch');
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -57,6 +58,7 @@ describe('ReleasePleaseBot', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(myProbotApp);
@@ -66,7 +68,7 @@ describe('ReleasePleaseBot', () => {
     createLightweightTagStub = sandbox.stub(Runner, 'createLightweightTag');
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
-      .resolves(new Octokit({auth: 'faketoken'}));
+      .resolves(new Octokit({auth: 'faketoken', request: {fetch}}));
 
     sandbox.replace(datastoreLockModule, 'withDatastoreLock', async function (
       _details: any,

@@ -28,17 +28,17 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^8.0.0",
-    "@google-automations/datastore-lock": "^6.0.0",
-    "@google-automations/issue-utils": "^4.0.0",
-    "@google-automations/label-utils": "^5.0.0",
-    "@octokit/rest": "^19.0.4",
-    "@octokit/webhooks": "^10.1.5",
-    "gcf-utils": "^16.2.1",
+    "@google-automations/bot-config-utils": "^9.0.0",
+    "@google-automations/datastore-lock": "^7.0.0",
+    "@google-automations/issue-utils": "^5.0.0",
+    "@google-automations/label-utils": "^6.0.0",
+    "@octokit/rest": "^20.1.1",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0",
-    "release-please": "^16.18.0"
+    "release-please": "^17.0.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/semver": "^7.3.12",
@@ -50,6 +50,7 @@
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
+    "node-fetch": "^2.6.9",
     "sinon": "^18.0.0",
     "snap-shot-it": "^7.9.6",
     "typescript": "~5.7.3"
