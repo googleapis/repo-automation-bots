@@ -17,6 +17,7 @@ import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import {Octokit} from '@octokit/rest';
 import {branchRequiresReviews} from '../src/branch-protection';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -26,6 +27,7 @@ describe('branchRequiresReview', () => {
   beforeEach(() => {
     octokit = new Octokit({
       auth: 'fakeToken',
+      request: {fetch},
     });
   });
 

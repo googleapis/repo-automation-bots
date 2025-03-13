@@ -27,6 +27,7 @@ import * as cherryPickModule from '../src/cherry-pick';
 import * as branchProtectionModule from '../src/branch-protection';
 import * as fs from 'fs';
 import snapshot from 'snap-shot-it';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -57,6 +58,7 @@ describe('cherry-pick-bot config validation', () => {
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
         throttle: {enabled: false},
+        request: {fetch},
       }),
     });
     probot.load(myProbotApp);
@@ -66,7 +68,7 @@ describe('cherry-pick-bot config validation', () => {
       'getAuthenticatedOctokit'
     );
 
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -221,6 +223,7 @@ describe('cherry-pick-bot', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {fetch},
         }),
       },
     });
@@ -234,7 +237,7 @@ describe('cherry-pick-bot', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
