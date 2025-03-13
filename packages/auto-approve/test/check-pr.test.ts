@@ -26,8 +26,11 @@ import sinon from 'sinon';
 const {Octokit} = require('@octokit/rest');
 nock.disableNetConnect();
 
+const fetch = require('node-fetch');
+
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 

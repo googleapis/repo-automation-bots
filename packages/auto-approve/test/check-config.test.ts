@@ -23,9 +23,11 @@ import * as fs from 'fs';
 import nock from 'nock';
 import snapshot from 'snap-shot-it';
 const {Octokit} = require('@octokit/rest');
+const fetch = require('node-fetch');
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 
 nock.disableNetConnect();

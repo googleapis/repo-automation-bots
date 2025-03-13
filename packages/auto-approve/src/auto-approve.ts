@@ -217,8 +217,8 @@ export function handler(app: Probot) {
       const logger = getContextLogger(context);
       const pr = context.payload;
       const owner = pr.repository.owner.login;
-      const repoHead = pr.pull_request.head.repo.name;
-      const repoHeadOwner = pr.pull_request.head.repo.owner.login;
+      const repoHead = pr.pull_request.head.repo?.name || 'unknown';
+      const repoHeadOwner = pr.pull_request.head.repo?.owner.login || 'unknown';
       const repo = pr.pull_request.base.repo.name;
       const prNumber = pr.pull_request.number;
 

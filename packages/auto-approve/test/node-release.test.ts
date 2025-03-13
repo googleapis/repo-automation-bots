@@ -18,9 +18,11 @@ import assert from 'assert';
 import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
+const fetch = require('node-fetch');
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 
 describe('behavior of Node Release process', () => {

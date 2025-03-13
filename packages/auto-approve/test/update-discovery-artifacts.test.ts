@@ -17,9 +17,11 @@ import {describe, it} from 'mocha';
 import assert from 'assert';
 
 const {Octokit} = require('@octokit/rest');
+const fetch = require('node-fetch');
 
 const octokit = new Octokit({
   auth: 'mypersonalaccesstoken123',
+  request: {fetch},
 });
 
 describe('behavior of UpdateDiscoveryArtifacts process', () => {
