@@ -24,6 +24,7 @@ import * as gcfUtils from 'gcf-utils';
 import {assert} from 'console';
 import {RepositoryFileCache} from '@google-automations/git-file-utils';
 import {readFileSync} from 'fs';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -36,10 +37,13 @@ describe('repo-metadata-lint', () => {
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
         throttle: {enabled: false},
+        request: {fetch},
       }),
     });
     probot.load(handler);
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {

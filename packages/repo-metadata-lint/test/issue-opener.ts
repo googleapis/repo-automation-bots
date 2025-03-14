@@ -21,6 +21,7 @@ import {logger} from 'gcf-utils';
 import assert from 'assert';
 import {ErrorMessageText} from '../src/error-message-text';
 import {ValidationResult} from '../src/validate';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -29,6 +30,7 @@ describe('open-issue', () => {
   const OctokitFactory = Octokit.defaults({
     retry: {enabled: false},
     throttle: {enabled: false},
+    request: {fetch},
   });
   const octokit = new OctokitFactory();
   afterEach(() => {
