@@ -20,6 +20,7 @@ import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -35,6 +36,9 @@ describe('loadtest', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {
+            fetch,
+          },
         }),
       },
     });
