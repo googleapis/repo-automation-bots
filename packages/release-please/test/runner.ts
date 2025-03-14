@@ -16,13 +16,14 @@ import nock from 'nock';
 import {Runner} from '../src/runner';
 import {Octokit} from '@octokit/rest';
 import assert from 'assert';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
 describe('Release Please Runner', () => {
   let octokit: Octokit;
   beforeEach(() => {
-    octokit = new Octokit({auth: 'faketoken'});
+    octokit = new Octokit({auth: 'faketoken', request: {fetch}});
   });
   afterEach(() => {
     nock.cleanAll();

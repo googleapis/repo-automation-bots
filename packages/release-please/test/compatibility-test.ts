@@ -30,6 +30,7 @@ import {
   WELL_KNOWN_CONFIGURATION_FILE,
 } from '../src/config-constants';
 import {api} from '../src/release-please';
+const fetch = require('node-fetch');
 const myProbotApp = api.handler;
 
 nock.disableNetConnect();
@@ -95,12 +96,13 @@ describe('release-please bot', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(myProbotApp);
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
-      .resolves(new Octokit({auth: 'faketoken'}));
+      .resolves(new Octokit({auth: 'faketoken', request: {fetch}}));
   });
 
   afterEach(() => {
@@ -235,7 +237,7 @@ describe('release-please bot', () => {
 
 describe('getConfig', () => {
   const sandbox = sinon.createSandbox();
-  const octokit = new Octokit();
+  const octokit = new Octokit({request: {fetch}});
 
   beforeEach(() => {});
 
