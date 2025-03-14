@@ -35,6 +35,9 @@ describe('loadtest', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {
+            fetch: require('node-fetch'),
+          },
         }),
       },
     });
