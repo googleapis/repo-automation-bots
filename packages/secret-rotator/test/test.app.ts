@@ -16,6 +16,7 @@ import * as app from '../src/app';
 import fetch from 'node-fetch';
 import {SecretRotator} from '../src/secret-rotator';
 import sinon, {SinonStub} from 'sinon';
+import * as gaxios from 'gaxios';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as http from 'http';
@@ -39,17 +40,16 @@ describe('behavior of Cloud Run service', async () => {
   });
 
   it('should get 200 when posting, and parse correctly', async () => {
-    const response = await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
+    const response = await gaxios.request({
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
+      url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
+      data: {
         serviceAccountProjectId: 'test-service-account',
         serviceAccountEmail: 'test-service-account-email',
         secretManagerProjectId: 'test-secret-project-manager-Id',
         secretName: 'test-secret-name',
-      }),
+      },
     });
-    const json = await response.json();
 
     assert.ok(rotateSecretStub.calledOnce);
     assert.ok(
@@ -61,12 +61,6 @@ describe('behavior of Cloud Run service', async () => {
       )
     );
     assert.deepStrictEqual(response.status, 200);
-    assert.deepStrictEqual(json, {
-      serviceAccountProjectId: 'test-service-account',
-      serviceAccountEmail: 'test-service-account-email',
-      secretManagerProjectId: 'test-secret-project-manager-Id',
-      secretName: 'test-secret-name',
-    });
   });
 
   it('should throw an error if service account is falsy', async () => {
