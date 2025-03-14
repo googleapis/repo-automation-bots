@@ -65,33 +65,35 @@ describe('behavior of Cloud Run service', async () => {
 
   it('should throw an error if service account is falsy', async () => {
     await assert.rejects(async () => {
-      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
+      await gaxios.request({
         method: 'POST',
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
+        data: {
           serviceAccountProjectId: '',
           serviceAccountEmail: 'test-service-account-email',
           secretManagerProjectId: 'test-secret-project-manager-Id',
           secretName: 'test-secret-name',
-        }),
-      }).then(res => {
-        throw new Error(`Request failed with status code ${res.status}`);
+        },
       });
     }, /Error: Request failed with status code 400/);
   });
 
   it('should throw an error if service account email is falsy', async () => {
     await assert.rejects(async () => {
-      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          serviceAccountProjectId: 'test-service-account',
-          serviceAccountEmail: '',
-          secretManagerProjectId: 'test-secret-project-manager-Id',
-          secretName: 'test-secret-name',
-        }),
-      }).then(res => {
+      await fetch(
+        `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            serviceAccountProjectId: 'test-service-account',
+            serviceAccountEmail: '',
+            secretManagerProjectId: 'test-secret-project-manager-Id',
+            secretName: 'test-secret-name',
+          }),
+        }
+      ).then(res => {
         throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 400/);
@@ -99,16 +101,19 @@ describe('behavior of Cloud Run service', async () => {
 
   it('should throw an error if secret manager project ID is falsy', async () => {
     await assert.rejects(async () => {
-      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          serviceAccountProjectId: 'test-service-account',
-          serviceAccountEmail: 'test-service-account-email',
-          secretManagerProjectId: '',
-          secretName: 'test-secret-name',
-        }),
-      }).then(res => {
+      await fetch(
+        `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            serviceAccountProjectId: 'test-service-account',
+            serviceAccountEmail: 'test-service-account-email',
+            secretManagerProjectId: '',
+            secretName: 'test-secret-name',
+          }),
+        }
+      ).then(res => {
         throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 400/);
@@ -116,16 +121,19 @@ describe('behavior of Cloud Run service', async () => {
 
   it('should throw an error if secret name is falsy', async () => {
     await assert.rejects(async () => {
-      await fetch(`http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          serviceAccountProjectId: 'test-service-account',
-          serviceAccountEmail: 'test-service-account-email',
-          secretManagerProjectId: 'test-secret-project-manager-Id',
-          secretName: '',
-        }),
-      }).then(res => {
+      await fetch(
+        `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            serviceAccountProjectId: 'test-service-account',
+            serviceAccountEmail: 'test-service-account-email',
+            secretManagerProjectId: 'test-secret-project-manager-Id',
+            secretName: '',
+          }),
+        }
+      ).then(res => {
         throw new Error(`Request failed with status code ${res.status}`);
       });
     }, /Error: Request failed with status code 400/);
