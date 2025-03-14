@@ -28,17 +28,16 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/git-file-utils": "^1.2.5",
+    "@google-automations/git-file-utils": "^3.0.0",
     "@google-cloud/bigquery": "^7.9.0",
-    "@octokit/rest": "^19.0.4",
+    "@octokit/rest": "^20.1.1",
     "ajv": "^8.11.0",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^16.2.1",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0",
     "yargs": "^17.5.1"
   },
   "devDependencies": {
-    "@octokit/types": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
@@ -49,6 +48,7 @@
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
+    "node-fetch": "^2.6.9",
     "sinon": "^15.0.0",
     "typescript": "~4.9.0"
   },
