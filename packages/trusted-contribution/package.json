@@ -27,13 +27,14 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^8.0.0",
-    "@google-automations/issue-utils": "^4.0.0",
+    "@google-automations/bot-config-utils": "^9.0.0",
+    "@google-automations/issue-utils": "^5.0.0",
     "@google-cloud/secret-manager": "^5.6.0",
-    "gcf-utils": "^16.2.1",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
@@ -44,6 +45,7 @@
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
+    "node-fetch": "^2.6.9",
     "sinon": "^15.0.0",
     "snap-shot-it": "^7.9.6",
     "typescript": "~4.9.0"

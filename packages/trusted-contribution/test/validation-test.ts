@@ -27,6 +27,7 @@ import * as gcfUtils from 'gcf-utils';
 
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/trusted-contribution';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -73,6 +74,7 @@ describe('trusted-contribution bot', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {fetch},
         }),
       },
     });
@@ -80,7 +82,9 @@ describe('trusted-contribution bot', () => {
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     // This test is only for config validation.
     getConfigStub.resolves({disabled: true});
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {

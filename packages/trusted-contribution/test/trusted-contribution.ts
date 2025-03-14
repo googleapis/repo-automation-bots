@@ -38,6 +38,7 @@ import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/trusted-contribution';
 import * as utilsModule from '../src/utils';
 import schema from '../src/config-schema.json';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -62,6 +63,7 @@ describe('TrustedContributionTestRunner', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {fetch},
         }),
       },
     });
@@ -72,7 +74,9 @@ describe('TrustedContributionTestRunner', () => {
       botConfigModule.ConfigChecker.prototype,
       'validateConfigChanges'
     );
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
     addOrUpdateCommentStub = sandbox.stub(
       issueUtilsModule,
       'addOrUpdateIssueComment'
@@ -836,7 +840,7 @@ describe('TrustedContributionTestRunner', () => {
       utilsModule,
       'getAuthenticatedOctokit'
     );
-    const testOctokit = new Octokit();
+    const testOctokit = new Octokit({request: {fetch}});
     getAuthenticatedOctokitStub.resolves(testOctokit);
     requests
       .get(
