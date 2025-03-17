@@ -28,6 +28,7 @@ nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+const fetch = require('node-fetch');
 
 function loadFixture(path: string): string {
   return fs.readFileSync(resolve(fixturesPath, path)).toString('utf-8');
@@ -35,6 +36,12 @@ function loadFixture(path: string): string {
 
 describe('Runner', () => {
   let runner: Runner;
+  let _octokit: Octokit;
+
+  beforeEach(() => {
+    _octokit = new Octokit({ request: { fetch }})
+  });
+
   afterEach(() => {
     sandbox.restore();
   });
