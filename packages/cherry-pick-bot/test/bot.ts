@@ -31,6 +31,7 @@ import snapshot from 'snap-shot-it';
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+const fetch = require('node-fetch');
 
 function createConfigResponse(configFile: string) {
   const config = fs.readFileSync(resolve(fixturesPath, configFile));
@@ -66,7 +67,7 @@ describe('cherry-pick-bot config validation', () => {
       'getAuthenticatedOctokit'
     );
 
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -234,7 +235,7 @@ describe('cherry-pick-bot', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {

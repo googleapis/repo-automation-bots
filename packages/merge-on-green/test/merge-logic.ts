@@ -32,6 +32,7 @@ import * as gcfUtilsModule from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 
 const sandbox = sinon.createSandbox();
+const fetch = require('node-fetch');
 
 interface HeadSha {
   sha: string;
@@ -178,7 +179,7 @@ describe('merge-logic', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -867,7 +868,7 @@ describe('merge-logic', () => {
         'testOwner',
         'testRepo',
         1,
-        new Octokit({auth: 'abc123'})
+        new Octokit({auth: 'abc123', request: {fetch}})
       );
       lastCommitRequest.done();
       assert.match(lastCommit, /lastcommit/);

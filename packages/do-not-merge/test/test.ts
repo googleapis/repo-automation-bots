@@ -28,6 +28,7 @@ import * as gcfUtilsModule from 'gcf-utils';
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+const fetch = require('node-fetch');
 
 function createConfigResponse(configFile: string) {
   const config = fs.readFileSync(resolve(fixturesPath, configFile));
@@ -55,6 +56,7 @@ describe('do-not-merge', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(myProbotApp);
@@ -62,7 +64,7 @@ describe('do-not-merge', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
