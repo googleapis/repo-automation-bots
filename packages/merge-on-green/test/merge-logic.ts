@@ -868,7 +868,7 @@ describe('merge-logic', () => {
         'testOwner',
         'testRepo',
         1,
-        new Octokit({auth: 'abc123'}, {request: {fetch}})
+        new Octokit({auth: 'abc123', request: {fetch}})
       );
       lastCommitRequest.done();
       assert.match(lastCommit, /lastcommit/);
