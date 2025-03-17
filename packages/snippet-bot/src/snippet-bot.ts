@@ -261,6 +261,8 @@ async function scanPullRequest(
   );
 
   let result: ChangesInPullRequest;
+  let prOwner = pull_request.head.repo?.owner.login ?? 'unknown';
+  let prRepoName = pull_request.head.repo?.name ?? 'unknown';
   try {
     // Parse the PR diff and recognize added/deleted region tags.
     result = await parseRegionTagsInPullRequest(
@@ -270,8 +272,8 @@ async function scanPullRequest(
       pull_request.base.repo.name,
       pull_request.base.sha,
       pull_request.base.ref,
-      pull_request.head.repo.owner.login,
-      pull_request.head.repo.name,
+      prOwner,
+      prRepoName,
       pull_request.head.sha,
       pull_request.head.ref
     );
@@ -297,8 +299,8 @@ async function scanPullRequest(
   const parseResults = new Map<string, ParseResult>();
 
   const cache = new RepositoryFileCache(octokit, {
-    owner: pull_request.head.repo.owner.login,
-    repo: pull_request.head.repo.name,
+    owner: prOwner,
+    repo: prRepoName,
   });
   // If we found any new files, verify they all have matching region tags.
   for (const file of result.files) {

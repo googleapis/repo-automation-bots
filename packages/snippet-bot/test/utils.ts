@@ -45,6 +45,7 @@ const loc: RegionTagLocation = {
   sha: 'sha',
   line: 42,
 };
+const fetch = require('node-fetch');
 
 describe('formatBody', () => {
   const commentMark = '<!-- commentMark>';
@@ -169,7 +170,7 @@ describe('maybeTrimText', () => {
 });
 
 describe('CheckAggregator', () => {
-  const octokit = new Octokit();
+  const octokit = new Octokit({request: {fetch}});
   const sandbox = sinon.createSandbox();
   let checksCreateStub: sinon.SinonStub;
   beforeEach(() => {
