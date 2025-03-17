@@ -29,6 +29,7 @@ import sinon from 'sinon';
 nock.disableNetConnect();
 
 const sandbox = sinon.createSandbox();
+const fetch = require('node-fetch');
 
 describe('parseCherryPickComment', () => {
   it('parses a command comment', () => {
@@ -58,6 +59,7 @@ describe('cherryPickCommits', () => {
   beforeEach(() => {
     octokit = new Octokit({
       auth: 'fakeToken',
+      request: {fetch},
     });
   });
 
@@ -200,6 +202,7 @@ describe('cherryPickAsPullRequest', () => {
   beforeEach(() => {
     octokit = new Octokit({
       auth: 'fakeToken',
+      request: {fetch},
     });
   });
 

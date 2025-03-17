@@ -27,7 +27,7 @@ import {Octokit} from '@octokit/rest';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import * as gcfUtilsModule from 'gcf-utils';
 
-const testingOctokitInstance = new Octokit({auth: 'abc123'});
+const testingOctokitInstance = new Octokit({auth: 'abc123'}, {request: {fetch}});
 const sandbox = sinon.createSandbox();
 
 interface PR {
@@ -45,6 +45,7 @@ interface PR {
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
+const fetch = require('node-fetch');
 
 function getBranchProtection(
   branch: string,
@@ -120,7 +121,7 @@ describe('merge-on-green wrapper logic', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit(), {request: {fetch}});
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
