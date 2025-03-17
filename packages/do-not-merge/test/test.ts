@@ -55,8 +55,8 @@ describe('do-not-merge', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
-          request: {fetch},
         }),
+        request: {fetch},
       },
     });
     probot.load(myProbotApp);
