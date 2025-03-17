@@ -78,7 +78,9 @@ describe('snippet-bot scheduler handler', () => {
     probot.load(myProbotApp);
     getConfigStub = sandbox.stub(configUtilsModule, 'getConfig');
     syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit({request: {fetch}}));
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -218,7 +220,9 @@ describe('snippet-bot config validation', () => {
       ignoreFiles: ['ignore.py'],
       aggregateChecks: false,
     });
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit({request: {fetch}}));
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -322,7 +326,9 @@ describe('snippet-bot bot-config-utils integration', () => {
       'validateConfigChanges'
     );
     validateConfigStub.resolves(undefined);
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit({request: {fetch}}));
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -415,7 +421,9 @@ describe('snippet-bot', () => {
       'validateConfigChanges'
     );
     validateConfigStub.resolves(undefined);
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit({request: {fetch}}));
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
     getFileContentsStub = sandbox.stub(
       RepositoryFileCache.prototype,
       'getFileContents'

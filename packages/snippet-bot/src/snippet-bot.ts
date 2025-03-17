@@ -261,8 +261,8 @@ async function scanPullRequest(
   );
 
   let result: ChangesInPullRequest;
-  let prOwner = pull_request.head.repo?.owner.login ?? 'unknown';
-  let prRepoName = pull_request.head.repo?.name ?? 'unknown';
+  const prOwner = pull_request.head.repo?.owner.login ?? 'unknown';
+  const prRepoName = pull_request.head.repo?.name ?? 'unknown';
   try {
     // Parse the PR diff and recognize added/deleted region tags.
     result = await parseRegionTagsInPullRequest(
