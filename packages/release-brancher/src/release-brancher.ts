@@ -70,7 +70,7 @@ export class Runner {
     this.branchName = options.branchName;
     this.targetTag = options.targetTag;
     this.releaseType = options.releaseType;
-    this.octokit = new Octokit({auth: options.gitHubToken, request: { fetch }});
+    this.octokit = new Octokit({auth: options.gitHubToken, request: {fetch}});
     this.upstreamRepo = options.upstreamRepo;
     this.upstreamOwner = options.upstreamOwner;
     this.pullRequestTitle = options.pullRequestTitle;
