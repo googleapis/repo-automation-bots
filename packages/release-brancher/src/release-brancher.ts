@@ -18,6 +18,8 @@ import {RequestError} from '@octokit/types';
 import {createPullRequest, Changes} from 'code-suggester';
 import * as yaml from 'js-yaml';
 
+const fetch = require('node-fetch');
+
 interface RunnerOptions {
   branchName: string;
   targetTag: string;
@@ -68,7 +70,7 @@ export class Runner {
     this.branchName = options.branchName;
     this.targetTag = options.targetTag;
     this.releaseType = options.releaseType;
-    this.octokit = new Octokit({auth: options.gitHubToken});
+    this.octokit = new Octokit({auth: options.gitHubToken, request: fetch});
     this.upstreamRepo = options.upstreamRepo;
     this.upstreamOwner = options.upstreamOwner;
     this.pullRequestTitle = options.pullRequestTitle;
