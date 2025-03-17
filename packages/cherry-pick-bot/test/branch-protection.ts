@@ -28,7 +28,7 @@ describe('branchRequiresReview', () => {
   beforeEach(() => {
     octokit = new Octokit({
       auth: 'fakeToken',
-      {request: {fetch}},
+      request: {fetch},
     });
   });
 

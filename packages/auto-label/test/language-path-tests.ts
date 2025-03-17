@@ -49,6 +49,7 @@ describe('language-and-path-labeling', () => {
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
         throttle: {enabled: false},
+        request: {fetch},
       }),
     });
     probot.load(handler);
