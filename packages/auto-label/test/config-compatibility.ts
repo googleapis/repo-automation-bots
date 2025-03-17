@@ -82,6 +82,7 @@ describe('getConfigWithDefault', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(handler);
