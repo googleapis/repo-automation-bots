@@ -27,6 +27,7 @@ import {resolve} from 'path';
 
 const sandbox = sinon.createSandbox();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+const fetch = require('node-fetch');
 
 function fileContentsFromFixture(fixture: string): GitHubFileContents {
   return {
@@ -43,7 +44,7 @@ describe('scanServiceConfigsForApiLabels', () => {
   afterEach(() => {
     sandbox.restore();
   });
-  const octokit = new Octokit({auth: '123'});
+  const octokit = new Octokit({auth: '123', request: {fetch}});
   it('should collect fields from service configs', async () => {
     sandbox
       .stub(RepositoryFileCache.prototype, 'findFilesByGlob')

@@ -28,11 +28,12 @@ import nock from 'nock';
 import * as sinon from 'sinon';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
 describe('region-tag-parser', () => {
-  const octokit = new Octokit({auth: '123'});
+  const octokit = new Octokit({auth: '123', request: {fetch}});
   const sandbox = sinon.createSandbox();
   let getFileContentsStub: sinon.SinonStub;
 
