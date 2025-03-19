@@ -18,9 +18,9 @@
     "build/src"
   ],
   "scripts": {
-    "test": "cd cli && npm i && npm t && cd ../app && npm i && npm t && cd ../common-container && npm i && npm t",
-    "fix": "cd cli && npm i && npm run fix && cd ../app && npm i && npm run fix && cd ../common-container && npm i && npm run fix",
-    "lint": "cd cli && npm i && npm run lint && cd ../app && npm i && npm run lint && cd ../common-container && npm i && npm run lint"
+    "test": "cd cli && npm i && npm t cd ../common-container && npm i && npm t",
+    "fix": "cd cli && npm i && npm run fix && cd ../common-container && npm i && npm run fix",
+    "lint": "cd cli && npm i && npm run lint && cd ../common-container && npm i && npm run lint"
   },
   "engines": {
     "node": ">= 18"
