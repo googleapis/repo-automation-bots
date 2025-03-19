@@ -22,6 +22,7 @@ import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {Octokit} from '@octokit/rest';
 import * as fetchApiInfo from '../fetch-api-info';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -119,7 +120,7 @@ describe('pre processing', async () => {
       sourceCl: 2345,
     };
 
-    const octokit = new Octokit({auth: 'abc1234'});
+    const octokit = new Octokit({auth: 'abc1234', request: {fetch}});
     authenticateOctokitStub.returns(octokit);
     cloneRepoAndOpenBranchStub.rejects();
 
@@ -149,7 +150,7 @@ describe('pre processing', async () => {
       sourceCl: 2345,
     };
 
-    const octokit = new Octokit({auth: 'abc1234'});
+    const octokit = new Octokit({auth: 'abc1234', request: {fetch}});
     authenticateOctokitStub.returns(octokit);
     cloneRepoAndOpenBranchStub.rejects();
 
