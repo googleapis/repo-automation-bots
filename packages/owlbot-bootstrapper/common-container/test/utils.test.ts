@@ -22,6 +22,7 @@ import assert from 'assert';
 import snapshot from 'snap-shot-it';
 import sinon from 'sinon';
 import * as fs from 'fs';
+const fetch = require('node-fetch');
 
 let directoryPath: string;
 let repoToClonePath: string;
@@ -66,7 +67,7 @@ describe('common utils tests', async () => {
     await execSync(`rm -rf ${repoToClonePath}`);
   });
 
-  const octokit = new Octokit({auth: 'abc1234'});
+  const octokit = new Octokit({auth: 'abc1234', request: {fetch}});
 
   it('get branch name from a well-known path', async () => {
     const branchName = await utils.getWellKnownFileContents(

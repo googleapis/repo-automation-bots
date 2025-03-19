@@ -22,6 +22,7 @@ import * as fs from 'fs';
 import {MonoRepo} from '../mono-repo';
 import * as utils from '../utils';
 import assert from 'assert';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -58,7 +59,7 @@ describe('MonoRepo class', () => {
     await execSync(`rm -rf ${repoToClonePath}`);
   });
 
-  const octokit = new Octokit({auth: 'abc1234'});
+  const octokit = new Octokit({auth: 'abc1234', request: {fetch}});
 
   it('should create the right type of object', async () => {
     const monoRepo = new MonoRepo(

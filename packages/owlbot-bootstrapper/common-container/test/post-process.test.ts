@@ -21,6 +21,7 @@ import {CliArgs} from '../interfaces';
 import assert from 'assert';
 import {postProcess} from '../post-process';
 import {Octokit} from '@octokit/rest';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -108,7 +109,7 @@ describe('post processing', async () => {
       sourceCl: 2345,
     };
 
-    const octokit = new Octokit({auth: 'abc1234'});
+    const octokit = new Octokit({auth: 'abc1234', request: {fetch}});
     authenticateOctokitStub.returns(octokit);
     pushToBranchAndOpenPRStub.rejects();
 
@@ -137,7 +138,7 @@ describe('post processing', async () => {
       skipIssueOnFailure: 'true',
       sourceCl: 2345,
     };
-    const octokit = new Octokit({auth: 'abc1234'});
+    const octokit = new Octokit({auth: 'abc1234', request: {fetch}});
     authenticateOctokitStub.returns(octokit);
     pushToBranchAndOpenPRStub.rejects();
 
