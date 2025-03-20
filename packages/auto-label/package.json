@@ -22,7 +22,7 @@
     "start": "node ./build/src/server.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch build/test",
+    "test": "NODE_OPTIONS='--no-deprecation' cross-env NOCK_DEBUG=1  LOG_LEVEL=debug c8 mocha build/test -- --grep 'adds staleness labels when feature enabled with default config values'",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -35,8 +35,7 @@
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "@octokit/types": "^8.0.0",
-    "@types/js-yaml": "^4.0.9",
+    "@types/js-yaml": "^3.11.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
