@@ -302,7 +302,9 @@ async function updateStalenessLabel(
     logger.info(`Staleness feature is disabled for ${owner}/${repo}...`);
     return;
   }
-
+   console.log("Type of Config", typeof config);
+  logger.info(`config...` + config.staleness.pullrequest);
+  logger.info(`config...` + config.staleness.old);
   const old = config.staleness?.old || helper.DEFAULT_DAYS_TO_STALE;
   const extraold =
     config.staleness?.extraold || helper.DEFAULT_DAYS_TO_STALE * 2;
@@ -334,20 +336,27 @@ async function updateStalenessLabel(
         continue;
       }
       logger.info(
-        `Checking staleness in PR #${pull.number} in ${owner}/${repo}...`
+        `Checking staleness in PR #${pull.number} in ${owner}/${repo}... ${pull.created_at}`
       );
       let label = null;
       const staleLabel = helper.fetchLabelByPrefix(
         pull.labels as Label[],
         helper.STALE_PREFIX
       );
+
       if (helper.isExpiredByDays(pull.created_at, extraold)) {
         label = `${helper.STALE_PREFIX} ${helper.EXTRAOLD_LABEL}`;
       } else if (helper.isExpiredByDays(pull.created_at, old)) {
         label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
       }
+    logger.info(
+          `label ${label} ${staleLabel?.name}`
+        );
       if (label && label !== staleLabel?.name) {
         // We are going to update a label now, remove an old one if exists
+        logger.info(
+                  `staleLabel ${staleLabel} `
+                );
         if (staleLabel) {
           logger.info(
             `Deleting ${staleLabel} in ${owner}/${repo}/${pull.number}...`
@@ -499,6 +508,7 @@ export function handler(app: Probot) {
       await syncLabels(octokit, owner, repo, helper.PULL_REQUEST_SIZE_LABELS);
     }
     // Update staleness labels on all pull requests in the repo
+    console.log ("got here")
     updateStalenessLabel(context, owner, repo, config, logger);
 
     logger.info(`running for org ${context.payload.cron_org}`);

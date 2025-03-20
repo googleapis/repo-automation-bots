@@ -90,10 +90,12 @@ describe('auto-label', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
+    getAuthenticatedOctokitStub.resolves(new Octokit({githubToken: 'abc123', request: {fetch}}));
     // We test the config schema compatibility in config-compatibility.ts
     validateConfigStub.resolves();
     sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
+    nock.recorder.rec({
+        enable_reqheaders_recording: true})
   });
 
   afterEach(() => {
