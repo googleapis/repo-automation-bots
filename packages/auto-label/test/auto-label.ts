@@ -791,36 +791,8 @@ describe('auto-label', () => {
             color: 'A9FFE5',
           },
         ])
-        .post('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, [
-          {
-            name: 'stale: extraold',
-            color: 'A9FFE5',
-          },
-        ])
-        .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, [
-          {
-            name: 'stale: old',
-            color: 'A9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, [
-          {
-            number: 5,
-            created_at: '2021-10-06T16:45:18Z',
-            labels: [
-              {
-                name: 'stale: extraold',
-                color: 'C9FFE5',
-              },
-            ],
-            pull_request: {
-              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
-            },
-          },
-        ]);
+        .reply(200, []);
 
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -950,17 +922,6 @@ describe('auto-label', () => {
       getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, [])
-        .post('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, [
-          {
-            name: 'stale: extraold',
-            color: 'C9FFE5',
-          },
-        ])
-        .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, [])
-        .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
             number: 5,
@@ -969,7 +930,16 @@ describe('auto-label', () => {
               url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
             },
           },
-        ]);
+        ])
+        .post('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'stale: extraold',
+            color: 'C9FFE5',
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, []);
 
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
