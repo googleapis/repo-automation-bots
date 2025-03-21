@@ -499,7 +499,7 @@ export function handler(app: Probot) {
       await syncLabels(octokit, owner, repo, helper.PULL_REQUEST_SIZE_LABELS);
     }
     // Update staleness labels on all pull requests in the repo
-    updateStalenessLabel(context, owner, repo, config, logger);
+    await updateStalenessLabel(context, owner, repo, config, logger);
 
     logger.info(`running for org ${context.payload.cron_org}`);
     if (context.payload.cron_org !== owner) {

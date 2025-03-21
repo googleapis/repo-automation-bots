@@ -32,6 +32,7 @@ import * as gcfUtilsModule from 'gcf-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
+const fetch = require('node-fetch');
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -81,6 +82,7 @@ describe('getConfigWithDefault', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(handler);
@@ -94,7 +96,7 @@ describe('getConfigWithDefault', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -198,7 +200,7 @@ describe('validateConfigChanges', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {

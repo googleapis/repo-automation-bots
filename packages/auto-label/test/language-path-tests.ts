@@ -35,6 +35,8 @@ const sandbox = sinon.createSandbox();
 import * as helper from '../src/helper';
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
+const fetch = require('node-fetch');
+
 describe('language-and-path-labeling', () => {
   let probot: Probot;
   let getConfigWithDefaultStub: sinon.SinonStub;
@@ -48,6 +50,7 @@ describe('language-and-path-labeling', () => {
         retry: {enabled: false},
         throttle: {enabled: false},
       }),
+      request: {fetch},
     });
     probot.load(handler);
     getConfigWithDefaultStub = sandbox.stub(
@@ -64,7 +67,7 @@ describe('language-and-path-labeling', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
