@@ -270,7 +270,7 @@ async function runBranchConfigurationWithConfigurationHandling(
   octokit: Octokit,
   options: RunBranchOptions
 ) {
-  const target = `${repoUrl}---${branchConfiguration.branch}`;
+  const target = `${repoUrl}---${branchConfiguration.branch}---${branchConfiguration.manifestConfig}`;
   const branchContext = {
     branch: branchConfiguration.branch,
     manifestConfig: branchConfiguration.manifestConfig,
