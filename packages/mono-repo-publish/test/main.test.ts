@@ -20,6 +20,7 @@ import * as sinon from 'sinon';
 import * as path from 'path';
 import {Octokit} from '@octokit/rest';
 import {makeTempDirWithTarballs} from './util';
+const fetch = require('node-fetch');
 
 const sandbox = sinon.createSandbox();
 
@@ -63,7 +64,7 @@ describe('mono-repo publish', () => {
   });
 
   it('lists all files on a PR', async () => {
-    const octokit = new Octokit();
+    const octokit = new Octokit({request: {fetch}});
     const fileRequest = nock('https://api.github.com')
       .get('/repos/testOwner/testRepo/pulls/1/files')
       .reply(200, changedFiles);
