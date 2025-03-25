@@ -31,6 +31,7 @@ import * as gcfUtils from 'gcf-utils';
 
 import {handler} from '../src/bot';
 import {CONFIG_FILE_NAME} from '../src/config';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -152,6 +153,7 @@ describe('Sync repo settings', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {fetch},
         }),
       },
     });
@@ -161,7 +163,9 @@ describe('Sync repo settings', () => {
     sandbox.stub(logger, 'debug');
     getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     addIssueStub = sandbox.stub(issueModule, 'addOrUpdateIssue');
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {

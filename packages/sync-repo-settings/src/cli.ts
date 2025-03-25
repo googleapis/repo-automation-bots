@@ -26,6 +26,7 @@ import {RepoConfig} from './types';
 import {SyncRepoSettings} from './sync-repo-settings';
 import {CONFIG_FILE_NAME} from './config';
 import schema from './schema.json';
+const fetch = require('node-fetch');
 
 interface Args {
   file?: string;
@@ -67,6 +68,7 @@ const sync: yargs.CommandModule<{}, Args> = {
     const [owner, repo] = argv.repo.split('/');
     const octokit = new Octokit({
       auth: argv['github-token'],
+      request: {fetch},
     });
 
     let config: RepoConfig | null;

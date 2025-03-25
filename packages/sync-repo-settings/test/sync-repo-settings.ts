@@ -24,6 +24,7 @@ import {readFileSync} from 'fs';
 import {resolve} from 'path';
 import * as yaml from 'js-yaml';
 import assert from 'assert';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -41,6 +42,7 @@ describe('SyncRepoSettings', () => {
   beforeEach(() => {
     octokit = new Octokit({
       auth: 'faketoken',
+      request: {fetch},
     });
     sandbox.stub(logger, 'error').throwsArg(0);
     sandbox.stub(logger, 'info');
