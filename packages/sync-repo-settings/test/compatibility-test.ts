@@ -30,6 +30,7 @@ import {CONFIG_FILE_NAME} from '../src/config';
 import {RepoConfig} from '../src/types';
 import schema from '../src/schema.json';
 import * as gcfUtils from 'gcf-utils';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -82,11 +83,14 @@ describe('Sync repo settings', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {fetch},
         }),
       },
     });
     probot.load(handler);
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
   afterEach(() => {
     sandbox.restore();
@@ -120,7 +124,7 @@ describe('Sync repo settings', () => {
 });
 
 describe('getConfig', () => {
-  const octokit = new Octokit();
+  const octokit = new Octokit({request: {fetch}});
 
   afterEach(() => {
     nock.cleanAll();
