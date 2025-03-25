@@ -271,6 +271,12 @@ async function runBranchConfigurationWithConfigurationHandling(
   options: RunBranchOptions
 ) {
   const target = `${repoUrl}---${branchConfiguration.branch}`;
+  const branchContext = {
+    branch: branchConfiguration.branch,
+    manifestConfig: branchConfiguration.manifestConfig,
+    manifestFile: branchConfiguration.manifestFile,
+  };
+  const logger = (options.logger ?? new GCFLogger()).child(branchContext);
   await withDatastoreLock(
     {
       lockId: RP_LOCK_ID,
@@ -285,7 +291,10 @@ async function runBranchConfigurationWithConfigurationHandling(
         repoUrl,
         branchConfiguration,
         octokit,
-        options
+        {
+          ...options,
+          logger: logger,
+        }
       );
     }
   );
