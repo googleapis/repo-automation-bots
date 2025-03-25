@@ -36,6 +36,7 @@ import {
 } from '../src/generated-files-bot';
 import schema from '../src/config-schema.json';
 import {CONFIGURATION_FILE_PATH, Configuration} from '../src/config';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -64,7 +65,7 @@ describe('generated-files-bot', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
@@ -111,7 +112,12 @@ describe('generated-files-bot', () => {
           },
         ],
       };
-      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
+      const list = await getFileList(
+        config,
+        new Octokit({request: {fetch}}),
+        'owner',
+        'repo'
+      );
       assert.deepStrictEqual(list, [
         {path: 'file1.txt'},
         {path: 'file2.txt'},
@@ -144,7 +150,12 @@ describe('generated-files-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
+      const list = await getFileList(
+        config,
+        new Octokit({request: {fetch}}),
+        'owner',
+        'repo'
+      );
       assert.deepStrictEqual(list, [
         {path: 'value1'},
         {path: 'value2'},
@@ -178,7 +189,12 @@ describe('generated-files-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
+      const list = await getFileList(
+        config,
+        new Octokit({request: {fetch}}),
+        'owner',
+        'repo'
+      );
       assert.deepStrictEqual(list, [
         {path: 'file1.txt'},
         {path: 'value1'},
@@ -203,7 +219,12 @@ describe('generated-files-bot', () => {
         .reply(404, {
           content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
+      const list = await getFileList(
+        config,
+        new Octokit({request: {fetch}}),
+        'owner',
+        'repo'
+      );
       assert.deepStrictEqual(list, []);
       requests.done();
     });
@@ -220,7 +241,7 @@ describe('generated-files-bot', () => {
         ]);
 
       const list = await getPullRequestFiles(
-        new Octokit(),
+        new Octokit({request: {fetch}}),
         'owner',
         'repo',
         1234
@@ -261,6 +282,7 @@ describe('generated-files-bot', () => {
           Octokit: ProbotOctokit.defaults({
             retry: {enabled: false},
             throttle: {enabled: false},
+            request: {fetch},
           }),
         },
       });
@@ -491,6 +513,7 @@ describe('validateConfigChanges', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {fetch},
         }),
       },
     });
@@ -504,7 +527,7 @@ describe('validateConfigChanges', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
