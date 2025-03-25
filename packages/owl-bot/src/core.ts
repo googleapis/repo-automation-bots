@@ -20,12 +20,11 @@ import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
-import {retry} from '@octokit/plugin-retry';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
 import {OwlBotLock, OWL_BOT_LOCK_PATH, owlBotLockFrom} from './config-files';
-import {OctokitFactory} from './octokit-util';
+import {OctokitFactory, MyOctokit} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
 import {OWL_BOT_POST_PROCESSOR_COMMIT_MESSAGE_MATCHER} from './constants';
 import {CopyCodeIntoPullRequestAction} from './copy-code';
@@ -364,7 +363,6 @@ export async function getAuthenticatedOctokit(
   } else {
     tokenString = auth;
   }
-  const MyOctokit = Octokit.plugin(retry);
   const octokit = new MyOctokit({
     auth: tokenString,
   });

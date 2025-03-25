@@ -42,7 +42,8 @@ export const validate: yargs.CommandModule<{}, Args> = {
         describe:
           'regular expression of paths to ignore while scanning the ' +
           'directory.  Example: .*/templates/.*',
-        type: 'array',
+        type: 'string',
+        array: true,
         demand: false,
         default: [],
       });

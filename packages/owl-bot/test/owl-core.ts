@@ -28,6 +28,7 @@ import * as protos from '@google-cloud/cloudbuild/build/protos/protos';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 import {OwlBotLock} from '../src/config-files';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -449,7 +450,12 @@ describe('core', () => {
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
-      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      const loop = await core.hasOwlBotLoop(
+        'bcoe',
+        'foo',
+        22,
+        new Octokit({request: {fetch}})
+      );
       assert.strictEqual(loop, false);
       githubMock.done();
     });
@@ -469,7 +475,12 @@ describe('core', () => {
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
-      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      const loop = await core.hasOwlBotLoop(
+        'bcoe',
+        'foo',
+        22,
+        new Octokit({request: {fetch}})
+      );
       assert.strictEqual(loop, true);
       githubMock.done();
     });
@@ -490,7 +501,12 @@ describe('core', () => {
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
-      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      const loop = await core.hasOwlBotLoop(
+        'bcoe',
+        'foo',
+        22,
+        new Octokit({request: {fetch}})
+      );
       assert.strictEqual(loop, false);
       githubMock.done();
     });
@@ -503,7 +519,12 @@ describe('core', () => {
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
-      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      const loop = await core.hasOwlBotLoop(
+        'bcoe',
+        'foo',
+        22,
+        new Octokit({request: {fetch}})
+      );
       assert.strictEqual(loop, false);
       githubMock.done();
     });
@@ -512,7 +533,12 @@ describe('core', () => {
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, []);
-      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      const loop = await core.hasOwlBotLoop(
+        'bcoe',
+        'foo',
+        22,
+        new Octokit({request: {fetch}})
+      );
       assert.strictEqual(loop, false);
       githubMock.done();
     });
