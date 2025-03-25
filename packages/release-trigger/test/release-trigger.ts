@@ -28,12 +28,14 @@ import * as releaseTriggerModule from '../src/release-trigger';
 import {Octokit} from '@octokit/rest';
 import * as assert from 'assert';
 import {logger} from 'gcf-utils';
+const fetch = require('node-fetch');
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
 
 const octokit = new Octokit({
   auth: 'fake-access-token',
+  request: {fetch},
 });
 
 function buildFakePullRequest(
