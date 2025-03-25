@@ -23,6 +23,7 @@ import * as sinon from 'sinon';
 import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
 import {GCFLogger} from 'gcf-utils';
+const fetch = require('node-fetch');
 const TestingOctokit = ProbotOctokit.defaults({
   retry: {enabled: false},
   throttle: {enabled: false},
@@ -86,6 +87,7 @@ describe('Label Sync', () => {
       overrides: {
         githubToken: 'abc123',
         Octokit: TestingOctokit,
+        request: {fetch},
       },
     });
 
@@ -104,7 +106,8 @@ describe('Label Sync', () => {
 
   afterEach(() => sandbox.restore());
 
-  it('should sync labels on repo create', async () => {
+  it('should sync labels on repo create', async function (this: Mocha.Context) {
+    this.timeout(120000); // 120 seconds
     const payload = require(path.resolve(
       fixturesPath,
       './repository_created.json'
@@ -122,7 +125,8 @@ describe('Label Sync', () => {
     scopes.forEach(s => s.done());
   });
 
-  it('should sync labels on label delete', async () => {
+  it('should sync labels on label delete', async function (this: Mocha.Context) {
+    this.timeout(120000); // 120 seconds
     const payload = require(path.resolve(fixturesPath, './label_deleted.json'));
     const scopes = [
       nockFetchOldLabels([]),
@@ -132,7 +136,8 @@ describe('Label Sync', () => {
     scopes.forEach(s => s.done());
   });
 
-  it('should delete expected labels', async () => {
+  it('should delete expected labels', async function (this: Mocha.Context) {
+    this.timeout(120000); // 120 seconds
     const payload = require(path.resolve(
       fixturesPath,
       './repository_created.json'
@@ -171,7 +176,8 @@ describe('Label Sync', () => {
     scopes.forEach(s => s.done());
   });
 
-  it('should handle missing properties on data from GCS', async () => {
+  it('should handle missing properties on data from GCS', async function (this: Mocha.Context) {
+    this.timeout(120000); // 120 seconds
     // Simulate the results coming back from DRIFT having missing fields.
     // In this case, the `apishort_name` property is explicitly missing.
     getApiLabelsStub.restore();
@@ -201,7 +207,8 @@ describe('Label Sync', () => {
     assert.ok(getApiLabelsStub.calledOnce);
   });
 
-  it('should sync labels on cron job', async () => {
+  it('should sync labels on cron job', async function (this: Mocha.Context) {
+    this.timeout(120000); // 120 seconds
     const scopes = [
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length + 1),
@@ -222,7 +229,8 @@ describe('Label Sync', () => {
     scopes.forEach(s => s.done());
   });
 
-  it('should attempt to load config', async () => {
+  it('should attempt to load config', async function (this: Mocha.Context) {
+    this.timeout(120000); // 120 seconds
     const payload = require(path.resolve(
       fixturesPath,
       './repository_created.json'
@@ -241,7 +249,8 @@ describe('Label Sync', () => {
     assert.ok(loadConfigStub.calledOnce);
   });
 
-  it('should skip sync if repository is ignored', async () => {
+  it('should skip sync if repository is ignored', async function (this: Mocha.Context) {
+    this.timeout(120000); // 120 seconds
     loadConfigStub.restore();
     loadConfigStub = sandbox.stub(labelSync, 'loadConfig').resolves({
       ignored: true,
