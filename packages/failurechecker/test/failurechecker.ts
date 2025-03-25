@@ -23,6 +23,7 @@ import * as sinon from 'sinon';
 import {failureChecker, TimeMethods} from '../src/failurechecker';
 import * as issueModule from '@google-automations/issue-utils';
 import * as gcfUtilsModule from 'gcf-utils';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 
@@ -45,7 +46,7 @@ describe('failurechecker', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    getAuthenticatedOctokitStub.resolves(new Octokit());
+    getAuthenticatedOctokitStub.resolves(new Octokit({request: {fetch}}));
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -53,6 +54,7 @@ describe('failurechecker', () => {
           retry: {enabled: false},
           throttle: {enabled: false},
         }),
+        request: {fetch},
       },
     });
     probot.load(failureChecker);
