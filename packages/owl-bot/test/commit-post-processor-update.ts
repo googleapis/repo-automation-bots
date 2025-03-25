@@ -24,6 +24,12 @@ import nock from 'nock';
 import {OWL_BOT_IGNORE, OWLBOT_RUN_LABEL} from '../src/labels';
 import * as fs from 'fs';
 import {OWL_BOT_COPY} from '../src/core';
+import {Octokit} from '@octokit/rest';
+import * as octokitUtil from '../src/octokit-util';
+const fetch = require('node-fetch');
+const TestOctokit = Octokit.defaults({
+  request: {fetch},
+})
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -115,7 +121,7 @@ describe('commitPostProcessorUpdate', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-
+    sandbox.replace(octokitUtil, 'MyOctokit', TestOctokit);
     /** Increments the counter so each test can have its own unique PR */
     pr++;
   });

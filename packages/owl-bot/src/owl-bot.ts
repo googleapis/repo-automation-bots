@@ -135,7 +135,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
   // on the pending pull request and push any changes back to the pull request.
   app.on(['pull_request.labeled'], async context => {
     const logger = getContextLogger(context);
-    const head = context.payload.pull_request.head.repo.full_name;
+    const head = context.payload.pull_request.head.repo?.full_name ?? 'unknown';
     const [owner, repo] = head.split('/');
     logger.info(
       `runPostProcessor: repo=${owner}/${repo} action=${context.payload.action} sha=${context.payload.pull_request.head.sha}`
@@ -198,7 +198,7 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
       name: 'OwlBot Post Processor',
       summary: 'Skipping check for merge_queue',
       head_sha: headSha,
-      status: 'complete',
+      status: 'completed',
       conclusion: 'skipped',
     });
   });
@@ -226,7 +226,8 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
         return;
       }
 
-      const head = context.payload.pull_request.head.repo.full_name;
+      const head =
+        context.payload.pull_request.head.repo?.full_name || 'unknown';
       const base = context.payload.pull_request.base.repo.full_name;
       const baseOwner = base.split('/')[0];
       const [owner, repo] = head.split('/');
@@ -404,7 +405,7 @@ async function handlePullRequestLabeled(
   octokit: Octokit,
   logger: GCFLogger = defaultLogger
 ) {
-  const head = payload.pull_request.head.repo.full_name;
+  const head = payload.pull_request.head.repo?.full_name || 'unknown';
   const base = payload.pull_request.base.repo.full_name;
   const [owner, repo] = base.split('/');
   const installation = payload.installation?.id ?? 0;

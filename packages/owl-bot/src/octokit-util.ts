@@ -18,8 +18,10 @@ import {promisify} from 'util';
 import {readFile} from 'fs';
 import {core} from './core';
 import {GCFLogger} from 'gcf-utils/build/src/logging/gcf-logger';
+import {retry} from '@octokit/plugin-retry';
 
 const readFileAsync = promisify(readFile);
+export const MyOctokit: typeof Octokit = Octokit.plugin(retry);
 
 export interface OctokitParams {
   'pem-path'?: string;

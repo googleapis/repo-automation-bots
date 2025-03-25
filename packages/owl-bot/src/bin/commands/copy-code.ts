@@ -23,7 +23,7 @@ import {OwlBotYaml} from '../../config-files';
 interface Args {
   'source-repo': string;
   'source-repo-commit-hash': string;
-  dest: string | undefined;
+  dest?: string;
   'config-file': string[];
 }
 
@@ -53,7 +53,8 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
       })
       .option('config-file', {
         describe: 'Path in the directory to the .OwlBot.yaml config.',
-        type: 'array',
+        type: 'string',
+        array: true,
         default: ['.github/.OwlBot.yaml'],
       });
   },

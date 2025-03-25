@@ -38,6 +38,7 @@ import * as labelUtilsModule from '@google-automations/label-utils';
 import * as gcfUtilsModule from 'gcf-utils';
 import {FirestoreConfigsStore} from '../src/database';
 import {REGENERATE_CHECKBOX_TEXT} from '../src/create-pr';
+const fetch = require('node-fetch');
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -72,7 +73,7 @@ describe('OwlBot', () => {
       gcfUtilsModule,
       'getAuthenticatedOctokit'
     );
-    octokit = new Octokit();
+    octokit = new Octokit({request: {fetch}});
     getAuthenticatedOctokitStub.resolves(octokit);
     await probot.load((app: Probot) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1801,7 +1802,7 @@ describe('locking behavior', () => {
     });
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
-      .resolves(new Octokit());
+      .resolves(new Octokit({request: {fetch}}));
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -2106,7 +2107,7 @@ describe('userCheckedRegenerateBox()', () => {
   beforeEach(() => {
     sandbox
       .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
-      .resolves(new Octokit());
+      .resolves(new Octokit({request: {fetch}}));
   });
   afterEach(() => {
     sandbox.restore();
