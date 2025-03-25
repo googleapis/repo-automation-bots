@@ -29,7 +29,7 @@ import * as octokitUtil from '../src/octokit-util';
 const fetch = require('node-fetch');
 const TestOctokit = Octokit.defaults({
   request: {fetch},
-})
+});
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
