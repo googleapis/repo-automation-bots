@@ -27,6 +27,7 @@ import * as releaseTriggerModule from '../src/release-trigger';
 import * as gcfUtils from 'gcf-utils';
 import {TriggerError} from '../src/release-trigger';
 import {DatastoreLock} from '@google-automations/datastore-lock';
+const fetch = require('node-fetch');
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -72,6 +73,7 @@ describe('bot', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
+          request: {fetch},
         }),
       },
     });
@@ -82,7 +84,9 @@ describe('bot', () => {
     sandbox.replace(releaseTriggerModule, 'ALLOWED_ORGANIZATIONS', [
       'Codertocat',
     ]);
-    sandbox.stub(gcfUtils, 'getAuthenticatedOctokit').resolves(new Octokit());
+    sandbox
+      .stub(gcfUtils, 'getAuthenticatedOctokit')
+      .resolves(new Octokit({request: {fetch}}));
   });
 
   afterEach(() => {
