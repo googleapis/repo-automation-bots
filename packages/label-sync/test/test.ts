@@ -23,9 +23,11 @@ import * as sinon from 'sinon';
 import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
 import {GCFLogger} from 'gcf-utils';
+const fetch = require('node-fetch');
 const TestingOctokit = ProbotOctokit.defaults({
   retry: {enabled: false},
   throttle: {enabled: false},
+  request: {fetch},
 });
 
 nock.disableNetConnect();
@@ -86,6 +88,7 @@ describe('Label Sync', () => {
       overrides: {
         githubToken: 'abc123',
         Octokit: TestingOctokit,
+        request: {fetch},
       },
     });
 

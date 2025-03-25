@@ -28,7 +28,7 @@
   "dependencies": {
     "@google-cloud/storage": "^7.0.0",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^16.2.1",
+    "gcf-utils": "^17.0.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
@@ -41,8 +41,9 @@
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
+    "node-fetch": "^2.6.0",
     "sinon": "^15.0.0",
-    "snap-shot-it": "^7.9.6",
+    "snap-shot-it": "^7.4.1",
     "typescript": "~4.9.0"
   },
   "engines": {
