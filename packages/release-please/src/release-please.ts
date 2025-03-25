@@ -276,8 +276,7 @@ async function runBranchConfigurationWithConfigurationHandling(
     manifestConfig: branchConfiguration.manifestConfig,
     manifestFile: branchConfiguration.manifestFile,
   };
-  const logger = options.logger ?? new GCFLogger();
-  logger.addBindings(branchContext);
+  const logger = (options.logger ?? new GCFLogger()).child(branchContext);
   await withDatastoreLock(
     {
       lockId: RP_LOCK_ID,
