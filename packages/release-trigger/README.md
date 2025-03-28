@@ -14,7 +14,7 @@ npm start
 
 ### Configuration
 
-To configure the bot, you can create a configuration file:
+To enable and configure the bot, you must create a configuration file:
 `.github/release-trigger.yml`. The contents of this file allow for the following
 options:
 
