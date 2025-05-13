@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# build with:
-# docker build -t gcr.io/repo-automation-bots/bazel-bot .
-
 ##########################################################
 # Build the command-line tool that lets us sign JWTs.
 FROM rust:1.79-buster

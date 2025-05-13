@@ -17,7 +17,7 @@ steps:
   entrypoint: 'bash'
   args: [ '-c', "gcloud secrets versions access latest --secret=bazel_bot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/bazel-bot-github-key.pem" ]
 
-- name: 'gcr.io/repo-automation-bots/bazel-bot'
+- name: 'us-central1-docker.pkg.dev/cloud-sdk-production-pipeline/images-prod/bazel-bot'
   env:
     - 'BAZEL_FLAGS=--google_default_credentials --remote_cache=https://storage.googleapis.com/repo-automation-bots-bazel-cache'
     - 'GITHUB_APP_INSTALLATION_ID=51826097'
