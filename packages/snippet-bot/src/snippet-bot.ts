@@ -91,6 +91,7 @@ const ALLOWED_ORGANIZATIONS = [
   'GoogleCloudPlatform',
   'googlemaps',
   'googlemaps-samples',
+  'googleworkspace',
   'terraform-google-modules',
 ];
 
