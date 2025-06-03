@@ -71,6 +71,7 @@ interface GitHubAPI {
 const DEFAULT_RELEASE_PLEASE_CONFIG = 'release-please-config.json';
 const DEFAULT_RELEASE_PLEASE_MANIFEST = '.release-please-manifest.json';
 const BOT_NAME = 'release-please[bot]';
+const BLOCKED_ORGANIZATIONS = ['mirakl'];
 
 class BotConfigurationError extends Error {}
 
@@ -487,6 +488,10 @@ const handler = (app: Probot) => {
     const repoLanguage = context.payload.repository.language;
     const {owner, repo} = context.repo();
     let octokit: Octokit;
+    if (BLOCKED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-please not allowed for owner: ${owner}`);
+      return;
+    }
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
@@ -566,6 +571,10 @@ const handler = (app: Probot) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     let octokit: Octokit;
+    if (BLOCKED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-please not allowed for owner: ${owner}`);
+      return;
+    }
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
@@ -636,6 +645,10 @@ const handler = (app: Probot) => {
     const branch = context.payload.pull_request.base.ref;
     const repoLanguage = context.payload.repository.language;
     let octokit: Octokit;
+    if (BLOCKED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-please not allowed for owner: ${owner}`);
+      return;
+    }
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
@@ -714,6 +727,10 @@ const handler = (app: Probot) => {
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     let octokit: Octokit;
+    if (BLOCKED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-please not allowed for owner: ${owner}`);
+      return;
+    }
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
@@ -755,6 +772,10 @@ const handler = (app: Probot) => {
       context.payload.pull_request.head.repo?.owner.login ?? 'unknown';
     const headRepo = context.payload.pull_request.head.repo?.name ?? 'unknown';
     const headBranch = context.payload.pull_request.head.ref;
+    if (BLOCKED_ORGANIZATIONS.includes(context.payload.pull_request.head.repo?.owner)) {
+      logger.info(`release-please not allowed for owner: ${context.payload.pull_request.head.repo?.owner}`);
+      return;
+    }
     let octokit: Octokit;
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
@@ -836,6 +857,10 @@ const handler = (app: Probot) => {
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     let octokit: Octokit;
+    if (BLOCKED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-please not allowed for owner: ${owner}`);
+      return;
+    }
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
@@ -890,6 +915,10 @@ const handler = (app: Probot) => {
     const repoUrl = context.payload.repository.full_name;
     const {owner, repo} = context.repo();
     let octokit: Octokit;
+    if (BLOCKED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-please not allowed for owner: ${owner}`);
+      return;
+    }
     if (context.payload.installation?.id) {
       octokit = await getAuthenticatedOctokit(context.payload.installation.id);
     } else {
