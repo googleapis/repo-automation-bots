@@ -772,8 +772,9 @@ const handler = (app: Probot) => {
       context.payload.pull_request.head.repo?.owner.login ?? 'unknown';
     const headRepo = context.payload.pull_request.head.repo?.name ?? 'unknown';
     const headBranch = context.payload.pull_request.head.ref;
-    if (BLOCKED_ORGANIZATIONS.includes(context.payload.pull_request.head.repo?.owner)) {
-      logger.info(`release-please not allowed for owner: ${context.payload.pull_request.head.repo?.owner}`);
+    const {owner, repo} = context.repo();
+    if (BLOCKED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-please not allowed for owner: ${owner}`);
       return;
     }
     let octokit: Octokit;
@@ -841,7 +842,7 @@ const handler = (app: Probot) => {
     // against the specified schema. It creates a failing commit check for
     // each invalid file.
     const configChecker = new MultiConfigChecker(schemasByFile);
-    const {owner, repo} = context.repo();
+    
     await configChecker.validateConfigChanges(
       octokit,
       owner,
