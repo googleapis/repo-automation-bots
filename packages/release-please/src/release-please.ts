@@ -842,7 +842,6 @@ const handler = (app: Probot) => {
     // against the specified schema. It creates a failing commit check for
     // each invalid file.
     const configChecker = new MultiConfigChecker(schemasByFile);
-    
     await configChecker.validateConfigChanges(
       octokit,
       owner,
