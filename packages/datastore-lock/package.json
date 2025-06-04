@@ -27,7 +27,7 @@
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.2",
-    "google-datastore-emulator": "^3.0.1",
+    "google-datastore-emulator": "^6.0.1",
     "gts": "^4.0.0",
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
@@ -49,7 +49,8 @@
   ],
   "overrides": {
     "google-datastore-emulator": {
-      "@google-cloud/datastore": "9.1.0"
+      "@google-cloud/datastore": "9.1.0",
+      "tar-fs": "2.1.3"
     }
   }
 }
