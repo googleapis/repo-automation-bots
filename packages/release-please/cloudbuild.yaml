@@ -24,6 +24,8 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/release-please"
       - "."
+     env:
+      - 'RELEASE_PLEASE_BLOCKED_ORGS=$_BLOCKED_ORGANIZATIONS'
 
   - name: gcr.io/cloud-builders/docker
     id: "push-docker"
