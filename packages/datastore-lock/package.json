@@ -49,7 +49,8 @@
   ],
   "overrides": {
     "google-datastore-emulator": {
-      "@google-cloud/datastore": "9.1.0"
+      "@google-cloud/datastore": "9.1.0",
+      "tar-fs": "2.1.3"
     }
   }
 }
