@@ -54,6 +54,10 @@ function isTrustedContribution(
   return trustedContributors.includes(author);
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export = (app: Probot) => {
   // Track estimate of how often a kokoro:run or kokoro:force-run label is being added manually:
   app.on(['pull_request.labeled'], async context => {
@@ -201,6 +205,11 @@ export = (app: Probot) => {
                 process.env.PROJECT_ID || '',
                 SECRET_NAME_FOR_COMMENT_PERMISSION
               );
+            }
+            // We need to sleep for 6s before adding the gcbrun due to race condition with other bots.
+            // More information in b/422754703.
+            if (annotation.text === '/gcbrun') {
+              await sleep(6000);
             }
             await octokitForComment.issues.createComment({
               issue_number: prNumber,
