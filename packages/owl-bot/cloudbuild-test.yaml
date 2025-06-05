@@ -14,7 +14,7 @@
 
 steps:
   - name: gcr.io/cloud-builders/docker
-    id: "build-docker"
+    id: "build-frontend-docker"
     waitFor: ["-"]
     dir: packages/owl-bot
     args:
@@ -22,7 +22,18 @@ steps:
       - "-f"
       - "Dockerfile.frontend"
       - "-t"
-      - "gcr.io/$PROJECT_ID/owl-bot"
+      - "gcr.io/$PROJECT_ID/owl-bot-frontend"
+      - "."
+  - name: gcr.io/cloud-builders/docker
+    id: "build-backend-docker"
+    waitFor: ["-"]
+    dir: packages/owl-bot
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile.backend"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/owl-bot-backend"
       - "."
 logsBucket: 'gs://owl-bot-deploy-logs'
 options:
