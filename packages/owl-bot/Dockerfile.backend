@@ -14,9 +14,14 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-# Use the official lightweight Node.js 14 image.
-# https://hub.docker.com/_/node
-FROM node:18.20.5-slim AS BUILD
+# Stage 1: Build
+FROM marketplace.gcr.io/google/debian12:latest AS BUILD
+
+# Install Node.js v18 and npm.
+RUN apt-get update && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -31,29 +36,37 @@ RUN npm ci
 
 # Now copy all the code so we can compile
 COPY . ./
-
 RUN npm run compile
 
-FROM node:18.20.5-slim
+# Stage 2: Production
+FROM marketplace.gcr.io/google/debian12:latest
+
+# Install Node.js v18 and npm.
+RUN apt-get update && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+RUN rm -rf /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
 
 # Install git binary and remove unnecessary cache files to keep the
 # image size small.
-
-RUN apt update \
-    && apt install -y git-core \
-    && apt-get update -y \
-    && rm -rf /var/cache/apt/*
+RUN apt-get update && \
+    apt-get install -y git-core && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
+# Copy only necessary production files from the build stage.
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build
+COPY --from=BUILD /usr/src/app/build build/
+
+# Install only production dependencies.
 RUN npm ci --only=production
 
+# Set environment variable for production.
 ENV NODE_ENV "production"
 
 # Run the web service on container startup.
