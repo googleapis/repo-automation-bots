@@ -19,6 +19,7 @@ FROM marketplace.gcr.io/google/debian12:latest AS BUILD
 
 # Install Node.js v18 and npm.
 RUN apt-get update && \
+    apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
@@ -43,6 +44,7 @@ FROM marketplace.gcr.io/google/debian12:latest
 
 # Install Node.js v18 and npm.
 RUN apt-get update && \
+    apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
