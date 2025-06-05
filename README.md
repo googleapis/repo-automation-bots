@@ -6,27 +6,29 @@ by Google on GitHub.
 
 ## Implemented Bots
 
-| Name | Description | Install |
-| ---- | ----------- | ------- |
-| [auto-approve] | Automatically approves and merges PRs matching user-specified configs | [install][auto-approve-app] |
-| [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
-| [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
-| [cherry-pick-bot] | Cherry-pick merged PRs between branches | [install][cherry-pick-bot-app] |
-| [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
-| [do-not-merge] | PR checker that ensures the `do not merge` label is not present | [install][do-not-merge-app]
-| [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
-| [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][flakybot-app] |
-| [generated-files-bot] | PR checker to notify if you are modifying generated files | [install][generated-files-bot-app]
-| [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
-| [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
-| [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
-| [policy] | Check repo configuration against known rules | [install][policy-app] |
-| [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
-| [release-trigger] | Trigger releases jobs | [install][release-trigger-app] |
-| [repo-metadata-lint] | Lint .repo-metadata.json files | [install][repo-metadata-lint-app] |
-| [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
-| [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
-| [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
+| Name | Description |
+| ---- | ----------- |
+| [auto-approve] | Automatically approves and merges PRs matching user-specified configs |
+| [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels |
+| [blunderbuss] | Assigns issues and PRs randomly to a specific list of users |
+| [cherry-pick-bot] | Cherry-pick merged PRs between branches |
+| [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style |
+| [do-not-merge] | PR checker that ensures the `do not merge` label is not present |
+| [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state |
+| [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues |
+| [generated-files-bot] | PR checker to notify if you are modifying generated files |
+| [label-sync] | Synchronize labels across organizations |
+| [license-header-lint] | PR checker that ensures that source files contain valid license headers |
+| [merge-on-green] | Merge a pull-request when all required checks have passed |
+| [policy] | Check repo configuration against known rules |
+| [release-please] | Proposes releases based on semantic version commits |
+| [release-trigger] | Trigger releases jobs |
+| [repo-metadata-lint] | Lint .repo-metadata.json files |
+| [snippet-bot] | Check for mismatched region tags in PRs |
+| [sync-repo-settings] | Synchronize repository settings from a centralized config |
+| [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors |
+
+Googlers: please cont
 
 ## Development environment
 
@@ -116,41 +118,22 @@ at the specified schedule.
 ![High Level Architecture](./architecture.png)
 
 [auto-approve]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-approve
-[auto-approve-app]: https://github.com/apps/auto-approve-bot
 [auto-label]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-label
-[auto-label-app]: https://github.com/apps/product-auto-label
 [blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/blunderbuss
-[blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
 [cherry-pick-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/cherry-pick-bot
-[cherry-pick-bot-app]: https://github.com/apps/gcp-cherry-pick-bot
 [conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/conventional-commit-lint
-[conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
 [do-not-merge]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/do-not-merge
-[do-not-merge-app]: https://github.com/apps/do-not-merge-gcf
 [generated-files-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/generated-files-bot
-[generated-files-bot-app]: https://github.com/apps/generated-files-bot
 [license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/header-checker-lint
-[license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
 [policy]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/policy
-[policy-app]: https://github.com/apps/google-cloud-policy-bot
 [release-please]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-please
-[release-please-app]: https://github.com/apps/release-please
 [release-trigger]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-trigger
-[release-trigger-app]: https://github.com/apps/release-trigger
 [trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/trusted-contribution
-[trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
 [failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/failurechecker
-[failurechecker-app]: https://github.com/apps/failure-checker
 [label-sync]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/label-sync
-[label-sync-app]: https://github.com/apps/google-cloud-label-sync
 [flakybot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot
-[flakybot-app]: https://github.com/apps/flaky-bot
 [merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/merge-on-green
-[merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
 [snippet-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/snippet-bot
-[snippet-bot-app]: https://github.com/apps/snippet-bot
 [sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/sync-repo-settings
-[sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
 [Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html
 [repo-metadata-lint]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/repo-metadata-lint
-[repo-metadata-lint-app]: https://github.com/apps/repo-metadata-lint
