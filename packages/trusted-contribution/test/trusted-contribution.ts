@@ -834,6 +834,7 @@ describe('TrustedContributionTestRunner', () => {
   });
 
   it('should add a comment if configured with annotations', async () => {
+    const startTime: Date = new Date();
     getConfigStub.resolves(loadConfig('gcbrun.yml'));
     const sandbox = sinon.createSandbox();
     const getAuthenticatedOctokitStub = sandbox.stub(
@@ -883,6 +884,10 @@ describe('TrustedContributionTestRunner', () => {
       process.env.PROJECT_ID || '',
       utilsModule.SECRET_NAME_FOR_COMMENT_PERMISSION
     );
+    const endTime: Date = new Date();
+    if (endTime.getTime() - startTime.getTime() < 6000) {
+      assert.fail('Adding a comment took less than 6s');
+    }
   });
 
   it('should log an error if the config cannot be fetched', async () => {
