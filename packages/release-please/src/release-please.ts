@@ -71,7 +71,7 @@ interface GitHubAPI {
 const DEFAULT_RELEASE_PLEASE_CONFIG = 'release-please-config.json';
 const DEFAULT_RELEASE_PLEASE_MANIFEST = '.release-please-manifest.json';
 const BOT_NAME = 'release-please[bot]';
-const BLOCKED_ORGANIZATIONS = (process.env.RELEASE_PLEASE_BLOCKED_ORGS || '')
+const BLOCKED_ORGANIZATIONS = (process.env.BLOCKLISTED_ORGANIZATIONS || '')
   .split(',')
   .filter(org => org.length > 0);
 

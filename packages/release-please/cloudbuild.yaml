@@ -63,8 +63,6 @@ steps:
       - "--region"
       - "$_REGION"
       - "--quiet"
-    env:
-      - 'RELEASE_PLEASE_BLOCKED_ORGS=$BLOCKLISTED_ORGANIZATIONS'
 
 logsBucket: 'gs://release-please-deploy-logs'
 options:
