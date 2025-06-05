@@ -24,8 +24,6 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/release-please"
       - "."
-     env:
-      - 'RELEASE_PLEASE_BLOCKED_ORGS=$_BLOCKED_ORGANIZATIONS'
 
   - name: gcr.io/cloud-builders/docker
     id: "push-docker"
@@ -65,6 +63,8 @@ steps:
       - "--region"
       - "$_REGION"
       - "--quiet"
+    env:
+      - 'RELEASE_PLEASE_BLOCKED_ORGS=$BLOCKLISTED_ORGANIZATIONS'
 
 logsBucket: 'gs://release-please-deploy-logs'
 options:
