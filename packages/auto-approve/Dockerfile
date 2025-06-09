@@ -49,9 +49,6 @@ RUN npm run compile
 
 FROM NODE_BASE
 
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
-
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
