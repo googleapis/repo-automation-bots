@@ -20,6 +20,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
+import * as configUtilsModule from '@google-automations/bot-config-utils';
 import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
 import {GCFLogger} from 'gcf-utils';
@@ -77,10 +78,7 @@ describe('Label Sync', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
   let getApiLabelsStub: sinon.SinonStub<[string, GCFLogger], Promise<{}>>;
-  let loadConfigStub: sinon.SinonStub<
-    [Context],
-    Promise<null | labelSync.ConfigurationOptions>
-  >;
+  let getConfigWithDefaultStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -101,7 +99,10 @@ describe('Label Sync', () => {
         },
       ],
     });
-    loadConfigStub = sandbox.stub(labelSync, 'loadConfig').resolves(null);
+    getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
   });
 
   afterEach(() => sandbox.restore());
@@ -246,13 +247,12 @@ describe('Label Sync', () => {
       id: 'abc123',
     });
     scopes.forEach(s => s.done());
-    assert.ok(loadConfigStub.calledOnce);
+    assert.ok(getConfigWithDefaultStub.calledOnce);
   });
 
   it('should skip sync if repository is ignored', async function (this: Mocha.Context) {
     this.timeout(120000); // 120 seconds
-    loadConfigStub.restore();
-    loadConfigStub = sandbox.stub(labelSync, 'loadConfig').resolves({
+    getConfigWithDefaultStub.resolves({
       ignored: true,
     });
     const payload = require(path.resolve(
@@ -264,6 +264,6 @@ describe('Label Sync', () => {
       payload,
       id: 'abc123',
     });
-    assert.ok(loadConfigStub.calledOnce);
+    assert.ok(getConfigWithDefaultStub.calledOnce);
   });
 });

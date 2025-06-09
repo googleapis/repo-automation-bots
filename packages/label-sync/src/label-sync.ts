@@ -17,13 +17,25 @@ import {Probot, Context} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
-import {getContextLogger, GCFLogger} from 'gcf-utils';
+import {getContextLogger, GCFLogger, getAuthenticatedOctokit} from 'gcf-utils';
 import {request} from 'gaxios';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {
+  ConfigChecker,
+  getConfigWithDefault,
+} from '@google-automations/bot-config-utils';
 
 const storage = new Storage();
 
 export interface ConfigurationOptions {
   ignored?: boolean;
+  includeApiLabels?: boolean;
+}
+
+const DEFAULT_CONFIGURATION: ConfigurationOptions = {
+  ignored: false,
+  includeApiLabels: false,
 }
 
 const CONFIGURATION_FILE = 'label-sync.yml';
@@ -100,12 +112,29 @@ export function handler(app: Probot) {
       const logger = getContextLogger(c);
       const [owner, repo] = c.payload.repository.full_name.split('/');
 
+      let octokit: Octokit;
+      if (c.payload.installation && c.payload.installation.id) {
+        octokit = await getAuthenticatedOctokit(
+          c.payload.installation.id
+        );
+      } else {
+        throw new Error(
+          `Installation ID not provided in ${c.payload.action} event.` +
+            ' We cannot authenticate Octokit.'
+        );
+      }
       // Allow the label sync logic to be ignored for a repository.
       // Since there's a feature for ignoring, it should skip the repo
       // when failed to fetch the config.
       let remoteConfiguration: ConfigurationOptions | null = null;
       try {
-        remoteConfiguration = await loadConfig(c);
+        remoteConfiguration = await getConfigWithDefault<ConfigurationOptions>(
+          octokit,
+          owner,
+          repo,
+          CONFIGURATION_FILE,
+          DEFAULT_CONFIGURATION,
+        );
       } catch (e) {
         const err = e as Error;
         err.message =
@@ -114,6 +143,7 @@ export function handler(app: Probot) {
         logger.error(err);
         return;
       }
+
       if (remoteConfiguration?.ignored) {
         logger.info(`skipping repository ${c.payload.repository.full_name}`);
         return;
@@ -129,12 +159,29 @@ export function handler(app: Probot) {
     const owner = c.payload.organization.login;
     const repo = c.payload.repository.name;
 
+    let octokit: Octokit;
+    if (c.payload.installation && c.payload.installation.id) {
+      octokit = await getAuthenticatedOctokit(
+        c.payload.installation.id
+      );
+    } else {
+      throw new Error(
+        `Installation ID not provided in ${c.payload.action} event.` +
+          ' We cannot authenticate Octokit.'
+      );
+    }
     // Allow the label sync logic to be ignored for a repository.
     // Since there's a feature for ignoring, it should skip the repo
     // when failed to fetch the config.
     let remoteConfiguration: ConfigurationOptions | null = null;
     try {
-      remoteConfiguration = await loadConfig(c);
+      remoteConfiguration = await getConfigWithDefault<ConfigurationOptions>(
+        octokit,
+        owner,
+        repo,
+        CONFIGURATION_FILE,
+        DEFAULT_CONFIGURATION,
+      );
     } catch (e) {
       const err = e as Error;
       err.message =
@@ -168,17 +215,6 @@ export function handler(app: Probot) {
     );
   });
 }
-
-/*
- * Fetch remote configuration.
- * @param probot context.
- *
- */
-export const loadConfig = async (context: Context) => {
-  return (await context.config(
-    CONFIGURATION_FILE
-  )) as ConfigurationOptions | null;
-};
 
 interface GetApiLabelsResponse {
   apis: Array<{
