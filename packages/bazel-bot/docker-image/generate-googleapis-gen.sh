@@ -91,7 +91,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     fi
     # Clean out all the source packages from the previous build.
 
-    BAZEL_BIN=$(cd "$GOOGLEAPIS" && bazel info bazel-bin)
+    BAZEL_BIN=$(cd "$GOOGLEAPIS" && bazelisk info bazel-bin)
     # The directory might not exist before the build, but its path is known
     if test -d "$BAZEL_BIN"; then
       rm -f $(find "$BAZEL_BIN" -name "*.tar.gz")
