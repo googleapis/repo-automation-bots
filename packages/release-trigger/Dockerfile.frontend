@@ -14,11 +14,24 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-# Use the official lightweight Node.js 14 image.
-# https://hub.docker.com/_/node
-FROM node:18-slim AS BUILD
+# Stage 0: Node.js Base Image
+FROM marketplace.gcr.io/google/debian12:latest AS NODE_BASE
 
-WORKDIR /home/node
+# Install Node.js v18 and npm.
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
+RUN rm -rf /usr/lib/node_modules/npm/node_modules/cross-spawn/
+
+# Stage 1: Build
+FROM NODE_BASE AS BUILD
+
+# Create and change to the app directory.
+WORKDIR /usr/src/app
 
 # Copy application dependency manifests to the container image.
 # A wildcard is used to ensure copying both package.json AND package-lock.json (when available).
@@ -30,23 +43,28 @@ RUN npm ci
 
 # Now copy all the code so we can compile
 COPY . ./
-
 RUN npm run compile
 
-# The steps above are the build time. At runtime, use the light-weight
-# container image to avoid vulnerabilities. It has to have the tools
-# required to run the service.
-FROM node:18-alpine3.21
+# Stage 2: Production
+FROM NODE_BASE
 
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+# Install git binary and remove unnecessary cache files to keep the
+# image size small.
+RUN apt-get update && \
+    apt-get install -y git-core && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-WORKDIR /home/node
+# Create and change to the app directory.
+WORKDIR /usr/src/app
 
+# Copy only necessary production files from the build stage.
 COPY package*.json ./
-COPY --from=BUILD /home/node/build build
+COPY --from=BUILD /usr/src/app/build build/
+
+# Install only production dependencies.
 RUN npm ci --only=production
 
+# Set environment variable for production.
 ENV NODE_ENV "production"
 
 # Run the web service on container startup.
