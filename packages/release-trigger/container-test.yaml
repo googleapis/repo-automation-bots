@@ -22,4 +22,4 @@ commandTests:
   expectedOutput: ["10.*.*"]
 - name: "python version"
   command: ["python3", "--version"]
-  expectedOutput: ["Python 3.13.*"]
+  expectedOutput: ["Python 3.10.*"]
