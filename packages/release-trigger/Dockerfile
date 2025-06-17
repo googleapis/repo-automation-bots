@@ -14,44 +14,45 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-FROM node:18.20.5-bullseye-slim AS BASE
+# Stage 0: Node.js Base Image
+FROM marketplace.gcr.io/google/debian12:latest AS BASE
+
+# Install Node.js v18 and npm.
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
+RUN rm -rf /usr/lib/node_modules/npm/node_modules/cross-spawn/
 
 # Install pyenv dependencies
 RUN apt-get update && \
     apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-    xz-utils tk-dev libffi-dev liblzma-dev python3-openssl && \
+    xz-utils tk-dev libffi-dev liblzma-dev && \
     apt-get upgrade -y
 
-# Remove base python3 installation, as we install our own version.
-RUN rm -r /usr/bin/python3
-
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
-
-USER node
+WORKDIR /root
 
 # Install pyenv
 RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tags/v2.4.20.tar.gz && \
-    mkdir ~/.pyenv && \
-    tar -xzvf /tmp/pyenv.tar.gz -C ~/.pyenv --strip-components=1 && \
-    echo 'export PATH="/home/node/.pyenv/bin:$PATH"' >> ~/.profile && \
-    echo 'export PATH="/home/node/.pyenv/shims:$PATH"' >> ~/.profile && \
-    echo 'eval "$(pyenv init -)"' >> ~/.profile && \
-    echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.profile
+    mkdir -p /root/.pyenv && \
+    tar -xzvf /tmp/pyenv.tar.gz -C /root/.pyenv --strip-components=1 && \
+    echo 'eval "$(pyenv init -)"' >> /root/.profile && \
+    echo 'eval "$(pyenv virtualenv-init -)"' >> /root/.profile
 
-ENV PATH="/home/node/.pyenv/bin:/home/node/.pyenv/shims:${PATH}"
+ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
 
 # Install python
-RUN pyenv install 3.10.13 && \
-    pyenv global 3.10.13 && \
+RUN pyenv install 3.13.1 && \
+    pyenv global 3.13.1 && \
     python3 -m pip install --upgrade pip setuptools
 
-# Use the Yoshi Node.js 14 image - it has python3 installed
-# https://github.com/googleapis/testing-infra-docker/tree/master/node/14-user
 FROM BASE AS BUILD
 
-WORKDIR /home/node
+WORKDIR /home/root
 
 # Copy application dependency manifests to the container image.
 # A wildcard is used to ensure copying both package.json AND package-lock.json (when available).
@@ -68,10 +69,10 @@ RUN npm run compile
 
 FROM BASE
 
-WORKDIR /home/node
+WORKDIR /home/root
 
 COPY package*.json ./
-COPY --from=BUILD /home/node/build build
+COPY --from=BUILD /home/root/build build
 COPY requirements.txt ./
 RUN npm ci --only=production && \
     python3 -m pip install --require-hashes -r requirements.txt
