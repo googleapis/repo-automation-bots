@@ -37,7 +37,7 @@ RUN apt-get update && \
 WORKDIR /root
 
 # Install pyenv
-RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tags/v2.4.20.tar.gz && \
+RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tags/v2.6.3.tar.gz && \
     mkdir -p /root/.pyenv && \
     tar -xzvf /tmp/pyenv.tar.gz -C /root/.pyenv --strip-components=1 && \
     echo 'eval "$(pyenv init -)"' >> /root/.profile && \
@@ -46,8 +46,8 @@ RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tag
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
 
 # Install python
-RUN pyenv install 3.13.1 && \
-    pyenv global 3.13.1 && \
+RUN pyenv install 3.13.5 && \
+    pyenv global 3.13.5 && \
     python3 -m pip install --upgrade pip setuptools
 
 FROM BASE AS BUILD
