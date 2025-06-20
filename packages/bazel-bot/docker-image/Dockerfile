@@ -25,7 +25,7 @@ RUN cargo build --release
 
 ##########################################################
 # Build the image.
-FROM gcr.io/gapic-images/googleapis:prod
+FROM us-central1-docker.pkg.dev/client-library-releases/release-images-prod/googleapis@sha256:28604fd422a5180dc02baf561f28d968b09f74e3b241a73e7439ffc814315ce1
 COPY --from=0 /jwt-cli/target/release/jwt /bin/jwt
 
 # Install the github command line tool, and jq to parse json responses.
