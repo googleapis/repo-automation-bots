@@ -16,7 +16,7 @@
 
 # Use the official lightweight Node.js 14 image.
 # https://hub.docker.com/_/node
-FROM node:18.20.5-slim AS BUILD
+FROM node:22.17.0-slim AS BUILD
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -37,7 +37,7 @@ RUN npm run compile
 # The steps above are the build time. At runtime, use the light-weight
 # container image to avoid vulnerabilities. It has to have the tools
 # required to run the service.
-FROM node:18-alpine3.21
+FROM node:22-alpine3.21
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
 RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
