@@ -136,7 +136,5 @@ describe('InstallationHandler', () => {
       );
       sinon.assert.calledOnce(organizationStub);
     });
-    // it('')
-    // const installationHandler = new InstallationHandler();
   });
 });

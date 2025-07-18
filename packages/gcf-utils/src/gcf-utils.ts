@@ -643,7 +643,6 @@ export class GCFBootstrapper {
         // only report to error reporting if it's the final attempt
         const maxRetries = this.getRetryLimit(wrapConfig, botRequest.eventName);
         const shouldReportErrors = botRequest.taskRetryCount >= maxRetries;
-        console.log(err);
         logErrors(requestLogger, err, shouldReportErrors);
         response.status(500).send({
           statusCode: 500,
