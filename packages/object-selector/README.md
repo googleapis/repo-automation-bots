@@ -1,4 +1,9 @@
-# object-selector
+# ⛔️ DEPRECATED : object-selector
+
+This library is deprecated and will no longer publish new versions
+as of August 1, 2025.
+
+---
 
 This is a small library for selecting objects. The main user of this
 library are the bot authors who want to choose objects based on their

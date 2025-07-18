@@ -8,6 +8,5 @@
   "packages/issue-utils": "5.0.0",
   "packages/label-utils": "6.0.0",
   "packages/mono-repo-publish": "1.7.0",
-  "packages/object-selector": "6.0.0",
   "packages/release-brancher": "1.3.3"
 }
