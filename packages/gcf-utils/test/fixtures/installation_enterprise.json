@@ -1,0 +1,42 @@
+{
+  "id": 1,
+  "account": {
+    "description": "some enterprise",
+    "html_url": "https://github.com/enterprises/octo-business",
+    "website_url": "https://github.com",
+    "id": 1,
+    "node_id": "MDQ6VXNlcjE=",
+    "name": "Octo Business",
+    "slug": "octo-business",
+    "created_at": "2019-01-26T19:01:12Z",
+    "updated_at": "2019-01-26T19:01:12Z",
+    "avatar_url": "https://github.com/images/error/octocat_happy.gif"
+  },
+  "access_tokens_url": "https://api.github.com/app/installations/1/access_tokens",
+  "repositories_url": "https://api.github.com/installation/repositories",
+  "html_url": "https://github.com/organizations/github/settings/installations/1",
+  "app_id": 1,
+  "target_id": 1,
+  "target_type": "Organization",
+  "permissions": {
+    "checks": "write",
+    "metadata": "read",
+    "contents": "read"
+  },
+  "events": [
+    "push",
+    "pull_request"
+  ],
+  "single_file_name": "config.yaml",
+  "has_multiple_single_files": true,
+  "single_file_paths": [
+    "config.yml",
+    ".github/issue_TEMPLATE.md"
+  ],
+  "repository_selection": "selected",
+  "created_at": "2017-07-08T16:18:44-04:00",
+  "updated_at": "2017-07-08T16:18:44-04:00",
+  "app_slug": "github-actions",
+  "suspended_at": null,
+  "suspended_by": null
+}

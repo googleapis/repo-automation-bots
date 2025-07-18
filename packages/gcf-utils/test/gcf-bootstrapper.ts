@@ -2164,5 +2164,157 @@ describe('GCFBootstrapper', () => {
         name: 'projects/my-project/locations/my-location/services/my-function-name-backend',
       });
     });
+
+    describe('allowlisting', () => {
+      it('skips queueing if installation not in allowlist', async () => {
+        restoreEnv = mockedEnv({
+          ALLOWLISTED_ORGANIZATIONS: 'org1,org2',
+        });
+        const bootstrapper = new GCFBootstrapper({
+          projectId: 'my-project',
+          functionName: 'my-function-name',
+          location: 'my-location',
+          taskTargetEnvironment: 'run',
+          taskTargetName: 'my-function-name-backend',
+        });
+        sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
+          appId: 1234,
+          secret: 'foo',
+          privateKey: 'cert',
+        });
+        const orgaizationStub = sandbox
+          .stub(bootstrapper.installationHandler, 'organizationForInstallation')
+          .resolves('some-org');
+        const handler = bootstrapper.gcf(async _ => {});
+        const req = Object.create(
+          Object.getPrototypeOf(express.request),
+          Object.getOwnPropertyDescriptors(express.request)
+        );
+        req.body = {
+          installation: {id: 1234},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+
+        const response = Object.create(
+          Object.getPrototypeOf(express.response),
+          Object.getOwnPropertyDescriptors(express.response)
+        );
+        const sendStub = sandbox.stub(response, 'send');
+        const enqueueTaskStub = sandbox
+          .stub(bootstrapper, 'enqueueTask')
+          .resolves();
+        await handler(req, response);
+        sinon.assert.notCalled(enqueueTaskStub);
+        sinon.assert.calledWith(
+          sendStub,
+          sinon.match({
+            statusCode: 200,
+          })
+        );
+        sinon.assert.calledWith(orgaizationStub, 1234);
+      });
+
+      it('allows queueing if installation is in allowlist', async () => {
+        restoreEnv = mockedEnv({
+          ALLOWLISTED_ORGANIZATIONS: 'some-org,org2',
+        });
+        const bootstrapper = new GCFBootstrapper({
+          projectId: 'my-project',
+          functionName: 'my-function-name',
+          location: 'my-location',
+          taskTargetEnvironment: 'run',
+          taskTargetName: 'my-function-name-backend',
+        });
+        sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
+          appId: 1234,
+          secret: 'foo',
+          privateKey: 'cert',
+        });
+        const orgaizationStub = sandbox
+          .stub(bootstrapper.installationHandler, 'organizationForInstallation')
+          .resolves('some-org');
+        const handler = bootstrapper.gcf(async _ => {});
+        const req = Object.create(
+          Object.getPrototypeOf(express.request),
+          Object.getOwnPropertyDescriptors(express.request)
+        );
+        req.body = {
+          installation: {id: 1234},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+
+        const response = Object.create(
+          Object.getPrototypeOf(express.response),
+          Object.getOwnPropertyDescriptors(express.response)
+        );
+        const sendStub = sandbox.stub(response, 'send');
+        const enqueueTaskStub = sandbox
+          .stub(bootstrapper, 'enqueueTask')
+          .resolves();
+        await handler(req, response);
+        sinon.assert.calledOnce(enqueueTaskStub);
+        sinon.assert.calledWith(
+          sendStub,
+          sinon.match({
+            statusCode: 200,
+          })
+        );
+        sinon.assert.calledWith(orgaizationStub, 1234);
+      });
+
+      it('skips queueing if installation in blocklist', async () => {
+        restoreEnv = mockedEnv({
+          BLOCKLISTED_ORGANIZATIONS: 'some-org,org2',
+        });
+        const bootstrapper = new GCFBootstrapper({
+          projectId: 'my-project',
+          functionName: 'my-function-name',
+          location: 'my-location',
+          taskTargetEnvironment: 'run',
+          taskTargetName: 'my-function-name-backend',
+        });
+        sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
+          appId: 1234,
+          secret: 'foo',
+          privateKey: 'cert',
+        });
+        const orgaizationStub = sandbox
+          .stub(bootstrapper.installationHandler, 'organizationForInstallation')
+          .resolves('some-org');
+        const handler = bootstrapper.gcf(async _ => {});
+        const req = Object.create(
+          Object.getPrototypeOf(express.request),
+          Object.getOwnPropertyDescriptors(express.request)
+        );
+        req.body = {
+          installation: {id: 1234},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+
+        const response = Object.create(
+          Object.getPrototypeOf(express.response),
+          Object.getOwnPropertyDescriptors(express.response)
+        );
+        const sendStub = sandbox.stub(response, 'send');
+        const enqueueTaskStub = sandbox
+          .stub(bootstrapper, 'enqueueTask')
+          .resolves();
+        await handler(req, response);
+        sinon.assert.notCalled(enqueueTaskStub);
+        sinon.assert.calledWith(
+          sendStub,
+          sinon.match({
+            statusCode: 200,
+          })
+        );
+        sinon.assert.calledWith(orgaizationStub, 1234);
+      });
+    });
   });
 });
