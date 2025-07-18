@@ -50,7 +50,12 @@ import {
   DEFAULT_WRAP_CONFIG,
   WrapConfig,
 } from './configuration';
-import {eachInstallation, eachInstalledRepository} from './installations';
+import {
+  eachInstallation,
+  eachInstalledRepository,
+  InstallationHandler,
+  parseInstallationId,
+} from './installations';
 export {TriggerType} from './bot-request';
 export {GCFLogger} from './logging/gcf-logger';
 export {DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND} from './configuration';
@@ -287,6 +292,7 @@ export class GCFBootstrapper {
   taskCaller: string;
   flowControlDelayInSeconds: number;
   cloudRunURL: string | undefined;
+  installationHandler: InstallationHandler;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -338,6 +344,16 @@ export class GCFBootstrapper {
     this.taskCaller = options.taskCaller || DEFAULT_TASK_CALLER;
     this.flowControlDelayInSeconds = DEFAULT_FLOW_CONTROL_DELAY_IN_SECOND;
     this.cloudRunURL = undefined;
+    const organizationAllowlist = process.env.ALLOWLISTED_ORGANIZATIONS
+      ? new Set(process.env.ALLOWLISTED_ORGANIZATIONS.split(','))
+      : undefined;
+    const organizationBlocklist = process.env.BLOCKLISTED_ORGANIZATIONS
+      ? new Set(process.env.BLOCKLISTED_ORGANIZATIONS.split(','))
+      : undefined;
+    this.installationHandler = new InstallationHandler({
+      organizationAllowlist,
+      organizationBlocklist,
+    });
   }
 
   async loadProbot(
@@ -598,14 +614,25 @@ export class GCFBootstrapper {
             }
           }
         } else if (botRequest.triggerType === TriggerType.GITHUB) {
-          await this.enqueueTask(
-            {
-              id: botRequest.githubDeliveryId,
-              name: botRequest.eventName,
-              body: JSON.stringify(request.body),
-            },
-            requestLogger
-          );
+          const installationId = parseInstallationId(request.body);
+          if (
+            !(await this.installationHandler.isOrganizationAllowed(
+              installationId
+            ))
+          ) {
+            requestLogger.warn(
+              `Request disallowed for installation ${installationId} not in allowlist, skipping.`
+            );
+          } else {
+            await this.enqueueTask(
+              {
+                id: botRequest.githubDeliveryId,
+                name: botRequest.eventName,
+                body: JSON.stringify(request.body),
+              },
+              requestLogger
+            );
+          }
         }
 
         response.send({
@@ -616,6 +643,7 @@ export class GCFBootstrapper {
         // only report to error reporting if it's the final attempt
         const maxRetries = this.getRetryLimit(wrapConfig, botRequest.eventName);
         const shouldReportErrors = botRequest.taskRetryCount >= maxRetries;
+        console.log(err);
         logErrors(requestLogger, err, shouldReportErrors);
         response.status(500).send({
           statusCode: 500,

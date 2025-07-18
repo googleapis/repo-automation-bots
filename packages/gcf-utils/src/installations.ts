@@ -14,7 +14,11 @@
 //
 
 import {WrapConfig} from './configuration';
-import {getAuthenticatedOctokit} from './gcf-utils';
+import {
+  GCFLogger,
+  getAuthenticatedOctokit,
+  logger as defaultLogger,
+} from './gcf-utils';
 
 // Helper interface to abstract the response of the list installations GitHub response
 export interface AppInstallation {
@@ -94,5 +98,105 @@ export async function* eachInstalledRepository(
         fullName: repo.full_name,
       };
     }
+  }
+}
+
+export interface BaseWebhook {
+  installation?: {
+    id: number;
+  };
+}
+export function parseInstallationId(body: BaseWebhook): number | undefined {
+  return body.installation?.id;
+}
+
+export interface InstallationHandlerOptions {
+  organizationAllowlist?: Set<string>;
+  organizationBlocklist?: Set<string>;
+  logger?: GCFLogger;
+}
+export class InstallationHandler {
+  private organizationAllowlist?: Set<string>;
+  private organizationBlocklist?: Set<string>;
+  private organizationByInstallationCache: Map<number, string>;
+  constructor(options: InstallationHandlerOptions = {}) {
+    this.organizationAllowlist = options.organizationAllowlist;
+    this.organizationBlocklist = options.organizationBlocklist;
+    this.organizationByInstallationCache = new Map();
+  }
+
+  async isOrganizationAllowed(
+    installationId: number,
+    logger: GCFLogger = defaultLogger
+  ): Promise<boolean> {
+    // If no organization allowlist or blocklist defined, then allow everything
+    if (!this.organizationAllowlist && !this.organizationBlocklist) {
+      logger.trace('No allowlist or disallowlist, passing');
+      return true;
+    }
+
+    // Lookup organization name by installationId
+    const organization = await this.organizationForInstallation(installationId);
+    if (!organization) {
+      // In the rare case we cannot determine the organization, allow the request and warn.
+      logger.warn(
+        `Failed to look up organization for installation: ${installationId}`
+      );
+      return true;
+    }
+
+    // Check the blocklist first if one is configured
+    if (
+      this.organizationBlocklist &&
+      this.organizationBlocklist.has(organization)
+    ) {
+      logger.info(
+        `Event for blocklisted organization: ${organization} (${installationId})`
+      );
+      return false;
+    }
+
+    // Ensure the organization is in the allowlist if one is configured
+    if (
+      this.organizationAllowlist &&
+      !this.organizationAllowlist.has(organization)
+    ) {
+      logger.info(
+        `Event for non-allowlisted organization: ${organization} (${installationId})`
+      );
+      return false;
+    }
+
+    // Passed all checks, allow the request
+    return true;
+  }
+
+  // Read-through cache for determining the installed organization name given
+  // the installationId. In rare cases, this may return undefined.
+  async organizationForInstallation(
+    installationId: number,
+    logger: GCFLogger = defaultLogger
+  ): Promise<string | undefined> {
+    const cached = this.organizationByInstallationCache.get(installationId);
+    if (cached) {
+      logger.trace(`Found cached organization ${cached} (${installationId})`);
+      return cached;
+    }
+
+    logger.debug(
+      `Looking up organzation for installationId: ${installationId}`
+    );
+    const octokit = await getAuthenticatedOctokit(installationId);
+    const installation = (
+      await octokit.rest.apps.getInstallation({installation_id: installationId})
+    ).data;
+    if (installation.account) {
+      const organization =
+        installation.account['login'] ?? installation.account['slug'];
+      this.organizationByInstallationCache.set(installationId, organization);
+      logger.debug(`Found organization ${organization} (${installationId})`);
+      return organization;
+    }
+    return undefined;
   }
 }
