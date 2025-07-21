@@ -1,4 +1,9 @@
-# loadtest-bot
+# ⛔️ DEPRECATED : loadtest-bot
+
+This library is deprecated and will no longer publish new versions
+as of August 4, 2025.
+
+---
 
 This bot does nothing. It only exists for performing load test.
 
