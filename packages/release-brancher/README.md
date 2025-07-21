@@ -1,7 +1,9 @@
-# release-brancher
+# ⛔️ DEPRECATED : release-brancher
 
-This project is designed to be a CLI for branching new release branches. A "release branch" is a protected branch
-that is configured for release automation.
+This library is deprecated and will no longer publish new versions
+as of August 1, 2025.
+
+---
 
 ## Installation
 
