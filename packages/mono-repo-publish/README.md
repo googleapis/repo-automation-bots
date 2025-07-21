@@ -1,4 +1,9 @@
-# Mono-repo-publish
+# ⛔️ DEPRECATED : Mono-repo-publish
+
+This library is deprecated and will no longer publish new versions
+as of August 1, 2025.
+
+---
 
 Mono-repo-publish is a tool that detects updates from release pull requests and determines which submodules to publish to npm.
 
