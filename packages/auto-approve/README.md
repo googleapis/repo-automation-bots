@@ -1,4 +1,9 @@
-# auto-approve
+# ⛔️ DEPRECATED : auto-approve
+
+This bot is deprecated and is planned for shutdown August 4, 2025.
+
+---
+
 Auto-approve is a bot that approves and tags pull requests to automatically merge. Pull requests are approved and tagged if they match
 the settings in the configuration file for that repository, and if that configuration file meets guidelines detailed below. 
 
