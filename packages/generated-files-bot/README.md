@@ -1,4 +1,8 @@
-# generated-files-bot
+# ⛔️ DEPRECATED : generated-files-bot
+
+This bot is deprecated and is planned for shutdown August 4, 2025.
+
+---
 
 The template bot automatically comments on pull requests if you are modifying templated files.
 
