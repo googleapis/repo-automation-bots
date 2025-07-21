@@ -1,4 +1,8 @@
-# cherry-pick-bot
+# ⛔️ DEPRECATED : cherry-pick-bot
+
+This bot is deprecated and is planned for shutdown August 4, 2025.
+
+---
 
 This bot assists in maintain changes across branches in a repository
 by easily cherry-picking changes via pull requests.
