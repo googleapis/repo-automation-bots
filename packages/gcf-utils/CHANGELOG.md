@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [17.1.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.0.0...gcf-utils-v17.1.0) (2025-07-21)
+
+
+### Features
+
+* **gcf-utils:** handle global allow/blocklists ([#5841](https://github.com/googleapis/repo-automation-bots/issues/5841)) ([a6cf229](https://github.com/googleapis/repo-automation-bots/commit/a6cf2297905cf8fcda0fdb2fe4cd6acf697728a7))
+
 ## [17.0.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v16.2.2...gcf-utils-v17.0.0) (2025-03-11)
 
 
