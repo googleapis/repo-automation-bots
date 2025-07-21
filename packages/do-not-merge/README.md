@@ -2,6 +2,8 @@
 
 This bot is deprecated and is planned for shutdown August 4, 2025.
 
+We suggest running using pull request reviews to actually block the merging of pull requests. Alternatively, you can easily replicate "Do Not Merge GCF"s functionality using GitHub actions and the "gh" CLI: https://docs.github.com/en/actions/how-tos/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows
+
 ---
 
 The Do Not Merge bot checks for the `do not merge` label on pull requests and
