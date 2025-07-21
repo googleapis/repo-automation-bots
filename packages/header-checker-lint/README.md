@@ -2,6 +2,8 @@
 
 This bot is deprecated and is planned for shutdown August 4, 2025.
 
+We suggest looking into a supported GitHub actions implementation. You can find a few options: https://github.com/marketplace?query=license+header&type=actions
+
 ---
 
 > A GitHub App built with [Probot][probot] that ensures source files contain a
