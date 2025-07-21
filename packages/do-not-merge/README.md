@@ -1,4 +1,8 @@
-# Do Not Merge
+# ⛔️ DEPRECATED : Do Not Merge
+
+This bot is deprecated and is planned for shutdown August 4, 2025.
+
+---
 
 The Do Not Merge bot checks for the `do not merge` label on pull requests and
 adds a failing PR check if it's there. The check changes to success once the
