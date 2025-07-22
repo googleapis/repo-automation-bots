@@ -2,6 +2,16 @@
 
 This bot is deprecated and is planned for shutdown August 4, 2025.
 
+We suggest running cherry-pick operations yourself. Cherry-pick bot essentially runs:
+
+```
+git checkout <target-branch>
+git checkout -b <target-branch>-cherry-pick-<short-sha>
+git cherry-pick <short-sha>
+git push -u origin <target-branch>-cherry-pick-<short-sha>
+# create pull request to <target-branch>
+```
+
 ---
 
 This bot assists in maintain changes across branches in a repository
