@@ -1,4 +1,12 @@
-# Sync Repo Settings
+# ⛔️ DEPRECATED : Sync Repo Settings
+
+This bot is deprecated and is planned for shutdown August 5, 2025.
+
+We suggest looking into a supported infrastructure as code implementations
+such as Terraform: https://registry.terraform.io/providers/integrations/github/latest/docs
+
+---
+
 > This bot takes settings in a `.github/sync-repo-settings.yaml` file, and automatically applies them to your repository.
 
 ## Using the bot
