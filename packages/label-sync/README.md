@@ -1,4 +1,12 @@
-# Label Sync
+# ⛔️ DEPRECATED : Label Sync
+
+This bot is deprecated and is planned for shutdown August 5, 2025.
+
+We suggest managing repository labels on an organization via default labels
+in your organization: https://docs.github.com/en/organizations/managing-organization-settings/managing-default-labels-for-repositories-in-your-organization
+
+---
+
 > This bot automatically creates labels in your GitHub repository for you!
 
 The bot will find labels that should be created from two sources:
