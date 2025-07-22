@@ -1,4 +1,9 @@
-# generate-bot
+# ⛔️ DEPRECATED : generate-bot
+
+This library is deprecated and will no longer publish new versions
+as of August 4, 2025.
+
+---
 
 > A command-line script that generates the scaffolding for a Github Probot application.
 > The script will generate a working probot application that listens to Issues and PRs.
