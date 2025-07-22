@@ -1,4 +1,10 @@
-# merge-on-green
+# ⛔️ DEPRECATED : merge-on-green
+
+This bot is deprecated and is planned for shutdown August 5, 2025.
+
+We suggest using GitHub's built-in automatic merge functionality: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request.
+
+---
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.
 
