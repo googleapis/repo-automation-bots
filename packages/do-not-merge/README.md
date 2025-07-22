@@ -1,4 +1,59 @@
-# Do Not Merge
+# ⛔️ DEPRECATED : Do Not Merge
+
+This bot is deprecated and is planned for shutdown August 4, 2025.
+
+We suggest blocking a pull request by "Requesting Changes" when reviewing the pull request.
+
+<details>
+<summary>
+Alternatively, you can easily replicate "Do Not Merge GCF"s functionality using GitHub actions.
+</summary>
+
+```
+on:
+  pull_request:
+    types: [labeled, unlabeled]
+
+jobs:
+  check-dnm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        if: github.event.label.name == 'do not merge' && github.event.action == 'labeled'
+        with:
+          script: |
+            github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "Do Not Merge",
+              head_sha: context.payload.pull_request.head.sha,
+              conclusion: "failure",
+              output: {
+                title: "Remove the do not merge label before merging",
+                summary: "Remove the do not merge label before merging"
+              }
+            })
+      - uses: actions/github-script@v7
+        if: github.event.label.name == 'do not merge' && github.event.action == 'unlabeled'
+        with:
+          script: |
+            github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "Do Not Merge",
+              head_sha: context.payload.pull_request.head.sha,
+              conclusion: "success",
+              output: {
+                title: "OK to merge, label not found",
+                summary: "Ok to merge, label not found"
+              }
+            })
+permissions:
+  checks: write
+```
+</details>
+
+---
 
 The Do Not Merge bot checks for the `do not merge` label on pull requests and
 adds a failing PR check if it's there. The check changes to success once the
