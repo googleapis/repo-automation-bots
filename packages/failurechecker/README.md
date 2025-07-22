@@ -1,4 +1,8 @@
-# Failure Checker Bot
+# ⛔️ DEPRECATED : Failure Checker Bot
+
+This bot is deprecated and is planned for shutdown August 5, 2025.
+
+---
 
 Cron task that periodically checks client libraries for failed releases.
 
