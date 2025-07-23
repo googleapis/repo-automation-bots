@@ -1,4 +1,8 @@
-# FlakyBot
+# ⛔️ DEPRECATED : FlakyBot
+
+This bot is deprecated and is planned for shutdown August 6, 2025.
+
+---
 
 The Flaky Bot manages issues for failing tests.
 
