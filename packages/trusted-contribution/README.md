@@ -1,4 +1,35 @@
-# trusted-contribution
+# ⛔️ DEPRECATED : trusted-contribution
+
+This bot is deprecated and is planned for shutdown August 6, 2025.
+
+<details>
+<summary>
+You can replicate trusted-contribution's functionality using GitHub actions
+</summary>
+
+```
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        if: github.actor == '<name-of-actor>'
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['<label-to-add>']
+            })
+```
+</details>
+
+---
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that will run Kokoro CI if the PR is created by a trusted contributor.
 
