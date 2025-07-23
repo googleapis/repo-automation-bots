@@ -1,4 +1,8 @@
-# googleapis-bootstrapper
+# ⛔️ DEPRECATED : owlbot-bootstrapper
+
+This bot is deprecated and is planned for an internal replacement in the near future.
+
+---
 
 Googleapis-bootstrapper is a Github bot that generates minimal files required to initialize googleapis libraries.
 
