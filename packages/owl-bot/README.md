@@ -1,4 +1,8 @@
-## Owl Bot Post Processor
+# ⛔️ DEPRECATED : OwlBot
+
+This bot is deprecated and is planned for shutdown in the near future.
+
+---
 
 Runs a docker container, defined in `OwlBot.yaml`, container as a postprocessing
 step when a pull request is opened.

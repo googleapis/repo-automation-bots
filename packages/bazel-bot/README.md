@@ -1,4 +1,8 @@
-# bazel-bot
+# ⛔️ DEPRECATED : bazel-bot
+
+This bot is deprecated and is planned for shutdown in the near future.
+
+---
 
 bazel-bot generates code in https://github.com/googleapis/googleapis-gen for each new commit in https://github.com/googleapis/googleapis.
 
