@@ -1,4 +1,10 @@
-# release-trigger
+# ⛔️ DEPRECATED : Release Trigger
+
+This bot is deprecated and is planned for shutdown August 6, 2025.
+
+Release triggering has migrated internally.
+
+---
 
 A GitHub app to help trigger Google releases.
 
