@@ -1,4 +1,10 @@
-# Blunderbuss
+# ⛔️ DEPRECATED : Blunderbuss
+
+This bot is deprecated and is planned for shutdown August 6, 2025.
+
+We suggest using GitHub's built-in team assignment feature: https://docs.github.com/en/organizations/organizing-members-into-teams/managing-code-review-settings-for-your-team#about-auto-assignment
+
+---
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that assigns issues and prs
 randomly to a specific list of users
