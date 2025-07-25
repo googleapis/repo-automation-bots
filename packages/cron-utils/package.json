@@ -27,7 +27,7 @@
     "@octokit/rest": "^19.0.4",
     "@types/js-yaml": "^4.0.5",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.7.15",
+    "@types/node": "^22.0.0",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.12",
     "c8": "^7.12.0",
