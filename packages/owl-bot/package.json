@@ -80,7 +80,7 @@
     "follow-redirects": "^1.15.2",
     "fs-extra": "^11.0.0",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^17.0.0",
+    "gcf-utils": "^17.1.1",
     "glob": "^8.0.3",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
