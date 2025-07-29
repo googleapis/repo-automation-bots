@@ -1,4 +1,4 @@
 cryptography>=45.0.4
 cffi>=1.17.1
-gcp-releasetool>=2.6.0
+gcp-releasetool>=2.6.1
 keyrings.alt
