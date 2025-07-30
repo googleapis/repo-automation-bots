@@ -1,4 +1,10 @@
-# conventional-commit-lint
+# ⛔️ DEPRECATED : conventional-commit-lint
+
+This bot is deprecated and is planned for shutdown August 13, 2025.
+
+We suggest looking into a supported GitHub actions implementation. You can find a few options: https://github.com/marketplace?query=commitlint&type=actions
+
+---
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that lints commit messages based on conventionalcommits.org
 
