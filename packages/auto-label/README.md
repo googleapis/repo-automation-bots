@@ -1,5 +1,37 @@
 # auto-label
 
+This bot is deprecated and is planned for shutdown August 13, 2025.
+
+<details>
+<summary>
+You can replicate auto-label's functionality using GitHub actions
+</summary>
+
+```
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  add-label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.payload.pull_request.title.includes('[foo]')) {
+              github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                labels: ['api: foo'],
+              });
+            }
+```
+</details>
+
+---
+
 The auto-label bot automatically label issues and pull requests.
 
 There are 3 types of labels available:
