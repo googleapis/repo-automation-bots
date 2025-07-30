@@ -1,4 +1,10 @@
-# repo-metadata-lint
+# ⛔️ DEPRECATED : repo-metadata-lint
+
+This bot is deprecated and is planned for shutdown August 13, 2025.
+
+We suggest looking into a supported GitHub actions implementation. You can find a few options: https://github.com/marketplace?query=json+validate&type=actions
+
+---
 
 Validates the fields in `.repo-metadata.json`:
 
