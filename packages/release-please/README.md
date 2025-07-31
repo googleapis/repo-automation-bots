@@ -1,4 +1,11 @@
-# release-please
+# ⛔️ DEPRECATED : release-please
+
+The app implementation of release-please is deprecated and is planned
+for shutdown August 13, 2025.
+
+Please see [alternatives](https://github.com/googleapis/release-please?tab=readme-ov-file#setting-up-release-please) for running release-please.
+
+---
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that proposes releases based on
 > semantic version commits defined by conventionalcommits.org.
