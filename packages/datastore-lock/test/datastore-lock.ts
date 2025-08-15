@@ -32,6 +32,7 @@ describe('datastore-lock', () => {
     nock.enableNetConnect('localhost');
     const options = {
       useDocker: true,
+      dockerImage: 'google/cloud-sdk:510.0.0',
     };
 
     emulator = new DataStoreEmulator(options);
