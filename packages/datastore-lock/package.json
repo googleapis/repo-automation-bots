@@ -4,7 +4,7 @@
   "description": "Distributed lock backed by Google Cloud Datastore",
   "scripts": {
     "compile": "tsc -p .",
-    "pretest": "npm run compile && docker pull google/cloud-sdk",
+    "pretest": "npm run compile && docker pull google/cloud-sdk:510.0.0",
     "prepare": "npm run compile",
     "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch ./build/test",
     "fix": "gts fix",
