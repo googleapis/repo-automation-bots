@@ -71,6 +71,6 @@ steps:
       - "$_REGION"
       - "--quiet"
 
-logsBucket: 'gs://flakybot-deploy-logs'
+logsBucket: 'gs://flakybot-repo-automation-bots-deploy-logs'
 options:
   logging: GCS_ONLY
