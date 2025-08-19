@@ -55,6 +55,9 @@
     "snap-shot-it": "^7.9.6",
     "typescript": "~4.9.0"
   },
+  "overrides": {
+    "tmp": "0.2.5"
+  },
   "engines": {
     "node": ">= 18"
   }
