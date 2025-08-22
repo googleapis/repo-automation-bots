@@ -57,5 +57,8 @@
   },
   "engines": {
     "node": ">= 18"
+  },
+  "overrides": {
+    "tmp": "0.2.5"
   }
 }
