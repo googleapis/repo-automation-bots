@@ -45,7 +45,6 @@
     "octokit-auth-probot": "^2.0.1",
     "pino": "^8.4.2",
     "probot": "^13.4.4",
-    "tmp": "^0.2.1",
     "uuid": "^9.0.0",
     "yargs": "^17.0.0"
   },
@@ -85,5 +84,8 @@
   "license": "Apache-2.0",
   "files": [
     "build/src"
-  ]
+  ],
+  "overrides": {
+    "tmp": "0.2.5"
+  }
 }

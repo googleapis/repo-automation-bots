@@ -63,5 +63,8 @@
   },
   "optionalDependencies": {
     "fsevents": "*"
+  },
+  "overrides": {
+    "tmp": "0.2.5"
   }
 }
