@@ -1082,7 +1082,7 @@ function copyFiles(
       logger.info(e);
     }
   }
-
+  excludes.forEach(e => logger.info(`exclude pattern: ${e}`));
   // Copy the files from source to dest.
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
     const regExp = toFrontMatchRegExp(deepCopy.source);
@@ -1090,9 +1090,17 @@ function copyFiles(
       regExp.test('/' + path)
     );
     for (const sourcePath of sourcePathsToCopy) {
+      logger.info('***')
+      logger.info(`source path: ${sourcePath}`)
       const fullSourcePath = path.join(sourceDir, sourcePath);
+      logger.info(`full source path: ${fullSourcePath}`)
       const relPath = ('/' + sourcePath).replace(regExp, deepCopy.dest);
+      logger.info(`rel path ${relPath}`);
+      logger.info('***')
       if (excluded(relPath)) {
+        if (relPath.includes("META-INF")) {
+          logger.info(`wont copy ${relPath}`);
+        }
         continue;
       }
       const fullDestPath = path.join(destDir, relPath);
