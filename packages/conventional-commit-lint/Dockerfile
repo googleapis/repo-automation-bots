@@ -14,9 +14,12 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-# Use the official lightweight Node.js 14 image.
-# https://hub.docker.com/_/node
-FROM node:18.20.5-slim AS BUILD
+
+# Use the latest Node.js 18 slim image with patched Debian base.
+FROM node:18.20.6-slim AS BUILD
+
+# Upgrade all Debian packages for security.
+RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -34,10 +37,14 @@ COPY . ./
 
 RUN npm run compile
 
-FROM node:18.20.5-slim
+
+FROM node:18.20.6-slim
+
+# Upgrade all Debian packages for security.
+RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+RUN rm -rf /usr/lib/node_modules/npm/node_modules/cross-spawn/
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
