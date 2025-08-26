@@ -44,7 +44,7 @@ FROM node:18.20.6-slim
 RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -rf /usr/lib/node_modules/npm/node_modules/cross-spawn/
+RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
