@@ -546,7 +546,7 @@ describe('refreshConfigs', () => {
 
     const zip = new AdmZip();
     zip.addFile(
-      'nodejs-vision/packages/gapic-node-templating/templates/bootstrap-templates/.OwlBot.yaml',
+      'nodejs-vision/packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml',
       Buffer.from(invalidConfig)
     );
 
