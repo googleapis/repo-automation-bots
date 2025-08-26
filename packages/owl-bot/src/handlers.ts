@@ -39,7 +39,7 @@ type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 // template files). This list will keep .OwlBot from providing error messages for
 // those files.
 export const CONFIG_PATHS_TO_SKIP = [
-  'packages/gapic-node-templating/templates/bootstrap-templates/.OwlBot.yaml',
+  'packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml',
 ];
 /**
  * Invoked when a new pubsub message arrives because a new post processor
