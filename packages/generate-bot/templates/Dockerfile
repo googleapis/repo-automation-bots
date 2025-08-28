@@ -16,7 +16,7 @@
 
 # Use the official lightweight Node.js 14 image.
 # https://hub.docker.com/_/node
-FROM node:18.20.5-slim AS BUILD
+FROM node:18.20.8-slim AS BUILD
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -34,7 +34,7 @@ COPY . ./
 
 RUN npm run compile
 
-FROM node:18.20.5-slim
+FROM node:18.20.8-slim
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
 RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/

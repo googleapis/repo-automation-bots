@@ -16,7 +16,7 @@
 
 
 # Use the latest Node.js 18 slim image with patched Debian base.
-FROM node:18.20.6-slim AS BUILD
+FROM node:18.20.8-slim AS BUILD
 
 # Upgrade all Debian packages for security.
 RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -38,7 +38,7 @@ COPY . ./
 RUN npm run compile
 
 
-FROM node:18.20.6-slim
+FROM node:18.20.8-slim
 
 # Upgrade all Debian packages for security.
 RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
