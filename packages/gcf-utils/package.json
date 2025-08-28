@@ -51,7 +51,7 @@
   "devDependencies": {
     "@types/get-stream": "^3.0.2",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.7.14",
+    "@types/node": "^22.0.0",
     "@types/pino": "^7.0.4",
     "@types/sinon": "^10.0.13",
     "@types/tmp": "^0.2.3",
