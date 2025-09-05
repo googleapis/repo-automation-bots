@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.23-alpine AS build
+FROM golang:1.25-alpine AS build
 
 RUN apk add --no-cache git ca-certificates
 WORKDIR /src/serverless-scheduler-proxy
