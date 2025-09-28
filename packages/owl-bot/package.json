@@ -64,7 +64,7 @@
     "sinon": "^18.0.0",
     "tmp": "0.2.5",
     "ts-node": "^10.9.1",
-    "typescript": "~4.8.3",
+    "typescript": "~4.9.0",
     "uuid": "^9.0.0"
   },
   "dependencies": {
