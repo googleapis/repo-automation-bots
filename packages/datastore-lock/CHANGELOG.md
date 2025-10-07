@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.1.1](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.1.0...datastore-lock-v7.1.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* **deps:** upgrade datastore emulator to fix tar-fs vulnerabilty ([#5933](https://github.com/googleapis/repo-automation-bots/issues/5933)) ([c1f9964](https://github.com/googleapis/repo-automation-bots/commit/c1f9964e4718531d519344f909afa2019d6e849d))
+
 ## [7.1.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.0.0...datastore-lock-v7.1.0) (2025-10-07)
 
 
