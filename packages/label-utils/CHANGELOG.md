@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.1](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.0.0...label-utils-v6.0.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* security vulnerability for form data indirect dependency ([#5870](https://github.com/googleapis/repo-automation-bots/issues/5870)) ([dda7955](https://github.com/googleapis/repo-automation-bots/commit/dda795521b72510f697e6e3165b38e37102d8930))
+
 ## [6.0.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v5.0.0...label-utils-v6.0.0) (2025-03-12)
 
 

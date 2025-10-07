@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.0.1](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v9.0.0...bot-config-utils-v9.0.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* **fix-bot-utils:** regenerate package-lock.json ([#5882](https://github.com/googleapis/repo-automation-bots/issues/5882)) ([e6e3244](https://github.com/googleapis/repo-automation-bots/commit/e6e3244db2038f7ea9083ab463375e811115677c))
+
 ## [9.0.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v8.0.0...bot-config-utils-v9.0.0) (2025-03-12)
 
 
