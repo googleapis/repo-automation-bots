@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [17.1.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.1.1...gcf-utils-v17.1.2) (2025-10-07)
+
+
+### Bug Fixes
+
+* **deps:** upgrade pino to fix fast-redact vulnerabilty ([#5934](https://github.com/googleapis/repo-automation-bots/issues/5934)) ([57cef0d](https://github.com/googleapis/repo-automation-bots/commit/57cef0d6ef3f9a6d658f6aef63a7e519f18db7d6))
+
 ## [17.1.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.1.0...gcf-utils-v17.1.1) (2025-07-28)
 
 

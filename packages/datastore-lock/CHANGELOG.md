@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.1.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.0.0...datastore-lock-v7.1.0) (2025-10-07)
+
+
+### Features
+
+* **datastore-lock:** update dependencies ([#5915](https://github.com/googleapis/repo-automation-bots/issues/5915)) ([28336e6](https://github.com/googleapis/repo-automation-bots/commit/28336e6b3a3505ed60498a44c258f3ff1fe63d27))
+
 ## [7.0.0](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v6.0.0...datastore-lock-v7.0.0) (2025-03-12)
 
 

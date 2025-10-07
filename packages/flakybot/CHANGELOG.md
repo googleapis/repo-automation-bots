@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.2.3...flakybot-v1.2.4) (2025-10-07)
+
+
+### Bug Fixes
+
+* security vulnerability for form data indirect dependency ([#5870](https://github.com/googleapis/repo-automation-bots/issues/5870)) ([dda7955](https://github.com/googleapis/repo-automation-bots/commit/dda795521b72510f697e6e3165b38e37102d8930))
+
 ## [1.2.3](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.2.2...flakybot-v1.2.3) (2025-02-21)
 
 
