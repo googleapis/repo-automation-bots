@@ -31,7 +31,7 @@
     "@octokit/rest": "^20.1.2",
     "ajv": "^8.11.0",
     "dayjs": "^1.11.5",
-    "gcf-utils": "^17.1.1",
+    "gcf-utils": "^17.1.2",
     "jsonwebtoken": "^9.0.0",
     "semver": "^7.3.8"
   },

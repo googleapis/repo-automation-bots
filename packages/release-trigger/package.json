@@ -31,7 +31,7 @@
     "@google-automations/bot-config-utils": "^9.0.0",
     "@google-automations/datastore-lock": "^7.0.0",
     "@google-automations/issue-utils": "^5.0.0",
-    "gcf-utils": "^17.1.1",
+    "gcf-utils": "^17.1.2",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {

@@ -33,7 +33,7 @@
     "@octokit/rest": "^20.1.1",
     "@types/yargs": "^17.0.12",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^17.1.1",
+    "gcf-utils": "^17.1.2",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
     "path-to-regexp": "^0.1.12",
