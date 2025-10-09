@@ -42,7 +42,7 @@ GITHUB_TOKEN=$(curl -X POST \
     | jq -r .token)
 
 git clone https://github.com/googleapis/googleapis.git ${SOURCE_CLONE_ARGS}
-git clone https://x-access-token:$GITHUB_TOKEN@github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}
+git -c http.extraHeader="Authorization: Bearer $GITHUB_TOKEN" clone https://github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}
 
 mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
