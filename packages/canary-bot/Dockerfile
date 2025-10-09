@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,22 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-# Use the official lightweight Node.js 14 image.
-# https://hub.docker.com/_/node
-FROM node:18.20.5-slim AS BUILD
+# Stage 0: Node.js Base Image
+FROM marketplace.gcr.io/google/debian12:latest AS NODE_BASE
+
+# Install Node.js v18 and npm.
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
+RUN rm -rf /usr/lib/node_modules/npm/node_modules/cross-spawn/
+
+# Stage 1: Build
+FROM NODE_BASE AS BUILD
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -34,13 +47,7 @@ COPY . ./
 
 RUN npm run compile
 
-# The steps above are the build time. At runtime, use the light-weight
-# container image to avoid vulnerabilities. It has to have the tools
-# required to run the service.
-FROM node:18-alpine3.21
-
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+FROM NODE_BASE
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
