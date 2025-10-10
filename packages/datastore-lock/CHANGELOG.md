@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.1.2](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.1.1...datastore-lock-v7.1.2) (2025-10-10)
+
+
+### Bug Fixes
+
+* **deps:** upgrade tar-fs to 2.1.4 ([#5936](https://github.com/googleapis/repo-automation-bots/issues/5936)) ([e1c3982](https://github.com/googleapis/repo-automation-bots/commit/e1c3982eb5371874bf025fc12564101b2fe74162))
+
 ## [7.1.1](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.1.0...datastore-lock-v7.1.1) (2025-10-07)
 
 

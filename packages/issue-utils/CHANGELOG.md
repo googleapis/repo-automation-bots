@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.1.0](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v5.0.1...issue-utils-v5.1.0) (2025-10-10)
+
+
+### Features
+
+* **deps:** bump gcf-utils to 17.1.2 ([#5939](https://github.com/googleapis/repo-automation-bots/issues/5939)) ([b97dcdb](https://github.com/googleapis/repo-automation-bots/commit/b97dcdb57867e885264c42a8c94101c900c814dd))
+
 ## [5.0.1](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v5.0.0...issue-utils-v5.0.1) (2025-10-07)
 
 
