@@ -32,7 +32,7 @@ then
 fi
 
 # According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app
-JWT=$(jwt encode --secret "@$GITHUB_APP_SECRET" --iss "$GITHUB_APP_ID" --exp "+10 min" --alg RS256)
+JWT=$(jwt encode --secret "@$GITHUB_APP_SECRET" --iss "$GITHUB_APP_ID" --exp "+9 min" --alg RS256)
 
 # According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#authenticating-as-an-installation
 RESPONSE=$(curl -X POST \
@@ -40,10 +40,6 @@ RESPONSE=$(curl -X POST \
     -H "Accept: application/vnd.github.v3+json" \
     https://api.github.com/app/installations/$GITHUB_APP_INSTALLATION_ID/access_tokens)
 GITHUB_TOKEN=$(echo "$RESPONSE" | jq -r .token)
-
-# temporarily log access_tokens response and the git clone command
-echo "GitHub API Response: $RESPONSE"
-echo "git clone https://x-access-token:$GITHUB_TOKEN@github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}"
 
 git clone https://x-access-token:$GITHUB_TOKEN@github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}
 git clone https://github.com/googleapis/googleapis.git ${SOURCE_CLONE_ARGS}
