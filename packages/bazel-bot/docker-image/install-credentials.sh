@@ -19,7 +19,7 @@
 set -e
 
 # According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app
-JWT=$(jwt encode --secret "@$GITHUB_APP_SECRET" --iss "$GITHUB_APP_ID" --exp "+10 min" --alg RS256)
+JWT=$(jwt encode --secret "@$GITHUB_APP_SECRET" --iss "$GITHUB_APP_ID" --exp "+9 min" --alg RS256)
 
 # According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#authenticating-as-an-installation
 GITHUB_TOKEN=$(curl -X POST \
