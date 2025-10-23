@@ -16,7 +16,7 @@
 
 # Use the official lightweight Node.js image.
 # https://hub.docker.com/_/node
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
 RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
