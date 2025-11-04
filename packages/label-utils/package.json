@@ -34,7 +34,7 @@
     "node-fetch": "^2.6.9",
     "sinon": "^15.0.0",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.8.2"
+    "typescript": "~4.9.0"
   },
   "engines": {
     "node": ">= 18"
