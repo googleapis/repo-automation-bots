@@ -41,6 +41,7 @@ handler.allowlist = [
   'google',
   'google-github-actions',
   'googlemaps',
+  'googleworkspace',
   'bcoe',
   'sofisl',
   'firebase',
