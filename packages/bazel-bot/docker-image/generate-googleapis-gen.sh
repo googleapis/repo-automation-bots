@@ -83,7 +83,9 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     git -C "$GOOGLEAPIS" checkout "$sha"
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
+        # TODO: find a cleaner way to ignore the .bcr folder inside googleapis
         targets=$(cd "$GOOGLEAPIS" \
+        && rm -rf .bcr \
         && bazelisk query $BAZEL_FLAGS  'filter("-(go|csharp|java|php|ruby|nodejs|py)$", kind("rule", //...:*))' \
         | grep -v -E ":(proto|grpc|gapic)-.*-java$")
     else
