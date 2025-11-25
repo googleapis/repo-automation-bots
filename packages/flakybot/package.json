@@ -34,6 +34,7 @@
     "@octokit/types": "^8.0.0",
     "gcf-utils": "^17.1.2",
     "jsonwebtoken": "^9.0.0",
+    "js-yaml": "^4.1.1",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {

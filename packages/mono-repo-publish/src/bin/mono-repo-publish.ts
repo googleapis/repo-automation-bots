@@ -32,8 +32,8 @@ interface PublishCustomArgs extends CommonArgs {
   script: string;
 }
 
-function parseCommonArgs(yargs: yargs.Argv): yargs.Argv<CommonArgs> {
-  return yargs
+function parseCommonArgs<T>(yargs: yargs.Argv<T>): yargs.Argv<T & CommonArgs> {
+  const configured = yargs
     .option('pr-url', {
       describe:
         'the URL of the GH PR for submodules you wish to publish, e.g., https://github.com/googleapis/release-please/pull/707',
@@ -69,6 +69,7 @@ function parseCommonArgs(yargs: yargs.Argv): yargs.Argv<CommonArgs> {
       type: 'array',
       default: [],
     });
+  return configured as unknown as yargs.Argv<T & CommonArgs>;
 }
 
 const publishCommand: yargs.CommandModule<{}, PublishArgs> = {

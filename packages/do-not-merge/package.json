@@ -29,7 +29,8 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^9.0.0",
     "gcf-utils": "^17.1.2",
-    "jsonwebtoken": "^9.0.0"
+    "jsonwebtoken": "^9.0.0",
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.0",

@@ -19,6 +19,7 @@
   "dependencies": {
     "@octokit/rest": "^20.1.1",
     "@octokit/types": "^13.0.0",
+    "js-yaml": "^4.1.1",
     "minimatch": "^5.1.0"
   },
   "devDependencies": {
