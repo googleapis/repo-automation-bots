@@ -16,7 +16,7 @@
 
 import * as yargs from 'yargs';
 import * as core from '../main';
-import { Octokit } from '@octokit/rest';
+import {Octokit} from '@octokit/rest';
 
 interface CommonArgs {
   'pr-url': string;
