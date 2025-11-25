@@ -39,7 +39,7 @@ steps:
       - "--region"
       - "$_REGION"
       - "--runtime"
-      - "nodejs18"
+      - "nodejs20"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker-frontend"
