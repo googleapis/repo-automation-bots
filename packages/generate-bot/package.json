@@ -27,7 +27,8 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "dependencies": {
     "enquirer": "^2.3.6",
-    "handlebars": "^4.7.7"
+    "handlebars": "^4.7.7",
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.0",

@@ -83,7 +83,7 @@
     "gaxios": "^5.0.1",
     "gcf-utils": "^17.1.2",
     "glob": "^8.0.3",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.0",
     "minimatch": "^5.1.0",
     "probot": "^13.4.4",
