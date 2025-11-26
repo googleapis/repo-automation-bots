@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.1](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.1.0...label-utils-v6.1.1) (2025-11-26)
+
+
+### Bug Fixes
+
+* security vulnerability with js-yaml ([#5965](https://github.com/googleapis/repo-automation-bots/issues/5965)) ([fad9d6c](https://github.com/googleapis/repo-automation-bots/commit/fad9d6c60fa5f82b19dd18e3608b7d771e595a9e))
+
 ## [6.1.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.0.1...label-utils-v6.1.0) (2025-10-10)
 
 
