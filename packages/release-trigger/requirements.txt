@@ -4,6 +4,7 @@
 #
 #    pip-compile --generate-hashes requirements.in
 #
+
 attrs==22.1.0 \
     --hash=sha256:29adc2665447e5191d0e7c568fde78b21f9672d344281d0c6e1ab085429b22b6 \
     --hash=sha256:86efa402f67bf2df34f51a335487cf46b1ec130d02b8d39fd248abfd30da551c
@@ -136,6 +137,7 @@ cryptography==45.0.4 \
     # via
     #   -r requirements.in
     #   gcp-releasetool
+    #   secretstorage
 gcp-releasetool==2.6.1 \
     --hash=sha256:0c5d6a673a0d5235cd477f3318292bdcb19eac2f3b3127d8f818dc92779bbe08 \
     --hash=sha256:77df715e9a41a2cad59dccb7951647e3a89ed71f23cb569fbacb47940ff6d04a
@@ -276,7 +278,9 @@ six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via python-dateutil
-urllib3==2.5.0 \
-    --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
-    --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
-    # via requests
+urllib3==2.6.1 \
+    --hash=sha256:5379eb6e1aba4088bae84f8242960017ec8d8e3decf30480b3a1abdaa9671a3f \
+    --hash=sha256:e67d06fe947c36a7ca39f4994b08d73922d40e6cca949907be05efa6fd75110b
+    # via
+    #   -r requirements.in
+    #   requests
