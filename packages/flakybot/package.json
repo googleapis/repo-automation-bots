@@ -33,7 +33,7 @@
     "@octokit/openapi-types": "^14.0.0",
     "@octokit/types": "^8.0.0",
     "gcf-utils": "^17.1.2",
-    "jsonwebtoken": "^9.0.0",
+    "jsonwebtoken": "^9.0.3",
     "js-yaml": "^4.1.1",
     "xml-js": "^1.6.11"
   },
