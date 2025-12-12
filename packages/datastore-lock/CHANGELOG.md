@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.1.3](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.1.2...datastore-lock-v7.1.3) (2025-12-12)
+
+
+### Bug Fixes
+
+* security vulnerability with js-yaml ([#5965](https://github.com/googleapis/repo-automation-bots/issues/5965)) ([fad9d6c](https://github.com/googleapis/repo-automation-bots/commit/fad9d6c60fa5f82b19dd18e3608b7d771e595a9e))
+
 ## [7.1.2](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.1.1...datastore-lock-v7.1.2) (2025-10-10)
 
 
