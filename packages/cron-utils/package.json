@@ -21,6 +21,7 @@
     "@google-cloud/scheduler": "^4.3.0",
     "google-auth-library": "^9.6.3",
     "js-yaml": "^4.1.1",
+    "jws": "^4.0.1",
     "yargs": "^17.5.1"
   },
   "devDependencies": {
