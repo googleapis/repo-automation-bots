@@ -29,6 +29,7 @@ const sandbox = sinon.createSandbox();
 
 nock.disableNetConnect();
 
+// CLI tests
 describe('cli', () => {
   let restore: RestoreFn;
 
