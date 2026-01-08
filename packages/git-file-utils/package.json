@@ -23,7 +23,7 @@
     "minimatch": "^5.1.0"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.3",
+    "@types/chai": "^5.0.0",
     "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
