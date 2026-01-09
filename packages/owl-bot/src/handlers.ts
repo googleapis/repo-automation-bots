@@ -40,6 +40,12 @@ type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 // those files.
 export const CONFIG_PATHS_TO_SKIP = [
   'packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml',
+  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v1-nodejs/.OwlBot.yaml',
+  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v1p1beta1-nodejs/.OwlBot.yaml',
+  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v2-nodejs/.OwlBot.yaml',
+  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech/.OwlBot.yaml',
+  'generator/gapic-generator-typescript/test-fixtures/google-cloud-tasks-nodejs/tasks-v2-nodejs/.OwlBot.yaml',
+  'generator/gapic-generator-typescript/test-fixtures/google-cloud-tasks-nodejs/tasks-v2beta2-nodejs/.OwlBot.yaml'
 ];
 /**
  * Invoked when a new pubsub message arrives because a new post processor
