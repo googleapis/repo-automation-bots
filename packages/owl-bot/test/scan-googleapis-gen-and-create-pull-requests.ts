@@ -708,6 +708,35 @@ Copy-Tag: ${copyTag}`
     // Confirm it created one pull request.
     assert.strictEqual(pulls.pulls.length, 1);
   });
+
+  it('skips a repo when path is in CONFIG_PATHS_TO_SKIP', async () => {
+    const skipPath =
+      'packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml';
+    const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
+
+    // Override the yaml path in the config store to be one of the skipped paths
+    const config = (configsStore as FakeConfigsStore).configs.get(
+      destRepo.toString()
+    );
+    if (config && config.yamls) {
+      config.yamls[0].path = skipPath;
+    }
+
+    const pulls = new FakePulls();
+    const octokit = newFakeOctokit(pulls);
+    const copyStateStore = new FakeCopyStateStore();
+
+    const prCount = await scanGoogleapisGenAndCreatePullRequests(
+      abcRepo,
+      factory(octokit),
+      configsStore,
+      1000,
+      copyStateStore
+    );
+
+    // Should be 0 because we skipped it
+    assert.strictEqual(prCount, 0);
+  });
 });
 
 describe('regenerate pull requests', function () {

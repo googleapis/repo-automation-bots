@@ -29,6 +29,7 @@ import {CopyStateStore} from './copy-state-store';
 import {GithubRepo} from './github-repo';
 import {Logger, LoggerWithTimestamp} from './logger';
 import {WithNestedCommitDelimiters} from './create-pr';
+import {CONFIG_PATHS_TO_SKIP} from './handlers';
 
 interface Todo {
   repo: GithubRepo;
@@ -144,6 +145,12 @@ export async function scanGoogleapisGenAndCreatePullRequests(
 
       const todoYamls = [];
       for (const yaml of repo.yamls) {
+        if (CONFIG_PATHS_TO_SKIP.includes(yaml.path)) {
+          logger.info(
+            `Skipping ${yaml.path} because it is in CONFIG_PATHS_TO_SKIP.`
+          );
+          continue;
+        }
         const copyBuildId = await copyStateStore.findBuildForCopy(
           repo.repo,
           copyTagFrom(yaml.path, commitHash)
