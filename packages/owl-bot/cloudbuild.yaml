@@ -17,30 +17,6 @@
 # owlbot app to production.
 
 steps:
-  - name: gcr.io/cloud-builders/npm
-    id: "build"
-    waitFor: ["-"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/build-function.sh"
-      - "$_DIRECTORY"
-
-  - name: gcr.io/cloud-builders/gcloud
-    id: "publish-function"
-    waitFor: ["build"]
-    entrypoint: gcloud
-    dir: "targets/owl-bot"
-    args:
-      - "functions"
-      - "deploy"
-      - "owl_bot"
-      - "--trigger-http"
-      - "--region"
-      - "$_REGION"
-      - "--runtime"
-      - "nodejs20"
-
   - name: gcr.io/cloud-builders/docker
     id: "build-docker-frontend"
     waitFor: ["-"]
