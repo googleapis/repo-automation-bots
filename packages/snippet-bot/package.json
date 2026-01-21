@@ -41,7 +41,7 @@
     "lru-cache": "^7.14.0",
     "minimatch": "^5.1.0",
     "parse-diff": "^0.11.0",
-    "tar": "^6.1.11",
+    "tar": "^7.5.4",
     "tmp-promise": "^3.0.3"
   },
   "devDependencies": {
