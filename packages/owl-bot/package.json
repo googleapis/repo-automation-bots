@@ -50,7 +50,7 @@
     "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.18",
-    "@types/rimraf": "^3.0.2",
+    "@types/rimraf": "^4.0.0",
     "@types/sinon": "^10.0.13",
     "@types/tmp": "^0.2.3",
     "@types/yargs": "^17.0.12",
