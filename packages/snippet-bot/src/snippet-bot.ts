@@ -56,7 +56,7 @@ import {syncLabels} from '@google-automations/label-utils';
 import {getContextLogger, GCFLogger, getAuthenticatedOctokit} from 'gcf-utils';
 import {addOrUpdateIssueComment} from '@google-automations/issue-utils';
 import tmp from 'tmp-promise';
-import tar from 'tar';
+import * as tar from 'tar';
 import {promises as pfs} from 'fs';
 import path from 'path';
 import {scanServiceConfigsForApiLabels} from './service-configs';
