@@ -44,7 +44,7 @@
     "@types/adm-zip": "^0.5.0",
     "@types/follow-redirects": "^1.14.1",
     "@types/fs-extra": "^11.0.0",
-    "@types/glob": "^8.0.0",
+    "@types/glob": "^9.0.0",
     "@types/js-yaml": "^4.0.5",
     "@types/jsonwebtoken": "^9.0.3",
     "@types/minimatch": "^5.1.2",
