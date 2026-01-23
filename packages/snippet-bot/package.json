@@ -48,7 +48,7 @@
     "@octokit/webhooks-types": "^6.3.6",
     "@types/follow-redirects": "^1.14.1",
     "@types/js-yaml": "^4.0.9",
-    "@types/minimatch": "^5.1.2",
+    "@types/minimatch": "^6.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",

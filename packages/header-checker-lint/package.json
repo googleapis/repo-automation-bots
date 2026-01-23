@@ -35,7 +35,7 @@
     "minimatch": "^5.1.0"
   },
   "devDependencies": {
-    "@types/minimatch": "^5.1.2",
+    "@types/minimatch": "^6.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
