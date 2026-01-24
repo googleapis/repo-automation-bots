@@ -41,7 +41,7 @@
     "lru-cache": "^7.14.0",
     "minimatch": "^5.1.0",
     "parse-diff": "^0.11.0",
-    "tar": "^6.1.11",
+    "tar": "^7.5.3",
     "tmp-promise": "^3.0.3"
   },
   "devDependencies": {
@@ -52,7 +52,6 @@
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
-    "@types/tar": "^6.1.2",
     "@types/tmp": "^0.2.3",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",

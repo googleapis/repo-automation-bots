@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "rootDir": ".",
     "outDir": "build",
+    "skipLibCheck": true,
     "resolveJsonModule": true
   },
   "include": [
