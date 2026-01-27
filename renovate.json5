@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "extends": [
     "config:recommended",
     // update base images in Dockerfiles
