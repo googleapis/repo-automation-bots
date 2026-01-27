@@ -3,3 +3,4 @@ cffi>=1.17.1
 gcp-releasetool>=2.6.1
 urllib3>=2.6.0
 keyrings.alt
+protobuf>=6.33.4
