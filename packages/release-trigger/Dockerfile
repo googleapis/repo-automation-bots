@@ -37,7 +37,7 @@ RUN apt-get update && \
 WORKDIR /root
 
 # Install pyenv
-RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tags/v2.6.3.tar.gz && \
+RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tags/v2.6.16.tar.gz && \
     mkdir -p /root/.pyenv && \
     tar -xzvf /tmp/pyenv.tar.gz -C /root/.pyenv --strip-components=1 && \
     echo 'eval "$(pyenv init -)"' >> /root/.profile && \
