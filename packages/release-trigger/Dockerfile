@@ -46,8 +46,8 @@ RUN curl -L -o /tmp/pyenv.tar.gz https://github.com/pyenv/pyenv/archive/refs/tag
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
 
 # Install python
-RUN pyenv install 3.13.5 && \
-    pyenv global 3.13.5 && \
+RUN pyenv install 3.13.11 && \
+    pyenv global 3.13.11 && \
     python3 -m pip install --upgrade pip setuptools
 
 FROM BASE AS BUILD
