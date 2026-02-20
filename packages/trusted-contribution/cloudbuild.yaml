@@ -22,6 +22,21 @@ steps:
       - "./scripts/build-function.sh"
       - "$_DIRECTORY"
 
+  - name: gcr.io/cloud-builders/gcloud
+    id: "publish-function"
+    waitFor: ["build"]
+    entrypoint: gcloud
+    dir: "targets/trusted-contribution"
+    args:
+      - "functions"
+      - "deploy"
+      - "trusted_contribution"
+      - "--trigger-http"
+      - "--region"
+      - "$_REGION"
+      - "--runtime"
+      - "nodejs20"
+
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["-"]

@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ steps:
     id: "publish-function"
     waitFor: ["build"]
     entrypoint: gcloud
-    dir: "targets/label-sync"
+    dir: "targets/canary-bot"
     args:
       - "functions"
       - "deploy"
-      - "label_sync"
+      - "canary_bot"
       - "--trigger-http"
       - "--region"
       - "$_REGION"
@@ -40,37 +40,35 @@ steps:
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["-"]
-    dir: packages/label-sync
+    dir: packages/canary-bot
     args:
       - "build"
-      - "-f"
-      - "Dockerfile"
       - "-t"
-      - "gcr.io/$PROJECT_ID/label-sync"
+      - "gcr.io/$PROJECT_ID/canary-bot"
       - "."
 
   - name: gcr.io/cloud-builders/docker
-    id: "push-docker"
+    id: "push-docker-gcf-frontend"
     waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/label-sync"]
+    args: ["push", "gcr.io/$PROJECT_ID/canary-bot"]
 
   - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
-    waitFor: ["push-docker"]
+    id: "deploy-cloud-run-gcf-frontend"
+    waitFor: ["push-docker-gcf-frontend"]
     entrypoint: gcloud
     dir: $_DIRECTORY
     args:
       - "run"
       - "deploy"
-      - "label-sync"
+      - "canary-bot"
       - "--image"
-      - "gcr.io/$PROJECT_ID/label-sync"
+      - "gcr.io/$PROJECT_ID/canary-bot"
       - "--platform"
       - "managed"
       - "--region"
       - "$_REGION"
       - "--quiet"
 
-logsBucket: 'gs://label-sync-deploy-logs'
+logsBucket: 'gs://canary-bot-deploy-logs'
 options:
   logging: GCS_ONLY
