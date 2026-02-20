@@ -22,22 +22,6 @@ steps:
       - "./scripts/build-function.sh"
       - "$_DIRECTORY"
 
-  - name: gcr.io/cloud-builders/gcloud
-    id: "publish-function"
-    waitFor: ["build"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/publish-function.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      - "nodejs12"
-      - "540s"
-
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["-"]
