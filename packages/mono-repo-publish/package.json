@@ -1,6 +1,6 @@
 {
   "name": "@google-cloud/mono-repo-publish",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "publishes submodules based on the last merged release PR",
   "main": "build/src/main.js",
   "bin": "build/src/bin/mono-repo-publish.js",
