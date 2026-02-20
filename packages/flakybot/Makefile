@@ -28,4 +28,4 @@ cross:
 	GOOS=windows GOARCH=amd64 go build ${LDFLAGS} -o bin/windows_amd64/flakybot.exe
 
 upload: cross
-	gsutil -m cp -r bin/* gs://cloud-devrel-kokoro-resources/trampoline/
+	gcloud storage cp --recursive bin/* gs://cloud-devrel-kokoro-resources/trampoline/

@@ -42,7 +42,7 @@ for f in *; do
         plain="${tmp_dir}/${functionname}.plain"
 
         # Download the blob
-        gsutil cp "gs://${BUCKET}/${functionname}" "${cipher}"
+        gcloud storage cp "gs://${BUCKET}/${functionname}" "${cipher}"
 
         # Decrypt the Blob
         gcloud kms decrypt --project="${PROJECT_ID}" --keyring="${KEY_RING}" --location="${KEY_LOCATION}" --ciphertext-file="${cipher}" --plaintext-file="${plain}" --key="${functionname}"
