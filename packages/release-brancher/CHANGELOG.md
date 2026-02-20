@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4](https://github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.3...release-brancher-v1.3.4) (2026-02-20)
+
+
+### Bug Fixes
+
+* security vulnerability with js-yaml ([#5965](https://github.com/googleapis/repo-automation-bots/issues/5965)) ([fad9d6c](https://github.com/googleapis/repo-automation-bots/commit/fad9d6c60fa5f82b19dd18e3608b7d771e595a9e))
+
 ### [1.3.3](https://github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.2...release-brancher-v1.3.3) (2022-05-18)
 
 

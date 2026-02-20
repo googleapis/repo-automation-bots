@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.1](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.3.0...flakybot-v1.3.1) (2026-02-20)
+
+
+### Bug Fixes
+
+* **deps:** update fast-xml-parser ([#6015](https://github.com/googleapis/repo-automation-bots/issues/6015)) ([6c4ddf5](https://github.com/googleapis/repo-automation-bots/commit/6c4ddf5683b05ccc0c2a0ef45ee07e4e214d5eff))
+* security vulnerability with js-yaml ([#5965](https://github.com/googleapis/repo-automation-bots/issues/5965)) ([fad9d6c](https://github.com/googleapis/repo-automation-bots/commit/fad9d6c60fa5f82b19dd18e3608b7d771e595a9e))
+* update gcb nodejs runtime to nodejs20, since GCB no longer supports nodejs18 ([#5966](https://github.com/googleapis/repo-automation-bots/issues/5966)) ([a3f9d35](https://github.com/googleapis/repo-automation-bots/commit/a3f9d35c9c4d2c85bfd2d97e95805976151a6d9a))
+
 ## [1.3.0](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.2.4...flakybot-v1.3.0) (2025-10-10)
 
 

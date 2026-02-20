@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.7.0...mono-repo-publish-v1.7.1) (2026-02-20)
+
+
+### Bug Fixes
+
+* security vulnerability with js-yaml ([#5965](https://github.com/googleapis/repo-automation-bots/issues/5965)) ([fad9d6c](https://github.com/googleapis/repo-automation-bots/commit/fad9d6c60fa5f82b19dd18e3608b7d771e595a9e))
+
 ## [1.7.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.6.4...mono-repo-publish-v1.7.0) (2023-03-28)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [9.0.2](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v9.0.1...bot-config-utils-v9.0.2) (2026-02-20)
+
+
+### Bug Fixes
+
+* **deps:** update fast-xml-parser ([#6015](https://github.com/googleapis/repo-automation-bots/issues/6015)) ([6c4ddf5](https://github.com/googleapis/repo-automation-bots/commit/6c4ddf5683b05ccc0c2a0ef45ee07e4e214d5eff))
+* security vulnerability with js-yaml ([#5965](https://github.com/googleapis/repo-automation-bots/issues/5965)) ([fad9d6c](https://github.com/googleapis/repo-automation-bots/commit/fad9d6c60fa5f82b19dd18e3608b7d771e595a9e))
+
 ## [9.0.1](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v9.0.0...bot-config-utils-v9.0.1) (2025-10-07)
 
 
