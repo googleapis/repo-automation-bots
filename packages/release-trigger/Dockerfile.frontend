@@ -19,6 +19,7 @@ FROM marketplace.gcr.io/google/debian12:latest AS NODE_BASE
 
 # Install Node.js v18 and npm.
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
