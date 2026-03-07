@@ -42,7 +42,7 @@
     "@octokit/rest": "^20.1.2",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
-    "minimatch": "^5.1.0",
+    "minimatch": "^5.1.9",
     "yargs": "^17.5.1"
   },
   "engines": {
@@ -57,6 +57,8 @@
     },
     "@eslint/eslintrc": {
       "ajv": "^6.12.4"
-    }
+    },
+    "minimatch@^3": "^3.1.2",
+    "minimatch@^5": "^5.1.9"
   }
 }

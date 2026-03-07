@@ -84,7 +84,7 @@
     "glob": "^8.0.3",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
-    "minimatch": "^5.1.0",
+    "minimatch": "^5.1.9",
     "probot": "^13.4.4",
     "tmp": "0.2.5",
     "yargs": "^17.5.1"
@@ -101,6 +101,8 @@
     },
     "@eslint/eslintrc": {
       "ajv": "^6.12.4"
-    }
+    },
+    "minimatch@^3": "^3.1.2",
+    "minimatch@^5": "^5.1.9"
   }
 }

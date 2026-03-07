@@ -20,7 +20,7 @@
     "@octokit/rest": "^20.1.1",
     "@octokit/types": "^13.0.0",
     "js-yaml": "^4.1.1",
-    "minimatch": "^5.1.0"
+    "minimatch": "^5.1.9"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
@@ -60,6 +60,8 @@
     },
     "@eslint/eslintrc": {
       "ajv": "^6.12.4"
-    }
+    },
+    "minimatch@^3": "^3.1.2",
+    "minimatch@^5": "^5.1.9"
   }
 }
