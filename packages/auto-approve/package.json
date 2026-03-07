@@ -29,7 +29,7 @@
   "dependencies": {
     "@google-cloud/secret-manager": "^5.6.0",
     "@octokit/rest": "^20.1.2",
-    "ajv": "^8.11.0",
+    "ajv": "^8.18.0",
     "dayjs": "^1.11.5",
     "gcf-utils": "^17.1.2",
     "jsonwebtoken": "^9.0.3",
@@ -59,6 +59,8 @@
     "node": ">= 18"
   },
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0"
   }
 }

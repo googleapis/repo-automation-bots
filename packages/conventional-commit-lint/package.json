@@ -56,7 +56,9 @@
     "typescript": "~4.9.0"
   },
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0"
   },
   "engines": {
     "node": ">= 18"

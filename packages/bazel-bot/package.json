@@ -1,6 +1,10 @@
 {
-    "scripts": {
-        "test": "bash test-generate-googleapis-gen.sh",
-        "lint": "echo 'The code is beautiful!'"
-    }
+  "scripts": {
+    "test": "bash test-generate-googleapis-gen.sh",
+    "lint": "echo 'The code is beautiful!'"
+  },
+  "overrides": {
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0"
+  }
 }

@@ -24,5 +24,9 @@
   },
   "engines": {
     "node": ">= 18"
+  },
+  "overrides": {
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0"
   }
 }

@@ -13,6 +13,10 @@
     "proxy": "smee",
     "generate-bot": "node ./packages/generate-bot/run.js"
   },
+  "overrides": {
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0"
+  },
   "devDependencies": {
     "c8": "^7.1.0",
     "formidable": ">=2.1.3",

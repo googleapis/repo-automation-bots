@@ -74,7 +74,7 @@
     "@octokit/plugin-retry": "^6.1.0",
     "@octokit/rest": "^20.1.1",
     "adm-zip": "^0.5.9",
-    "ajv": "^8.11.0",
+    "ajv": "^8.18.0",
     "code-suggester": "^5.0.0",
     "firebase-admin": "^12.4.0",
     "follow-redirects": "^1.15.2",
@@ -93,6 +93,8 @@
     "fsevents": "*"
   },
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0"
   }
 }
