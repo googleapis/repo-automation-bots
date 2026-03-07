@@ -74,6 +74,12 @@
   "overrides": {
     "tmp": "0.2.5",
     "fast-xml-parser": "^5.3.8",
-    "ajv": "^8.18.0"
+    "ajv": "^8.18.0",
+    "eslint": {
+      "ajv": "^6.12.4"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "^6.12.4"
+    }
   }
 }
