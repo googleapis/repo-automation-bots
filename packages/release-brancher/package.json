@@ -1,6 +1,6 @@
 {
   "name": "@google-cloud/release-brancher",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Cut release branches",
   "bin": "./build/src/bin/release-brancher.js",
   "author": "Google LLC.",
