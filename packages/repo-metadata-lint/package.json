@@ -31,7 +31,7 @@
     "@google-automations/git-file-utils": "^3.0.0",
     "@google-cloud/bigquery": "^7.9.0",
     "@octokit/rest": "^20.1.1",
-    "ajv": "^8.18.0",
+    "ajv": "^8.11.0",
     "gaxios": "^5.0.1",
     "gcf-utils": "^17.1.2",
     "js-yaml": "^4.1.1",
@@ -43,7 +43,7 @@
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.12",
-    "c8": "^10.1.0",
+    "c8": "^7.12.0",
     "cross-env": "^7.0.3",
     "gts": "^4.0.0",
     "lru-cache": "^7.14.0",
@@ -57,18 +57,6 @@
     "node": ">= 18"
   },
   "overrides": {
-    "tmp": "0.2.5",
-    "fast-xml-parser": "^5.3.8",
-    "ajv": "^8.18.0",
-    "eslint": {
-      "ajv": "^6.12.4"
-    },
-    "@eslint/eslintrc": {
-      "ajv": "^6.12.4"
-    },
-    "minimatch@^3": "^3.1.2",
-    "minimatch@^5": "^5.1.9",
-    "glob": "^10.5.0",
-    "tar": "^7.5.8"
+    "tmp": "0.2.5"
   }
 }
