@@ -113,7 +113,9 @@ describe('copyDirs', () => {
     copyDirs(sourceDir, destDir, yaml);
 
     // Confirm .git/ wasn't copied, but .gitignore was copied.
-    const allFiles = globSync('**', {cwd: destDir, dot: true}).filter(p => p !== '.' && p !== './');
+    const allFiles = globSync('**', {cwd: destDir, dot: true}).filter(
+      p => p !== '.' && p !== './'
+    );
     const tree = collectGlobResult(destDir, allFiles);
     assert.deepStrictEqual(tree, ['m', 'm/n', 'm/n/.gitignore:*.o']);
   });
