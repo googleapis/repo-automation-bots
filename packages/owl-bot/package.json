@@ -54,7 +54,7 @@
     "@types/sinon": "^10.0.13",
     "@types/tmp": "^0.2.3",
     "@types/yargs": "^17.0.12",
-    "c8": "^7.12.0",
+    "c8": "^10.1.0",
     "gts": "^3.1.1",
     "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
@@ -74,17 +74,17 @@
     "@octokit/plugin-retry": "^6.1.0",
     "@octokit/rest": "^20.1.1",
     "adm-zip": "^0.5.9",
-    "ajv": "^8.11.0",
+    "ajv": "^8.18.0",
     "code-suggester": "^5.0.0",
     "firebase-admin": "^12.4.0",
     "follow-redirects": "^1.15.2",
     "fs-extra": "^11.0.0",
     "gaxios": "^5.0.1",
     "gcf-utils": "^17.1.2",
-    "glob": "^8.0.3",
+    "glob": "^10.5.0",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
-    "minimatch": "^5.1.0",
+    "minimatch": "^5.1.9",
     "probot": "^13.4.4",
     "tmp": "0.2.5",
     "yargs": "^17.5.1"
@@ -93,6 +93,18 @@
     "fsevents": "*"
   },
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0",
+    "eslint": {
+      "ajv": "^6.12.4"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "^6.12.4"
+    },
+    "minimatch@^3": "^3.1.2",
+    "minimatch@^5": "^5.1.9",
+    "glob": "^10.5.0",
+    "tar": "^7.5.8"
   }
 }

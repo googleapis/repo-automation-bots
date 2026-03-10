@@ -20,7 +20,7 @@
     "@octokit/rest": "^20.1.1",
     "@octokit/types": "^13.0.0",
     "js-yaml": "^4.1.1",
-    "minimatch": "^5.1.0"
+    "minimatch": "^5.1.9"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
@@ -28,7 +28,7 @@
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.15",
     "@types/sinon": "^10.0.13",
-    "c8": "^7.12.0",
+    "c8": "^10.1.0",
     "chai": "^4.3.6",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.2",
@@ -52,6 +52,18 @@
     "build/src"
   ],
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "fast-xml-parser": "^5.3.8",
+    "ajv": "^8.18.0",
+    "eslint": {
+      "ajv": "^6.12.4"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "^6.12.4"
+    },
+    "minimatch@^3": "^3.1.2",
+    "minimatch@^5": "^5.1.9",
+    "glob": "^10.5.0",
+    "tar": "^7.5.8"
   }
 }

@@ -33,7 +33,7 @@ import {OwlBotYaml} from '../src/config-files';
 import {collectDirTree, collectGlobResult, makeDirTree} from './dir-tree';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 import {newCmd} from '../src/cmd';
-import glob from 'glob';
+import {globSync} from 'glob';
 
 describe('copyDirs', () => {
   /**
@@ -113,7 +113,9 @@ describe('copyDirs', () => {
     copyDirs(sourceDir, destDir, yaml);
 
     // Confirm .git/ wasn't copied, but .gitignore was copied.
-    const allFiles = glob.sync('**', {cwd: destDir, dot: true});
+    const allFiles = globSync('**', {cwd: destDir, dot: true}).filter(
+      p => p !== '.' && p !== './'
+    );
     const tree = collectGlobResult(destDir, allFiles);
     assert.deepStrictEqual(tree, ['m', 'm/n', 'm/n/.gitignore:*.o']);
   });
