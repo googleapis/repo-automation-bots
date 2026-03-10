@@ -1,6 +1,6 @@
 module github.com/googleapis/repo-automation-bots/serverless-scheduler-proxy
 
-go 1.25.5
+go 1.24.0
 
 require (
 	cloud.google.com/go/secretmanager v1.14.2

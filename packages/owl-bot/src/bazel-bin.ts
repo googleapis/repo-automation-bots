@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {globSync} from 'glob';
+import glob from 'glob';
 import {newCmd} from './cmd';
 import path from 'path';
 import * as fs from 'fs';
@@ -35,7 +35,7 @@ export function unpackTarBalls(
 ) {
   const cmd = newCmd(logger);
   const pattern = makeTarBallPattern(buildTargetStem);
-  const tarBalls = globSync(pattern, {cwd: bazelBinDir});
+  const tarBalls = glob.sync(pattern, {cwd: bazelBinDir});
   for (const tarBall of tarBalls) {
     const parentDir = path.dirname(tarBall);
     const tarBallFullPath = path.join(bazelBinDir, tarBall);

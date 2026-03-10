@@ -24,7 +24,7 @@ import {GithubRepo} from './github-repo';
 import * as fs from 'fs';
 import path from 'path';
 import {load} from 'js-yaml';
-import {globSync} from 'glob';
+import {glob} from 'glob';
 
 export interface OwlBotYamlAndPath {
   // The path in the repository where the .OwlBot.yaml was found.
@@ -161,10 +161,10 @@ export function collectConfigs(dir: string): CollectedConfigs {
     }
   }
   // .OwlBot.yamls may be scattered throughout the directory.  Find them.
-  const yamlPaths = globSync(path.join('**', '.OwlBot.yaml'), {cwd: dir});
+  const yamlPaths = glob.sync(path.join('**', '.OwlBot.yaml'), {cwd: dir});
   // Glob ignores .dot files, and we need to look in the .github directory.
   yamlPaths.push(
-    ...globSync(path.join('.github', '**', '.OwlBot.yaml'), {cwd: dir})
+    ...glob.sync(path.join('.github', '**', '.OwlBot.yaml'), {cwd: dir})
   );
   for (const yamlPath of yamlPaths) {
     try {
