@@ -20,7 +20,7 @@
     "@octokit/rest": "^20.1.1",
     "@octokit/types": "^13.0.0",
     "js-yaml": "^4.1.1",
-    "minimatch": "^5.1.0"
+    "minimatch": "^9.0.9"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
@@ -33,7 +33,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.2",
     "gts": "^4.0.0",
-    "mocha": "^10.0.0",
+    "mocha": "^11.7.5",
     "nock": "^13.2.9",
     "node-fetch": "^2.7.0",
     "sinon": "^15.0.0",
