@@ -29,7 +29,7 @@ async function main() {
     const res = await request({
       url,
       headers: {
-        authentication: `token ${githubToken}`,
+        Authorization: `token ${githubToken}`,
       }
     });
     for (const job of res.data.jobs) {
