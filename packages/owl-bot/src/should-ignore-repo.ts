@@ -30,8 +30,10 @@ export function shouldIgnoreRepo(ownerSlashRepo: string): boolean {
   // is a waste of time and energy.
   // Also, ignore PHP's mirrored repos because their exact copies of
   // subdirectories of google-cloud-php and never accept pull requests.
+  // Additionally, ignore librarian repo as it only has `.OwlBot.yaml`s
+  // for testing.
   const regexp = process.env.IGNORE_REPO_REGEXP
     ? new RegExp(process.env.IGNORE_REPO_REGEXP)
-    : /googleapis\/(googleapis(-gen)?|google-cloud-php-.+|php-.+)/;
+    : /googleapis\/(googleapis(-gen)?|google-cloud-php-.+|php-.+|librarian)/;
   return regexp.test(ownerSlashRepo);
 }
