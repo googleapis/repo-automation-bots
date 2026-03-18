@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 18
+          node-version: 20
       - run: npm run run -- npm audit fix
         continue-on-error: true
       - uses: googleapis/code-suggester@589b3ac11ac2575fd561afa45034907f301a375b # v4
