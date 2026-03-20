@@ -16,7 +16,7 @@ exports['release-please bot config schema check on PRs should create a failing s
   "output": {
     "title": "Config schema error",
     "summary": "An error found in the config file",
-    "text": "the given config is not valid JSON 😱 \nExpected ':' after property name in JSON at position 59 (line 4 column 27)"
+    "text": "the given config is not valid JSON 😱 \nUnexpected token ',', ...\"ing-comma\",\n  }\n}\n\" is not valid JSON"
   }
 }
 
@@ -38,7 +38,7 @@ exports['release-please bot config schema check on PRs should create a failing s
   "output": {
     "title": "Config schema error",
     "summary": "An error found in the config file",
-    "text": "the given config is not valid JSON 😱 \nExpected ':' after property name in JSON at position 59 (line 4 column 27)"
+    "text": "the given config is not valid JSON 😱 \nUnexpected token ',', ...\"ing-comma\",\n  }\n}\n\" is not valid JSON"
   }
 }
 
