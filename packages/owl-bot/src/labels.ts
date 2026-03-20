@@ -27,8 +27,6 @@ export const OWL_BOT_LABELS = [
   },
   {
     name: OWL_BOT_COPY_COMMAND_LABEL,
-    description:
-      'Instruct owl-bot to copy code from googleapis-gen.' +
-      '  The PR this label is applied to must have a copy tag.',
+    description: 'Instruct owl-bot to copy code from googleapis-gen.',
   },
 ];
