@@ -6,7 +6,7 @@
     "compile": "tsc -p .",
     "pretest": "npm run compile && docker pull google/cloud-sdk:510.0.0",
     "prepare": "npm run compile",
-    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch ./build/test",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
