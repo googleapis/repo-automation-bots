@@ -8,7 +8,7 @@
     "compile": "tsc",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.7.15",
+    "@types/node": "^20.0.0",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.12",
     "c8": "^7.12.0",
@@ -46,7 +46,7 @@
     "yargs": "^17.5.1"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 20"
   },
   "overrides": {
     "tmp": "0.2.5"

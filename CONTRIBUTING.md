@@ -78,7 +78,7 @@ take the steps below.
 
 1. Read `package.json` of the package to understand the commands there.
    For example, in `packages/release-please/package.json`, the command for the test is
-   `cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch --exit build/test`.
+   `cross-env LOG_LEVEL=fatal c8 mocha --exit build/test`.
    - `cross-env` is NodeJS utility command for Windows. This is irrelevant
      to break points.
    - `c8` is code coverage measurement tool. This is irrelevant to break points.

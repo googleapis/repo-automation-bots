@@ -22,7 +22,7 @@
     "compile": "tsc",
     "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
@@ -39,7 +39,7 @@
     "@types/extend": "^3.0.1",
     "@types/js-yaml": "^4.0.5",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.7.15",
+    "@types/node": "^20.0.0",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.12",
     "c8": "^7.12.0",
@@ -56,7 +56,7 @@
     "typescript": "^5.7.3"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 20"
   },
   "overrides": {
     "tmp": "0.2.5"

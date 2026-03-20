@@ -16,7 +16,7 @@ schemaVersion: 1.0.0
 commandTests:
 - name: "node version"
   command: ["node", "--version"]
-  expectedOutput: ["v18.*.*"]
+  expectedOutput: ["v20.*.*"]
 - name: "npm version"
   command: ["npm", "--version"]
   expectedOutput: ["10.*.*"]

@@ -8,7 +8,7 @@
     "build/src"
   ],
   "engines": {
-    "node": ">= 18"
+    "node": ">= 20"
   },
   "scripts": {
     "start-backend": "node ./build/src/server-backend.js",
@@ -19,7 +19,7 @@
     "fix": "gts fix",
     "lint": "gts check",
     "mocha": "npm run compile && c8 mocha build/test",
-    "test": "c8 mocha --node-option no-experimental-fetch build/test && node ./build/src/bin/owl-bot.js --help",
+    "test": "c8 mocha build/test && node ./build/src/bin/owl-bot.js --help",
     "system-test": "c8 mocha build/system-test",
     "pretest": "npm run compile",
     "presystem-test": "npm run compile",
@@ -49,7 +49,7 @@
     "@types/jsonwebtoken": "^9.0.3",
     "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.7.18",
+    "@types/node": "^20.0.0",
     "@types/rimraf": "^3.0.2",
     "@types/sinon": "^10.0.13",
     "@types/tmp": "^0.2.3",

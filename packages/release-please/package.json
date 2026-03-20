@@ -22,7 +22,7 @@
     "compile": "tsc -p .",
     "start": "node ./build/src/server.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --node-option no-experimental-fetch --exit build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.7.15",
+    "@types/node": "^20.0.0",
     "@types/semver": "^7.3.12",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
@@ -56,7 +56,7 @@
     "typescript": "~5.7.3"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 20"
   },
   "overrides": {
     "tmp": "0.2.5"
