@@ -21,7 +21,6 @@
   "author": "Google LLC",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/minimatch": "^5.1.2",
     "@types/mocha": "^10.0.0",
     "@types/node": "^20.0.0",
     "@types/sinon": "^10.0.13",
@@ -42,7 +41,7 @@
     "@octokit/rest": "^20.1.2",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
-    "minimatch": "^5.1.0",
+    "minimatch": "^10.2.4",
     "yargs": "^17.5.1"
   },
   "engines": {
