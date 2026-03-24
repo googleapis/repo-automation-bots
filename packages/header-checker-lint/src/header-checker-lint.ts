@@ -45,7 +45,7 @@ const FORCE_RUN_LABEL = 'header-checker-lint:force-run';
 
 class Configuration {
   private options: ConfigurationOptions;
-  private minimatches: minimatch.IMinimatch[];
+  private minimatches: minimatch.Minimatch[];
 
   constructor(options: ConfigurationOptions) {
     this.options = options;

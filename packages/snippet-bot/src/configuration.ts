@@ -30,7 +30,7 @@ export const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
 export class Configuration {
   private options: ConfigurationOptions;
-  private minimatches: minimatch.IMinimatch[];
+  private minimatches: minimatch.Minimatch[];
 
   constructor(options: ConfigurationOptions) {
     this.options = options;
