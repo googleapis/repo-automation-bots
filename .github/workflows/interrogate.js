@@ -39,13 +39,16 @@ let goPaths = new Set();
 let bashPaths = new Set();
 for (const change of changes) {
   if (change.startsWith('packages/')) {
-    if (change.startsWith('packages/monitoring-system')) {
+    const pkg = change.split('/')[1];
+    if (pkg === 'monitoring-system' || pkg === 'release-trigger') {
       // Currently our test pipeline does not allow us to delete an
       // existing package. We may want to handle it better in the
       // future.
       continue;
     } else {
-      nodePaths.add(change.split('/')[1]);
+      if (fs.existsSync(`packages/${pkg}`)) {
+        nodePaths.add(pkg);
+      }
     }
   };
   if (change.startsWith('packages/flakybot/')) {
