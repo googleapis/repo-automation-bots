@@ -31,7 +31,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots#readme",
   "devDependencies": {
     "@types/express": "^4.17.13",
-    "@types/mocha": "^10.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.33",
     "@types/node-fetch": "^2.6.9",
@@ -39,7 +39,7 @@
     "gaxios": "^5.0.1",
     "gts": "^4.0.0",
     "lru-cache": "^7.14.0",
-    "mocha": "^10.0.0",
+    "mocha": "^11.7.5",
     "nock": "^13.2.9",
     "node-fetch": "^2.6.9",
     "sinon": "^18.0.0",

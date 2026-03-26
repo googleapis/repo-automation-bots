@@ -27,7 +27,7 @@
   "devDependencies": {
     "@octokit/rest": "^19.0.4",
     "@types/js-yaml": "^4.0.5",
-    "@types/mocha": "^10.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.12",
@@ -35,7 +35,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.2",
     "gts": "^4.0.0",
-    "mocha": "^10.0.0",
+    "mocha": "^11.7.5",
     "nock": "^13.2.9",
     "sinon": "^15.0.0",
     "snap-shot-it": "^7.9.6",
