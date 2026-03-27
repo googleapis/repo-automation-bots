@@ -15,21 +15,7 @@
 # Use a multi-stage docker build to limit production dependencies.
 
 # Stage 0: Node.js Base Image
-FROM marketplace.gcr.io/google/debian12:latest AS NODE_BASE
-
-# Install Node.js v18 and npm.
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
-
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -rf /usr/lib/node_modules/npm/node_modules/cross-spawn/
-
-# Stage 1: Build
-FROM NODE_BASE AS BUILD
+FROM gcr.io/distroless/nodejs24-debian13:latest AS BUILD
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -47,7 +33,7 @@ COPY . ./
 
 RUN npm run compile
 
-FROM NODE_BASE
+FROM gcr.io/distroless/nodejs24-debian13:latest
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
