@@ -58,7 +58,7 @@ COPY package*.json ./
 COPY --from=app-build /usr/src/app/build build
 COPY --from=node-deps /usr/src/app/node_modules node_modules
 
-ENV NODE_ENV="production"
+ENV NODE_ENV=production
 
 # Run the web service on container startup.
-CMD [ "npm", "--no-update-notifier", "run", "start" ]
+CMD [ "./build/src/server.js"]
