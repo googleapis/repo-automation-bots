@@ -14,8 +14,8 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-# Stage 0: Node.js Base Image
-FROM gcr.io/distroless/nodejs24-debian13:latest AS BUILD
+# Stage 0: Compile the app (needs dev dependencies)
+FROM node:24 AS app-build
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -31,18 +31,34 @@ RUN npm ci
 # Now copy all the code so we can compile
 COPY . ./
 
+# compile .ts files into build/
 RUN npm run compile
 
+# remove installed node_modules because we will only have production
+# dependencies in the final image
+RUN rm -rf node_modules/
+
+# Stage 1: Install only production dependencies
+FROM node:24 AS node-deps
+
+# Create and change to the app directory.
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Stage 2: Create the final image with only the compiled code and production dependencies
+# as we cannot run npm from this image
 FROM gcr.io/distroless/nodejs24-debian13:latest
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build
-RUN npm ci --only=production
+COPY --from=app-build /usr/src/app/build build
+COPY --from=node-deps /usr/src/app/node_modules node_modules
 
-ENV NODE_ENV "production"
+ENV NODE_ENV="production"
 
 # Run the web service on container startup.
 CMD [ "npm", "--no-update-notifier", "run", "start" ]
