@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.0.1](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v5.0.0...cron-utils-v5.0.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* drop support for Node.js 18 ([#6034](https://github.com/googleapis/repo-automation-bots/issues/6034)) ([b7ce273](https://github.com/googleapis/repo-automation-bots/commit/b7ce2739fd791cba3845f0d833843d933f756a78))
+* security vulnerability with js-yaml ([#5965](https://github.com/googleapis/repo-automation-bots/issues/5965)) ([fad9d6c](https://github.com/googleapis/repo-automation-bots/commit/fad9d6c60fa5f82b19dd18e3608b7d771e595a9e))
+
 ## [5.0.0](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v4.0.0...cron-utils-v5.0.0) (2024-09-06)
 
 
