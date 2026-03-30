@@ -47,7 +47,7 @@
     "@types/glob": "^8.0.0",
     "@types/js-yaml": "^4.0.5",
     "@types/jsonwebtoken": "^9.0.3",
-    "@types/mocha": "^10.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
     "@types/rimraf": "^3.0.2",
     "@types/sinon": "^10.0.13",
@@ -56,7 +56,7 @@
     "c8": "^7.12.0",
     "gts": "^3.1.1",
     "lru-cache": "^7.14.0",
-    "mocha": "^10.0.0",
+    "mocha": "^11.7.5",
     "nock": "^13.2.9",
     "node-fetch": "^2.6.9",
     "rimraf": "^3.0.2",
@@ -92,6 +92,10 @@
     "fsevents": "*"
   },
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "mocha": {
+      "serialize-javascript": "7.0.5",
+      "diff": "8.0.4"
+    }
   }
 }
