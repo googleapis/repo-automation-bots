@@ -59,6 +59,9 @@
     "node": ">= 20"
   },
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "jsonpath": {
+      "underscore": "^1.13.8"
+    }
   }
 }
