@@ -87,6 +87,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [17.1.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.1.2...gcf-utils-v17.1.3) (2026-03-30)
+
+
+### Bug Fixes
+
+* **deps:** update fast-xml-parser ([#6015](https://github.com/googleapis/repo-automation-bots/issues/6015)) ([6c4ddf5](https://github.com/googleapis/repo-automation-bots/commit/6c4ddf5683b05ccc0c2a0ef45ee07e4e214d5eff))
+* drop support for Node.js 18 ([#6034](https://github.com/googleapis/repo-automation-bots/issues/6034)) ([b7ce273](https://github.com/googleapis/repo-automation-bots/commit/b7ce2739fd791cba3845f0d833843d933f756a78))
+
 ## [17.1.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.1.1...gcf-utils-v17.1.2) (2025-10-07)
 
 
