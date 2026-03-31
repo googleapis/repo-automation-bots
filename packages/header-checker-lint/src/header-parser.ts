@@ -21,7 +21,7 @@ export interface LicenseHeader {
 }
 
 const COPYRIGHT_REGEX =
-  /\s*(^|[*#]|\/\/) ?\s*Copyright (\d{4}(-\d{4})?) ([\w\s,]+)\.?/;
+  /\s*(^|[*#]|\/\/) ?\s*Copyright (\d{4}(-\d{4})?),? ([\w\s,]+)\.?/;
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );
