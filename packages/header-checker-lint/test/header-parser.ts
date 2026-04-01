@@ -109,4 +109,15 @@ describe('detectLicenseHeader', () => {
     assert.strictEqual(header.year, 2021);
     assert.strictEqual(header.type, 'Apache-2.0');
   });
+
+  it('should handle Java BSD-3 style', async () => {
+    const contents = fs.readFileSync(
+      resolve(fixturesPath, './java-bsd3.txt'),
+      'utf-8'
+    );
+    const header = detectLicenseHeader(contents);
+    assert.strictEqual(header.copyright, 'Google Inc');
+    assert.strictEqual(header.year, 2016);
+    assert.strictEqual(header.type, 'BSD-3');
+  });
 });
