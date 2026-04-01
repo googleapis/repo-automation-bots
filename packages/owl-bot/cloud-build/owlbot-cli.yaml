@@ -21,6 +21,8 @@ steps:
       - "-t"
       - "gcr.io/cloud-devrel-public-resources/owlbot-cli"
       - "-t"
+      - "gcr.io/cloud-devrel-public-resources/owlbot-cli:infrastructure-public-image-$COMMIT_SHA"
+      - "-t"
       - "gcr.io/repo-automation-bots/owlbot-cli"
       - "-t"
       - "gcr.io/repo-automation-bots/owlbot-cli:$COMMIT_SHA"
