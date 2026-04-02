@@ -16,10 +16,7 @@
 
 
 # Use the latest Node.js 18 slim image with patched Debian base.
-FROM node:20-slim AS BUILD
-
-# Upgrade all Debian packages for security.
-RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+FROM node:24 AS app-build
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -37,23 +34,31 @@ COPY . ./
 
 RUN npm run compile
 
+# remove installed node_modules because we will only have production
+# dependencies in the final image
+RUN rm -rf node_modules/
 
-FROM node:20-slim
-
-# Upgrade all Debian packages for security.
-RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+# Stage 1: Install only production dependencies
+FROM node:24 AS node-deps
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build
 RUN npm ci --only=production
 
-ENV NODE_ENV "production"
+# Stage 2: Create the final image with only the compiled code and production dependencies
+# as we cannot run npm from this image
+FROM gcr.io/distroless/nodejs24-debian13:latest
+
+# Create and change to the app directory.
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+COPY --from=app-build /usr/src/app/build build
+COPY --from=node-deps /usr/src/app/node_modules node_modules
+
+ENV NODE_ENV=production
 
 # Run the web service on container startup.
-CMD [ "npm", "--no-update-notifier", "run", "start" ]
+CMD [ "./build/src/server.js"]
