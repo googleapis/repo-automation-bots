@@ -18,6 +18,7 @@ RUN go build -o /serverless-scheduler-proxy
 
 FROM alpine
 RUN apk add --no-cache ca-certificates
+RUN apk update && apk upgrade
 COPY --from=build /serverless-scheduler-proxy /serverless-scheduler-proxy
 
 ENTRYPOINT [ "/serverless-scheduler-proxy" ]
