@@ -56,7 +56,8 @@
     "typescript": "~4.9.0"
   },
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "@tootallnate/once": "^3.0.1"
   },
   "engines": {
     "node": ">= 20"

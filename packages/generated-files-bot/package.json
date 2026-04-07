@@ -62,6 +62,7 @@
     "tmp": "0.2.5",
     "jsonpath": {
       "underscore": "^1.13.8"
-    }
+    },
+    "@tootallnate/once": "^3.0.1"
   }
 }

@@ -87,6 +87,7 @@
     "build/src"
   ],
   "overrides": {
-    "tmp": "0.2.5"
+    "tmp": "0.2.5",
+    "@tootallnate/once": "^3.0.1"
   }
 }
