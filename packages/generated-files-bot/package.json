@@ -63,6 +63,7 @@
     "jsonpath": {
       "underscore": "^1.13.8"
     },
-    "@tootallnate/once": "^3.0.1"
+    "@tootallnate/once": "^3.0.1",
+    "serialize-javascript": "^7.0.3"
   }
 }
