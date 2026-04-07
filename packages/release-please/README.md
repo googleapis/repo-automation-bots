@@ -114,6 +114,7 @@ configuration names are often the "dasherized" versions of these camel-cased nam
 | `releaseLabel` | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`) |
 | `draft` | Whether to create the release as a draft | `boolean` | `false` |
 | `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
+| `onDemand` | Skip automatic processing on push events (except release commits). Use with `release-please:force-run` label to trigger manually. | `boolean` | `false` |
 | `pullRequestTitlePattern` | Customize the pull request title | `string` | |
 | `monorepoTags` | Whether to include the component name in the release | `boolean` | `false` |
 
@@ -136,6 +137,7 @@ configuration names are often the "dasherized" versions of these camel-cased nam
 | `releaseLabel` | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`) |
 | `draft` | Whether to create the release as a draft | `boolean` | `false` |
 | `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
+| `onDemand` | Skip automatic processing on push events (except release commits). Use with `release-please:force-run` label to trigger manually. | `boolean` | `false` |
 | `pullRequestTitlePattern` | Customize the pull request title | `string` | |
 | `monorepoTags` | Whether to include the component name in the release | `boolean` | `false` |
 
@@ -147,7 +149,8 @@ releases should be automatically proposed on commits to the configured branch(es
 #### Forcing the bot to run
 
 To force a re-run, you may add the `release-please:force-run` label to *any* pull
-request. The bot should respond by running and removing that label.
+request targeting the branch. The bot should respond by running and removing that label.
+This is especially useful when `onDemand` is enabled, as it becomes the primary way to trigger release PR creation.
 
 #### Handling GitHub releases
 
