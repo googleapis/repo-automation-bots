@@ -16,10 +16,8 @@
 
 # Use the official lightweight Node.js image.
 # https://hub.docker.com/_/node
-FROM node:24-alpine
-
-# Bump the heap size
-ENV NODE_OPTIONS='--max-old-space-size=8192'
+# Stage 1: Build
+FROM node:24-alpine AS builder
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -27,18 +25,38 @@ WORKDIR /usr/src/app
 # Copy local code to the container image.
 COPY . ./
 
-# Install git
+# Install dependencies and compile
+# Speed up build by switching to 'npm ci' since package-lock.json exists
+RUN npm ci && \
+    npm run compile
+
+# Prune dev dependencies
+RUN npm prune --production
+
+# Stage 2: Final Runtime Image
+# Use the official lightweight Node.js image.
+# https://hub.docker.com/_/node
+FROM node:24-alpine
+
+# Create and change to the app directory.
+WORKDIR /usr/src/app
+
+# Install git and bash (needed by owl-bot)
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
-# Upgrade npm to latest to fix CVEs
-RUN npm install -g npm@latest
+# Copy built files and production node_modules from builder
+COPY --from=builder /usr/src/app/build ./build
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/package.json ./package.json
 
-# Install production dependencies.
-# If you add a package-lock.json, speed your build by switching to 'npm ci'.
-# RUN npm ci --only=production
-RUN npm install && \
-    npm run compile
+# Remove npm and npx to fix CVEs in bundled dependencies and reduce attack surface
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx
+
+# Bump the heap size
+ENV NODE_OPTIONS='--max-old-space-size=8192'
 
 # Make sure users besides root can run the app.
 RUN chmod a+rx -R .
