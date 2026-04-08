@@ -31,6 +31,9 @@ COPY . ./
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
+# Upgrade npm to latest to fix CVEs
+RUN npm install -g npm@latest
+
 # Install production dependencies.
 # If you add a package-lock.json, speed your build by switching to 'npm ci'.
 # RUN npm ci --only=production
