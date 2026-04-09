@@ -49,6 +49,8 @@ import {
   Logger,
   PluginType,
 } from 'release-please';
+import {Scm} from 'release-please/build/src/scm';
+import {LocalGitHub} from 'release-please/build/src/local-github';
 import schema from './config-schema.json';
 import {
   BranchConfiguration,
@@ -178,17 +180,41 @@ async function getConfigWithDefaultBranch(
   return config;
 }
 
-async function buildGitHub(
+async function buildScm(
   owner: string,
   repo: string,
   octokit: GitHubAPI,
-  defaultBranch?: string,
-  logger?: Logger
-): Promise<GitHub> {
+  branchConfiguration: BranchConfiguration,
+  logger: Logger,
+  options: {
+    defaultBranch?: string;
+  }
+): Promise<Scm> {
+  if (branchConfiguration.local) {
+    if (!process.env.BOT_TMPFS_DIR) {
+      logger.warn(
+        'Local git clone requested, but BOT_TMPFS_DIR is not set -- using GitHub API'
+      );
+    } else {
+      return await LocalGitHub.create({
+        owner,
+        repo,
+        defaultBranch: options.defaultBranch,
+        octokitAPIs: {
+          octokit: octokit as {} as OctokitType,
+          request: octokit.request,
+          graphql: octokit.graphql,
+        },
+        logger,
+        cloneDepth: branchConfiguration.localCloneDepth,
+        localRepoPath: `${process.env.BOT_TMPFS_DIR}/${owner}--${repo}`,
+      });
+    }
+  }
   return await GitHub.create({
     owner,
     repo,
-    defaultBranch,
+    defaultBranch: options.defaultBranch,
     octokitAPIs: {
       octokit: octokit as {} as OctokitType,
       request: octokit.request,
@@ -199,7 +225,7 @@ async function buildGitHub(
 }
 
 async function buildManifest(
-  github: GitHub,
+  scm: Scm,
   repoLanguage: string | null,
   configuration: BranchConfiguration,
   logger: GCFLogger,
@@ -208,7 +234,7 @@ async function buildManifest(
   if (configuration.manifest) {
     logger.info('building from manifest file');
     return await Manifest.fromManifest(
-      github,
+      scm,
       configuration.branch,
       configuration.manifestConfig,
       configuration.manifestFile,
@@ -250,7 +276,7 @@ async function buildManifest(
     logger,
   };
   return await Manifest.fromConfig(
-    github,
+    scm,
     configuration.branch,
     releaserConfig,
     manifestOverrides,
@@ -266,14 +292,16 @@ interface RunBranchOptions {
   skipPullRequest?: boolean;
 }
 async function runBranchConfigurationWithConfigurationHandling(
-  github: GitHub,
+  scm: Scm,
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
   octokit: Octokit,
   options: RunBranchOptions
 ) {
-  const target = `${repoUrl}---${branchConfiguration.branch}---${branchConfiguration.manifestConfig}`;
+  // Slow down release-please and lock on repo level instead of branch + config level.
+  // We also can't have multiple local handlers running against the same local git repository.
+  const target = repoUrl;
   const branchContext = {
     branch: branchConfiguration.branch,
     manifestConfig: branchConfiguration.manifestConfig,
@@ -289,7 +317,7 @@ async function runBranchConfigurationWithConfigurationHandling(
     },
     async () => {
       await runBranchConfigurationWithConfigurationHandlingWithoutLock(
-        github,
+        scm,
         repoLanguage,
         repoUrl,
         branchConfiguration,
@@ -303,7 +331,7 @@ async function runBranchConfigurationWithConfigurationHandling(
   );
 }
 async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
-  github: GitHub,
+  scm: Scm,
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
@@ -313,7 +341,7 @@ async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
   const logger = options.logger ?? defaultLogger;
   try {
     await runBranchConfiguration(
-      github,
+      scm,
       repoLanguage,
       repoUrl,
       branchConfiguration,
@@ -327,8 +355,8 @@ async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
       logger.warn(e);
       await addOrUpdateIssue(
         octokit,
-        github.repository.owner,
-        github.repository.repo,
+        scm.repository.owner,
+        scm.repository.repo,
         'Configuration error for release-please',
         e.message,
         ['release-please'],
@@ -338,8 +366,8 @@ async function runBranchConfigurationWithConfigurationHandlingWithoutLock(
       logger.warn(e);
       await addOrUpdateIssue(
         octokit,
-        github.repository.owner,
-        github.repository.repo,
+        scm.repository.owner,
+        scm.repository.repo,
         'Configuration error for release-please',
         e.message,
         ['release-please'],
@@ -365,7 +393,7 @@ function isSentenceCaseEnabled(repoUrl: string) {
 }
 
 async function runBranchConfiguration(
-  github: GitHub,
+  scm: Scm,
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
@@ -390,7 +418,7 @@ async function runBranchConfiguration(
   if (branchConfiguration.handleGHRelease) {
     logger.info(`handling GitHub release for (${repoUrl})`);
     manifest = await buildManifest(
-      github,
+      scm,
       repoLanguage,
       branchConfiguration,
       logger,
@@ -421,7 +449,7 @@ async function runBranchConfiguration(
           logger.info(`Creating ${tagName} pointing to ${sha}`);
           const tagResponse = await Runner.createLightweightTag(
             octokit,
-            github.repository,
+            scm.repository,
             tagName,
             sha
           );
@@ -445,7 +473,7 @@ async function runBranchConfiguration(
     logger.info(`creating pull request for (${repoUrl})`);
     if (!manifest) {
       manifest = await buildManifest(
-        github,
+        scm,
         repoLanguage,
         branchConfiguration,
         logger,
@@ -532,14 +560,6 @@ const handler = (app: Probot) => {
       return;
     }
 
-    const github = await buildGitHub(
-      owner,
-      repo,
-      octokit as GitHubAPI,
-      context.payload.repository.default_branch,
-      logger
-    );
-
     for (const branchConfiguration of branchConfigurations) {
       // if branch is configured for on-demand releases, then skip the push event
       // unless it looks like a release (we)
@@ -553,9 +573,20 @@ const handler = (app: Probot) => {
         continue;
       }
 
+      const scm = await buildScm(
+        owner,
+        repo,
+        octokit as GitHubAPI,
+        branchConfiguration,
+        logger,
+        {
+          defaultBranch: context.payload.repository.default_branch,
+        }
+      );
+
       logger.debug(branchConfiguration);
       await runBranchConfigurationWithConfigurationHandling(
-        github,
+        scm,
         repoLanguage,
         repoUrl,
         branchConfiguration,
@@ -703,18 +734,21 @@ const handler = (app: Probot) => {
       return;
     }
 
-    const github = await buildGitHub(
-      owner,
-      repo,
-      octokit as GitHubAPI,
-      context.payload.repository.default_branch,
-      logger
-    );
-
     for (const branchConfiguration of branchConfigurations) {
+      const scm = await buildScm(
+        owner,
+        repo,
+        octokit as GitHubAPI,
+        branchConfiguration,
+        logger,
+        {
+          defaultBranch: context.payload.repository.default_branch,
+        }
+      );
+
       logger.debug(branchConfiguration);
       await runBranchConfigurationWithConfigurationHandling(
-        github,
+        scm,
         repoLanguage,
         repoUrl,
         branchConfiguration,

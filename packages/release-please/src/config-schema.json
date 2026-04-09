@@ -119,6 +119,12 @@
                 },
                 "onDemand": {
                     "type": "boolean"
+                },
+                "local": {
+                    "type": "boolean"
+                },
+                "localCloneDepth": {
+                    "type": "integer"
                 }
             }
         },
@@ -177,7 +183,9 @@
         "versioning": true,
         "changelogType": true,
         "initialVersion": true,
-        "onDemand": true
+        "onDemand": true,
+        "local": true,
+        "localCloneDepth": true
     },
     "allOf": [
         { "$ref": "#/definitions/BranchOptions"},
@@ -219,7 +227,9 @@
                             "versioning": true,
                             "changelogType": true,
                             "initialVersion": true,
-                            "onDemand": true
+                            "onDemand": true,
+                            "local": true,
+                            "localCloneDepth": true
                         },
                         "allOf": [
                             { "$ref": "#/definitions/BranchOptions"},
