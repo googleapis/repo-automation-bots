@@ -9,16 +9,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.25-alpine AS build
+FROM golang:1.25.9-alpine AS build
 
 RUN apk add --no-cache git ca-certificates
 WORKDIR /src/serverless-scheduler-proxy
 COPY . .
-RUN go build -o /serverless-scheduler-proxy
+RUN CGO_ENABLED=0 go build -o /serverless-scheduler-proxy
 
-FROM alpine
-RUN apk add --no-cache ca-certificates
-RUN apk update && apk upgrade
+FROM gcr.io/distroless/static-debian12
 COPY --from=build /serverless-scheduler-proxy /serverless-scheduler-proxy
 
 ENTRYPOINT [ "/serverless-scheduler-proxy" ]
