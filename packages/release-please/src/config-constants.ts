@@ -43,6 +43,9 @@ export interface BranchOptions {
   initialVersion?: string;
   onDemand?: boolean;
   tagPullRequestNumber?: boolean;
+  local?: boolean;
+  localPath?: string;
+  localCloneDepth?: number;
 }
 
 export interface BranchConfiguration extends BranchOptions {
