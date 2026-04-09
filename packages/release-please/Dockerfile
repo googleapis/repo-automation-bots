@@ -55,6 +55,8 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY --from=BUILD /usr/src/app/build build
 RUN npm ci --only=production
+RUN git config --global user.email "release-please[bot]@users.noreply.github.com"
+RUN git config --global user.name "release-please[bot]"
 
 ENV NODE_ENV "production"
 
