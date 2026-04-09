@@ -22,7 +22,7 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y nodejs git && \
     rm -rf /var/lib/apt/lists/*
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
