@@ -187,12 +187,14 @@ async function buildScm(
   branchConfiguration: BranchConfiguration,
   logger: Logger,
   options: {
-    defaultBranch?: string,
+    defaultBranch?: string;
   }
 ): Promise<Scm> {
   if (branchConfiguration.local) {
     if (!process.env.BOT_TMPFS_DIR) {
-      logger.warn('Local git clone requested, but BOT_TMPFS_DIR is not set -- using GitHub API');
+      logger.warn(
+        'Local git clone requested, but BOT_TMPFS_DIR is not set -- using GitHub API'
+      );
     } else {
       return await LocalGitHub.create({
         owner,
