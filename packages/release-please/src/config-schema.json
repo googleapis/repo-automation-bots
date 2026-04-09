@@ -123,9 +123,6 @@
                 "local": {
                     "type": "boolean"
                 },
-                "localPath": {
-                    "type": "string"
-                },
                 "localCloneDepth": {
                     "type": "integer"
                 }
@@ -188,7 +185,6 @@
         "initialVersion": true,
         "onDemand": true,
         "local": true,
-        "localPath": true,
         "localCloneDepth": true
     },
     "allOf": [
@@ -233,7 +229,6 @@
                             "initialVersion": true,
                             "onDemand": true,
                             "local": true,
-                            "localPath": true,
                             "localCloneDepth": true
                         },
                         "allOf": [

@@ -44,7 +44,6 @@ export interface BranchOptions {
   onDemand?: boolean;
   tagPullRequestNumber?: boolean;
   local?: boolean;
-  localPath?: string;
   localCloneDepth?: number;
 }
 

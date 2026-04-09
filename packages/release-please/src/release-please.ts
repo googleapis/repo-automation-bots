@@ -185,28 +185,34 @@ async function buildScm(
   repo: string,
   octokit: GitHubAPI,
   branchConfiguration: BranchConfiguration,
-  defaultBranch?: string,
-  logger?: Logger
+  logger: Logger,
+  options: {
+    defaultBranch?: string,
+  }
 ): Promise<Scm> {
   if (branchConfiguration.local) {
-    return await LocalGitHub.create({
-      owner,
-      repo,
-      defaultBranch,
-      octokitAPIs: {
-        octokit: octokit as {} as OctokitType,
-        request: octokit.request,
-        graphql: octokit.graphql,
-      },
-      logger,
-      cloneDepth: branchConfiguration.localCloneDepth,
-      localRepoPath: branchConfiguration.localPath,
-    });
+    if (!process.env.BOT_TMPFS_DIR) {
+      logger.warn('Local git clone requested, but BOT_TMPFS_DIR is not set -- using GitHub API');
+    } else {
+      return await LocalGitHub.create({
+        owner,
+        repo,
+        defaultBranch: options.defaultBranch,
+        octokitAPIs: {
+          octokit: octokit as {} as OctokitType,
+          request: octokit.request,
+          graphql: octokit.graphql,
+        },
+        logger,
+        cloneDepth: branchConfiguration.localCloneDepth,
+        localRepoPath: `${process.env.BOT_TMPFS_DIR}/${owner}--${repo}`,
+      });
+    }
   }
   return await GitHub.create({
     owner,
     repo,
-    defaultBranch,
+    defaultBranch: options.defaultBranch,
     octokitAPIs: {
       octokit: octokit as {} as OctokitType,
       request: octokit.request,
@@ -568,8 +574,10 @@ const handler = (app: Probot) => {
         repo,
         octokit as GitHubAPI,
         branchConfiguration,
-        context.payload.repository.default_branch,
-        logger
+        logger,
+        {
+          defaultBranch: context.payload.repository.default_branch,
+        }
       );
 
       logger.debug(branchConfiguration);
@@ -728,8 +736,10 @@ const handler = (app: Probot) => {
         repo,
         octokit as GitHubAPI,
         branchConfiguration,
-        context.payload.repository.default_branch,
-        logger
+        logger,
+        {
+          defaultBranch: context.payload.repository.default_branch,
+        }
       );
 
       logger.debug(branchConfiguration);
