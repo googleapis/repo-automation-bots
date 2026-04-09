@@ -297,7 +297,9 @@ async function runBranchConfigurationWithConfigurationHandling(
   octokit: Octokit,
   options: RunBranchOptions
 ) {
-  const target = `${repoUrl}---${branchConfiguration.branch}---${branchConfiguration.manifestConfig}`;
+  // Slow down release-please and lock on repo level instead of branch + config level.
+  // We also can't have multiple local handlers running against the same local git repository.
+  const target = repoUrl;
   const branchContext = {
     branch: branchConfiguration.branch,
     manifestConfig: branchConfiguration.manifestConfig,
