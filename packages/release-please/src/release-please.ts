@@ -15,6 +15,8 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import {Runner} from './runner';
+import * as child_process from 'child_process';
+import * as util from 'util';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 // We pull in @octokit/request to crreate an appropriate type for the
@@ -180,10 +182,23 @@ async function getConfigWithDefaultBranch(
   return config;
 }
 
-async function buildScm(
+interface AuthResponse {
+  type: string;
+  token: string;
+}
+async function getInstallationToken(octokit: Octokit): Promise<string> {
+  const auth = (await octokit.auth({type: 'installation'})) as AuthResponse;
+  if (auth.type !== 'token') {
+    throw new Error('Expected token auth');
+  }
+  return auth.token;
+}
+
+const execFile = util.promisify(child_process.execFile);
+export async function buildScm(
   owner: string,
   repo: string,
-  octokit: GitHubAPI,
+  octokit: Octokit,
   branchConfiguration: BranchConfiguration,
   logger: Logger,
   options: {
@@ -196,18 +211,54 @@ async function buildScm(
         'Local git clone requested, but BOT_TMPFS_DIR is not set -- using GitHub API'
       );
     } else {
+      const token = await getInstallationToken(octokit);
+      const localRepoPath = `${process.env.BOT_TMPFS_DIR}/${owner}--${repo}`;
+      const url = `https://x-access-token:${token}@github.com/${owner}/${repo}.git`;
+
+      let isGitRepo = false;
+      try {
+        await execFile('git', ['rev-parse', '--is-inside-work-tree'], {
+          cwd: localRepoPath,
+        });
+        isGitRepo = true;
+      } catch (err) {
+        isGitRepo = false;
+      }
+
+      if (!isGitRepo) {
+        logger.info(
+          `Path ${localRepoPath} is not a git clone. Initializing with credentials...`
+        );
+        const args = ['clone', '--', url, localRepoPath];
+        if (branchConfiguration.localCloneDepth) {
+          args.splice(
+            1,
+            0,
+            '--depth',
+            branchConfiguration.localCloneDepth.toString()
+          );
+        }
+        await execFile('git', args);
+      }
+      logger.info(
+        `Updating credentials for existing local repository at ${localRepoPath}...`
+      );
+      await execFile('git', ['remote', 'set-url', 'origin', url], {
+        cwd: localRepoPath,
+      });
+
       return await LocalGitHub.create({
         owner,
         repo,
         defaultBranch: options.defaultBranch,
         octokitAPIs: {
-          octokit: octokit as {} as OctokitType,
-          request: octokit.request,
+          octokit,
+          request: (octokit as GitHubAPI).request,
           graphql: octokit.graphql,
         },
         logger,
         cloneDepth: branchConfiguration.localCloneDepth,
-        localRepoPath: `${process.env.BOT_TMPFS_DIR}/${owner}--${repo}`,
+        localRepoPath,
       });
     }
   }
@@ -216,8 +267,8 @@ async function buildScm(
     repo,
     defaultBranch: options.defaultBranch,
     octokitAPIs: {
-      octokit: octokit as {} as OctokitType,
-      request: octokit.request,
+      octokit,
+      request: (octokit as GitHubAPI).request,
       graphql: octokit.graphql,
     },
     logger,
@@ -576,7 +627,7 @@ const handler = (app: Probot) => {
       const scm = await buildScm(
         owner,
         repo,
-        octokit as GitHubAPI,
+        octokit,
         branchConfiguration,
         logger,
         {
@@ -738,7 +789,7 @@ const handler = (app: Probot) => {
       const scm = await buildScm(
         owner,
         repo,
-        octokit as GitHubAPI,
+        octokit,
         branchConfiguration,
         logger,
         {
