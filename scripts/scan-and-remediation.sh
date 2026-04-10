@@ -27,7 +27,7 @@ log "INFO: Using Project ID: $PROJECT_ID"
 log "INFO: Fetching triggers dynamically..."
 # Get all triggers starting with 'packages-' and not ending with '-test'
 # Format as "name:id"
-TRIGGERS_DATA=$(gcloud builds triggers list --project=$PROJECT_ID --format="json" | jq -r '.[] | select(.name | startswith("packages-") and (endswith("-test") | not)) | .name + ":" + .id')
+TRIGGERS_DATA=$(gcloud builds triggers list --project="$PROJECT_ID" --format="json" | jq -r '.[] | select(.name | startswith("packages-") and (endswith("-test") | not)) | .name + ":" + .id')
 
 TOTAL_CHECKED=0
 TOTAL_VULNERABLE=0
@@ -39,8 +39,8 @@ STDERR_FILE=$(mktemp)
 trap 'rm -f "$STDERR_FILE"' EXIT
 
 for T in $TRIGGERS_DATA; do
-  NAME=$(echo $T | cut -d: -f1)
-  TRIGGER_ID=$(echo $T | cut -d: -f2)
+  NAME=$(echo "$T" | cut -d: -f1)
+  TRIGGER_ID=$(echo "$T" | cut -d: -f2)
   
   # Derive image name candidate by removing 'packages-'
   IMAGE=${NAME#packages-}
@@ -64,7 +64,7 @@ for T in $TRIGGERS_DATA; do
   
   # Capture stdout and stderr separately to avoid JSON corruption
   # Use location=us to avoid SDK crash
-  OUTPUT=$(gcloud artifacts vulnerabilities list us-docker.pkg.dev/$PROJECT_ID/gcr.io/$IMAGE --location=us --format=json 2>"$STDERR_FILE")
+  OUTPUT=$(gcloud artifacts vulnerabilities list us-docker.pkg.dev/"$PROJECT_ID"/gcr.io/"$IMAGE" --location=us --format=json 2>"$STDERR_FILE")
   STATUS=$?
   
   if [ $STATUS -ne 0 ]; then
@@ -88,7 +88,7 @@ for T in $TRIGGERS_DATA; do
     log "WARN: Found $COUNT fixable vulnerabilities in $IMAGE. Triggering rebuild..."
     TOTAL_VULNERABLE=$((TOTAL_VULNERABLE + 1))
     
-    if gcloud builds triggers run "$TRIGGER_ID" --branch=main --project=$PROJECT_ID; then
+    if gcloud builds triggers run "$TRIGGER_ID" --branch=main --project="$PROJECT_ID"; then
       TOTAL_TRIGGERED=$((TOTAL_TRIGGERED + 1))
     else
       log "ERROR: Failed to run trigger for $NAME (using trigger $TRIGGER_ID)"
