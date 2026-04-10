@@ -12,38 +12,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Use the official lightweight Node.js 12 image.
-# https://hub.docker.com/_/node
-FROM node:20-alpine AS BUILD
+# Use a multi-stage docker build to limit production dependencies.
+
+# Stage 0: Compile the app (needs dev dependencies)
+FROM node:24 AS app-build
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
+# Copy application dependency manifests to the container image.
+# A wildcard is used to ensure copying both package.json AND package-lock.json (when available).
+# Copying this first prevents re-running npm install on every code change.
 COPY package*.json ./
 
-# Install production dependencies.
+# Install build dependencies.
 RUN npm ci
 
-# Copy local code to the container image.
+# Now copy all the code so we can compile
 COPY . ./
 
+# compile .ts files into build/
 RUN npm run compile
 
-FROM node:20-alpine
+# remove installed node_modules because we will only have production
+# dependencies in the final image
+RUN rm -rf node_modules/
+
+# Stage 1: Install only production dependencies
+FROM node:24 AS node-deps
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build
+RUN npm ci --only=production
 
-RUN npm install -g npm
+# Stage 2: Create the final image with only the compiled code and production dependencies
+# as we cannot run npm from this image
+FROM gcr.io/distroless/nodejs24-debian13:latest
 
-RUN npm install
+# Create and change to the app directory.
+WORKDIR /usr/src/app
 
-ENV NODE_ENV "production"
+COPY package*.json ./
+COPY --from=app-build /usr/src/app/build build
+COPY --from=node-deps /usr/src/app/node_modules node_modules
 
-RUN chmod 755 /usr/src/app/build/src/index.js
+ENV NODE_ENV=production
 
 # Run the web service on container startup.
-CMD [ "npm", "run", "start" ]
+CMD [ "./build/src/index.js"]

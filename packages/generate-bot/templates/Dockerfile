@@ -14,9 +14,8 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-# Use the official lightweight Node.js 14 image.
-# https://hub.docker.com/_/node
-FROM node:20-slim AS BUILD
+# Stage 0: Compile the app (needs dev dependencies)
+FROM node:24 AS app-build
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -32,21 +31,34 @@ RUN npm ci
 # Now copy all the code so we can compile
 COPY . ./
 
+# compile .ts files into build/
 RUN npm run compile
 
-FROM node:20-slim
+# remove installed node_modules because we will only have production
+# dependencies in the final image
+RUN rm -rf node_modules/
 
-# Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
-RUN rm -r /usr/local/lib/node_modules/npm/node_modules/cross-spawn/
+# Stage 1: Install only production dependencies
+FROM node:24 AS node-deps
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build
 RUN npm ci --only=production
 
-ENV NODE_ENV "production"
+# Stage 2: Create the final image with only the compiled code and production dependencies
+# as we cannot run npm from this image
+FROM gcr.io/distroless/nodejs24-debian13:latest
+
+# Create and change to the app directory.
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+COPY --from=app-build /usr/src/app/build build
+COPY --from=node-deps /usr/src/app/node_modules node_modules
+
+ENV NODE_ENV=production
 
 # Run the web service on container startup.
-CMD [ "npm", "--no-update-notifier", "run", "start" ]
+CMD [ "./build/src/server.js"]
