@@ -297,7 +297,8 @@ interface RunBranchOptions {
   skipPullRequest?: boolean;
 }
 async function runBranchConfigurationWithConfigurationHandling(
-  scm: Scm,
+  owner: string,
+  repo: string,
   repoLanguage: string | null,
   repoUrl: string,
   branchConfiguration: BranchConfiguration,
@@ -321,6 +322,16 @@ async function runBranchConfigurationWithConfigurationHandling(
       lockAcquireTimeout: RP_LOCK_ACQUIRE_TIMEOUT_MS,
     },
     async () => {
+      const scm = await buildScm(
+        owner,
+        repo,
+        octokit,
+        branchConfiguration,
+        logger,
+        {
+          defaultBranch: branchConfiguration.branch,
+        }
+      );
       await runBranchConfigurationWithConfigurationHandlingWithoutLock(
         scm,
         repoLanguage,
@@ -578,20 +589,10 @@ const handler = (app: Probot) => {
         continue;
       }
 
-      const scm = await buildScm(
-        owner,
-        repo,
-        octokit,
-        branchConfiguration,
-        logger,
-        {
-          defaultBranch: context.payload.repository.default_branch,
-        }
-      );
-
       logger.debug(branchConfiguration);
       await runBranchConfigurationWithConfigurationHandling(
-        scm,
+        owner,
+        repo,
         repoLanguage,
         repoUrl,
         branchConfiguration,
@@ -740,20 +741,10 @@ const handler = (app: Probot) => {
     }
 
     for (const branchConfiguration of branchConfigurations) {
-      const scm = await buildScm(
-        owner,
-        repo,
-        octokit,
-        branchConfiguration,
-        logger,
-        {
-          defaultBranch: context.payload.repository.default_branch,
-        }
-      );
-
       logger.debug(branchConfiguration);
       await runBranchConfigurationWithConfigurationHandling(
-        scm,
+        owner,
+        repo,
         repoLanguage,
         repoUrl,
         branchConfiguration,
