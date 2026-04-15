@@ -26,8 +26,7 @@ log "INFO: Using Project ID: $PROJECT_ID"
 
 log "INFO: Fetching triggers dynamically..."
 # Get all triggers starting with 'packages-' and not ending with '-test'
-# Format as "name:id"
-TRIGGERS_DATA=$(gcloud builds triggers list --project="$PROJECT_ID" --format="json" | jq -r '.[] | select(.name | startswith("packages-") and (endswith("-test") | not)) | .name + ":" + .id')
+TRIGGERS_DATA=$(gcloud builds triggers list --project="$PROJECT_ID" --format="json" | jq -r '.[] | select((.name | startswith("packages-") or .name == "deploy-canary-bot-cloud-run-run") and (endswith("-test") | not)) | .name + ":" + .id')
 
 TOTAL_CHECKED=0
 TOTAL_VULNERABLE=0
@@ -44,6 +43,10 @@ for T in $TRIGGERS_DATA; do
   
   # Derive image name candidate by removing 'packages-'
   IMAGE=${NAME#packages-}
+  
+  if [ "$NAME" == "deploy-canary-bot-cloud-run-run" ]; then
+    IMAGE="canary-bot-cloud-run"
+  fi
   
   # Handle known exceptions where trigger name doesn't match image name
   if [ "$IMAGE" == "owl-bot" ]; then
