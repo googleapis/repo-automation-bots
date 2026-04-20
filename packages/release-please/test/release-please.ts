@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as authModule from '../src/auth';
 import {api} from '../src/release-please';
 const myProbotApp = api.handler;
 import {Runner} from '../src/runner';
@@ -23,7 +24,6 @@ import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
-import * as gcfUtilsModule from 'gcf-utils';
 import * as datastoreLockModule from '@google-automations/datastore-lock';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
@@ -67,7 +67,7 @@ describe('ReleasePleaseBot', () => {
     createReleasesStub = sandbox.stub(Runner, 'createReleases');
     createLightweightTagStub = sandbox.stub(Runner, 'createLightweightTag');
     sandbox
-      .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+      .stub(authModule, 'getAuthenticatedOctokit')
       .resolves(new Octokit({auth: 'faketoken', request: {fetch}}));
 
     sandbox.replace(datastoreLockModule, 'withDatastoreLock', async function (

@@ -25,12 +25,7 @@ import {Octokit} from '@octokit/rest';
 import {request} from '@octokit/request';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {
-  getContextLogger,
-  GCFLogger,
-  getAuthenticatedOctokit,
-  logger as defaultLogger,
-} from 'gcf-utils';
+import {getContextLogger, GCFLogger, logger as defaultLogger} from 'gcf-utils';
 import {
   getConfig,
   MultiConfigChecker,
@@ -61,6 +56,7 @@ import {
   DEFAULT_CONFIGURATION,
 } from './config-constants';
 import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
+import * as auth from './auth';
 import {addOrUpdateIssue} from '@google-automations/issue-utils';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
@@ -539,7 +535,9 @@ const handler = (app: Probot) => {
       return;
     }
     if (context.payload.installation?.id) {
-      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      octokit = await auth.getAuthenticatedOctokit(
+        context.payload.installation.id
+      );
     } else {
       throw new Error(
         'Installation ID not provided in push event payload.' +
@@ -615,7 +613,9 @@ const handler = (app: Probot) => {
       return;
     }
     if (context.payload.installation?.id) {
-      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      octokit = await auth.getAuthenticatedOctokit(
+        context.payload.installation.id
+      );
     } else {
       throw new Error(
         `Installation ID not provided in ${context.payload.action} event.` +
@@ -689,7 +689,9 @@ const handler = (app: Probot) => {
       return;
     }
     if (context.payload.installation?.id) {
-      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      octokit = await auth.getAuthenticatedOctokit(
+        context.payload.installation.id
+      );
     } else {
       throw new Error(
         `Installation ID not provided in ${context.payload.action} event.` +
@@ -764,7 +766,9 @@ const handler = (app: Probot) => {
       return;
     }
     if (context.payload.installation?.id) {
-      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      octokit = await auth.getAuthenticatedOctokit(
+        context.payload.installation.id
+      );
     } else {
       throw new Error(
         `Installation ID not provided in ${context.payload.action} event.` +
@@ -811,7 +815,9 @@ const handler = (app: Probot) => {
     }
     let octokit: Octokit;
     if (context.payload.installation?.id) {
-      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      octokit = await auth.getAuthenticatedOctokit(
+        context.payload.installation.id
+      );
     } else {
       throw new Error(
         `Installation ID not provided in ${context.payload.action} event.` +
@@ -894,7 +900,9 @@ const handler = (app: Probot) => {
       return;
     }
     if (context.payload.installation?.id) {
-      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      octokit = await auth.getAuthenticatedOctokit(
+        context.payload.installation.id
+      );
     } else {
       throw new Error(
         `Installation ID not provided in ${context.payload.action} event.` +
@@ -952,7 +960,9 @@ const handler = (app: Probot) => {
       return;
     }
     if (context.payload.installation?.id) {
-      octokit = await getAuthenticatedOctokit(context.payload.installation.id);
+      octokit = await auth.getAuthenticatedOctokit(
+        context.payload.installation.id
+      );
     } else {
       throw new Error(
         `Installation ID not provided in ${context.payload.action} event.` +

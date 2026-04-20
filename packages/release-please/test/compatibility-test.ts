@@ -23,13 +23,13 @@ import nock from 'nock';
 import assert from 'assert';
 import snapshot from 'snap-shot-it';
 import {getConfig} from '@google-automations/bot-config-utils';
-import * as gcfUtilsModule from 'gcf-utils';
 import {
   ConfigurationOptions,
   DEFAULT_CONFIGURATION,
   WELL_KNOWN_CONFIGURATION_FILE,
 } from '../src/config-constants';
 import {api} from '../src/release-please';
+import * as authModule from '../src/auth';
 const fetch = require('node-fetch');
 const myProbotApp = api.handler;
 
@@ -101,7 +101,7 @@ describe('release-please bot', () => {
     });
     probot.load(myProbotApp);
     sandbox
-      .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+      .stub(authModule, 'getAuthenticatedOctokit')
       .resolves(new Octokit({auth: 'faketoken', request: {fetch}}));
   });
 
