@@ -26,7 +26,7 @@ log "INFO: Using Project ID: $PROJECT_ID"
 
 log "INFO: Fetching triggers dynamically..."
 # Get all triggers starting with 'packages-' and not ending with '-test'
-TRIGGERS_DATA=$(gcloud builds triggers list --project="$PROJECT_ID" --format="json" | jq -r '.[] | select((.name | startswith("packages-") or .name == "deploy-canary-bot-cloud-run-run") and (endswith("-test") | not)) | .name + ":" + .id')
+TRIGGERS_DATA=$(gcloud builds triggers list --project="$PROJECT_ID" --format="json" | jq -r '.[] | select(type == "object") | select(.name != null) | select((.name | startswith("packages-")) or (.name == "deploy-canary-bot-cloud-run-run")) | select(.name | endswith("-test") | not) | .name + ":" + .id')
 
 TOTAL_CHECKED=0
 TOTAL_VULNERABLE=0
@@ -57,7 +57,7 @@ for T in $TRIGGERS_DATA; do
     IMAGE="owlbot-cli"
   elif [ "$IMAGE" == "bazel-bot-build-docker-image" ]; then
     IMAGE="bazel-bot" # Map to the image it builds
-  elif [ "$NAME" == "packages-bazel-bot" ]; then
+  elif [ "$NAME" == "packages-bazel-bot" ] || [ "$NAME" == "packages-bazel-bot-run-master" ] || [ "$NAME" == "packages-bazel-bot-run-preview" ]; then
     log "INFO: Skipping run trigger $NAME. The image is checked via packages-bazel-bot-build-docker-image."
     continue
   fi
@@ -85,7 +85,7 @@ for T in $TRIGGERS_DATA; do
     continue
   fi
 
-  COUNT=$(echo "$OUTPUT" | jq '[.[] | select(.occurrence.vulnerability.packageIssue.fixedVersion.kind != "MAXIMUM")] | length')
+  COUNT=$(echo "$OUTPUT" | jq '[.[] | select(type == "object") | select(.occurrence != null) | select(.occurrence.vulnerability.packageIssue.fixedVersion.kind != "MAXIMUM")] | length')
   
   if [ "$COUNT" -gt 0 ]; then
     log "WARN: Found $COUNT fixable vulnerabilities in $IMAGE. Triggering rebuild..."
