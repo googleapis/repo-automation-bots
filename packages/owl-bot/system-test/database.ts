@@ -16,7 +16,7 @@ import {describe, it, before} from 'mocha';
 import admin from 'firebase-admin';
 import {FirestoreConfigsStore, FirestoreCopyStateStore} from '../src/database';
 import {Configs} from '../src/configs-store';
-import {v4 as uuidv4} from 'uuid';
+import {randomUUID as uuidv4} from 'crypto';
 import * as assert from 'assert';
 
 describe('database', () => {
