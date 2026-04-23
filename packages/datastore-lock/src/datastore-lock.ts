@@ -14,7 +14,6 @@
 //
 
 import crypto from 'crypto';
-import {v4 as uuidv4} from 'uuid';
 import {Datastore, Key} from '@google-cloud/datastore';
 import {logger} from 'gcf-utils';
 
@@ -88,7 +87,7 @@ export class DatastoreLock {
     const hash = crypto.createHash('sha1');
     hash.update(this.target);
     this.key = this.datastore.key([this.kind, hash.digest('hex')]);
-    this.uniqueId = uuidv4();
+    this.uniqueId = crypto.randomUUID();
     this.lockExpiry = lockExpiry;
     this.lockAcquireTimeout = lockAcquireTimeout;
   }

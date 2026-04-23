@@ -35,7 +35,7 @@ import {GraphqlResponseError} from '@octokit/graphql';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, buildRequestLogger} from './logging/gcf-logger';
-import {v4} from 'uuid';
+import {randomUUID as v4} from 'crypto';
 import {getServer} from './server/server';
 import {v2 as CloudRunV2} from '@google-cloud/run';
 import {TriggerType, parseBotRequest, BotRequest} from './bot-request';
