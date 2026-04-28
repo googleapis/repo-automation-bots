@@ -14,7 +14,7 @@
 
 import {execSync, ExecSyncOptions} from 'child_process';
 import {logger} from 'gcf-utils';
-import {uuid} from 'uuidv4';
+import {randomUUID} from 'crypto';
 import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {InterContainerVars} from './interfaces';
@@ -100,7 +100,7 @@ PiperOrigin-RevId: ${sourceCl}`;
  * @returns name of the branch that was opened
  */
 export async function openABranch(repoName: string, monoRepoPath: string) {
-  const UUID = uuid().split('-')[4];
+  const UUID = randomUUID().split('-')[4];
   const branchName = `${BRANCH_NAME_PREFIX}-${UUID}`;
   logger.info(`Opening branch ${branchName} on ${repoName}`);
   try {
