@@ -30,8 +30,7 @@
     "@google-automations/bot-config-utils": "^9.0.0",
     "@google-automations/issue-utils": "^5.0.0",
     "@google-cloud/secret-manager": "^5.6.0",
-    "gcf-utils": "^17.1.2",
-    "jsonwebtoken": "^9.0.3"
+    "gcf-utils": "^17.1.2"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
@@ -42,7 +41,6 @@
     "cross-env": "^7.0.3",
     "gts": "^4.0.0",
     "js-yaml": "^4.1.1",
-    "lru-cache": "^7.14.0",
     "mocha": "^10.0.0",
     "nock": "^13.2.9",
     "node-fetch": "^2.6.9",
