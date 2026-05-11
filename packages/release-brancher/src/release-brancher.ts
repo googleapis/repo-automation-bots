@@ -15,7 +15,7 @@
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
-import {createPullRequest, Changes} from 'code-suggester';
+import {codeSuggester, Changes} from '@google-automations/issue-utils';
 import * as yaml from 'js-yaml';
 
 const fetch = require('node-fetch');
@@ -255,7 +255,7 @@ export class Runner {
       this.pullRequestTitle === undefined
         ? `build: configure branch ${this.branchName} as a release branch`
         : this.pullRequestTitle;
-    return await createPullRequest(this.octokit, changes, {
+    return await codeSuggester.createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
       message,
@@ -344,7 +344,7 @@ export class Runner {
     const message =
       (this.releaseType === 'java-lts' ? 'feat' : 'ci') +
       ': configure the protected branch';
-    return await createPullRequest(this.octokit, changes, {
+    return await codeSuggester.createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
       message,

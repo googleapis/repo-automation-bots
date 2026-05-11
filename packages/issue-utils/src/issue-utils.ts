@@ -189,3 +189,6 @@ export async function closeIssue(
   logger.metric('issue.closed', {opener: issueOpener});
   return issueFromGitHubIssue(owner, repo, updatedIssue);
 }
+
+export * from './code-suggester';
+

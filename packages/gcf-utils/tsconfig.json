@@ -4,6 +4,7 @@
     "strict": false,
     "lib": ["es2018", "dom"],
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": "build"
   },
