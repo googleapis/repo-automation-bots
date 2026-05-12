@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^20.1.2",
-    "code-suggester": "^5.0.0",
+    "@google-automations/issue-utils": "file:../issue-utils",
     "js-yaml": "^4.1.1",
     "node-fetch": "^2.6.9",
     "yargs": "^17.5.1"

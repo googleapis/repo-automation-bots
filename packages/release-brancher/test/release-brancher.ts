@@ -16,13 +16,13 @@ import {resolve} from 'path';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
-import * as suggester from 'code-suggester';
+import * as suggester from '@google-automations/issue-utils';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
 import {Runner} from '../src/release-brancher';
 import {Octokit} from '@octokit/rest';
-import {CreatePullRequestUserOptions} from 'code-suggester/build/src/types';
+import {CreatePullRequestUserOptions} from '@google-automations/issue-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -339,10 +339,7 @@ describe('Runner', () => {
           full_name: 'testOwner/testRepo',
           default_branch: 'master',
         });
-      sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (
+      sandbox.stub(suggester.codeSuggester, 'createPullRequest').callsFake((
           _octokit: Octokit,
           changes: suggester.Changes | null | undefined,
           options: CreatePullRequestUserOptions
@@ -393,10 +390,7 @@ describe('Runner', () => {
           full_name: 'testOwner/testRepo',
           default_branch: 'master',
         });
-      sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (
+      sandbox.stub(suggester.codeSuggester, 'createPullRequest').callsFake((
           _octokit: Octokit,
           changes: suggester.Changes | null | undefined,
           options: CreatePullRequestUserOptions
@@ -448,10 +442,7 @@ describe('Runner', () => {
           full_name: 'testOwner/testRepo',
           default_branch: 'master',
         });
-      sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (
+      sandbox.stub(suggester.codeSuggester, 'createPullRequest').callsFake((
           _octokit: Octokit,
           changes: suggester.Changes | null | undefined
         ): Promise<number> => {
@@ -487,10 +478,7 @@ describe('Runner', () => {
           full_name: 'testOwner/testRepo',
           default_branch: 'master',
         });
-      sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (
+      sandbox.stub(suggester.codeSuggester, 'createPullRequest').callsFake((
           _octokit: Octokit,
           changes: suggester.Changes | null | undefined
         ): Promise<number> => {
@@ -552,10 +540,7 @@ describe('Runner', () => {
             loadFixture('workflows/empty-objects.yaml')
           ).toString('base64'),
         });
-      sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (
+      sandbox.stub(suggester.codeSuggester, 'createPullRequest').callsFake((
           _octokit: Octokit,
           changes: suggester.Changes | null | undefined,
           options: CreatePullRequestUserOptions
@@ -619,10 +604,7 @@ describe('Runner', () => {
             loadFixture('workflows/empty-objects.yaml')
           ).toString('base64'),
         });
-      sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (
+      sandbox.stub(suggester.codeSuggester, 'createPullRequest').callsFake((
           _octokit: Octokit,
           changes: suggester.Changes | null | undefined,
           options: CreatePullRequestUserOptions
@@ -689,10 +671,7 @@ describe('Runner', () => {
             loadFixture('workflows/empty-objects.yaml')
           ).toString('base64'),
         });
-      sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (
+      sandbox.stub(suggester.codeSuggester, 'createPullRequest').callsFake((
           _octokit: Octokit,
           changes: suggester.Changes | null | undefined,
           options: CreatePullRequestUserOptions

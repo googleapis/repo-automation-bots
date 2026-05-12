@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,19 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-const config = {
-  "enable-source-maps": true,
-  "throw-deprecation": true,
-  "timeout": 10000,
-  "recursive": true
+
+import {setupLogger, logger} from '../../src/code-suggester/logger';
+import {Octokit} from '@octokit/rest';
+import {disableNetConnect} from 'nock';
+
+const octokit: Octokit = new Octokit();
+
+/**
+ * setup tests
+ */
+function setup() {
+  disableNetConnect();
+  setupLogger(console);
 }
-if (process.env.MOCHA_THROW_DEPRECATION === 'false') {
-  delete config['throw-deprecation'];
-}
-if (process.env.MOCHA_REPORTER) {
-  config.reporter = process.env.MOCHA_REPORTER;
-}
-if (process.env.MOCHA_REPORTER_OUTPUT) {
-  config['reporter-option'] = `output=${process.env.MOCHA_REPORTER_OUTPUT}`;
-}
-module.exports = config
+
+export {logger, octokit, setup};
