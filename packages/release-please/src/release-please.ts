@@ -286,7 +286,7 @@ async function buildManifest(
 }
 
 const RP_LOCK_ID = 'release-please';
-const RP_LOCK_DURATION_MS = 60 * 1000;
+const RP_LOCK_DURATION_MS = 5 * 60 * 1000;
 const RP_LOCK_ACQUIRE_TIMEOUT_MS = 120 * 1000;
 interface RunBranchOptions {
   logger?: GCFLogger;

@@ -63,7 +63,7 @@ describe('datastore-lock', () => {
       assert(!(await l.acquire()));
       assert(!(await l.release()));
       assert.throws(() => {
-        new DatastoreLock('datastore-lock-test', 'test', 120 * 1000 + 1);
+        new DatastoreLock('datastore-lock-test', 'test', 10 * 60 * 1000 + 1);
       }, Error);
     });
   });

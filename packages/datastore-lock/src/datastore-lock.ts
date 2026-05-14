@@ -14,11 +14,11 @@
 //
 
 import crypto from 'crypto';
-import {Datastore, Key} from '@google-cloud/datastore';
-import {logger} from 'gcf-utils';
+import { Datastore, Key } from '@google-cloud/datastore';
+import { logger } from 'gcf-utils';
 
 const DEFAULT_LOCK_EXPIRY = 20 * 1000; // 20 seconds
-const MAX_LOCK_EXPIRY = 60 * 1000; // 60 seconds
+const MAX_LOCK_EXPIRY = 10 * 60 * 1000; // 10 minutes
 const DEFAULT_LOCK_ACQUIRE_TIMEOUT = 120 * 1000; // 120 seconds
 const BACKOFF_INITIAL_DELAY = 2 * 1000; // 1 seconds
 const BACKOFF_MAX_DELAY = 10 * 1000; // 10 seconds
@@ -73,7 +73,7 @@ export class DatastoreLock {
     if (lockExpiry > MAX_LOCK_EXPIRY) {
       throw new Error(
         `lockExpiry is too long, max is ${MAX_LOCK_EXPIRY}, ` +
-          `given ${lockExpiry}`
+        `given ${lockExpiry}`
       );
     }
     // It reduces memory overhead on Cloud Function if we
@@ -260,6 +260,14 @@ export async function withDatastoreLock<R>(
   try {
     return await f();
   } finally {
-    lock.release();
+    try {
+      await lock.release();
+    } catch (err) {
+      if (err instanceof DatastoreLockError) {
+        logger.warn(err);
+      } else {
+        throw err;
+      }
+    }
   }
 }
