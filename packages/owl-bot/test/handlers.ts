@@ -24,6 +24,7 @@ import {
   triggerOneBuildForUpdatingLock,
   refreshConfigs,
   scanGithubForConfigs,
+  onPostProcessorPublished,
 } from '../src/handlers';
 import {AffectedRepo, Configs, ConfigsStore} from '../src/configs-store';
 import {dump} from 'js-yaml';
@@ -49,6 +50,25 @@ const sandbox = sinon.createSandbox();
 describe('handlers', () => {
   afterEach(() => {
     sandbox.restore();
+  });
+  describe('onPostProcessorPublished', () => {
+    it('returns early without calling findReposWithPostProcessor if dockerImageName is empty', async () => {
+      let called = false;
+      const fakeStore = new FakeConfigsStore();
+      fakeStore.findReposWithPostProcessor = async () => {
+        called = true;
+        return [];
+      };
+      await onPostProcessorPublished(
+        fakeStore,
+        'fake-key',
+        123,
+        '',
+        'sha256:abc',
+        456
+      );
+      assert.strictEqual(called, false);
+    });
   });
   describe('triggerOneBuildForUpdatingLock', () => {
     const octokitFactory = octokitFactoryFromToken('fake-github-token');

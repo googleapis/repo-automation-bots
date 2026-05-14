@@ -64,6 +64,12 @@ export async function onPostProcessorPublished(
   dockerImageDigest: string,
   installation: number
 ): Promise<void> {
+  if (!dockerImageName) {
+    console.warn(
+      'onPostProcessorPublished called without a valid dockerImageName'
+    );
+    return;
+  }
   // Examine all the repos that use the specified docker image for post
   // processing.
   console.info(
