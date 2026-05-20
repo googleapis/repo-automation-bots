@@ -39,13 +39,13 @@ type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 // template files). This list will keep .OwlBot from providing error messages for
 // those files.
 export const CONFIG_PATHS_TO_SKIP = [
-  'packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml',
-  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v1-nodejs/.OwlBot.yaml',
-  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v1p1beta1-nodejs/.OwlBot.yaml',
-  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v2-nodejs/.OwlBot.yaml',
-  'generator/gapic-generator-typescript/test-fixtures/google-cloud-speech/.OwlBot.yaml',
-  'generator/gapic-generator-typescript/test-fixtures/google-cloud-tasks-nodejs/tasks-v2-nodejs/.OwlBot.yaml',
-  'generator/gapic-generator-typescript/test-fixtures/google-cloud-tasks-nodejs/tasks-v2beta2-nodejs/.OwlBot.yaml',
+  'core/packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml',
+  'core/generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v1-nodejs/.OwlBot.yaml',
+  'core/generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v1p1beta1-nodejs/.OwlBot.yaml',
+  'core/generator/gapic-generator-typescript/test-fixtures/google-cloud-speech-nodejs/speech-v2-nodejs/.OwlBot.yaml',
+  'core/generator/gapic-generator-typescript/test-fixtures/google-cloud-speech/.OwlBot.yaml',
+  'core/generator/gapic-generator-typescript/test-fixtures/google-cloud-tasks-nodejs/tasks-v2-nodejs/.OwlBot.yaml',
+  'core/generator/gapic-generator-typescript/test-fixtures/google-cloud-tasks-nodejs/tasks-v2beta2-nodejs/.OwlBot.yaml',
 ];
 /**
  * Invoked when a new pubsub message arrives because a new post processor
