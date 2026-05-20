@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.2](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.1.1...label-utils-v6.1.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* **label-utils:** update documentation to test a release ([#6202](https://github.com/googleapis/repo-automation-bots/issues/6202)) ([0b11c72](https://github.com/googleapis/repo-automation-bots/commit/0b11c729f0753bd1005a5308ab9c8aed2492a425))
+
 ## [6.1.1](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.1.0...label-utils-v6.1.1) (2026-03-30)
 
 
