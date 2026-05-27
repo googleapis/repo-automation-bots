@@ -1,7 +1,7 @@
 {
   "name": "generate-bot",
   "version": "1.1.0",
-  "description": "generate new repo-automation-bots 🤖",
+  "description": "generate new repo-automation-bots \ud83e\udd16",
   "main": "build/src/run.js",
   "private": true,
   "files": [
@@ -43,7 +43,9 @@
     "node": ">= 20"
   },
   "overrides": {
+    "qs": "6.15.2",
+    "serialize-javascript": "^7.0.5",
     "tmp": "0.2.6",
-    "serialize-javascript": "^7.0.5"
+    "uuid": "^11.1.1"
   }
 }

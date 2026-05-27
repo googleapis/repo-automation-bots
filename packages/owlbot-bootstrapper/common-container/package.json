@@ -61,6 +61,9 @@
     "node": ">= 20"
   },
   "overrides": {
-    "tmp": "0.2.6"
+    "qs": "6.15.2",
+    "serialize-javascript": "^7.0.5",
+    "tmp": "0.2.6",
+    "uuid": "^11.1.1"
   }
 }
