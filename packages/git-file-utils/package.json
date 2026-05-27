@@ -45,7 +45,7 @@
     "build/src"
   ],
   "overrides": {
-    "tmp": "0.2.5",
+    "tmp": "0.2.6",
     "serialize-javascript": "^7.0.5"
   }
 }
