@@ -19,5 +19,10 @@
     "gaxios": "^5.0.0",
     "smee-client": "^1.1.0",
     "@google-cloud/mono-repo-publish": "^1.0.0"
+  },
+  "overrides": {
+    "qs": "6.15.2",
+    "serialize-javascript": "^7.0.5",
+    "uuid": "^11.1.1"
   }
 }
