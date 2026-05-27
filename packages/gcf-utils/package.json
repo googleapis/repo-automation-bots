@@ -77,7 +77,7 @@
     "build/src"
   ],
   "overrides": {
-    "tmp": "0.2.5",
+    "tmp": "0.2.6",
     "@tootallnate/once": "^3.0.1",
     "serialize-javascript": "^7.0.5",
     "uuid": "^11.1.1"

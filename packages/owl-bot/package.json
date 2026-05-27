@@ -81,14 +81,14 @@
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
     "probot": "^13.4.4",
-    "tmp": "0.2.5",
+    "tmp": "0.2.6",
     "yargs": "^17.5.1"
   },
   "optionalDependencies": {
     "fsevents": "*"
   },
   "overrides": {
-    "tmp": "0.2.5",
+    "tmp": "0.2.6",
     "mocha": {
       "serialize-javascript": "7.0.5",
       "diff": "8.0.4"
