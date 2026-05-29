@@ -84,7 +84,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
         targets=$(cd "$GOOGLEAPIS" \
-        && bazelisk query $BAZEL_FLAGS  'filter("-(csharp|php|ruby|nodejs)$", kind("rule", //...:*)) + filter("-py$", kind("rule", //google/cloud/aiplatform/...:*))' \
+        && bazelisk query $BAZEL_FLAGS  'filter("-(csharp|php|ruby|nodejs|py)$", kind("rule", //...:*))' \
         | grep -v -E ":(proto|grpc|gapic)-.*-java$")
     else
         targets="$BUILD_TARGETS"
