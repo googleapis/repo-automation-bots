@@ -83,8 +83,15 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     git -C "$GOOGLEAPIS" checkout "$sha"
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
+        query='filter("-(csharp|php|ruby|nodejs)$", kind("rule", //...:*))'
+
+        if [ -d "$GOOGLEAPIS/google/cloud/aiplatform" ]; then
+            echo "google/cloud/aiplatform directory found. Including Python targets for aiplatform."
+            query="$query + filter('-py$', kind('rule', //google/cloud/aiplatform/...:*))"
+        fi
+
         targets=$(cd "$GOOGLEAPIS" \
-        && bazelisk query $BAZEL_FLAGS  'filter("-(csharp|php|ruby|nodejs|py)$", kind("rule", //...:*))' \
+        && bazelisk query $BAZEL_FLAGS "$query" \
         | grep -v -E ":(proto|grpc|gapic)-.*-java$")
     else
         targets="$BUILD_TARGETS"
