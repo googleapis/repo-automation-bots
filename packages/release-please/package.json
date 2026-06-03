@@ -35,7 +35,7 @@
     "@octokit/plugin-retry": "^6.1.0",
     "@octokit/rest": "^20.1.1",
     "gcf-utils": "^17.1.2",
-    "release-please": "^17.6.1"
+    "release-please": "^17.7.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
