@@ -1,6 +1,6 @@
 # Utility for syncing bot labels
 
-This is a small utility for syncing bot specific labels.
+This is a small utility for syncing bot-specific labels across GitHub repositories.
 
 ## Usage
 

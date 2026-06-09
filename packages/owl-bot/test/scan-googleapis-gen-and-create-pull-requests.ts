@@ -711,7 +711,7 @@ Copy-Tag: ${copyTag}`
 
   it('skips a repo when path is in CONFIG_PATHS_TO_SKIP', async () => {
     const skipPath =
-      'packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml';
+      'core/packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml';
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 
     // Override the yaml path in the config store to be one of the skipped paths

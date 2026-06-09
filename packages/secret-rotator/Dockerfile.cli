@@ -61,4 +61,5 @@ COPY --from=node-deps /usr/src/app/node_modules node_modules
 ENV NODE_ENV=production
 
 # Run the CLI
-ENTRYPOINT [ "/usr/src/app/build/src/cli.js" ]
+ENTRYPOINT [ "/nodejs/bin/node", "/usr/src/app/build/src/cli.js" ]
+
