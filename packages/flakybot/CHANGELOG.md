@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.3.1...flakybot-v1.3.2) (2026-06-09)
+
+
+### Bug Fixes
+
+* bump datastore-lock dep in bots ([#6231](https://github.com/googleapis/repo-automation-bots/issues/6231)) ([942a80e](https://github.com/googleapis/repo-automation-bots/commit/942a80ec7d68f9a406aee5d7267170eaddc5c3ae))
+
 ## [1.3.1](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.3.0...flakybot-v1.3.1) (2026-03-30)
 
 
