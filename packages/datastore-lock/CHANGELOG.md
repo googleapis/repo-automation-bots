@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.1.4](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.1.3...datastore-lock-v7.1.4) (2026-06-09)
+
+
+### Bug Fixes
+
+* increase lock timeouts for large monorepos ([#6191](https://github.com/googleapis/repo-automation-bots/issues/6191)) ([6fda4c4](https://github.com/googleapis/repo-automation-bots/commit/6fda4c44e6e6f9df72d80e734c409a70104248cb))
+
 ## [7.1.3](https://github.com/googleapis/repo-automation-bots/compare/datastore-lock-v7.1.2...datastore-lock-v7.1.3) (2026-03-30)
 
 
