@@ -260,6 +260,6 @@ export async function withDatastoreLock<R>(
   try {
     return await f();
   } finally {
-    lock.release();
+    await lock.release();
   }
 }
