@@ -98,6 +98,7 @@
       "diff": "8.0.4"
     },
     "@tootallnate/once": "^3.0.1",
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.3",
+    "qs": "^6.15.2"
   }
 }
