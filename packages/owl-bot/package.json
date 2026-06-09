@@ -64,7 +64,7 @@
     "typescript": "~4.9.0"
   },
   "dependencies": {
-    "@google-automations/datastore-lock": "^7.0.0",
+    "@google-automations/datastore-lock": "^7.1.4",
     "@google-automations/label-utils": "^6.0.0",
     "@google-cloud/cloudbuild": "^4.5.0",
     "@octokit/core": "^5.0.0",
