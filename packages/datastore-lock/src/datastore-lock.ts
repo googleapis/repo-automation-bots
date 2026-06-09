@@ -18,7 +18,7 @@ import {Datastore, Key} from '@google-cloud/datastore';
 import {logger} from 'gcf-utils';
 
 const DEFAULT_LOCK_EXPIRY = 20 * 1000; // 20 seconds
-const MAX_LOCK_EXPIRY = 60 * 1000; // 60 seconds
+const MAX_LOCK_EXPIRY = 10 * 60 * 1000; // 10 minutes
 const DEFAULT_LOCK_ACQUIRE_TIMEOUT = 120 * 1000; // 120 seconds
 const BACKOFF_INITIAL_DELAY = 2 * 1000; // 1 seconds
 const BACKOFF_MAX_DELAY = 10 * 1000; // 10 seconds
