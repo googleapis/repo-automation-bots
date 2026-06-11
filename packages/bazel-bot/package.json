@@ -1,4 +1,10 @@
 {
+  "name": "bazel-bot",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">= 22"
+  },
   "scripts": {
     "test": "bash test-generate-googleapis-gen.sh",
     "lint": "echo 'The code is beautiful!'"

@@ -35,7 +35,7 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
-      - "nodejs12"
+      - "nodejs22"
       - "540s"
 
   - name: gcr.io/cloud-builders/docker

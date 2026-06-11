@@ -42,7 +42,7 @@
   "devDependencies": {
     "@types/jwt-encode": "^1.0.0",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "@types/node-fetch": "^2.6.2",
     "@types/sinon": "^10.0.13",
     "c8": "^7.12.0",
@@ -58,7 +58,7 @@
     "typescript": "~4.9.0"
   },
   "engines": {
-    "node": ">= 20"
+    "node": ">= 22"
   },
   "overrides": {
     "qs": "6.15.2",

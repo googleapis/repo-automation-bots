@@ -35,7 +35,7 @@ steps:
       - "--region"
       - "$_REGION"
       - "--runtime"
-      - "nodejs20"
+      - "nodejs22"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
