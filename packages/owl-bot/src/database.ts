@@ -121,6 +121,9 @@ export class FirestoreConfigsStore implements ConfigsStore {
   async findReposWithPostProcessor(
     dockerImageName: string
   ): Promise<[string, Configs][]> {
+    if (!dockerImageName) {
+      return [];
+    }
     const ref = this.db.collection(this.repoConfigs);
     const got = await ref.where('dockerImage', '==', dockerImageName).get();
     return got.docs.map(doc => [decodeId(doc.id), doc.data() as Configs]);

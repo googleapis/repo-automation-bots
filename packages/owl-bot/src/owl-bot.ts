@@ -293,9 +293,13 @@ function OwlBot(privateKey: string | undefined, app: Probot, db?: Db): void {
     // TODO: flesh out tests for pubsub.message handler:
     logger.info(JSON.stringify(typedContext.payload));
     if (typedContext.payload.action === 'INSERT') {
+      const dockerImageName = typedContext.payload.tag;
+      if (!dockerImageName) {
+        logger.info('pubsub message payload missing tag, skipping');
+        return;
+      }
       const configStore = new FirestoreConfigsStore(db!);
       const dockerImageDigest = typedContext.payload.digest.split('@')[1];
-      const dockerImageName = typedContext.payload.tag;
       logger.info({dockerImageDigest, dockerImageName});
       await onPostProcessorPublished(
         configStore,

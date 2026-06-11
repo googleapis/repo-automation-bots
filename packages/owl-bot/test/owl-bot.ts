@@ -811,6 +811,30 @@ describe('OwlBot', () => {
     sandbox.assert.calledOnce(loggerStub);
   });
 
+  describe('pubsub.message', () => {
+    it('skips processing when action is INSERT but tag is missing', async () => {
+      const onPostProcessorPublishedStub = sandbox
+        .stub(handlers, 'onPostProcessorPublished')
+        .resolves();
+      const loggerStub = sandbox.stub(logger, 'info');
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'pubsub.message' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: {
+          action: 'INSERT',
+          digest: 'gcr.io/foo/bar@sha256:123',
+        } as any,
+        id: 'abc123',
+      });
+      sandbox.assert.notCalled(onPostProcessorPublishedStub);
+      sandbox.assert.calledWith(
+        loggerStub,
+        sandbox.match(/pubsub message payload missing tag, skipping/)
+      );
+    });
+  });
+
   describe('pull request merged', () => {
     let loggerErrorStub: sinon.SinonStub;
     let getConfigsStub: sinon.SinonStub;

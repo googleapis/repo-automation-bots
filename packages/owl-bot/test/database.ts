@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {describe, it} from 'mocha';
-import {encodeId, decodeId} from '../src/database';
+import {encodeId, decodeId, FirestoreConfigsStore} from '../src/database';
 import * as assert from 'assert';
 
 describe('encodeId', () => {
@@ -36,5 +36,15 @@ describe('encodeId', () => {
     const encoded = encodeId(chars);
     assert.strictEqual(encoded, '%2F%25%2B%2F%25%2B%2F%25%2B');
     assert.strictEqual(decodeId(encoded), chars);
+  });
+});
+
+describe('FirestoreConfigsStore', () => {
+  it('findReposWithPostProcessor returns empty array early when dockerImageName is empty', async () => {
+    // Passing null as db verifies that db.collection is never called.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const store = new FirestoreConfigsStore(null as any);
+    const result = await store.findReposWithPostProcessor('');
+    assert.deepStrictEqual(result, []);
   });
 });
