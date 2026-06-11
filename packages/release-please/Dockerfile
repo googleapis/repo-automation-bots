@@ -21,7 +21,7 @@ FROM marketplace.gcr.io/google/debian12:latest AS NODE_BASE
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs git && \
     rm -rf /var/lib/apt/lists/*
 

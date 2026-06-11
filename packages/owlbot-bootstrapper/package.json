@@ -23,7 +23,7 @@
     "lint": "cd cli && npm i && npm run lint && cd ../common-container && npm i && npm run lint"
   },
   "engines": {
-    "node": ">= 20"
+    "node": ">= 22"
   },
   "overrides": {
     "qs": "6.15.2",
