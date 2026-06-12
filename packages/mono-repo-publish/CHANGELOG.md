@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.7.1...mono-repo-publish-v1.8.0) (2026-06-12)
+
+
+### Features
+
+* upgrade repository to Node.js 22 ([#6243](https://github.com/googleapis/repo-automation-bots/issues/6243)) ([e7f322d](https://github.com/googleapis/repo-automation-bots/commit/e7f322d592590ce6f0e5d894de5eab247df077fe))
+
 ## [1.7.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.7.0...mono-repo-publish-v1.7.1) (2026-03-30)
 
 
