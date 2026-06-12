@@ -40,6 +40,7 @@
     "yargs": "^17.5.1"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.5",
     "@types/jwt-encode": "^1.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^22.0.0",
