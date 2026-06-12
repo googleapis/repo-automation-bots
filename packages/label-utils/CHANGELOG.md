@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.2.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.1.3...label-utils-v6.2.0) (2026-06-12)
+
+
+### Features
+
+* upgrade repository to Node.js 22 ([#6243](https://github.com/googleapis/repo-automation-bots/issues/6243)) ([e7f322d](https://github.com/googleapis/repo-automation-bots/commit/e7f322d592590ce6f0e5d894de5eab247df077fe))
+
 ## [6.1.3](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.1.2...label-utils-v6.1.3) (2026-06-09)
 
 

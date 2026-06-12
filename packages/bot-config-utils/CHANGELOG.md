@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.1.0](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v9.0.2...bot-config-utils-v9.1.0) (2026-06-12)
+
+
+### Features
+
+* upgrade repository to Node.js 22 ([#6243](https://github.com/googleapis/repo-automation-bots/issues/6243)) ([e7f322d](https://github.com/googleapis/repo-automation-bots/commit/e7f322d592590ce6f0e5d894de5eab247df077fe))
+
 ## [9.0.2](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v9.0.1...bot-config-utils-v9.0.2) (2026-03-30)
 
 
