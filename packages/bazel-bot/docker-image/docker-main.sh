@@ -39,7 +39,7 @@ RESPONSE=$(curl -X POST \
     -H "Authorization: Bearer $JWT" \
     -H "Accept: application/vnd.github.v3+json" \
     https://api.github.com/app/installations/$GITHUB_APP_INSTALLATION_ID/access_tokens)
-GITHUB_TOKEN=$(echo "$RESPONSE" | jq -r .token)
+GITHUB_TOKEN=$(echo "$RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
 
 git clone https://x-access-token:$GITHUB_TOKEN@github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}
 git clone https://github.com/googleapis/googleapis.git ${SOURCE_CLONE_ARGS}

@@ -23,12 +23,6 @@ commandTests:
 - name: "git version"
   command: ["git", "--version"]
   expectedOutput: ["git version.*.*"]
-- name: "gh version"
-  command: ["gh", "--version"]
-  expectedOutput: ["gh version.*"]
-- name: "jq version"
-  command: ["jq", "--version"]
-  expectedOutput: ["jq-.*"]
 - name: "jwt installed"
   command: ["jwt", "--version"]
   expectedOutput: ["jwt .*"]
