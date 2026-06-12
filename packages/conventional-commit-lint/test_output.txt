@@ -1,0 +1,225 @@
+
+  1) Uncaught error outside test suite
+
+  0 passing (12ms)
+  1 failing
+
+  1) Uncaught error outside test suite:
+     Uncaught DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+      at node:punycode:7:10
+      at BuiltinModule.compileForInternalLoader (node:internal/bootstrap/realm:400:7)
+      at BuiltinModule.compileForPublicLoader (node:internal/bootstrap/realm:338:10)
+      at loadBuiltinModule (node:internal/modules/helpers:121:7)
+      at loadBuiltinWithHooks (node:internal/modules/cjs/loader:1154:15)
+      at Module._load (node:internal/modules/cjs/loader:1228:20)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/whatwg-url/lib/url-state-machine.js:2:18)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/whatwg-url/lib/URL-impl.js:2:13)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/whatwg-url/lib/URL.js:5:14)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/whatwg-url/lib/public-api.js:3:15)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/node-fetch/lib/index.js:10:33)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/gcp-metadata/node_modules/gaxios/src/gaxios.ts:17:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/gcp-metadata/node_modules/gaxios/src/index.ts:15:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/gcp-metadata/src/index.ts:17:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/google-auth-library/build/src/auth/googleauth.js:31:21)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/google-auth-library/build/src/index.js:17:22)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/google-gax/src/grpc.ts:20:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/google-gax/src/index.ts:18:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/@google-cloud/secret-manager/build/src/v1beta1/secret_manager_service_client.js:22:13)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/@google-cloud/secret-manager/build/src/v1beta1/index.js:21:39)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/@google-cloud/secret-manager/build/src/index.js:23:17)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/gcf-utils/src/gcf-utils.ts:25:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (node_modules/@google-automations/bot-config-utils/src/bot-config-utils.ts:23:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at Module.require (node:internal/modules/cjs/loader:1463:12)
+      at require (node:internal/modules/helpers:147:16)
+      at Object.<anonymous> (test/conventional-commit-lint.ts:17:1)
+      at Module._compile (node:internal/modules/cjs/loader:1705:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1838:10)
+      at Module.load (node:internal/modules/cjs/loader:1441:32)
+      at Module._load (node:internal/modules/cjs/loader:1263:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+      at cjsLoader (node:internal/modules/esm/translators:309:5)
+      at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:202:7)
+      at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+
+
+
+
+
+  ConventionalCommitLint
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+    ✔ sets a "failure" context on PR, if commits fail linting (61ms)
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+{"severity":"INFO","level":30,"message":"commit message: Fix all the bugs"}
+{"severity":"INFO","level":30,"message":"PR title: fix: Fix all the bugs"}
+    ✔ adds an additional check when the commit message and the PR title differ
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+    ✔ should post "success" context on PR with always_check_pr_title set to true
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+    ✔ should post "failure" context on PR with always_check_pr_title set to true
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+    ✔ sets a "success" context on PR, if commit lint succeeds
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+{"severity":"INFO","level":30,"message":"Pull request https://github.com/bcoe/test-release-please/pull/11 has no commits!"}
+    ✔ should handle a PR with no commits
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+    ✔ sets a "success" context on PR with very long lines (542ms)
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+    ✔ sets a "success" context on PR, if subject contains a full stop
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+    ✔ should abort immediately if "enabled" is false
+    ✔ should abort immediately if PR contains update with bad bot configuration
+    PR With Multiple Commits
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+      ✔ has a valid pull request title
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+      ✔ has an invalid pull request title
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+      ✔ has a valid title, invalid commit, automerge label
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+      ✔ has a valid title, invalid commit, automerge: exact label
+{"severity":"WARNING","level":40,"message":"Failed to find a context logger"}
+      ✔ has a valid title, invalid commit, automerge enabled
+
+*** gpkg: This tool is configured to use Corp Airlock for package installs: http://go/corp-airlock
+*** gpkg: If Corp Airlock is breaking your workflow please report at: http://go/corp-airlock-feedback
+*** gpkg: Exceptions are available: http://go/corp-airlock#request-exception
