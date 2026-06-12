@@ -26,10 +26,7 @@ GITHUB_TOKEN=$(curl -X POST \
     -H "Authorization: Bearer $JWT" \
     -H "Accept: application/vnd.github.v3+json" \
     https://api.github.com/app/installations/$GITHUB_APP_INSTALLATION_ID/access_tokens \
-    | jq -r .token)
-
-# According to https://cli.github.com/manual/gh_auth_login
-echo "$GITHUB_TOKEN" | gh auth login --with-token
+    | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
 
 # According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#http-based-git-access-by-an-installation
 git -C "$GOOGLEAPIS_GEN" remote set-url origin \
