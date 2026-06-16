@@ -81,7 +81,7 @@
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
     "probot": "^13.4.4",
-    "tmp": "0.2.6",
+    "tmp": "0.2.7",
     "yargs": "^17.5.1"
   },
   "optionalDependencies": {
@@ -95,7 +95,7 @@
     },
     "qs": "6.15.2",
     "serialize-javascript": "^7.0.5",
-    "tmp": "0.2.6",
+    "tmp": "0.2.7",
     "uuid": "^11.1.1"
   }
 }
