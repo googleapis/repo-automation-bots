@@ -108,8 +108,13 @@ function findBranchConfiguration(
 ): BranchConfiguration[] {
   const configurations: BranchConfiguration[] = [];
 
+  const hasDuplicateInBranches = config.branches?.some(
+    branchConfig =>
+      branchConfig.branch === branch && branchConfig.path === config.path
+  );
+
   // look at primaryBranch first
-  if (branch === config.primaryBranch) {
+  if (branch === config.primaryBranch && !hasDuplicateInBranches) {
     configurations.push({
       ...config,
       ...{branch},
