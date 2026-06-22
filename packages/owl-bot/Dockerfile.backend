@@ -15,21 +15,20 @@
 # Use a multi-stage docker build to limit production dependencies.
 
 # Stage 0: Node.js Base Image
-FROM marketplace.gcr.io/google/debian12:latest AS NODE_BASE
+FROM marketplace.gcr.io/google/debian12:latest AS node_base
 
-# Install Node.js v18 and npm.
+# Install Node.js v22.22.3 and npm.
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y curl xz-utils && \
+    curl -fsSL https://nodejs.org/dist/v22.22.3/node-v22.22.3-linux-x64.tar.xz | tar -xJf - --strip-components=1 -C /usr/local && \
     rm -rf /var/lib/apt/lists/*
 
 # Remove unnecessary cross-spawn from npm to resolve CVE-2024-21538
 RUN rm -rf /usr/lib/node_modules/npm/node_modules/cross-spawn/
 
 # Stage 1: Build
-FROM NODE_BASE AS BUILD
+FROM node_base AS build
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -47,7 +46,7 @@ COPY . ./
 RUN npm run compile
 
 # Stage 2: Production
-FROM NODE_BASE
+FROM node_base
 
 # Install git binary and remove unnecessary cache files to keep the
 # image size small.
@@ -60,7 +59,7 @@ WORKDIR /usr/src/app
 
 # Copy only necessary production files from the build stage.
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build/
+COPY --from=build /usr/src/app/build build/
 
 # Install only production dependencies.
 RUN npm ci --only=production
