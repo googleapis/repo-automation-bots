@@ -62,6 +62,7 @@
     "qs": "6.15.2",
     "serialize-javascript": "^7.0.5",
     "tmp": "0.2.7",
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "protobufjs": "^7.6.4"
   }
 }
