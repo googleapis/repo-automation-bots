@@ -743,6 +743,33 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
+      it('should not run the top-level config if the branch is explicitly configured in branches', async () => {
+        const mainPayload = require(resolve(fixturesPath, './push_to_main'));
+        getConfigStub.resolves(loadConfig('manifest_multiple_same_branch.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: mainPayload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledTwice(fromManifestStub);
+        sinon.assert.calledWith(
+          fromManifestStub.firstCall,
+          sinon.match.any,
+          'main',
+          'release-please-bulk-config.json',
+          '.release-please-bulk-manifest.json',
+          sinon.match.any
+        );
+        sinon.assert.calledWith(
+          fromManifestStub.secondCall,
+          sinon.match.any,
+          'main',
+          'release-please-individual-config.json',
+          '.release-please-individual-manifest.json',
+          sinon.match.any
+        );
+      });
+
       it('should tag pull request number if configured', async () => {
         getConfigStub.resolves(loadConfig('manifest_tag_pr_number.yml'));
         // We want the PR number 789 to be in the tag
