@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.3.2...flakybot-v1.4.0) (2026-06-26)
+
+
+### Features
+
+* upgrade repository to Node.js 22 ([#6243](https://github.com/googleapis/repo-automation-bots/issues/6243)) ([e7f322d](https://github.com/googleapis/repo-automation-bots/commit/e7f322d592590ce6f0e5d894de5eab247df077fe))
+
 ## [1.3.2](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.3.1...flakybot-v1.3.2) (2026-06-09)
 
 
