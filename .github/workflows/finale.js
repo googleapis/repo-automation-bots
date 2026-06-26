@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const {request} = require('gaxios');
+
 const args = process.argv.slice(2);
 const requiredJobs = JSON.parse(args[0]);
 const runId = process.env.GITHUB_RUN_ID;
@@ -26,25 +26,29 @@ async function main() {
   const iterations = 20 * 60 / 5
   for (let i=0; i<iterations; i++) {
     const url = `https://api.github.com/repos/${repo}/actions/runs/${runId}/jobs?per_page=100`;
-    const res = await request({
-      url,
+    const response = await fetch(url, {
       headers: {
         Authorization: `token ${githubToken}`,
+        Accept: 'application/json',
       }
     });
-    for (const job of res.data.jobs) {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    for (const job of data.jobs) {
       if (job.status === 'completed' && job.conclusion !== 'success') {
         throw new Error(`Job ${job.name} failed.`);
       }
     }
-    const totalCount = res.data.total_count;
+    const totalCount = data.total_count;
     console.log(`total count: ${totalCount}`);
     console.log(`required jobs: ${requiredJobs.length}`);
     for (const job of requiredJobs) {
       console.log(`- ${job}`);
     }
     if (totalCount >= requiredJobs.length) {
-      const successfulJobs = res.data.jobs.filter(job => {
+      const successfulJobs = data.jobs.filter(job => {
         return job.status === 'completed' && job.conclusion === 'success';
       }).map(job => job.name);
       let completedCount = 0;
