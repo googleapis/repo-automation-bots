@@ -87,6 +87,18 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [17.2.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.1.3...gcf-utils-v17.2.0) (2026-06-26)
+
+
+### Features
+
+* upgrade repository to Node.js 22 ([#6243](https://github.com/googleapis/repo-automation-bots/issues/6243)) ([e7f322d](https://github.com/googleapis/repo-automation-bots/commit/e7f322d592590ce6f0e5d894de5eab247df077fe))
+
+
+### Bug Fixes
+
+* pin node version ([#6254](https://github.com/googleapis/repo-automation-bots/issues/6254)) ([ca1e124](https://github.com/googleapis/repo-automation-bots/commit/ca1e124d9c867896357de4010a2f35b6e0f2d5cb))
+
 ## [17.1.3](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.1.2...gcf-utils-v17.1.3) (2026-03-30)
 
 
