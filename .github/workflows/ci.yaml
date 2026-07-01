@@ -109,4 +109,8 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - run: node ./.github/workflows/finale.js '${{needs.changeFinder.outputs.requiredJobs}}' ${{secrets.GITHUB_TOKEN}}
+      - env:
+          REQUIRED_JOBS: ${{ needs.changeFinder.outputs.requiredJobs }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node ./.github/workflows/finale.js "$REQUIRED_JOBS" "$GITHUB_TOKEN"
+
