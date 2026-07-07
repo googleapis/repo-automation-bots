@@ -19,11 +19,11 @@
   "dependencies": {
     "@google-cloud/run": "^1.4.0",
     "@google-cloud/scheduler": "^4.3.0",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.3.0",
     "yargs": "^17.5.1"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.5",
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^22.0.0",
     "@types/sinon": "^10.0.13",
