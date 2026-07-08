@@ -64,6 +64,7 @@
     "@opentelemetry/core": "2.8.0",
     "@opentelemetry/sdk-trace-base": "2.8.0",
     "@opentelemetry/resources": "2.8.0",
-    "@opentelemetry/context-async-hooks": "2.8.0"
+    "@opentelemetry/context-async-hooks": "2.8.0",
+    "js-yaml": "^4.3.0"
   }
 }
