@@ -19,9 +19,6 @@
     "packages/label-utils": {
       "release-type": "node"
     },
-    "packages/release-brancher": {
-      "release-type": "node"
-    },
     "packages/mono-repo-publish": {
       "release-type": "node"
     },
