@@ -92,7 +92,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
 
         targets=$(cd "$GOOGLEAPIS" \
         && bazelisk query $BAZEL_FLAGS "$query" \
-        | grep -v -E ":(proto|grpc|gapic)-.*-java$")
+        | grep -v -E ":(proto|grpc|gapic)-.*-java$" \
+        | grep -v -E "^//google/cloud/compute/.*-nodejs$")
     else
         targets="$BUILD_TARGETS"
     fi
