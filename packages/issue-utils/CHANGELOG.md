@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.0](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v5.1.1...issue-utils-v5.2.0) (2026-07-23)
+
+
+### Features
+
+* upgrade repository to Node.js 22 ([#6243](https://github.com/googleapis/repo-automation-bots/issues/6243)) ([e7f322d](https://github.com/googleapis/repo-automation-bots/commit/e7f322d592590ce6f0e5d894de5eab247df077fe))
+
 ## [5.1.1](https://github.com/googleapis/repo-automation-bots/compare/issue-utils-v5.1.0...issue-utils-v5.1.1) (2026-03-30)
 
 
