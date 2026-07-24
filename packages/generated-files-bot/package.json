@@ -30,7 +30,7 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^9.0.0",
     "@google-automations/issue-utils": "^5.0.0",
-    "gcf-utils": "^17.1.2",
+    "gcf-utils": "^17.2.0",
     "js-yaml": "^4.3.0",
     "jsonpath": "^1.2.0",
     "minimatch": "^10.2.4"

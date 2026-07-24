@@ -28,7 +28,7 @@
   "dependencies": {
     "@google-cloud/storage": "^7.0.0",
     "gaxios": "^5.0.1",
-    "gcf-utils": "^17.1.2"
+    "gcf-utils": "^17.2.0"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.0",
