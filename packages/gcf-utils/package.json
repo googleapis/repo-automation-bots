@@ -31,7 +31,7 @@
     "@types/express": "^4.17.13",
     "@types/into-stream": "^3.1.1",
     "@types/sonic-boom": "^2.1.0",
-    "body-parser": "^1.20.0",
+    "body-parser": "^1.20.6",
     "express": "^4.18.1",
     "gaxios": "^7.1.4",
     "get-stream": "^6.0.1",
@@ -82,11 +82,13 @@
     "serialize-javascript": "^7.0.5",
     "tmp": "0.2.7",
     "uuid": "^11.1.1",
-    "protobufjs": "^7.6.4",
+    "protobufjs": "^7.6.5",
     "@opentelemetry/core": "2.8.0",
     "@opentelemetry/sdk-trace-base": "2.8.0",
     "@opentelemetry/resources": "2.8.0",
     "@opentelemetry/context-async-hooks": "2.8.0",
-    "js-yaml": "^4.3.0"
+    "js-yaml": "^4.3.0",
+    "body-parser": "^1.20.6",
+    "brace-expansion": "^2.1.2"
   }
 }
