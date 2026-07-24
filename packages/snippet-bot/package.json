@@ -39,7 +39,7 @@
     "js-yaml": "^4.3.0",
     "minimatch": "^10.2.4",
     "parse-diff": "^0.11.0",
-    "tar": "^7.5.16",
+    "tar": "^7.5.21",
     "tmp-promise": "^3.0.3"
   },
   "devDependencies": {
@@ -78,6 +78,7 @@
     "@opentelemetry/context-async-hooks": "2.8.0",
     "js-yaml": "^4.3.0",
     "body-parser": "^2.3.0",
-    "brace-expansion": "^2.1.2"
+    "brace-expansion": "^2.1.2",
+    "fast-uri": "^3.1.4"
   }
 }
