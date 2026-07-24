@@ -294,6 +294,15 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(enqueueTask);
         sinon.assert.notCalled(issueSpy);
       });
+
+      it('should gracefully handle requests with undefined body', async () => {
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          method: 'GET',
+          validateStatus: () => true,
+        });
+        assert.deepStrictEqual(response.status, 400);
+      });
     });
   });
 });

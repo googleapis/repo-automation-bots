@@ -466,7 +466,7 @@ export class GCFBootstrapper {
         !(await this.probot.webhooks.verify(
           request.rawBody
             ? request.rawBody.toString()
-            : request.body.toString(),
+            : request.body?.toString() ?? '',
           botRequest.signature
         ))
       ) {
@@ -481,7 +481,10 @@ export class GCFBootstrapper {
        * Note: any logs written before resetting bindings may contain
        * bindings from previous executions
        */
-      const loggerBindings = this.buildLoggerBindings(botRequest, request.body);
+      const loggerBindings = this.buildLoggerBindings(
+        botRequest,
+        request.body || {}
+      );
       logger.resetBindings();
       logger.addBindings(loggerBindings);
       let requestLogger = buildRequestLogger(logger, loggerBindings);
@@ -510,7 +513,9 @@ export class GCFBootstrapper {
         } else if (botRequest.triggerType === TriggerType.TASK) {
           // If the payload contains `tmpUrl` this indicates that the original
           // payload has been written to Cloud Storage; download it.
-          const payload = await this.maybeDownloadOriginalBody(request.body);
+          const payload = await this.maybeDownloadOriginalBody(
+            request.body || {}
+          );
 
           // Regenerate the logger bindings based on the downloaded payload
           const loggerBindings = this.buildLoggerBindings(
@@ -614,7 +619,7 @@ export class GCFBootstrapper {
             }
           }
         } else if (botRequest.triggerType === TriggerType.GITHUB) {
-          const installationId = parseInstallationId(request.body);
+          const installationId = parseInstallationId(request.body || {});
           if (
             !(await this.installationHandler.isOrganizationAllowed(
               installationId
