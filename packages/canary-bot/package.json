@@ -30,7 +30,7 @@
     "@google-automations/datastore-lock": "^7.1.4",
     "@google-automations/issue-utils": "^5.0.0",
     "dayjs": "^1.11.5",
-    "gcf-utils": "^17.1.2"
+    "gcf-utils": "^17.2.0"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.0",

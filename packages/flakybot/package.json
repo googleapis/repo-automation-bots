@@ -31,7 +31,7 @@
     "@google-automations/datastore-lock": "^7.1.4",
     "@google-automations/label-utils": "^6.0.0",
     "@octokit/openapi-types": "^14.0.0",
-    "gcf-utils": "^17.1.2",
+    "gcf-utils": "^17.2.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
