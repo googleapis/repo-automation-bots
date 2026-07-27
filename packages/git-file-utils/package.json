@@ -24,7 +24,7 @@
     "@types/chai": "^4.3.3",
     "@types/mocha": "^10.0.0",
     "@types/node": "^22.0.0",
-    "c8": "^7.12.0",
+    "c8": "^12.0.0",
     "chai": "^4.3.6",
     "cross-env": "^7.0.3",
     "gts": "^4.0.0",
@@ -51,7 +51,7 @@
     "uuid": "^11.1.1",
     "protobufjs": "^7.6.5",
     "js-yaml": "^4.3.0",
-    "brace-expansion": "^2.1.2",
+    "brace-expansion": "^5.0.8",
     "fast-uri": "^3.1.4"
   }
 }

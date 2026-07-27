@@ -48,7 +48,7 @@
     "@types/pino": "^7.0.4",
     "@types/sinon": "^10.0.13",
     "@types/yargs": "^17.0.0",
-    "c8": "^7.12.0",
+    "c8": "^12.0.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.2",
     "google-auth-library": "^9.6.3",
@@ -89,7 +89,7 @@
     "@opentelemetry/context-async-hooks": "2.8.0",
     "js-yaml": "^4.3.0",
     "body-parser": "^1.20.6",
-    "brace-expansion": "^2.1.2",
+    "brace-expansion": "^5.0.8",
     "fast-uri": "^3.1.4"
   }
 }
