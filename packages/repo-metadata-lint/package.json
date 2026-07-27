@@ -69,6 +69,17 @@
     "body-parser": "^2.3.0",
     "brace-expansion": "^5.0.8",
     "fast-uri": "^3.1.4",
-    "minimatch": "^10.2.5"
+    "glob": {
+      "minimatch": "^10.2.5"
+    },
+    "test-exclude": {
+      "minimatch": "^10.2.5"
+    },
+    "mocha": {
+      "minimatch": "^10.2.5"
+    },
+    "rimraf": {
+      "minimatch": "^10.2.5"
+    }
   }
 }

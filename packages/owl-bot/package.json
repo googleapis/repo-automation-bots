@@ -91,7 +91,8 @@
     "@tootallnate/once": "^3.0.1",
     "mocha": {
       "serialize-javascript": "7.0.5",
-      "diff": "8.0.4"
+      "diff": "8.0.4",
+      "minimatch": "^10.2.5"
     },
     "qs": "6.15.2",
     "serialize-javascript": "^7.0.5",
@@ -106,6 +107,14 @@
     "body-parser": "^2.3.0",
     "brace-expansion": "^5.0.8",
     "fast-uri": "^3.1.4",
-    "minimatch": "^10.2.5"
+    "glob": {
+      "minimatch": "^10.2.5"
+    },
+    "test-exclude": {
+      "minimatch": "^10.2.5"
+    },
+    "rimraf": {
+      "minimatch": "^10.2.5"
+    }
   }
 }
