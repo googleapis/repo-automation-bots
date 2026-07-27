@@ -68,6 +68,7 @@
     "@opentelemetry/context-async-hooks": "2.8.0",
     "js-yaml": "^4.3.0",
     "body-parser": "^2.3.0",
-    "brace-expansion": "^2.1.2"
+    "brace-expansion": "^2.1.2",
+    "fast-uri": "^3.1.4"
   }
 }
