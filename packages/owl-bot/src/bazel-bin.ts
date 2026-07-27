@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { globSync } from 'glob';
+import {globSync} from 'glob';
 import {newCmd} from './cmd';
 import path from 'path';
 import * as fs from 'fs';

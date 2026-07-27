@@ -33,7 +33,7 @@ import {OwlBotYaml} from '../src/config-files';
 import {collectDirTree, collectGlobResult, makeDirTree} from './dir-tree';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 import {newCmd} from '../src/cmd';
-import { globSync } from 'glob';
+import {globSync} from 'glob';
 
 describe('copyDirs', () => {
   /**

@@ -24,7 +24,7 @@ import * as fs from 'fs';
 import * as fse from 'fs-extra';
 import {OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
-import { globSync } from 'glob';
+import {globSync} from 'glob';
 import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {
