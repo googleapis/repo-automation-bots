@@ -1,7 +1,7 @@
 {
   "name": "generate-bot",
   "version": "1.1.0",
-  "description": "generate new repo-automation-bots \ud83e\udd16",
+  "description": "generate new repo-automation-bots 🤖",
   "main": "build/src/run.js",
   "private": true,
   "files": [
@@ -50,6 +50,8 @@
     "protobufjs": "^7.6.5",
     "js-yaml": "^4.3.0",
     "brace-expansion": "^5.0.8",
-    "fast-uri": "^3.1.4"
+    "fast-uri": "^3.1.4",
+    "debug": "^4.3.4",
+    "diff": "^8.0.4"
   }
 }
