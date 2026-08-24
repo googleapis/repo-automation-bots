@@ -18,6 +18,7 @@ import {describe, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import {BranchFileCache} from '../src/git-file-utils';
+import * as assert from 'assert';
 const fetch = require('node-fetch');
 
 nock.disableNetConnect();
@@ -322,6 +323,103 @@ describe('BranchFileCache', () => {
         req.done();
       });
     });
+
+    describe('with repository containing submodules (HTTP 422 fallback)', () => {
+      it('finds multiple files and ignores submodules', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(422, {
+            message:
+              'Invalid object requested. SHA must identify a commit or a tree.',
+          })
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(200, {
+            sha: 'feature-branch',
+            tree: [
+              {
+                path: 'pkg',
+                mode: '040000',
+                type: 'tree',
+                sha: 'cc64165cf5da91810ab7edc1143a47be42513c0a',
+              },
+              {
+                path: 'submodule-repo',
+                mode: '160000',
+                type: 'commit',
+                sha: 'submodule-commit-sha',
+              },
+              {
+                path: 'foo.json',
+                mode: '160000',
+                type: 'commit',
+                sha: 'submodule-commit-sha-2',
+              },
+              {
+                path: 'package.json',
+                mode: '100644',
+                type: 'blob',
+                sha: '33f90c139fca3d99a08a934fb87d30c13c68b885',
+              },
+            ],
+            truncated: false,
+          })
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-recursive'
+            ))
+          );
+        const files = await cache.findFilesByFilename('foo.json');
+        expect(files).lengthOf(2);
+        expect(files).to.eql(['pkg/a/foo.json', 'pkg/b/foo.json']);
+        req.done();
+      });
+
+      it('does not return submodule even if filename matches', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(422, {
+            message:
+              'Invalid object requested. SHA must identify a commit or a tree.',
+          })
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(200, {
+            sha: 'feature-branch',
+            tree: [
+              {
+                path: 'submodule-repo',
+                mode: '160000',
+                type: 'commit',
+                sha: 'submodule-commit-sha',
+              },
+            ],
+            truncated: false,
+          });
+        const files = await cache.findFilesByFilename('submodule-repo');
+        expect(files).lengthOf(0);
+        req.done();
+      });
+
+      it('throws RequestError on HTTP 404', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(404);
+        await assert.rejects(async () => {
+          await cache.findFilesByFilename('foo.json');
+        });
+        req.done();
+      });
+    });
   });
 
   describe('findFilesByExtension', () => {
@@ -620,6 +718,62 @@ describe('BranchFileCache', () => {
         req.done();
       });
     });
+
+    describe('with repository containing submodules (HTTP 422 fallback)', () => {
+      it('finds multiple files and ignores submodules', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(422, {
+            message:
+              'Invalid object requested. SHA must identify a commit or a tree.',
+          })
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(200, {
+            sha: 'feature-branch',
+            tree: [
+              {
+                path: 'pkg',
+                mode: '040000',
+                type: 'tree',
+                sha: 'cc64165cf5da91810ab7edc1143a47be42513c0a',
+              },
+              {
+                path: 'submodule.json',
+                mode: '160000',
+                type: 'commit',
+                sha: 'submodule-commit-sha',
+              },
+              {
+                path: 'package.json',
+                mode: '100644',
+                type: 'blob',
+                sha: '33f90c139fca3d99a08a934fb87d30c13c68b885',
+              },
+            ],
+            truncated: false,
+          })
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-recursive'
+            ))
+          );
+        const files = await cache.findFilesByExtension('json');
+        expect(files).lengthOf(3);
+        expect(files).to.eql([
+          'package.json',
+          'pkg/a/foo.json',
+          'pkg/b/foo.json',
+        ]);
+        req.done();
+      });
+    });
   });
 
   describe('findFilesByGlob', () => {
@@ -915,6 +1069,62 @@ describe('BranchFileCache', () => {
         const files = await cache.findFilesByGlob('**/*.json', 'pkg/b');
         expect(files).lengthOf(1);
         expect(files).to.eql(['foo.json']);
+        req.done();
+      });
+    });
+
+    describe('with repository containing submodules (HTTP 422 fallback)', () => {
+      it('finds multiple files and ignores submodules', async () => {
+        const req = nock('https://api.github.com')
+          .get(
+            '/repos/testOwner/testRepo/git/trees/feature-branch?recursive=true'
+          )
+          .reply(422, {
+            message:
+              'Invalid object requested. SHA must identify a commit or a tree.',
+          })
+          .get('/repos/testOwner/testRepo/git/trees/feature-branch')
+          .reply(200, {
+            sha: 'feature-branch',
+            tree: [
+              {
+                path: 'pkg',
+                mode: '040000',
+                type: 'tree',
+                sha: 'cc64165cf5da91810ab7edc1143a47be42513c0a',
+              },
+              {
+                path: 'submodule.json',
+                mode: '160000',
+                type: 'commit',
+                sha: 'submodule-commit-sha',
+              },
+              {
+                path: 'package.json',
+                mode: '100644',
+                type: 'blob',
+                sha: '33f90c139fca3d99a08a934fb87d30c13c68b885',
+              },
+            ],
+            truncated: false,
+          })
+          .get(
+            '/repos/testOwner/testRepo/git/trees/cc64165cf5da91810ab7edc1143a47be42513c0a?recursive=true'
+          )
+          .reply(
+            200,
+            require(resolve(
+              fixturesPath,
+              'github-data-api/data-api-trees-successful-response-subdir-pkg-recursive'
+            ))
+          );
+        const files = await cache.findFilesByGlob('**/*.json');
+        expect(files).lengthOf(3);
+        expect(files).to.eql([
+          'package.json',
+          'pkg/a/foo.json',
+          'pkg/b/foo.json',
+        ]);
         req.done();
       });
     });
