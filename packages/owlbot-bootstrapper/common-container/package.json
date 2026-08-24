@@ -34,7 +34,7 @@
     "@types/yargs": "^17.0.12",
     "gaxios": "^7.1.4",
     "gcf-utils": "^17.2.0",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "jsonwebtoken": "^9.0.3",
     "path-to-regexp": "^1.9.0",
     "yargs": "^17.5.1"
@@ -71,7 +71,7 @@
     "@opentelemetry/sdk-trace-base": "2.8.0",
     "@opentelemetry/resources": "2.8.0",
     "@opentelemetry/context-async-hooks": "2.8.0",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "body-parser": "^2.3.0",
     "brace-expansion": "^5.0.8",
     "fast-uri": "^3.1.5"

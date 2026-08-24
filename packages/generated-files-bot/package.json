@@ -31,7 +31,7 @@
     "@google-automations/bot-config-utils": "^9.0.0",
     "@google-automations/issue-utils": "^5.0.0",
     "gcf-utils": "^17.2.0",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "jsonpath": "^1.2.0",
     "minimatch": "^10.2.4"
   },
@@ -68,7 +68,7 @@
     "@opentelemetry/sdk-trace-base": "2.8.0",
     "@opentelemetry/resources": "2.8.0",
     "@opentelemetry/context-async-hooks": "2.8.0",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "body-parser": "^2.3.0",
     "brace-expansion": "^5.0.8",
     "fast-uri": "^3.1.4",

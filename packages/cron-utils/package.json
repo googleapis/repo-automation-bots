@@ -19,7 +19,7 @@
   "dependencies": {
     "@google-cloud/run": "^1.4.0",
     "@google-cloud/scheduler": "^4.3.0",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "yargs": "^17.5.1"
   },
   "devDependencies": {
@@ -52,7 +52,7 @@
     "tmp": "0.2.7",
     "uuid": "^11.1.1",
     "protobufjs": "^7.6.5",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "brace-expansion": "^5.0.8",
     "fast-uri": "^3.1.4",
     "debug": "^4.3.4",
