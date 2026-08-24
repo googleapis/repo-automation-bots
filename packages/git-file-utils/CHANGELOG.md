@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v3.1.0...git-file-utils-v3.2.0) (2026-08-24)
+
+
+### Features
+
+* **git-file-utils:** fallback to non-recursive tree traversal on HTTP 422 and ignore submodules ([#6354](https://github.com/googleapis/repo-automation-bots/issues/6354)) ([053424a](https://github.com/googleapis/repo-automation-bots/commit/053424ad50c16b5d0ee81ed9dc0177c4aaf97058))
+
 ## [3.1.0](https://github.com/googleapis/repo-automation-bots/compare/git-file-utils-v3.0.1...git-file-utils-v3.1.0) (2026-07-24)
 
 
