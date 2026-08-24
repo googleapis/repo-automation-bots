@@ -85,15 +85,6 @@ const REFRESH_STRING = '- [x] Refresh this comment';
 // Github issue comment API has a limit of 65536 characters.
 const MAX_CHARS_IN_COMMENT = 64000;
 
-const ALLOWED_ORGANIZATIONS = [
-  'android',
-  'googleapis',
-  'GoogleCloudPlatform',
-  'googlemaps',
-  'googlemaps-samples',
-  'terraform-google-modules',
-];
-
 async function getFiles(dir: string, allFiles: string[]) {
   const files = (await pfs.readdir(dir)).map(f => path.join(dir, f));
   for (const f of files) {
@@ -708,10 +699,6 @@ export = (app: Probot) => {
       logger.info(`snippet-bot is not configured for ${owner}/${repo}.`);
       return;
     }
-    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
-      logger.info(`snippet-bot not allowed for owner: ${owner}`);
-      return;
-    }
     await syncLabels(octokit, owner, repo, SNIPPET_BOT_LABELS);
   });
 
@@ -784,10 +771,6 @@ export = (app: Probot) => {
       logger.info(`snippet-bot is not configured for ${repoUrl}.`);
       return;
     }
-    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
-      logger.info(`snippet-bot not allowed for owner: ${owner}`);
-      return;
-    }
     const configuration = new Configuration({
       ...DEFAULT_CONFIGURATION,
       ...configOptions,
@@ -837,10 +820,6 @@ export = (app: Probot) => {
       logger.info(`snippet-bot is not configured for ${repoUrl}.`);
       return;
     }
-    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
-      logger.info(`snippet-bot not allowed for owner: ${owner}`);
-      return;
-    }
     const configuration = new Configuration({
       ...DEFAULT_CONFIGURATION,
       ...configOptions,
@@ -872,10 +851,6 @@ export = (app: Probot) => {
 
     if (configOptions === null) {
       logger.info(`snippet-bot is not configured for ${repoUrl}.`);
-      return;
-    }
-    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
-      logger.info(`snippet-bot not allowed for owner: ${owner}`);
       return;
     }
     const configuration = new Configuration({
@@ -990,10 +965,6 @@ export = (app: Probot) => {
       );
       if (configOptions === null) {
         logger.info(`snippet-bot is not configured for ${repoUrl}.`);
-        return;
-      }
-      if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
-        logger.info(`snippet-bot not allowed for owner: ${owner}`);
         return;
       }
       const configuration = new Configuration({
