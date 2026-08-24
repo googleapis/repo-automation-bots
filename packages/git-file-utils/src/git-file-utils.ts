@@ -325,7 +325,7 @@ export class BranchFileCache {
     const treeEntries = await this.getFullTree();
     if (treeEntries) {
       const found = treeEntries.find(entry => entry.path === path);
-      if (found?.sha) {
+      if (found?.sha && !isGitSubmodule(found)) {
         return await this.fetchContents(found.sha, found);
       }
       throw new FileNotFoundError(path);
@@ -338,7 +338,7 @@ export class BranchFileCache {
     for (const part of parts) {
       const {tree} = await this.getTree(treeSha);
       found = tree.find(item => item.path === part);
-      if (!found?.sha) {
+      if (!found?.sha || isGitSubmodule(found)) {
         throw new FileNotFoundError(path);
       }
       treeSha = found.sha;
@@ -381,8 +381,19 @@ export class BranchFileCache {
     }
 
     // try the fetch the entire tree first
-    const fetched = await this.fetchTree(sha, true);
-    if (fetched.truncated) {
+    let fetched: TreeResponse | undefined;
+    try {
+      fetched = await this.fetchTree(sha, true);
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 422) {
+        // HTTP 422 occurs when submodules are present in the repo
+        // Fall back to non-recursive tree fetching
+      } else {
+        throw e;
+      }
+    }
+
+    if (!fetched || fetched.truncated) {
       // we are unable to fetch the entire tree, so fetch only contents of
       // this single directory
       const singleDirectory = await this.fetchTree(sha, false);
@@ -479,6 +490,11 @@ export class BranchFileCache {
           continue;
         }
 
+        // Git Submodules (mode === '160000' or type === 'commit'): Explicitly ignore and skip
+        if (isGitSubmodule(treeEntry)) {
+          continue;
+        }
+
         // If the result for this SHA was incomplete, dig deeper on the subtrees
         if (!cachedTree.recursive && treeEntry.type === 'tree') {
           treeShas.push({ref: treeEntry.sha!, path});
@@ -516,6 +532,10 @@ export class BranchFileCache {
       parsedContent: Buffer.from(content, 'base64').toString('utf8'),
     };
   }
+}
+
+function isGitSubmodule(treeEntry?: TreeEntry): boolean {
+  return treeEntry?.mode === '160000' || treeEntry?.type === 'commit';
 }
 
 function stripPrefix(files: string[], prefix?: string): string[] {
