@@ -21,6 +21,7 @@ import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as fs from 'fs';
+import * as assert from 'assert';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
@@ -770,6 +771,28 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
+      it('should inherit top-level config options when branch is configured in branches', async () => {
+        const mainPayload = require(resolve(fixturesPath, './push_to_main'));
+        getConfigStub.resolves(loadConfig('manifest_branch_inheritance.yml'));
+        await probot.receive({
+          name: 'push',
+          payload: mainPayload,
+          id: 'abc123',
+        });
+
+        sinon.assert.calledOnce(fromManifestStub);
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          'main',
+          'release-please-config.json',
+          '.release-please-manifest.json',
+          sinon.match.any
+        );
+        sinon.assert.calledOnce(createReleasesStub);
+        sinon.assert.calledOnce(createPullRequestsStub);
+      });
+
       it('should tag pull request number if configured', async () => {
         getConfigStub.resolves(loadConfig('manifest_tag_pr_number.yml'));
         // We want the PR number 789 to be in the tag
@@ -1309,6 +1332,126 @@ describe('ReleasePleaseBot', () => {
         payload: payload as any,
         id: 'abc123',
       });
+    });
+  });
+
+  describe('findBranchConfiguration', () => {
+    it('should inherit top-level config in branch configuration', () => {
+      const config = {
+        primaryBranch: 'main',
+        handleGHRelease: true,
+        releaseType: 'go-librarian' as const,
+        manifest: true,
+        tagPullRequestNumber: true,
+        branches: [
+          {
+            branch: 'main',
+            manifestFile: '.release-please-manifest.json',
+            manifestConfig: 'release-please-config.json',
+          },
+        ],
+      };
+
+      const branchConfigs = api.findBranchConfiguration('main', config);
+      assert.strictEqual(branchConfigs.length, 1);
+      assert.strictEqual(branchConfigs[0].branch, 'main');
+      assert.strictEqual(branchConfigs[0].handleGHRelease, true);
+      assert.strictEqual(branchConfigs[0].releaseType, 'go-librarian');
+      assert.strictEqual(branchConfigs[0].manifest, true);
+      assert.strictEqual(branchConfigs[0].tagPullRequestNumber, true);
+      assert.strictEqual(
+        branchConfigs[0].manifestFile,
+        '.release-please-manifest.json'
+      );
+      assert.strictEqual(
+        branchConfigs[0].manifestConfig,
+        'release-please-config.json'
+      );
+    });
+
+    it('should allow branch configuration to override top-level config', () => {
+      const config = {
+        primaryBranch: 'main',
+        handleGHRelease: true,
+        releaseType: 'go-librarian' as const,
+        branches: [
+          {
+            branch: 'main',
+            handleGHRelease: false,
+            releaseType: 'node' as const,
+          },
+        ],
+      };
+
+      const branchConfigs = api.findBranchConfiguration('main', config);
+      assert.strictEqual(branchConfigs.length, 1);
+      assert.strictEqual(branchConfigs[0].handleGHRelease, false);
+      assert.strictEqual(branchConfigs[0].releaseType, 'node');
+    });
+
+    it('should inherit top-level config for non-primary branch', () => {
+      const config = {
+        primaryBranch: 'main',
+        handleGHRelease: true,
+        releaseType: 'node' as const,
+        branches: [
+          {
+            branch: '1.x',
+          },
+        ],
+      };
+
+      const branchConfigs = api.findBranchConfiguration('1.x', config);
+      assert.strictEqual(branchConfigs.length, 1);
+      assert.strictEqual(branchConfigs[0].branch, '1.x');
+      assert.strictEqual(branchConfigs[0].handleGHRelease, true);
+      assert.strictEqual(branchConfigs[0].releaseType, 'node');
+    });
+
+    it('should not duplicate execution when monorepo path is inherited from top-level config', () => {
+      const config = {
+        primaryBranch: 'main',
+        path: 'packages/foo',
+        branches: [
+          {
+            branch: 'main',
+          },
+        ],
+      };
+
+      const branchConfigs = api.findBranchConfiguration('main', config);
+      assert.strictEqual(branchConfigs.length, 1);
+      assert.strictEqual(branchConfigs[0].branch, 'main');
+      assert.strictEqual(branchConfigs[0].path, 'packages/foo');
+    });
+
+    it('should not leak root-only properties into branch configurations', () => {
+      const config = {
+        primaryBranch: 'main',
+        disableFailureChecker: true,
+        branches: [
+          {
+            branch: 'main',
+          },
+          {
+            branch: '1.x',
+          },
+        ],
+      };
+
+      const branchConfigs = api.findBranchConfiguration('main', config);
+      assert.deepStrictEqual(branchConfigs, [
+        {
+          branch: 'main',
+        },
+      ]);
+
+      const nonPrimaryConfigs = api.findBranchConfiguration('1.x', config);
+      assert.deepStrictEqual(nonPrimaryConfigs, [
+        {
+          branch: '1.x',
+        },
+      ]);
     });
   });
 });
