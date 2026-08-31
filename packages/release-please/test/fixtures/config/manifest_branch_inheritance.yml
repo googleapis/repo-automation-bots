@@ -1,0 +1,9 @@
+handleGHRelease: true
+releaseType: go-librarian
+manifest: true
+tagPullRequestNumber: true
+
+branches:
+  - branch: main
+    manifestFile: .release-please-manifest.json
+    manifestConfig: release-please-config.json

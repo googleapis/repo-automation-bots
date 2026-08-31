@@ -107,24 +107,30 @@ function findBranchConfiguration(
   config: ConfigurationOptions
 ): BranchConfiguration[] {
   const configurations: BranchConfiguration[] = [];
+  const {branches, primaryBranch, ...branchDefaults} = config;
+  delete branchDefaults.disableFailureChecker;
 
-  const hasDuplicateInBranches = config.branches?.some(
+  const hasDuplicateInBranches = branches?.some(
     branchConfig =>
-      branchConfig.branch === branch && branchConfig.path === config.path
+      branchConfig.branch === branch &&
+      (branchConfig.path ?? config.path) === config.path
   );
 
   // look at primaryBranch first
-  if (branch === config.primaryBranch && !hasDuplicateInBranches) {
+  if (branch === primaryBranch && !hasDuplicateInBranches) {
     configurations.push({
-      ...config,
-      ...{branch},
+      ...branchDefaults,
+      branch,
     });
   }
 
-  if (config.branches) {
-    for (const branchConfig of config.branches) {
+  if (branches) {
+    for (const branchConfig of branches) {
       if (branch === branchConfig.branch) {
-        configurations.push(branchConfig);
+        configurations.push({
+          ...branchDefaults,
+          ...branchConfig,
+        });
       }
     }
   }
@@ -1013,4 +1019,5 @@ const handler = (app: Probot) => {
 export const api = {
   handler,
   getRepositoryDefaultBranch,
+  findBranchConfiguration,
 };
