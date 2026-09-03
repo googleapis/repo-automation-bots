@@ -32,7 +32,7 @@
     "protobufjs": "^7.6.5",
     "js-yaml": "^4.3.1",
     "brace-expansion": "^5.0.8",
-    "fast-uri": "^3.1.4",
+    "fast-uri": "^3.1.7",
     "debug": "^4.3.4",
     "diff": "^8.0.4"
   }
