@@ -52,7 +52,7 @@
   ],
   "overrides": {
     "@tootallnate/once": "^3.0.1",
-    "qs": "6.15.2",
+    "qs": "6.16.0",
     "serialize-javascript": "^7.0.5",
     "tmp": "0.2.7",
     "uuid": "^11.1.1",
