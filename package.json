@@ -21,7 +21,7 @@
     "@google-cloud/mono-repo-publish": "^1.0.0"
   },
   "overrides": {
-    "qs": "6.15.2",
+    "qs": "6.16.0",
     "protobufjs": "^7.6.5",
     "serialize-javascript": "^7.0.5",
     "uuid": "^11.1.1",
