@@ -37,7 +37,6 @@ import {GithubRepo} from '../src/github-repo';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {newFakeOctokitFactory} from './fake-octokit';
 import {newFakeCloudBuildClient} from './fake-cloud-build-client';
-import AdmZip from 'adm-zip';
 import tmp from 'tmp';
 import * as fs from 'fs';
 import path from 'path';
@@ -242,13 +241,20 @@ describe('handlers', () => {
   });
 });
 
-function repoFromZip(repoName: string, zip: AdmZip): GithubRepo {
+function repoFromFiles(
+  repoName: string,
+  files?: Record<string, string>
+): GithubRepo {
   const tmpDir = tmp.dirSync().name;
-  zip.extractAllTo(tmpDir);
-  // The root directory of the zip is <repo-name>-<short-hash>.
-  // That's actually the directory we want to work in.
-  const [rootDir] = fs.readdirSync(tmpDir);
-  const repoDir = rootDir ? path.join(tmpDir, rootDir) : tmpDir;
+  const repoDir = path.join(tmpDir, 'repo-abc123');
+  fs.mkdirSync(repoDir, {recursive: true});
+  if (files) {
+    for (const [relPath, content] of Object.entries(files)) {
+      const fullPath = path.join(repoDir, relPath);
+      fs.mkdirSync(path.dirname(fullPath), {recursive: true});
+      fs.writeFileSync(fullPath, content);
+    }
+  }
   const cmd = newCmd();
   cmd('git init -b main', {cwd: repoDir});
   cmd('git config user.email "test@example.com"', {cwd: repoDir});
@@ -264,28 +270,19 @@ function repoFromZip(repoName: string, zip: AdmZip): GithubRepo {
   };
 }
 
-function zipWithOwlBotYaml(): AdmZip {
-  const zip = new AdmZip();
-  zip.addZipComment('This is a test.');
-  zip.addFile(
-    'repo-abc123/.github/.OwlBot.yaml',
-    Buffer.from(
-      `
+const defaultYamlFiles = {
+  '.github/.OwlBot.yaml': `
     docker:
       image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
   `,
-      'utf8'
-    )
-  );
-  return zip;
-}
+};
 
 describe('refreshConfigs', () => {
   afterEach(() => {
     sandbox.restore();
   });
 
-  const octokitSha123 = (zip?: AdmZip): InstanceType<typeof Octokit> => {
+  const octokitSha123 = (): InstanceType<typeof Octokit> => {
     return {
       issues: {
         create: () => {
@@ -305,17 +302,6 @@ describe('refreshConfigs', () => {
             },
           };
         },
-        downloadZipballArchive() {
-          if (!zip) {
-            zip = new AdmZip();
-            zip.addZipComment('This is a test.');
-            zip.addFile(
-              'repo-123/README.txt',
-              Buffer.from('This is a very useful API.')
-            );
-          }
-          return {data: zip.toBuffer()};
-        },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any as InstanceType<typeof Octokit>;
@@ -327,8 +313,8 @@ describe('refreshConfigs', () => {
     await refreshConfigs(
       configsStore,
       undefined,
-      octokitSha123(zipWithOwlBotYaml()),
-      repoFromZip('nodejs-vision', zipWithOwlBotYaml()),
+      octokitSha123(),
+      repoFromFiles('nodejs-vision', defaultYamlFiles),
       'main',
       42
     );
@@ -361,24 +347,18 @@ describe('refreshConfigs', () => {
 
   it('stores a good lock.yaml', async () => {
     const configsStore = new FakeConfigsStore();
-    const zip = new AdmZip();
-    zip.addFile(
-      'repo-abc123/.github/.OwlBot.lock.yaml',
-      Buffer.from(
-        `
-      docker:
-        image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
-        digest: sha256:abcdef
-    `,
-        'utf8'
-      )
-    );
 
     await refreshConfigs(
       configsStore,
       undefined,
-      octokitSha123(zip),
-      repoFromZip('nodejs-vision', zip),
+      octokitSha123(),
+      repoFromFiles('nodejs-vision', {
+        '.github/.OwlBot.lock.yaml': `
+      docker:
+        image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
+        digest: sha256:abcdef
+    `,
+      }),
       'main',
       42
     );
@@ -413,7 +393,7 @@ describe('refreshConfigs', () => {
       configsStore,
       undefined,
       octokitSha123(),
-      repoFromZip('nodejs-vision', new AdmZip()),
+      repoFromFiles('nodejs-vision'),
       'main',
       42
     );
@@ -452,7 +432,7 @@ describe('refreshConfigs', () => {
       configsStore,
       undefined,
       octokitSha123(),
-      repoFromZip('nodejs-vision', new AdmZip()),
+      repoFromFiles('nodejs-vision'),
       'main',
       77
     );
@@ -485,7 +465,7 @@ describe('refreshConfigs', () => {
       configsStore,
       configs,
       octokitSha123(),
-      repoFromZip('nodejs-vision', new AdmZip()),
+      repoFromFiles('nodejs-vision'),
       'main',
       77
     );
@@ -497,24 +477,17 @@ describe('refreshConfigs', () => {
     const configsStore = new FakeConfigsStore();
     const universalInvalidContent = 'deep-copy-regex\n - invalid_prop: 1';
 
-    const zip = new AdmZip();
-    zip.addFile(
-      'repo-abc123/.github/.OwlBot.yaml',
-      Buffer.from(universalInvalidContent)
-    );
-    zip.addFile(
-      'repo-abc123/.github/.OwlBot.lock.yaml',
-      Buffer.from(universalInvalidContent)
-    );
-
-    const octokit = octokitSha123(zip);
+    const octokit = octokitSha123();
     const issuesCreateSpy = sandbox.spy(octokit.issues, 'create');
 
     await refreshConfigs(
       configsStore,
       undefined,
       octokit,
-      repoFromZip('nodejs-vision', zip),
+      repoFromFiles('nodejs-vision', {
+        '.github/.OwlBot.yaml': universalInvalidContent,
+        '.github/.OwlBot.lock.yaml': universalInvalidContent,
+      }),
       'main',
       42
     );
@@ -527,17 +500,16 @@ describe('refreshConfigs', () => {
     const invalidConfig =
       'deep-copy-regex:\n - source: /(*foo)\n   dest: missing/leading/slash';
 
-    const zip = new AdmZip();
-    zip.addFile('repo-abc123/.github/.OwlBot.yaml', Buffer.from(invalidConfig));
-
-    const octokit = octokitSha123(zip);
+    const octokit = octokitSha123();
     const issuesCreateSpy = sandbox.spy(octokit.issues, 'create');
 
     await refreshConfigs(
       configsStore,
       undefined,
       octokit,
-      repoFromZip('nodejs-vision', zip),
+      repoFromFiles('nodejs-vision', {
+        '.github/.OwlBot.yaml': invalidConfig,
+      }),
       'main',
       42
     );
@@ -564,20 +536,17 @@ describe('refreshConfigs', () => {
     const invalidConfig =
       'deep-copy-regex:\n - source: /(*foo)\n   dest: missing/leading/slash';
 
-    const zip = new AdmZip();
-    zip.addFile(
-      'nodejs-vision/core/packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml',
-      Buffer.from(invalidConfig)
-    );
-
-    const octokit = octokitSha123(zip);
+    const octokit = octokitSha123();
     const issuesCreateSpy = sandbox.spy(octokit.issues, 'create');
 
     await refreshConfigs(
       configsStore,
       undefined,
       octokit,
-      repoFromZip('nodejs-vision', zip),
+      repoFromFiles('nodejs-vision', {
+        'core/packages/gapic-node-processing/templates/bootstrap-templates/.OwlBot.yaml':
+          invalidConfig,
+      }),
       'main',
       42
     );
@@ -608,10 +577,6 @@ describe('scanGithubForConfigs', () => {
             return 'merge';
           },
         },
-      },
-      downloadZipballArchive() {
-        const zip = zipWithOwlBotYaml();
-        return {data: zip.toBuffer()};
       },
     },
     paginate: {
