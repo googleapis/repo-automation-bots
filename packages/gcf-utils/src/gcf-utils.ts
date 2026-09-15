@@ -481,18 +481,44 @@ export class GCFBootstrapper {
        * Note: any logs written before resetting bindings may contain
        * bindings from previous executions
        */
-      const loggerBindings = this.buildLoggerBindings(
-        botRequest,
-        request.body || {}
-      );
       logger.resetBindings();
-      logger.addBindings(loggerBindings);
-      let requestLogger = buildRequestLogger(logger, loggerBindings);
+      let requestLogger = logger;
       try {
         if (botRequest.triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
           return;
-        } else if (botRequest.triggerType === TriggerType.SCHEDULER) {
+        }
+
+        if (botRequest.triggerType === TriggerType.GITHUB) {
+          const installationId = parseInstallationId(request.body || {});
+          if (
+            !(await this.installationHandler.isOrganizationAllowed(
+              installationId,
+              requestLogger
+            ))
+          ) {
+            requestLogger.warn(
+              `Request disallowed for installation ${installationId} not in allowlist, skipping.`
+            );
+            response.send({
+              statusCode: 200,
+              body: JSON.stringify({message: 'Executed'}),
+            });
+            requestLogger.flushSync();
+            logger.flushSync();
+            return;
+          }
+        }
+
+        const loggerBindings = this.buildLoggerBindings(
+          botRequest,
+          request.body || {}
+        );
+        logger.resetBindings();
+        logger.addBindings(loggerBindings);
+        requestLogger = buildRequestLogger(logger, loggerBindings);
+
+        if (botRequest.triggerType === TriggerType.SCHEDULER) {
           // Cloud scheduler tasks (cron)
           await this.handleScheduled(
             botRequest.githubDeliveryId,
@@ -619,25 +645,14 @@ export class GCFBootstrapper {
             }
           }
         } else if (botRequest.triggerType === TriggerType.GITHUB) {
-          const installationId = parseInstallationId(request.body || {});
-          if (
-            !(await this.installationHandler.isOrganizationAllowed(
-              installationId
-            ))
-          ) {
-            requestLogger.warn(
-              `Request disallowed for installation ${installationId} not in allowlist, skipping.`
-            );
-          } else {
-            await this.enqueueTask(
-              {
-                id: botRequest.githubDeliveryId,
-                name: botRequest.eventName,
-                body: JSON.stringify(request.body),
-              },
-              requestLogger
-            );
-          }
+          await this.enqueueTask(
+            {
+              id: botRequest.githubDeliveryId,
+              name: botRequest.eventName,
+              body: JSON.stringify(request.body),
+            },
+            requestLogger
+          );
         }
 
         response.send({
@@ -749,6 +764,14 @@ export class GCFBootstrapper {
     log: GCFLogger
   ) {
     if (body.installation) {
+      if (
+        !(await this.installationHandler.isOrganizationAllowed(
+          body.installation.id,
+          log
+        ))
+      ) {
+        return;
+      }
       await this.enqueueTask(
         {
           id,
@@ -760,6 +783,20 @@ export class GCFBootstrapper {
     } else {
       const generator = eachInstallation(wrapConfig);
       for await (const installation of generator) {
+        if (installation.login) {
+          this.installationHandler.cacheOrganization(
+            installation.id,
+            installation.login
+          );
+        }
+        if (
+          !(await this.installationHandler.isOrganizationAllowed(
+            installation.id,
+            log
+          ))
+        ) {
+          continue;
+        }
         const extraParams: Scheduled = {
           installation: {
             id: installation.id,
@@ -816,6 +853,14 @@ export class GCFBootstrapper {
         log
       );
     } else if (body.installation) {
+      if (
+        !(await this.installationHandler.isOrganizationAllowed(
+          body.installation.id,
+          log
+        ))
+      ) {
+        return;
+      }
       const generator = eachInstalledRepository(
         body.installation.id,
         wrapConfig
@@ -855,10 +900,28 @@ export class GCFBootstrapper {
       const batchSize = 30;
       let delayInSeconds = 0; // initial delay for the tasks
       for await (const installation of installationGenerator) {
+        if (installation.login) {
+          this.installationHandler.cacheOrganization(
+            installation.id,
+            installation.login
+          );
+        }
+        if (
+          !(await this.installationHandler.isOrganizationAllowed(
+            installation.id,
+            log
+          ))
+        ) {
+          continue;
+        }
         if (body.allowed_organizations !== undefined) {
           const org = installation.login?.toLowerCase();
           if (!body.allowed_organizations.includes(org)) {
-            log.info(`${org} is not allowed for this scheduler job, skipping`);
+            log.info(
+              `Discarding this request because its organization is outside the allowlist: ${body.allowed_organizations.join(
+                ','
+              )}`
+            );
             continue;
           }
         }
