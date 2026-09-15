@@ -87,6 +87,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [17.2.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.2.0...gcf-utils-v17.2.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **deps:** upgrade js-yaml to 4.3.2 and grpc to 1.83.2 to address CVEs ([#6366](https://github.com/googleapis/repo-automation-bots/issues/6366)) ([7449eaa](https://github.com/googleapis/repo-automation-bots/commit/7449eaaf9b843252fb341e24785bbb80ffa0ee98))
+* **gcf-utils:** stop logging organization name when not in allowlist ([#6376](https://github.com/googleapis/repo-automation-bots/issues/6376)) ([b5faa12](https://github.com/googleapis/repo-automation-bots/commit/b5faa126348a783017cb4c28a1bad58ef06793b9))
+
 ## [17.2.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.1.3...gcf-utils-v17.2.0) (2026-07-24)
 
 

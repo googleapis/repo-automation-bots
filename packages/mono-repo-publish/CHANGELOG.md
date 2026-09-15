@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.8.0...mono-repo-publish-v1.8.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **deps:** upgrade js-yaml to 4.3.2 and grpc to 1.83.2 to address CVEs ([#6366](https://github.com/googleapis/repo-automation-bots/issues/6366)) ([7449eaa](https://github.com/googleapis/repo-automation-bots/commit/7449eaaf9b843252fb341e24785bbb80ffa0ee98))
+
 ## [1.8.0](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.7.1...mono-repo-publish-v1.8.0) (2026-07-24)
 
 

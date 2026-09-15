@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.2.1](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.2.0...label-utils-v6.2.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **deps:** upgrade js-yaml to 4.3.2 and grpc to 1.83.2 to address CVEs ([#6366](https://github.com/googleapis/repo-automation-bots/issues/6366)) ([7449eaa](https://github.com/googleapis/repo-automation-bots/commit/7449eaaf9b843252fb341e24785bbb80ffa0ee98))
+
 ## [6.2.0](https://github.com/googleapis/repo-automation-bots/compare/label-utils-v6.1.3...label-utils-v6.2.0) (2026-07-24)
 
 
