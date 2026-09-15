@@ -77,6 +77,43 @@ describe('InstallationHandler', () => {
       assert.strictEqual(organization2, 'octocat');
       scope.done();
     });
+    it('does not log organization name if not in allowlist', async () => {
+      const response = JSON.parse(
+        fs.readFileSync('test/fixtures/installation_user.json').toString()
+      );
+      const scope = nock('https://api.github.com')
+        .get('/app/installations/1')
+        .reply(200, response);
+      const installationHandler = new InstallationHandler({
+        organizationAllowlist: new Set(['allowed-org']),
+      });
+      const debugSpy = sandbox.spy(gcfUtilsModule.logger, 'debug');
+      const traceSpy = sandbox.spy(gcfUtilsModule.logger, 'trace');
+
+      const organization =
+        await installationHandler.organizationForInstallation(1);
+      assert.strictEqual(organization, 'octocat');
+      sinon.assert.calledWith(
+        debugSpy,
+        sinon.match('Found organization for installationId: 1')
+      );
+      for (const call of debugSpy.getCalls()) {
+        assert.ok(!JSON.stringify(call.args).includes('octocat'));
+      }
+
+      // Second call hits cache
+      const organization2 =
+        await installationHandler.organizationForInstallation(1);
+      assert.strictEqual(organization2, 'octocat');
+      sinon.assert.calledWith(
+        traceSpy,
+        sinon.match('Found cached organization for installationId: 1')
+      );
+      for (const call of traceSpy.getCalls()) {
+        assert.ok(!JSON.stringify(call.args).includes('octocat'));
+      }
+      scope.done();
+    });
   });
   describe('isOrganizationAllowed', () => {
     it('allows organization if no allowlist set', async () => {
@@ -120,13 +157,14 @@ describe('InstallationHandler', () => {
       );
       sinon.assert.calledOnce(organizationStub);
     });
-    it('blocks organization if not in allowlist', async () => {
+    it('blocks organization if not in allowlist without logging organization name', async () => {
       const installationHandler = new InstallationHandler({
         organizationAllowlist: new Set([
           'allowed-organization',
           'other-allowed-organization',
         ]),
       });
+      const infoSpy = sandbox.spy(gcfUtilsModule.logger, 'info');
       const organizationStub = sandbox
         .stub(installationHandler, 'organizationForInstallation')
         .resolves('some-organization');
@@ -135,6 +173,15 @@ describe('InstallationHandler', () => {
         false
       );
       sinon.assert.calledOnce(organizationStub);
+      sinon.assert.calledWith(
+        infoSpy,
+        sinon.match(
+          'Discarding this request because its organization is outside the allowlist: allowed-organization,other-allowed-organization'
+        )
+      );
+      for (const call of infoSpy.getCalls()) {
+        assert.ok(!JSON.stringify(call.args).includes('some-organization'));
+      }
     });
   });
 });

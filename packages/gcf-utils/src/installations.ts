@@ -125,6 +125,10 @@ export class InstallationHandler {
     this.organizationByInstallationCache = new Map();
   }
 
+  cacheOrganization(installationId: number, organization: string) {
+    this.organizationByInstallationCache.set(installationId, organization);
+  }
+
   async isOrganizationAllowed(
     installationId: number,
     logger: GCFLogger = defaultLogger
@@ -136,7 +140,10 @@ export class InstallationHandler {
     }
 
     // Lookup organization name by installationId
-    const organization = await this.organizationForInstallation(installationId);
+    const organization = await this.organizationForInstallation(
+      installationId,
+      logger
+    );
     if (!organization) {
       // In the rare case we cannot determine the organization, allow the request and warn.
       logger.warn(
@@ -162,7 +169,9 @@ export class InstallationHandler {
       !this.organizationAllowlist.has(organization)
     ) {
       logger.info(
-        `Event for non-allowlisted organization: ${organization} (${installationId})`
+        `Discarding this request because its organization is outside the allowlist: ${Array.from(
+          this.organizationAllowlist
+        ).join(',')}`
       );
       return false;
     }
@@ -179,7 +188,16 @@ export class InstallationHandler {
   ): Promise<string | undefined> {
     const cached = this.organizationByInstallationCache.get(installationId);
     if (cached) {
-      logger.trace(`Found cached organization ${cached} (${installationId})`);
+      if (
+        !this.organizationAllowlist ||
+        this.organizationAllowlist.has(cached)
+      ) {
+        logger.trace(`Found cached organization ${cached} (${installationId})`);
+      } else {
+        logger.trace(
+          `Found cached organization for installationId: ${installationId}`
+        );
+      }
       return cached;
     }
 
@@ -194,7 +212,16 @@ export class InstallationHandler {
       const organization =
         installation.account['login'] ?? installation.account['slug'];
       this.organizationByInstallationCache.set(installationId, organization);
-      logger.debug(`Found organization ${organization} (${installationId})`);
+      if (
+        !this.organizationAllowlist ||
+        this.organizationAllowlist.has(organization)
+      ) {
+        logger.debug(`Found organization ${organization} (${installationId})`);
+      } else {
+        logger.debug(
+          `Found organization for installationId: ${installationId}`
+        );
+      }
       return organization;
     }
     return undefined;

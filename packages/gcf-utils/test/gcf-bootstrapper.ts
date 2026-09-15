@@ -2192,6 +2192,11 @@ describe('GCFBootstrapper', () => {
         );
         req.body = {
           installation: {id: 1234},
+          sender: {login: 'non-allowlisted-user'},
+          repository: {
+            name: 'private-repo',
+            owner: {login: 'some-org', type: 'User'},
+          },
         };
         req.headers = {};
         req.headers['x-github-event'] = 'issues';
@@ -2214,6 +2219,7 @@ describe('GCFBootstrapper', () => {
           })
         );
         sinon.assert.calledWith(orgaizationStub, 1234);
+        assert.deepStrictEqual(logger.getBindings(), {});
       });
 
       it('allows queueing if installation is in allowlist', async () => {
