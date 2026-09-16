@@ -34,7 +34,7 @@
     "@google-automations/label-utils": "^6.0.0",
     "@octokit/plugin-retry": "^6.1.0",
     "@octokit/rest": "^20.1.1",
-    "gcf-utils": "^17.2.0",
+    "gcf-utils": "^17.2.1",
     "release-please": "^17.11.2"
   },
   "devDependencies": {
