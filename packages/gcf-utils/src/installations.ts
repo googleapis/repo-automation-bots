@@ -46,7 +46,8 @@ export interface InstalledRepository {
 }
 
 /**
- * Async iterator over each installation for an app.
+ * Async iterator over each installation for an app. Null entries in the
+ * GitHub response are skipped with a warning.
  *
  * See https://docs.github.com/en/rest/reference/apps#list-installations-for-the-authenticated-app
  * @param wrapConfig {WrapConfig}
@@ -58,8 +59,16 @@ export async function* eachInstallation(
   const installationsPaginated = octokit.paginate.iterator(
     octokit.apps.listInstallations as any
   );
+  let previousInstallationId: number | undefined;
   for await (const response of installationsPaginated) {
     for (const installation of response.data) {
+      if (!installation) {
+        defaultLogger.warn(
+          `Skipping null app installation (previous installation: ${previousInstallationId})`
+        );
+        continue;
+      }
+      previousInstallationId = installation.id;
       yield {
         id: installation.id,
         suspended: installation.suspended_at !== null,

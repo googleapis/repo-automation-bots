@@ -23,6 +23,7 @@ import {
   getContextLogger,
   ServiceUnavailable,
 } from '../src/gcf-utils';
+import * as gcfUtilsModule from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
@@ -36,6 +37,7 @@ import * as express from 'express';
 import fs from 'fs';
 import sinon from 'sinon';
 import nock from 'nock';
+import fetch from 'node-fetch';
 import assert from 'assert';
 import {RestoreFn} from 'mocked-env';
 import mockedEnv from 'mocked-env';
@@ -1319,6 +1321,41 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
         sinon.assert.calledOnce(listInstallationStub);
+      });
+
+      it('skips null installations when called by scheduler', async () => {
+        await mockBootstrapper();
+        req.body = {
+          cron_type: 'installation',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        sandbox
+          .stub(gcfUtilsModule, 'getAuthenticatedOctokit')
+          .resolves(new Octokit({auth: 'secret123', request: {fetch}}));
+        const [firstInstallation, secondInstallation] = JSON.parse(
+          fs
+            .readFileSync('test/fixtures/app_installations_multiple.json')
+            .toString()
+        );
+        const scope = nock('https://api.github.com')
+          .get('/app/installations')
+          .reply(200, [firstInstallation, null, secondInstallation]);
+        const warnSpy = sandbox.spy(logger, 'warn');
+
+        await handler(req, response);
+
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+        sinon.assert.calledTwice(enqueueTask);
+        sinon.assert.calledWith(
+          warnSpy,
+          sinon.match(
+            'Skipping null app installation (previous installation: 1)'
+          )
+        );
+        scope.done();
       });
 
       it('ensures that task is enqueued when called by scheduler with an installation id', async () => {
