@@ -35,6 +35,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
     && apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y gh jq \
+    && apt-get purge -y "libheif*" \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
