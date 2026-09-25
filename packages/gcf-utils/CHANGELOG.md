@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [17.2.2](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.2.1...gcf-utils-v17.2.2) (2026-09-25)
+
+
+### Bug Fixes
+
+* **gcf-utils:** skip null entries when listing app installations ([#6382](https://github.com/googleapis/repo-automation-bots/issues/6382)) ([94b1209](https://github.com/googleapis/repo-automation-bots/commit/94b120970b2eb6937e9bae8416881123161e1b00)), refs [#6383](https://github.com/googleapis/repo-automation-bots/issues/6383)
+
 ## [17.2.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils-v17.2.0...gcf-utils-v17.2.1) (2026-09-15)
 
 
