@@ -1,7 +1,7 @@
 {
   "enabled": false,
   "extends": [
-    "config:recommended",
+    "config:best-practices",
     // update base images in Dockerfiles
     ":docker",
     // prevent upgrading to packages that can be unpublished 
