@@ -101,14 +101,18 @@ export class SecretRotator {
   ) {
     let bucketName = '';
     let objectName = '';
-    
+
     if (gcsDestination) {
       if (!this.storageClient) {
-        throw new Error('A storageClient must be provided in the constructor to use the gcsDestination parameter.');
+        throw new Error(
+          'A storageClient must be provided in the constructor to use the gcsDestination parameter.'
+        );
       }
       const match = gcsDestination.match(/^gs:\/\/([^/]+)\/([^/].*)$/);
       if (!match || match[2].endsWith('/')) {
-        throw new Error('The gcsDestination parameter must be a valid GCS object URI (e.g. gs://bucket/path/file.json) and cannot be a directory.');
+        throw new Error(
+          'The gcsDestination parameter must be a valid GCS object URI (e.g. gs://bucket/path/file.json) and cannot be a directory.'
+        );
       }
       [, bucketName, objectName] = match;
     }

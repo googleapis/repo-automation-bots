@@ -54,7 +54,8 @@ const rotateSecretCommand: yargs.CommandModule<{}, RotateSecretArgs> = {
         type: 'string',
       })
       .option('gcs-destination', {
-        describe: 'Optional GCS destination to store the rotated secret (e.g. gs://bucket/path/to/key.json)',
+        describe:
+          'Optional GCS destination to store the rotated secret (e.g. gs://bucket/path/to/key.json)',
         type: 'string',
       });
   },
@@ -77,7 +78,11 @@ const rotateSecretCommand: yargs.CommandModule<{}, RotateSecretArgs> = {
       authClient: authv8,
     });
 
-    const secretRotator = new SecretRotator(iamClient, secretManagerClient, storageClient);
+    const secretRotator = new SecretRotator(
+      iamClient,
+      secretManagerClient,
+      storageClient
+    );
     await secretRotator.rotateSecret(
       argv['service-account-project-id'],
       argv['service-account-email'],

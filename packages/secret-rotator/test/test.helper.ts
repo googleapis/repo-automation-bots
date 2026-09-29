@@ -224,12 +224,12 @@ describe('behavior of helper functions', async () => {
       'test-secret',
       'gs://my-bucket/my-path/key.json'
     );
-    
+
     assert.strictEqual(mockStorageClient.bucket.calledWith('my-bucket'), true);
     assert.strictEqual(mockFile.calledWith('my-path/key.json'), true);
     assert.strictEqual(mockFileSave.calledOnce, true);
   });
-  
+
   it('should throw if gcsDestination is provided without a storageClient', async () => {
     const helper = new SecretRotator(
       iamClientStubListAndDelete,
@@ -248,7 +248,7 @@ describe('behavior of helper functions', async () => {
   });
 
   it('should throw if gcsDestination is an invalid syntax', async () => {
-    const mockStorageClient = { bucket: sinon.stub() } as any;
+    const mockStorageClient = {bucket: sinon.stub()} as any;
     const helper = new SecretRotator(
       iamClientStubListAndDelete,
       secretManagerClientStub,
@@ -265,9 +265,9 @@ describe('behavior of helper functions', async () => {
       );
     }, /The gcsDestination parameter must be a valid GCS object URI/);
   });
-  
+
   it('should throw if gcsDestination points to a directory (trailing slash)', async () => {
-    const mockStorageClient = { bucket: sinon.stub() } as any;
+    const mockStorageClient = {bucket: sinon.stub()} as any;
     const helper = new SecretRotator(
       iamClientStubListAndDelete,
       secretManagerClientStub,
