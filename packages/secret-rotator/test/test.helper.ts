@@ -199,11 +199,13 @@ describe('behavior of helper functions', async () => {
   });
 
   it('should rotate a secret and save to GCS if specified', async () => {
+    const mockFileSave = sinon.stub().resolves();
+    const mockFile = sinon.stub().returns({
+      save: mockFileSave,
+    });
     const mockStorageClient = {
       bucket: sinon.stub().returns({
-        file: sinon.stub().returns({
-          save: sinon.stub().resolves(),
-        }),
+        file: mockFile,
       }),
     } as any;
     const helper = new SecretRotator(
@@ -224,5 +226,62 @@ describe('behavior of helper functions', async () => {
     );
     
     assert.strictEqual(mockStorageClient.bucket.calledWith('my-bucket'), true);
+    assert.strictEqual(mockFile.calledWith('my-path/key.json'), true);
+    assert.strictEqual(mockFileSave.calledOnce, true);
+  });
+  
+  it('should throw if gcsDestination is provided without a storageClient', async () => {
+    const helper = new SecretRotator(
+      iamClientStubListAndDelete,
+      secretManagerClientStub
+    );
+
+    await assert.rejects(async () => {
+      await helper.rotateSecret(
+        'test-sa-proj',
+        'test-email',
+        'test-sec-proj',
+        'test-secret',
+        'gs://my-bucket/my-path/key.json'
+      );
+    }, /A storageClient must be provided/);
+  });
+
+  it('should throw if gcsDestination is an invalid syntax', async () => {
+    const mockStorageClient = { bucket: sinon.stub() } as any;
+    const helper = new SecretRotator(
+      iamClientStubListAndDelete,
+      secretManagerClientStub,
+      mockStorageClient
+    );
+
+    await assert.rejects(async () => {
+      await helper.rotateSecret(
+        'test-sa-proj',
+        'test-email',
+        'test-sec-proj',
+        'test-secret',
+        's3://my-bucket/my-path/key.json'
+      );
+    }, /The gcsDestination parameter must be a valid GCS object URI/);
+  });
+  
+  it('should throw if gcsDestination points to a directory (trailing slash)', async () => {
+    const mockStorageClient = { bucket: sinon.stub() } as any;
+    const helper = new SecretRotator(
+      iamClientStubListAndDelete,
+      secretManagerClientStub,
+      mockStorageClient
+    );
+
+    await assert.rejects(async () => {
+      await helper.rotateSecret(
+        'test-sa-proj',
+        'test-email',
+        'test-sec-proj',
+        'test-secret',
+        'gs://my-bucket/my-path/'
+      );
+    }, /cannot be a directory/);
   });
 });

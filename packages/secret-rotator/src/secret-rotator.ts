@@ -99,6 +99,20 @@ export class SecretRotator {
     secretName: string,
     gcsDestination?: string
   ) {
+    let bucketName = '';
+    let objectName = '';
+    
+    if (gcsDestination) {
+      if (!this.storageClient) {
+        throw new Error('A storageClient must be provided in the constructor to use the gcsDestination parameter.');
+      }
+      const match = gcsDestination.match(/^gs:\/\/([^/]+)\/([^/].*)$/);
+      if (!match || match[2].endsWith('/')) {
+        throw new Error('The gcsDestination parameter must be a valid GCS object URI (e.g. gs://bucket/path/file.json) and cannot be a directory.');
+      }
+      [, bucketName, objectName] = match;
+    }
+
     logger.info(
       `creating new key for service account: ${serviceAccountEmail} (${serviceAccountProjectId})`
     );
@@ -124,13 +138,7 @@ export class SecretRotator {
     );
     logger.info(`updated secret: ${version}`);
 
-    if (gcsDestination && this.storageClient) {
-      const match = gcsDestination.match(/^gs:\/\/([^/]+)\/(.+)$/);
-      if (!match) {
-        throw new Error('gcs-destination must be a valid GCS URI (gs://bucket/object-path)');
-      }
-      const [, bucketName, objectName] = match;
-
+    if (gcsDestination && this.storageClient && bucketName && objectName) {
       logger.info(`uploading new key to gcs destination: ${gcsDestination}`);
       const file = this.storageClient.bucket(bucketName).file(objectName);
       await file.save(serviceAccountKey, {
