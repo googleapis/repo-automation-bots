@@ -197,4 +197,32 @@ describe('behavior of helper functions', async () => {
       );
     });
   });
+
+  it('should rotate a secret and save to GCS if specified', async () => {
+    const mockStorageClient = {
+      bucket: sinon.stub().returns({
+        file: sinon.stub().returns({
+          save: sinon.stub().resolves(),
+        }),
+      }),
+    } as any;
+    const helper = new SecretRotator(
+      iamClientStubListAndDelete,
+      secretManagerClientStub,
+      mockStorageClient
+    );
+    helper.deleteExpiredServiceAccountKeys = sinon.stub().resolves();
+    helper.createServiceAccountKey = sinon.stub().resolves(Buffer.from('key'));
+    helper.updateSecret = sinon.stub().resolves('versionX');
+
+    await helper.rotateSecret(
+      'test-sa-proj',
+      'test-email',
+      'test-sec-proj',
+      'test-secret',
+      'gs://my-bucket/my-path/key.json'
+    );
+    
+    assert.strictEqual(mockStorageClient.bucket.calledWith('my-bucket'), true);
+  });
 });

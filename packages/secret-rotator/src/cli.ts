@@ -18,12 +18,14 @@ import {SecretRotator} from './secret-rotator';
 import {iam, auth as authlibv7} from '@googleapis/iam';
 import * as authlibv8 from 'google-auth-library';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+import {Storage} from '@google-cloud/storage';
 
 interface RotateSecretArgs {
   'secret-name': string;
   'secret-project-id': string;
   'service-account-email': string;
   'service-account-project-id': string;
+  'gcs-destination'?: string;
 }
 
 const rotateSecretCommand: yargs.CommandModule<{}, RotateSecretArgs> = {
@@ -50,6 +52,10 @@ const rotateSecretCommand: yargs.CommandModule<{}, RotateSecretArgs> = {
         describe: 'The project ID that contains the service account',
         demand: true,
         type: 'string',
+      })
+      .option('gcs-destination', {
+        describe: 'Optional GCS destination to store the rotated secret (e.g. gs://bucket/path/to/key.json)',
+        type: 'string',
       });
   },
   async handler(argv) {
@@ -67,13 +73,17 @@ const rotateSecretCommand: yargs.CommandModule<{}, RotateSecretArgs> = {
       auth: authv8,
       fallback: 'rest',
     });
+    const storageClient = new Storage({
+      authClient: authv8,
+    });
 
-    const secretRotator = new SecretRotator(iamClient, secretManagerClient);
+    const secretRotator = new SecretRotator(iamClient, secretManagerClient, storageClient);
     await secretRotator.rotateSecret(
       argv['service-account-project-id'],
       argv['service-account-email'],
       argv['secret-project-id'],
-      argv['secret-name']
+      argv['secret-name'],
+      argv['gcs-destination']
     );
   },
 };

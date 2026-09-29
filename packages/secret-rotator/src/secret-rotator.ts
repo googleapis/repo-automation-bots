@@ -14,18 +14,22 @@
 
 import {iam_v1} from '@googleapis/iam';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+import {Storage} from '@google-cloud/storage';
 import {logger} from 'gcf-utils';
 
 export class SecretRotator {
   iamClient: iam_v1.Iam;
   secretManagerClient: SecretManagerServiceClient;
+  storageClient?: Storage;
 
   constructor(
     iamClient: iam_v1.Iam,
-    secretManagerClient: SecretManagerServiceClient
+    secretManagerClient: SecretManagerServiceClient,
+    storageClient?: Storage
   ) {
     this.iamClient = iamClient;
     this.secretManagerClient = secretManagerClient;
+    this.storageClient = storageClient;
   }
 
   public async createServiceAccountKey(
@@ -92,7 +96,8 @@ export class SecretRotator {
     serviceAccountProjectId: string,
     serviceAccountEmail: string,
     secretManagerProjectId: string,
-    secretName: string
+    secretName: string,
+    gcsDestination?: string
   ) {
     logger.info(
       `creating new key for service account: ${serviceAccountEmail} (${serviceAccountProjectId})`
@@ -118,5 +123,25 @@ export class SecretRotator {
       serviceAccountKey
     );
     logger.info(`updated secret: ${version}`);
+
+    if (gcsDestination && this.storageClient) {
+      if (!gcsDestination.startsWith('gs://')) {
+        throw new Error('gcs-destination must start with gs://');
+      }
+      const pathPart = gcsDestination.substring('gs://'.length);
+      const splitIndex = pathPart.indexOf('/');
+      if (splitIndex === -1) {
+        throw new Error('gcs-destination must include a bucket and an object path');
+      }
+      const bucketName = pathPart.substring(0, splitIndex);
+      const objectName = pathPart.substring(splitIndex + 1);
+
+      logger.info(`uploading new key to gcs destination: ${gcsDestination}`);
+      const file = this.storageClient.bucket(bucketName).file(objectName);
+      await file.save(serviceAccountKey, {
+        contentType: 'application/json',
+      });
+      logger.info(`uploaded new key to ${gcsDestination}`);
+    }
   }
 }
