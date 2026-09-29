@@ -125,16 +125,11 @@ export class SecretRotator {
     logger.info(`updated secret: ${version}`);
 
     if (gcsDestination && this.storageClient) {
-      if (!gcsDestination.startsWith('gs://')) {
-        throw new Error('gcs-destination must start with gs://');
+      const match = gcsDestination.match(/^gs:\/\/([^/]+)\/(.+)$/);
+      if (!match) {
+        throw new Error('gcs-destination must be a valid GCS URI (gs://bucket/object-path)');
       }
-      const pathPart = gcsDestination.substring('gs://'.length);
-      const splitIndex = pathPart.indexOf('/');
-      if (splitIndex === -1) {
-        throw new Error('gcs-destination must include a bucket and an object path');
-      }
-      const bucketName = pathPart.substring(0, splitIndex);
-      const objectName = pathPart.substring(splitIndex + 1);
+      const [, bucketName, objectName] = match;
 
       logger.info(`uploading new key to gcs destination: ${gcsDestination}`);
       const file = this.storageClient.bucket(bucketName).file(objectName);
