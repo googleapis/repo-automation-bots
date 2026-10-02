@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.1.2](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v5.1.1...cron-utils-v5.1.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **deps:** upgrade fast-uri, brace-expansion, and grpc/grpc-js ([#6392](https://github.com/googleapis/repo-automation-bots/issues/6392)) ([168055a](https://github.com/googleapis/repo-automation-bots/commit/168055a7821daf242d4951fd4a40a70d58cf599c))
+
 ## [5.1.1](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v5.1.0...cron-utils-v5.1.1) (2026-09-15)
 
 
