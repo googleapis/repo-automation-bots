@@ -510,9 +510,9 @@ async function scanPullRequest(
     if (tagFormatViolations.length > 0) {
       let summary = '';
       if (tagFormatViolations.length === 1) {
-        summary = 'There is a format violation for a region tag.';
+        summary = 'There is a format violation for a region tag. Region tags may only contain letters (a-z, A-Z), numbers (0-9), and underscores (_).';
       } else {
-        summary = `There are format violations for ${tagFormatViolations.length} region tags.`;
+        summary = `There are format violations for ${tagFormatViolations.length} region tags. Region tags may only contain letters (a-z, A-Z), numbers (0-9), and underscores (_).`;
       }
       const tagFormatViolationsDetail = formatViolations(
         tagFormatViolations,
