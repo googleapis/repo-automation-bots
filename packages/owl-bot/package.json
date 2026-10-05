@@ -101,6 +101,7 @@
     "fast-uri": "^3.1.8",
     "diff": "^8.0.4",
     "debug": "^4.3.4",
-    "@grpc/grpc-js": "^1.14.5"
+    "@grpc/grpc-js": "^1.14.5",
+    "node-forge": "^1.4.0"
   }
 }
