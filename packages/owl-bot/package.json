@@ -102,6 +102,8 @@
     "diff": "^8.0.4",
     "debug": "^4.3.4",
     "@grpc/grpc-js": "^1.14.5",
-    "node-forge": "^1.4.0"
+    "node-forge": "^1.4.0",
+    "fast-copy": "^4.1.0",
+    "@opentelemetry/instrumentation-tedious": "0.40.0"
   }
 }
