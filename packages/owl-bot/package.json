@@ -104,6 +104,11 @@
     "@grpc/grpc-js": "^1.14.5",
     "node-forge": "^1.4.0",
     "fast-copy": "^4.1.0",
-    "@opentelemetry/instrumentation-tedious": "0.40.0"
+    "@opentelemetry/instrumentation-tedious": "0.40.0",
+    "@opentelemetry/instrumentation-pg": "0.73.0",
+    "@opentelemetry/instrumentation-mysql2": "0.67.0",
+    "@opentelemetry/instrumentation-knex": "0.65.0",
+    "@opentelemetry/instrumentation-mysql": "0.67.0",
+    "@opentelemetry/instrumentation-mongoose": "0.67.0"
   }
 }
