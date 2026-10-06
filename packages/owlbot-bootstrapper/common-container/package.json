@@ -75,6 +75,7 @@
     "body-parser": "^2.3.0",
     "brace-expansion": "^5.0.11",
     "fast-uri": "^3.1.8",
-    "@grpc/grpc-js": "^1.14.5"
+    "@grpc/grpc-js": "^1.14.5",
+    "fast-copy": "^4.1.0"
   }
 }
