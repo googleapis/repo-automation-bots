@@ -79,6 +79,7 @@
     "@opentelemetry/instrumentation-mysql2": "0.67.0",
     "@opentelemetry/instrumentation-knex": "0.65.0",
     "@opentelemetry/instrumentation-mysql": "0.67.0",
-    "@opentelemetry/instrumentation-mongoose": "0.67.0"
+    "@opentelemetry/instrumentation-mongoose": "0.67.0",
+    "handlebars": "^4.7.10"
   }
 }
