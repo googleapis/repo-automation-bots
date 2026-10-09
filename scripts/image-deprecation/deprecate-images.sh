@@ -136,8 +136,11 @@ for IMAGE in "${IMAGES[@]}"; do
   for digest in "${digests_array[@]}"; do
     echo -n "  [Scan $i/${#digests_array[@]}] Checking $AR_IMAGE@$digest... "
     
-    if vuln_output=$(gcloud artifacts vulnerabilities list "$AR_IMAGE@$digest" --format="json" 2>/dev/null); then
-      if echo "$vuln_output" | jq -e 'map(select(. != null)) | length > 0' >/dev/null; then
+    # `gcloud artifacts vulnerabilities list` returns [null] even for digests
+    # with known vulnerabilities, so read the package vulnerability summary.
+    if vuln_output=$(gcloud artifacts docker images describe "$AR_IMAGE@$digest" \
+        --show-package-vulnerability --format="json" 2>/dev/null); then
+      if echo "$vuln_output" | jq -e '[(.package_vulnerability_summary.vulnerabilities // {})[] | length] | add // 0 | . > 0' >/dev/null; then
         echo "VULNERABLE"
         vulnerable_digests+=("$digest")
       else
