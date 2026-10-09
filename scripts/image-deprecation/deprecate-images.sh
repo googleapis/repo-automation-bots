@@ -77,6 +77,7 @@ if [ -z "$IMAGES_INPUT" ]; then
   echo "No images specified. Using default list."
   IMAGES=(
     "gcr.io/repo-automation-bots/owlbot-cli"
+    "gcr.io/repo-automation-bots/bazel-bot"
   )
 else
   # Remove all whitespace
