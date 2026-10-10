@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/datastore-lock",
-  "version": "7.2.1",
+  "version": "7.2.2",
   "description": "Distributed lock backed by Google Cloud Datastore",
   "scripts": {
     "compile": "tsc -p .",

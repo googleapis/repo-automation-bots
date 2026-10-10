@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.2](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.8.1...mono-repo-publish-v1.8.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** override node-forge dep ([#6399](https://github.com/googleapis/repo-automation-bots/issues/6399)) ([b308b75](https://github.com/googleapis/repo-automation-bots/commit/b308b756847771d51d1e2582c6a084387313f44d))
+* **deps:** upgrade fast-uri, brace-expansion, and grpc/grpc-js ([#6392](https://github.com/googleapis/repo-automation-bots/issues/6392)) ([168055a](https://github.com/googleapis/repo-automation-bots/commit/168055a7821daf242d4951fd4a40a70d58cf599c))
+
 ## [1.8.1](https://github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.8.0...mono-repo-publish-v1.8.1) (2026-09-15)
 
 
