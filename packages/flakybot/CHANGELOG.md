@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.4.1...flakybot-v1.4.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** upgrade fast-uri, brace-expansion, and grpc/grpc-js ([#6392](https://github.com/googleapis/repo-automation-bots/issues/6392)) ([168055a](https://github.com/googleapis/repo-automation-bots/commit/168055a7821daf242d4951fd4a40a70d58cf599c))
+
 ## [1.4.1](https://github.com/googleapis/repo-automation-bots/compare/flakybot-v1.4.0...flakybot-v1.4.1) (2026-09-15)
 
 
