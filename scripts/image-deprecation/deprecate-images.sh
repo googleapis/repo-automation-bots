@@ -36,12 +36,16 @@ while getopts "di:t:" opt; do
     *)
       echo "Usage: $0 [-d] [-i <image1,image2,...>] [-t <days>]"
       echo "  -d: Dry run (preview changes without applying tags)"
-      echo "  -i: Comma-separated list of images (overrides defaults)"
+      echo "  -i: Comma-separated list of images, with gcr.io names for gcr.io repositories (overrides defaults)"
       echo "  -t: Only check images created in the last N days (default: 30)"
       exit 1
       ;;
   esac
 done
+
+# Keep the gcloud error text, so that a failed call shows its cause.
+ERR_FILE=$(mktemp)
+trap 'rm -f "$ERR_FILE"' EXIT
 
 # Helper function to convert GCR path to AR path
 to_ar_path() {
@@ -100,8 +104,8 @@ for IMAGE in "${IMAGES[@]}"; do
       --include-tags \
       --filter="createTime > '$CUTOFF_DATE'" \
       --sort-by="~createTime" \
-      --format="json" 2>/dev/null); then
-    echo "Error: Failed to list images for $IMAGE. Skipping."
+      --format="json" 2>"$ERR_FILE"); then
+    echo "Error: Failed to list images for $IMAGE. Skipping. $(tr '\n' ' ' < "$ERR_FILE" | head -c 500)"
     EXIT_CODE=1
     continue
   fi
@@ -134,20 +138,21 @@ for IMAGE in "${IMAGES[@]}"; do
   vulnerable_digests=()
   i=1
   for digest in "${digests_array[@]}"; do
-    echo -n "  [Scan $i/${#digests_array[@]}] Checking $AR_IMAGE@$digest... "
+    echo -n "  [Scan $i/${#digests_array[@]}] Checking $IMAGE@$digest... "
     
-    # `gcloud artifacts vulnerabilities list` returns [null] even for digests
-    # with known vulnerabilities, so read the package vulnerability summary.
-    if vuln_output=$(gcloud artifacts docker images describe "$AR_IMAGE@$digest" \
-        --show-package-vulnerability --format="json" 2>/dev/null); then
-      if echo "$vuln_output" | jq -e '[(.package_vulnerability_summary.vulnerabilities // {})[] | length] | add // 0 | . > 0' >/dev/null; then
+    # Query by the gcr.io name of the image. Since gcloud 586.0.0, this
+    # command finds nothing for the us-docker.pkg.dev/<project>/gcr.io/...
+    # form of an image in a gcr.io-domain repository.
+    if vuln_output=$(gcloud artifacts vulnerabilities list "$IMAGE@$digest" \
+        --format="json" 2>"$ERR_FILE"); then
+      if echo "$vuln_output" | jq -e 'map(select(. != null)) | length > 0' >/dev/null; then
         echo "VULNERABLE"
         vulnerable_digests+=("$digest")
       else
         echo "CLEAN"
       fi
     else
-      echo "ERROR (Failed to query)"
+      echo "ERROR (Failed to query): $(tr '\n' ' ' < "$ERR_FILE" | head -c 500)"
       EXIT_CODE=1
     fi
     i=$((i+1))
