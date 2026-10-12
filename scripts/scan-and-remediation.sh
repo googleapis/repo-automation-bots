@@ -66,8 +66,10 @@ for T in $TRIGGERS_DATA; do
   TOTAL_CHECKED=$((TOTAL_CHECKED + 1))
   
   # Capture stdout and stderr separately to avoid JSON corruption
+  # Query by the gcr.io name of the image. Since gcloud 586.0.0, this command
+  # finds nothing for the us-docker.pkg.dev/<project>/gcr.io/... form.
   # Use location=us to avoid SDK crash
-  OUTPUT=$(gcloud artifacts vulnerabilities list us-docker.pkg.dev/"$PROJECT_ID"/gcr.io/"$IMAGE" --location=us --format=json 2>"$STDERR_FILE")
+  OUTPUT=$(gcloud artifacts vulnerabilities list gcr.io/"$PROJECT_ID"/"$IMAGE" --location=us --format=json 2>"$STDERR_FILE")
   STATUS=$?
   
   if [ $STATUS -ne 0 ]; then
