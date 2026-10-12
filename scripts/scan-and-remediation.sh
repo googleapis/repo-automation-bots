@@ -25,8 +25,8 @@ log() {
 log "INFO: Using Project ID: $PROJECT_ID"
 
 log "INFO: Fetching triggers dynamically..."
-# Get all triggers starting with 'packages-' and not ending with '-test'
-TRIGGERS_DATA=$(gcloud builds triggers list --project="$PROJECT_ID" --format="json" | jq -r '.[] | select(type == "object") | select(.name != null) | select((.name | startswith("packages-")) or (.name == "deploy-canary-bot-cloud-run-run")) | select(.name | endswith("-test") | not) | .name + ":" + .id')
+# Get all triggers starting with 'packages-' (plus top-level bot deploy triggers) and not ending with '-test'
+TRIGGERS_DATA=$(gcloud builds triggers list --project="$PROJECT_ID" --format="json" | jq -r '.[] | select(type == "object") | select(.name != null) | select((.name | startswith("packages-")) or (.name == "deploy-canary-bot-cloud-run-run") or (.name == "serverless-scheduler-proxy")) | select(.name | endswith("-test") | not) | .name + ":" + .id')
 
 TOTAL_CHECKED=0
 TOTAL_VULNERABLE=0
