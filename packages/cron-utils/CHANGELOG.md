@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.1.2](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v5.1.1...cron-utils-v5.1.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update qs to 6.16.1 and serialize-javascript to 7.1.3 ([#6414](https://github.com/googleapis/repo-automation-bots/issues/6414)) ([2711e22](https://github.com/googleapis/repo-automation-bots/commit/2711e22073f4a02f7408ec687e3127d61dcdae31))
+* **deps:** upgrade fast-uri, brace-expansion, and grpc/grpc-js ([#6392](https://github.com/googleapis/repo-automation-bots/issues/6392)) ([168055a](https://github.com/googleapis/repo-automation-bots/commit/168055a7821daf242d4951fd4a40a70d58cf599c))
+
 ## [5.1.1](https://github.com/googleapis/repo-automation-bots/compare/cron-utils-v5.1.0...cron-utils-v5.1.1) (2026-09-15)
 
 
