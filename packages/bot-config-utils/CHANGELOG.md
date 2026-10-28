@@ -1,5 +1,14 @@
 # Changelog
 
+## [9.1.2](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v9.1.1...bot-config-utils-v9.1.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update body-parser to 2.4.0/1.20.9 and fast-uri to 3.1.9 ([#6412](https://github.com/googleapis/repo-automation-bots/issues/6412)) ([4085594](https://github.com/googleapis/repo-automation-bots/commit/4085594927c02b7a9a69db419bac390c4045a334))
+* **deps:** update qs to 6.16.1 and serialize-javascript to 7.1.3 ([#6414](https://github.com/googleapis/repo-automation-bots/issues/6414)) ([2711e22](https://github.com/googleapis/repo-automation-bots/commit/2711e22073f4a02f7408ec687e3127d61dcdae31))
+* **deps:** upgrade fast-uri, brace-expansion, and grpc/grpc-js ([#6392](https://github.com/googleapis/repo-automation-bots/issues/6392)) ([168055a](https://github.com/googleapis/repo-automation-bots/commit/168055a7821daf242d4951fd4a40a70d58cf599c))
+
 ## [9.1.1](https://github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v9.1.0...bot-config-utils-v9.1.1) (2026-09-15)
 
 
