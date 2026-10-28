@@ -41,6 +41,7 @@ processes:
   - "OwlBotTemplateChangesNode"
   - "OwlBotPRsNode"
   - "RubyApiaryCodegen"
+  - "RubyGeneratorLockfileSync"
 ```
 
 These processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
@@ -212,6 +213,10 @@ Below is what each process checks for:
 * RubyApiaryCodegen
   - Checks that the author is 'yoshi-code-bot'
   - Checks that the title of the PR matches the regexp: /^feat: Automated regeneration of .* client$/
+* RubyGeneratorLockfileSync
+  - Checks that the author is 'yoshi-code-bot'
+  - Checks that the title of the PR matches the regexp: /^chore\(generator\): sync Gemfile\.lock$/
+  - Checks that the PR only changes google-apis-generator/Gemfile.lock
 
 This change in configuration permits the following:
 * Allows for more complete testing as described by c8, by codifying the logic in TS as opposed to the JSON validation schema
