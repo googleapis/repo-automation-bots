@@ -18,7 +18,7 @@
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
     "@octokit/rest": "^20.1.1",
-    "minimatch": "^10.2.4"
+    "minimatch": "^11.0.1"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
