@@ -135,11 +135,25 @@ for IMAGE in "${IMAGES[@]}"; do
   mapfile -t digests_array <<< "$eligible_images"
   echo "Found ${#digests_array[@]} eligible images. Scanning for vulnerabilities..."
 
+  # Each image in a public project must have a tag, so tag each eligible
+  # digest of a public image without a vulnerability scan.
+  tag_all=false
+  case "$IMAGE" in
+    gcr.io/cloud-devrel-public-resources/*) tag_all=true ;;
+  esac
+
   # Query vulnerabilities for each eligible image digest
   vulnerable_digests=()
   i=1
   for digest in "${digests_array[@]}"; do
     echo -n "  [Scan $i/${#digests_array[@]}] Checking $IMAGE@$digest... "
+
+    if [ "$tag_all" = true ]; then
+      echo "PUBLIC (tag without scan)"
+      vulnerable_digests+=("$digest")
+      i=$((i+1))
+      continue
+    fi
     
     # Query by the gcr.io name of the image. Since gcloud 586.0.0, this
     # command finds nothing for the us-docker.pkg.dev/<project>/gcr.io/...
@@ -166,7 +180,7 @@ for IMAGE in "${IMAGES[@]}"; do
     continue
   fi
 
-  # Tag only the vulnerable images
+  # Tag the vulnerable images (each eligible image for a public image)
   echo "Processing ${#vulnerable_digests[@]} images..."
   for digest in "${vulnerable_digests[@]}"; do
     digest_hex=${digest#sha256:}
