@@ -82,6 +82,7 @@ if [ -z "$IMAGES_INPUT" ]; then
   IMAGES=(
     "gcr.io/repo-automation-bots/owlbot-cli"
     "gcr.io/repo-automation-bots/bazel-bot"
+    "gcr.io/cloud-devrel-public-resources/owlbot-cli"
   )
 else
   # Remove all whitespace
