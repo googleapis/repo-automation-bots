@@ -1,7 +1,7 @@
 {
   "name": "generate-bot",
   "version": "1.1.0",
-  "description": "generate new repo-automation-bots \ud83e\udd16",
+  "description": "generate new repo-automation-bots 🤖",
   "main": "build/src/run.js",
   "private": true,
   "files": [
@@ -53,6 +53,7 @@
     "fast-uri": "^3.1.8",
     "debug": "^4.3.4",
     "diff": "^8.0.4",
-    "@grpc/grpc-js": "^1.14.5"
+    "@grpc/grpc-js": "^1.14.5",
+    "minimatch": "^11.0.1"
   }
 }
