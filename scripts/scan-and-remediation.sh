@@ -40,6 +40,8 @@ FIXABLE_FILTER='.[] | select(type == "object") | select(.occurrence != null) | s
 # node_modules, so the version comes from package-lock.json. npm in a base
 # image (/usr/local/lib/node_modules) doesn't count, because a rebuild pulls
 # the newest base image.
+# The $pi and $paths below are jq variables, so the single quotes are intended.
+# shellcheck disable=SC2016
 LOCKFILE_NPM_FILTER='.occurrence.vulnerability.packageIssue as $pi
   | [$pi.fileLocation[]?.filePath] as $paths
   | $pi.packageType == "NPM"
