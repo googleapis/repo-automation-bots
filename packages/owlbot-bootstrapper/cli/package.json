@@ -64,6 +64,7 @@
     "js-yaml": "^4.3.2",
     "brace-expansion": "^5.0.11",
     "fast-uri": "^3.1.9",
-    "@grpc/grpc-js": "^1.14.5"
+    "@grpc/grpc-js": "^1.14.5",
+    "minimatch": "^11.0.1"
   }
 }
