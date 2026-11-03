@@ -33,6 +33,26 @@ TOTAL_VULNERABLE=0
 TOTAL_TRIGGERED=0
 TOTAL_SKIPPED=0
 
+# jq filter for the findings that have a fixed version.
+FIXABLE_FILTER='.[] | select(type == "object") | select(.occurrence != null) | select(.occurrence.vulnerability.packageIssue.fixedVersion.kind != "MAXIMUM")'
+
+# jq condition for an npm finding whose files are all in the app's
+# node_modules (/usr/src/app, the WORKDIR of the bot images), so the version
+# comes from package-lock.json. Any other path, such as npm in a base image
+# (/usr/local/lib/node_modules for node images, /usr/lib/node_modules for
+# Debian node packages) or an app with another WORKDIR, still triggers a
+# rebuild, because a rebuild can update it.
+# The $pi and $paths below are jq variables, so the single quotes are intended.
+# shellcheck disable=SC2016
+LOCKFILE_NPM_FILTER='.occurrence.vulnerability.packageIssue as $pi
+  | [$pi.fileLocation[]?.filePath] as $paths
+  | $pi.packageType == "NPM"
+    and ($paths | length) > 0
+    and all($paths[]; startswith("/usr/src/app/node_modules/"))'
+
+# Images whose rebuild was skipped, for the summary.
+SKIPPED_IMAGES=()
+
 # Create a temp file for stderr
 STDERR_FILE=$(mktemp)
 trap 'rm -f "$STDERR_FILE"' EXIT
@@ -87,10 +107,27 @@ for T in $TRIGGERS_DATA; do
     continue
   fi
 
-  COUNT=$(echo "$OUTPUT" | jq '[.[] | select(type == "object") | select(.occurrence != null) | select(.occurrence.vulnerability.packageIssue.fixedVersion.kind != "MAXIMUM")] | length')
-  
+  COUNT=$(echo "$OUTPUT" | jq "[${FIXABLE_FILTER}] | length")
+  # A rebuild from the same commit installs the same package-lock.json, so it
+  # can't fix an npm package in the app's node_modules. Only count the other
+  # findings (OS packages, base image files) when deciding to rebuild.
+  REBUILD_COUNT=$(echo "$OUTPUT" | jq "[${FIXABLE_FILTER} | select((${LOCKFILE_NPM_FILTER}) | not)] | length")
+  # If jq fails, don't skip: count every fixable finding as rebuild-fixable.
+  if ! [[ "$REBUILD_COUNT" =~ ^[0-9]+$ ]]; then
+    log "WARN: Could not classify the vulnerabilities of $IMAGE. Treating them all as fixable by a rebuild."
+    REBUILD_COUNT=$COUNT
+  fi
+
+  if [ "$COUNT" -gt 0 ] && [ "$REBUILD_COUNT" -eq 0 ]; then
+    log "WARN: Skipping rebuild of $IMAGE. Its $COUNT fixable vulnerabilities are all npm packages from package-lock.json, which a rebuild can't update. Update the dependencies instead."
+    TOTAL_VULNERABLE=$((TOTAL_VULNERABLE + 1))
+    TOTAL_SKIPPED=$((TOTAL_SKIPPED + 1))
+    SKIPPED_IMAGES+=("$IMAGE")
+    continue
+  fi
+
   if [ "$COUNT" -gt 0 ]; then
-    log "WARN: Found $COUNT fixable vulnerabilities in $IMAGE. Triggering rebuild..."
+    log "WARN: Found $COUNT fixable vulnerabilities in $IMAGE ($REBUILD_COUNT a rebuild can fix). Triggering rebuild..."
     TOTAL_VULNERABLE=$((TOTAL_VULNERABLE + 1))
     
     if gcloud builds triggers run "$TRIGGER_ID" --branch=main --project="$PROJECT_ID"; then
@@ -108,3 +145,6 @@ log "INFO: Total images checked: $TOTAL_CHECKED"
 log "INFO: Total images with fixable CVEs: $TOTAL_VULNERABLE"
 log "INFO: Total triggers executed: $TOTAL_TRIGGERED"
 log "INFO: Total triggers skipped: $TOTAL_SKIPPED"
+if [ "${#SKIPPED_IMAGES[@]}" -gt 0 ]; then
+  log "WARN: These images need a dependency update (package-lock.json) to fix their vulnerabilities: ${SKIPPED_IMAGES[*]}"
+fi
