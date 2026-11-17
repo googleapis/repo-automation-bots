@@ -1725,6 +1725,58 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
       });
+
+      it('rejects requests with empty body with 400', async () => {
+        await mockBootstrapper({
+          logging: false,
+          background: true,
+          skipVerification: false,
+        });
+        req.body = undefined as any;
+        req.rawBody = undefined as any;
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-hub-signature'] = 'sha1=fake-signature';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {
+          statusCode: 400,
+          body: JSON.stringify({message: 'Empty body or signature'}),
+        });
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('rejects requests with empty signature with 400', async () => {
+        await mockBootstrapper({
+          logging: false,
+          background: true,
+          skipVerification: false,
+        });
+        req.body = 'example body';
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {
+          statusCode: 400,
+          body: JSON.stringify({message: 'Empty body or signature'}),
+        });
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
     });
   });
 
