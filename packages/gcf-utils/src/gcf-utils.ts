@@ -464,7 +464,11 @@ export class GCFBootstrapper {
         : request.body?.toString() ?? '';
       // empty body will cause an TypeError in webhook.verify, so we check the body
       // first and return early.
-      if (!payload || !botRequest.signature || botRequest.signature === 'unset') {
+      if (
+        !payload ||
+        !botRequest.signature ||
+        botRequest.signature === 'unset'
+      ) {
         response.status(400).send({
           statusCode: 400,
           body: JSON.stringify({message: 'Empty body or signature'}),
@@ -474,10 +478,7 @@ export class GCFBootstrapper {
       // validate the signature
       if (
         !wrapConfig.skipVerification &&
-        !(await this.probot.webhooks.verify(
-          payload,
-          botRequest.signature
-        ))
+        !(await this.probot.webhooks.verify(payload, botRequest.signature))
       ) {
         response.status(400).send({
           statusCode: 400,
