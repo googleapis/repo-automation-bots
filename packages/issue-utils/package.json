@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/issue-utils",
-  "version": "5.2.1",
+  "version": "5.2.2",
   "description": "Utilities for github issues",
   "scripts": {
     "compile": "tsc -p .",
