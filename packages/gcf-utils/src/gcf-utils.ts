@@ -465,9 +465,8 @@ export class GCFBootstrapper {
       // empty body will cause an TypeError in webhook.verify, so we check the body
       // first and return early.
       if (
-        !payload ||
-        !botRequest.signature ||
-        botRequest.signature === 'unset'
+        !wrapConfig.skipVerification &&
+        (!payload || !botRequest.signature || botRequest.signature === 'unset')
       ) {
         response.status(400).send({
           statusCode: 400,
